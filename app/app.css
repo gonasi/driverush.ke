@@ -1,58 +1,109 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/figtree";
 
 @custom-variant dark (&:is(.dark *));
 
-@theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-}
-
 html,
 body {
-  @apply bg-white dark:bg-gray-950;
+  @apply bg-background text-foreground;
 
   @media (prefers-color-scheme: dark) {
     color-scheme: dark;
   }
 }
 
+/* =============================================================
+   DriveRush.ke — Design Tokens
+   Brand: modern driving school. Red = action, Charcoal = authority,
+   Cream = clarity. Amber = caution, Green = success, Blue = info.
+   ============================================================= */
+
 @theme inline {
-  --font-heading: var(--font-sans);
-  --font-sans: 'Figtree Variable', sans-serif;
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --color-foreground: var(--foreground);
+  /* ---------- Typography ---------- */
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
+  --font-display: "Sora", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Sora", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono:
+    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+
+  /* Tracking — display copy reads tight, body relaxed, eyebrows wide */
+  --tracking-tighter: -0.04em;
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.02em;
+  --tracking-wider: 0.06em;
+  --tracking-widest: 0.14em;
+
+  /* ---------- Core surfaces ---------- */
   --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* ---------- Brand semantic tokens ---------- */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-soft: var(--warning-soft);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-soft: var(--info-soft);
+  --color-danger-soft: var(--danger-soft);
+
+  /* Brand reds — explicit ramp for hero / pricing / hover states */
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+  --color-brand-950: var(--brand-950);
+
+  /* ---------- Charts (driving-themed: stop, slow, go, info, slate) ---------- */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* ---------- Sidebar ---------- */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* ---------- Radius — slightly softened from default for friendliness ---------- */
+  --radius-xs: calc(var(--radius) * 0.4);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -60,88 +111,255 @@ body {
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* ---------- Elevation — warm shadows that read on cream + on charcoal ---------- */
+  --shadow-xs: 0 1px 2px 0 oklch(0.18 0.02 260 / 0.04);
+  --shadow-sm:
+    0 1px 2px 0 oklch(0.18 0.02 260 / 0.05),
+    0 1px 3px 0 oklch(0.18 0.02 260 / 0.06);
+  --shadow-md:
+    0 4px 8px -2px oklch(0.18 0.02 260 / 0.08),
+    0 2px 4px -2px oklch(0.18 0.02 260 / 0.06);
+  --shadow-lg:
+    0 12px 24px -8px oklch(0.18 0.02 260 / 0.12),
+    0 4px 8px -4px oklch(0.18 0.02 260 / 0.08);
+  --shadow-xl: 0 24px 48px -12px oklch(0.18 0.02 260 / 0.18);
+  --shadow-glow:
+    0 0 0 1px oklch(0.62 0.24 29 / 0.18),
+    0 8px 24px -6px oklch(0.62 0.24 29 / 0.35);
+
+  /* ---------- Motion — fast and decisive, like a quick lane change ---------- */
+  --ease-snap: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+
+  /* ---------- Container — generous gutters on mobile, capped on desktop ---------- */
+  --container-2xs: 18rem;
+  --container-xs: 22rem;
+  --container-sm: 26rem;
+  --container-md: 32rem;
+  --container-lg: 40rem;
+  --container-xl: 48rem;
+  --container-2xl: 56rem;
+  --container-3xl: 64rem;
+  --container-4xl: 72rem;
+  --container-5xl: 80rem;
+  --container-6xl: 88rem;
+  --container-7xl: 96rem;
+  --container-prose: 65ch;
 }
 
+/* =============================================================
+   LIGHT — clean cream base, charcoal type, vibrant red action
+   ============================================================= */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  /* Surfaces */
+  --background: oklch(0.98 0.005 250); /* near-white cream */
+  --foreground: oklch(0.18 0.02 260); /* charcoal */
+  --card: oklch(1 0 0); /* pure white card lifts off cream */
+  --card-foreground: oklch(0.18 0.02 260);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --popover-foreground: oklch(0.18 0.02 260);
+
+  /* Primary — vibrant red */
+  --primary: oklch(0.62 0.24 29);
+  --primary-foreground: oklch(0.99 0.005 0);
+
+  /* Secondary — neutral cool gray, sits behind primary without competing */
+  --secondary: oklch(0.96 0.005 260);
+  --secondary-foreground: oklch(0.22 0.02 260);
+
+  /* Muted — quieter than secondary, for placeholders + disabled */
+  --muted: oklch(0.95 0.005 260);
+  --muted-foreground: oklch(0.5 0.015 260);
+
+  /* Accent — hover states on neutral controls */
+  --accent: oklch(0.94 0.008 260);
+  --accent-foreground: oklch(0.18 0.02 260);
+
+  /* Destructive — same red family as primary, slightly punchier */
+  --destructive: oklch(0.58 0.245 27);
+  --destructive-foreground: oklch(0.99 0.005 0);
+  --danger-soft: oklch(0.96 0.04 25); /* red-tinted bg for STOP cards */
+
+  /* Status — success / warning / info */
+  --success: oklch(0.62 0.16 150);
+  --success-foreground: oklch(0.99 0.005 0);
+  --success-soft: oklch(0.95 0.05 150);
+  --warning: oklch(0.78 0.17 85);
+  --warning-foreground: oklch(0.18 0.02 60);
+  --warning-soft: oklch(0.96 0.06 85);
+  --info: oklch(0.62 0.16 240);
+  --info-foreground: oklch(0.99 0.005 0);
+  --info-soft: oklch(0.95 0.04 240);
+
+  /* Lines */
+  --border: oklch(0.9 0.008 260);
+  --input: oklch(0.92 0.008 260);
+  --ring: oklch(0.62 0.24 29 / 0.55); /* red focus ring */
+
+  /* Brand red ramp */
+  --brand-50: oklch(0.97 0.02 25);
+  --brand-100: oklch(0.94 0.05 25);
+  --brand-200: oklch(0.88 0.1 27);
+  --brand-300: oklch(0.8 0.16 28);
+  --brand-400: oklch(0.71 0.21 28);
+  --brand-500: oklch(0.62 0.24 29); /* primary */
+  --brand-600: oklch(0.55 0.23 28);
+  --brand-700: oklch(0.47 0.2 28);
+  --brand-800: oklch(0.38 0.16 27);
+  --brand-900: oklch(0.3 0.12 27);
+  --brand-950: oklch(0.2 0.08 27);
+
+  /* Charts: stop · slow · go · info · slate */
+  --chart-1: oklch(0.62 0.24 29); /* red — answers wrong */
+  --chart-2: oklch(0.78 0.17 85); /* amber — needs review */
+  --chart-3: oklch(0.62 0.16 150); /* green — answers correct */
+  --chart-4: oklch(0.62 0.16 240); /* blue — info / neutral */
+  --chart-5: oklch(0.45 0.03 260); /* slate — totals */
+
+  /* Radius */
+  --radius: 0.75rem;
+
+  /* Sidebar — slightly cooler than page bg so it reads as a panel */
+  --sidebar: oklch(0.985 0.004 250);
+  --sidebar-foreground: oklch(0.22 0.02 260);
+  --sidebar-primary: oklch(0.62 0.24 29);
+  --sidebar-primary-foreground: oklch(0.99 0.005 0);
+  --sidebar-accent: oklch(0.94 0.008 260);
+  --sidebar-accent-foreground: oklch(0.18 0.02 260);
+  --sidebar-border: oklch(0.9 0.008 260);
+  --sidebar-ring: oklch(0.62 0.24 29 / 0.45);
 }
 
+/* =============================================================
+   DARK — deep charcoal, brighter red so it still pops at night
+   ============================================================= */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: oklch(0.15 0.015 260);
+  --foreground: oklch(0.96 0.005 250);
+  --card: oklch(0.19 0.018 260);
+  --card-foreground: oklch(0.96 0.005 250);
+  --popover: oklch(0.19 0.018 260);
+  --popover-foreground: oklch(0.96 0.005 250);
+
+  /* Primary — lift chroma + lightness slightly, red has to hold against black */
+  --primary: oklch(0.68 0.22 29);
+  --primary-foreground: oklch(0.14 0.02 30);
+
+  --secondary: oklch(0.25 0.015 260);
+  --secondary-foreground: oklch(0.96 0.005 250);
+
+  --muted: oklch(0.23 0.013 260);
+  --muted-foreground: oklch(0.68 0.012 260);
+
+  --accent: oklch(0.26 0.015 260);
+  --accent-foreground: oklch(0.96 0.005 250);
+
+  --destructive: oklch(0.66 0.22 27);
+  --destructive-foreground: oklch(0.99 0.005 0);
+  --danger-soft: oklch(0.3 0.1 27);
+
+  --success: oklch(0.74 0.17 150);
+  --success-foreground: oklch(0.14 0.04 150);
+  --success-soft: oklch(0.3 0.08 150);
+  --warning: oklch(0.82 0.17 85);
+  --warning-foreground: oklch(0.18 0.04 60);
+  --warning-soft: oklch(0.32 0.08 85);
+  --info: oklch(0.72 0.15 240);
+  --info-foreground: oklch(0.14 0.04 240);
+  --info-soft: oklch(0.3 0.06 240);
+
+  --border: oklch(1 0 0 / 0.1);
+  --input: oklch(1 0 0 / 0.14);
+  --ring: oklch(0.68 0.22 29 / 0.65);
+
+  --brand-50: oklch(0.22 0.06 27);
+  --brand-100: oklch(0.28 0.1 27);
+  --brand-200: oklch(0.36 0.14 27);
+  --brand-300: oklch(0.45 0.18 28);
+  --brand-400: oklch(0.55 0.22 28);
+  --brand-500: oklch(0.68 0.22 29); /* dark-mode primary */
+  --brand-600: oklch(0.75 0.2 30);
+  --brand-700: oklch(0.82 0.16 32);
+  --brand-800: oklch(0.88 0.11 35);
+  --brand-900: oklch(0.93 0.06 38);
+  --brand-950: oklch(0.97 0.03 40);
+
+  --chart-1: oklch(0.68 0.22 29);
+  --chart-2: oklch(0.82 0.17 85);
+  --chart-3: oklch(0.74 0.17 150);
+  --chart-4: oklch(0.72 0.15 240);
+  --chart-5: oklch(0.7 0.02 260);
+
+  --sidebar: oklch(0.17 0.015 260);
+  --sidebar-foreground: oklch(0.92 0.008 250);
+  --sidebar-primary: oklch(0.68 0.22 29);
+  --sidebar-primary-foreground: oklch(0.14 0.02 30);
+  --sidebar-accent: oklch(0.26 0.015 260);
+  --sidebar-accent-foreground: oklch(0.96 0.005 250);
+  --sidebar-border: oklch(1 0 0 / 0.1);
+  --sidebar-ring: oklch(0.68 0.22 29 / 0.55);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
+  html {
+    @apply font-sans antialiased;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "cv11", "ss01", "ss03"; /* Inter alt features */
   }
-  button:not(:disabled), [role="button"]:not(:disabled) {
+
+  /* Display copy: Sora, tight tracking, weight 700 */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    letter-spacing: var(--tracking-tight);
+    font-weight: 700;
+  }
+  h1 {
+    letter-spacing: var(--tracking-tighter);
+  }
+
+  /* Eyebrows / button labels in caps benefit from extra tracking */
+  .eyebrow,
+  [data-eyebrow] {
+    font-family: var(--font-heading);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-widest);
+    font-weight: 600;
+  }
+
+  /* Tabular numbers everywhere a count, score, or timer appears */
+  .tabular,
+  [data-tabular],
+  time,
+  output {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
     cursor: pointer;
   }
-  html {
-    @apply font-sans;
+
+  /* Selection picks up brand red so it always feels on-brand */
+  ::selection {
+    background: oklch(0.62 0.24 29 / 0.2);
+    color: inherit;
   }
 }
