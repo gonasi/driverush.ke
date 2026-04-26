@@ -1,27 +1,33 @@
+import * as React from "react";
+import { Link } from "react-router";
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import {
   ArrowRight02FreeIcons,
-  Tick02FreeIcons,
   Menu01FreeIcons,
+  PlayCircleFreeIcons,
+  TimeQuarterFreeIcons,
+  TrafficLightFreeIcons,
+  AwardFreeIcons,
+  Tick02FreeIcons,
+  RefreshFreeIcons,
   Fire02FreeIcons,
   CarFreeIcons,
   Motorbike01FreeIcons,
   DeliveryTruck01FreeIcons,
   BusFreeIcons,
-  TrafficLightFreeIcons,
-  OctagonFreeIcons,
-  AlertCircleFreeIcons,
-  SmartPhone01FreeIcons,
   ChartIncreaseFreeIcons,
-  TimeQuarterFreeIcons,
-  AwardFreeIcons,
+  SmartPhone01FreeIcons,
   GlobalEducationFreeIcons,
+  WifiOffFreeIcons,
 } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Link } from "react-router";
+import { motion } from "framer-motion";
 
 import type { Route } from "./+types/home";
 
 import { absUrl, SITE } from "~/lib/site";
+import { getTodaysQuestion } from "~/lib/questions";
+import { variants } from "~/lib/motion";
+
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -36,15 +42,15 @@ import {
 
 import { AppBar, AppBarLink } from "~/components/brand/app-bar";
 import { BoardingCard } from "~/components/brand/boarding-card";
-import { DrPlate } from "~/components/brand/dr-mark";
-import { Logo } from "~/components/brand/logo";
+import { ChoiceCard } from "~/components/brand/choice-card";
 import { FeedbackBanner } from "~/components/brand/feedback-banner";
-import { StatTile } from "~/components/brand/gauge";
+import { Logo } from "~/components/brand/logo";
+import { QuickAction } from "~/components/brand/quick-action";
 import { Rail } from "~/components/brand/rail";
 import { TicketCard } from "~/components/brand/ticket-card";
 
 export function meta(_: Route.MetaArgs) {
-  const title = "DriveRush · Pass your NTSA exam, made in Kenya";
+  const title = "DriveRush · Practice for the NTSA exam, no signup";
   const description = SITE.description;
   const url = absUrl("/");
   const ogImage = absUrl(SITE.ogImage);
@@ -53,11 +59,7 @@ export function meta(_: Route.MetaArgs) {
     { title },
     { name: "description", content: description },
     { name: "keywords", content: SITE.keywords.join(", ") },
-
-    // Canonical
     { tagName: "link", rel: "canonical", href: url },
-
-    // Open Graph
     { property: "og:title", content: title },
     { property: "og:description", content: description },
     { property: "og:url", content: url },
@@ -65,15 +67,10 @@ export function meta(_: Route.MetaArgs) {
     { property: "og:image:width", content: String(SITE.ogImageWidth) },
     { property: "og:image:height", content: String(SITE.ogImageHeight) },
     { property: "og:image:alt", content: `${SITE.name} logo` },
-
-    // Twitter Card
     { name: "twitter:title", content: title },
     { name: "twitter:description", content: description },
     { name: "twitter:image", content: ogImage },
     { name: "twitter:image:alt", content: `${SITE.name} logo` },
-
-    // JSON-LD: EducationalOrganization. Surfaces the brand to Google's
-    // Knowledge Graph and enables logo + sameAs cards in SERP.
     {
       "script:ld+json": {
         "@context": "https://schema.org",
@@ -92,9 +89,6 @@ export function meta(_: Route.MetaArgs) {
         inLanguage: ["en", "sw"],
       },
     },
-
-    // JSON-LD: WebSite. Lets Google show a sitelinks search box if/when we
-    // expose a real /search route.
     {
       "script:ld+json": {
         "@context": "https://schema.org",
@@ -111,6 +105,11 @@ const Container = ({ children }: { children: React.ReactNode }) => (
   <div className="mx-auto w-full max-w-6xl px-5 sm:px-9">{children}</div>
 );
 
+// Default viewport options for whileInView. once:true means each section
+// animates exactly once. -60px margin starts the animation while the section
+// is still slightly below the fold so the user perceives it as already there.
+const VIEWPORT = { once: true, margin: "-60px" } as const;
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-paper text-ink">
@@ -123,11 +122,13 @@ export default function Home() {
       </Container>
 
       <Hero />
-      <ProofBar />
-      <Principles />
+      <TodaysQuestion />
+      <QuickActions />
       <Curriculum />
       <Features />
+      <Principles />
       <Pricing />
+      <TrustStrip />
       <FinalCta />
       <SiteFooter />
     </main>
@@ -135,8 +136,15 @@ export default function Home() {
 }
 
 /* =============================================================
-   Top navigation — desktop AppBar + mobile Sheet
+   Top nav. No signup CTAs, just paths to action.
    ============================================================= */
+
+const NAV_LINKS = [
+  { label: "Practice", href: "/practice" },
+  { label: "Quick test", href: "/practice?mode=test" },
+  { label: "Signs", href: "/practice?mode=signs" },
+  { label: "Challenges", href: "/practice?mode=challenge" },
+];
 
 function SiteNav() {
   return (
@@ -144,30 +152,22 @@ function SiteNav() {
       {/* Desktop */}
       <div className="hidden md:block">
         <AppBar
-          nav={
-            <>
-              <AppBarLink href="#curriculum">Curriculum</AppBarLink>
-              <AppBarLink href="#features">Features</AppBarLink>
-              <AppBarLink href="#pricing">Pricing</AppBarLink>
-              <AppBarLink href="/design">System</AppBarLink>
-            </>
-          }
+          nav={NAV_LINKS.map((l) => (
+            <AppBarLink key={l.href} href={l.href}>
+              {l.label}
+            </AppBarLink>
+          ))}
           trailing={
-            <>
-              <Button variant="paper" size="sm" asChild>
-                <a href="#">Sign in</a>
-              </Button>
-              <Button variant="rush" size="sm" asChild>
-                <a href="#">
-                  Start free
-                  <HugeiconsIcon
-                    icon={ArrowRight02FreeIcons}
-                    size={14}
-                    strokeWidth={2.5}
-                  />
-                </a>
-              </Button>
-            </>
+            <Button variant="rush" size="sm" asChild>
+              <Link to="/practice">
+                Start practice
+                <HugeiconsIcon
+                  icon={ArrowRight02FreeIcons}
+                  size={14}
+                  strokeWidth={2.5}
+                />
+              </Link>
+            </Button>
           }
         />
       </div>
@@ -177,56 +177,66 @@ function SiteNav() {
         <AppBar
           nav={null}
           trailing={
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="paper" size="sm" aria-label="Open menu">
-                  <HugeiconsIcon
-                    icon={Menu01FreeIcons}
-                    size={16}
-                    strokeWidth={2.5}
-                  />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right">
-                <SheetHeader>
-                  <SheetTitle>DR · Menu</SheetTitle>
-                </SheetHeader>
-                <SheetBody>
-                  <nav className="grid gap-3">
-                    {[
-                      { label: "Curriculum", href: "#curriculum" },
-                      { label: "Features", href: "#features" },
-                      { label: "Pricing", href: "#pricing" },
-                      { label: "Design system", href: "/design" },
-                    ].map((it) => (
-                      <SheetClose asChild key={it.label}>
+            <>
+              <Button variant="rush" size="sm" asChild>
+                <Link to="/practice">Start</Link>
+              </Button>
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="paper" size="sm" aria-label="Open menu">
+                    <HugeiconsIcon
+                      icon={Menu01FreeIcons}
+                      size={16}
+                      strokeWidth={2.5}
+                    />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right">
+                  <SheetHeader>
+                    <SheetTitle>Menu</SheetTitle>
+                  </SheetHeader>
+                  <SheetBody>
+                    <nav className="grid gap-3">
+                      {NAV_LINKS.map((l) => (
+                        <SheetClose asChild key={l.href}>
+                          <Link
+                            to={l.href}
+                            className="border-2 border-ink bg-surface px-4 py-3 font-display text-[13px] font-bold uppercase tracking-wider text-ink shadow-stamp-sm hover:bg-paper-3"
+                          >
+                            {l.label}
+                          </Link>
+                        </SheetClose>
+                      ))}
+                      <SheetClose asChild>
                         <a
-                          href={it.href}
-                          className="border-2 border-ink bg-surface px-4 py-3 font-display text-[13px] font-bold uppercase tracking-wider text-ink shadow-stamp-sm hover:bg-paper-3"
+                          href="#pricing"
+                          className="border-2 border-dashed border-ink bg-surface px-4 py-3 font-display text-[13px] font-bold uppercase tracking-wider text-ink-3 hover:text-ink"
                         >
-                          {it.label}
+                          Pricing
                         </a>
                       </SheetClose>
-                    ))}
-                  </nav>
-                  <div className="mt-6 grid gap-2.5">
-                    <Button variant="paper" size="lg" asChild>
-                      <a href="#">Sign in</a>
-                    </Button>
-                    <Button variant="rush" size="lg" asChild>
-                      <a href="#">
-                        Start free
-                        <HugeiconsIcon
-                          icon={ArrowRight02FreeIcons}
-                          size={16}
-                          strokeWidth={2.5}
-                        />
-                      </a>
-                    </Button>
-                  </div>
-                </SheetBody>
-              </SheetContent>
-            </Sheet>
+                    </nav>
+                    <div className="mt-6">
+                      <Button
+                        variant="rush"
+                        size="lg"
+                        asChild
+                        className="w-full"
+                      >
+                        <Link to="/practice">
+                          Start practice
+                          <HugeiconsIcon
+                            icon={ArrowRight02FreeIcons}
+                            size={16}
+                            strokeWidth={2.5}
+                          />
+                        </Link>
+                      </Button>
+                    </div>
+                  </SheetBody>
+                </SheetContent>
+              </Sheet>
+            </>
           }
         />
       </div>
@@ -235,291 +245,350 @@ function SiteNav() {
 }
 
 /* =============================================================
-   Hero — masthead-style headline with two CTAs
+   Hero. Action first. No motion — page transition handles route entry.
    ============================================================= */
 
 function Hero() {
   return (
-    <section className="border-b-2 border-ink py-16 sm:py-24">
+    <section className="border-b-2 border-ink py-14 sm:py-20">
       <Container>
-        <div className="grid items-end gap-8 md:grid-cols-[1.6fr_1fr]">
-          <div>
-            <div className="mb-5 flex items-center gap-3">
-              <Badge variant="rush">★ Made in Kenya</Badge>
-              <Badge variant="ink">Class A · B · C · D</Badge>
-            </div>
-            <h1 className="m-0 font-display font-extrabold uppercase leading-[0.86] tracking-[-0.045em] text-ink text-[clamp(56px,9vw,128px)]">
-              Ace the <span className="italic text-rush">NTSA</span>{" "}
-              <span
-                className="italic"
-                style={{
-                  color: "transparent",
-                  WebkitTextStroke: "2px var(--ink)",
-                }}
-              >
-                exam
-              </span>
-              .
-            </h1>
-            <p className="mt-7 max-w-xl font-serif text-[clamp(18px,2.4vw,26px)] leading-tight text-ink-2">
-              Real Nairobi junctions. Real past papers. Bite-sized, timed, and
-              scored like the day at the test centre.
-              <span className="text-rush"> No filler.</span>
+        <div className="grid gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="rush">★ NTSA · Class B</Badge>
+            <Badge variant="ink">No signup</Badge>
+          </div>
+          <h1 className="m-0 mt-3 font-display font-extrabold uppercase leading-[0.88] tracking-tighter text-ink text-[clamp(48px,9vw,112px)]">
+            Pick a test. <span className="italic text-rush">Start now.</span>
+          </h1>
+          <p className="mt-5 max-w-2xl font-serif text-[clamp(17px,2.2vw,24px)] leading-tight text-ink-2">
+            Real Nairobi junctions. Real past papers. Bite-sized, scored
+            instantly. No card, no account.
+          </p>
+          <div className="mt-7 flex flex-wrap items-center gap-3">
+            <Button variant="rush" size="lg" asChild>
+              <Link to="/practice">
+                <HugeiconsIcon
+                  icon={PlayCircleFreeIcons}
+                  size={18}
+                  strokeWidth={2.25}
+                />
+                Start practice
+              </Link>
+            </Button>
+            <Button variant="paper" size="lg" asChild>
+              <Link to="/practice?mode=test">
+                Take a quick test
+                <HugeiconsIcon
+                  icon={ArrowRight02FreeIcons}
+                  size={16}
+                  strokeWidth={2.5}
+                />
+              </Link>
+            </Button>
+          </div>
+          <p className="mt-3 font-mono text-[11px] uppercase tracking-widest text-ink-3">
+            Free forever · Practice as a guest · Built for Kenya
+          </p>
+        </div>
+      </Container>
+    </section>
+  );
+}
+
+/* =============================================================
+   Today's question. Deterministic per day so SSR matches hydration.
+   ============================================================= */
+
+function TodaysQuestion() {
+  const question = React.useMemo(() => getTodaysQuestion(), []);
+  const [picked, setPicked] = React.useState<number | null>(null);
+  const revealed = picked !== null;
+  const correct = revealed && picked === question.correctIndex;
+
+  return (
+    <motion.section
+      id="today"
+      className="border-b-2 border-ink bg-paper-3 py-12 sm:py-16"
+      initial="hidden"
+      whileInView="visible"
+      viewport={VIEWPORT}
+      variants={variants.fadeUp}
+    >
+      <Container>
+        <div className="grid gap-6 md:grid-cols-[1fr_2fr] md:gap-10">
+          <div className="grid gap-3">
+            <span className="eyebrow text-ink">Today's question</span>
+            <h2 className="m-0 font-display text-[clamp(26px,3.5vw,36px)] font-extrabold uppercase leading-tight tracking-tight text-ink">
+              Try one, <span className="italic text-rush">free</span>.
+            </h2>
+            <p className="text-[14px] leading-relaxed text-ink-2">
+              Same shape as the real NTSA paper. Pick an answer, see whether
+              it's right, read why. No counter, no streak required.
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Button variant="rush" size="lg" asChild>
-                <a href="#">
-                  Start free · 14-day streak
+            {revealed && (
+              <Button
+                variant="rush"
+                size="lg"
+                asChild
+                className="justify-self-start"
+              >
+                <Link to="/practice">
+                  Continue practicing
                   <HugeiconsIcon
                     icon={ArrowRight02FreeIcons}
                     size={16}
                     strokeWidth={2.5}
                   />
-                </a>
+                </Link>
               </Button>
-              <Button variant="paper" size="lg" asChild>
-                <a href="#curriculum">See curriculum</a>
-              </Button>
-            </div>
-            <p className="mt-4 font-mono text-[11px] uppercase tracking-widest text-ink-3">
-              Pay later · M-Pesa · KES 499/mo
-            </p>
+            )}
           </div>
 
-          <aside className="flex flex-col items-start gap-5 border-2 border-ink bg-surface p-6 shadow-stamp md:items-center md:text-center">
+          <article className="grid gap-4 border-2 border-ink bg-surface p-5 shadow-stamp sm:p-7">
             <div className="font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
-              Today's plate
+              Class B ·{" "}
+              {question.category === "sign"
+                ? "Signs"
+                : question.category === "scenario"
+                  ? "Scenarios"
+                  : "Highway code"}
             </div>
-            <DrPlate region="KE" code="DR" year="2026" />
-            <div className="grid w-full grid-cols-3 border-t-2 border-dashed border-ink pt-5">
-              <div className="text-center">
-                <div className="font-mono text-[10px] uppercase tracking-widest text-ink-3">
-                  Lessons
-                </div>
-                <div className="mt-1 font-display text-[26px] font-extrabold tabular-nums text-ink">
-                  47
-                </div>
-              </div>
-              <div className="border-x border-ink text-center">
-                <div className="font-mono text-[10px] uppercase tracking-widest text-ink-3">
-                  Signs
-                </div>
-                <div className="mt-1 font-display text-[26px] font-extrabold tabular-nums text-ink">
-                  120
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="font-mono text-[10px] uppercase tracking-widest text-ink-3">
-                  Mocks
-                </div>
-                <div className="mt-1 font-display text-[26px] font-extrabold tabular-nums text-rush">
-                  8
-                </div>
-              </div>
+            <p className="m-0 font-display text-[clamp(18px,2.5vw,22px)] font-extrabold uppercase leading-tight tracking-tight text-ink wrap-anywhere">
+              {question.prompt}
+            </p>
+
+            <div className="grid gap-2.5">
+              {question.choices.map((choice, i) => {
+                const isThisCorrect = i === question.correctIndex;
+                const isPicked = picked === i;
+                const state = !revealed
+                  ? undefined
+                  : isThisCorrect
+                    ? "correct"
+                    : isPicked
+                      ? "wrong"
+                      : "disabled";
+                return (
+                  <ChoiceCard
+                    key={i}
+                    keyLabel={String.fromCharCode(65 + i)}
+                    state={state}
+                    onClick={() => setPicked(i)}
+                    disabled={revealed}
+                  >
+                    {choice}
+                  </ChoiceCard>
+                );
+              })}
             </div>
-          </aside>
+
+            {revealed && (
+              <motion.div
+                className="grid gap-2"
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.14, ease: [0.32, 0.72, 0, 1] }}
+              >
+                <FeedbackBanner
+                  tone={correct ? "win" : "fail"}
+                  title={correct ? "Sawa sawa · Correct" : "Not quite · Wrong"}
+                  description={question.explanation}
+                />
+                <p className="font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
+                  {question.rule}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setPicked(null)}
+                  className="mt-1 inline-flex items-center gap-1.5 self-start font-mono text-[11px] uppercase tracking-widest text-ink-3 outline-none hover:text-ink focus-visible:text-ink"
+                >
+                  <HugeiconsIcon
+                    icon={RefreshFreeIcons}
+                    size={12}
+                    strokeWidth={2.5}
+                  />
+                  Try the answer again
+                </button>
+              </motion.div>
+            )}
+          </article>
         </div>
       </Container>
-    </section>
+    </motion.section>
   );
 }
 
 /* =============================================================
-   Proof bar — quick stats
+   Quick action tiles. Mobile-first, staggered on view.
    ============================================================= */
 
-function ProofBar() {
+function QuickActions() {
+  const tiles = [
+    {
+      to: "/practice",
+      icon: PlayCircleFreeIcons,
+      accent: "rush" as const,
+      title: "Quick practice",
+      copy: "Five questions, no timer. Build the habit.",
+      meta: "5 Qs · open",
+    },
+    {
+      to: "/practice?mode=test",
+      icon: TimeQuarterFreeIcons,
+      accent: "ink" as const,
+      title: "Quick test",
+      copy: "Ten questions, eight minutes. Test centre shape.",
+      meta: "10 Qs · 8 min",
+    },
+    {
+      to: "/practice?mode=signs",
+      icon: TrafficLightFreeIcons,
+      accent: "amber" as const,
+      title: "Road signs",
+      copy: "Master the Kenyan signs you'll see on the road.",
+      meta: "5 Qs · signs",
+    },
+    {
+      to: "/practice?mode=challenge",
+      icon: AwardFreeIcons,
+      accent: "green" as const,
+      title: "Scenarios",
+      copy: "Right-of-way and hazards from real junctions.",
+      meta: "5 Qs · daily",
+    },
+  ];
+
   return (
-    <section className="border-b-2 border-ink bg-paper-3 py-10">
+    <section className="border-b-2 border-ink py-12 sm:py-16">
       <Container>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatTile
-            label="Pass rate"
-            value="92%"
-            tone="rush"
-            delta={{ dir: "up", copy: "vs national avg" }}
-          />
-          <StatTile
-            label="Avg. study time"
-            value="14d"
-            tone="ink"
-            delta={{ dir: "up", copy: "to first mock" }}
-          />
-          <StatTile label="Past papers" value="240+" tone="green" />
-          <StatTile label="On M-Pesa" value="KES 499" tone="ink" />
-        </div>
+        <SectionHead
+          title={
+            <>
+              Pick your <em>lane</em>
+            </>
+          }
+          stamp="All free, all guest"
+        />
+
+        <motion.div
+          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEWPORT}
+          variants={variants.staggerList}
+        >
+          {tiles.map((t) => (
+            <motion.div key={t.to} variants={variants.fadeUp}>
+              <QuickAction {...t} />
+            </motion.div>
+          ))}
+        </motion.div>
       </Container>
     </section>
   );
 }
 
 /* =============================================================
-   Principles — same three rules as the design system
+   Curriculum. Topic preview, no locked chapters — every chapter
+   is accessible via /practice. The cards just show what's covered.
    ============================================================= */
 
-function Principles() {
-  return (
-    <section className="border-b-2 border-ink py-16">
-      <Container>
-        <div className="mb-9 flex flex-wrap items-baseline justify-between gap-3 border-b border-ink pb-4">
-          <h2 className="m-0 font-display text-[clamp(28px,4vw,44px)] font-extrabold uppercase leading-tight tracking-tight">
-            How we{" "}
-            <em className="font-serif font-normal italic text-ink-3 text-[0.7em]">
-              build
-            </em>
-          </h2>
-          <span className="font-mono text-[11px] uppercase tracking-widest text-ink-3">
-            Three rules · zero negotiable
-          </span>
-        </div>
-
-        <div className="grid border-2 border-ink md:grid-cols-3">
-          <TicketCard
-            passLabel="Pass № 01"
-            seat="A·01"
-            title={
-              <>
-                Fast over <em>fancy</em>
-              </>
-            }
-            description="Two taps to learning. Cut transitions. Kill loaders. Default to the action. Students don't have time, and neither do we."
-            className="border-t-0 md:border-r-2 md:border-dashed"
-          />
-          <TicketCard
-            passLabel="Pass № 02"
-            seat="B·02"
-            title={
-              <>
-                Earned, not <em>given</em>
-              </>
-            }
-            description="Streaks, XP and badges only land if work was done. We never inflate. Confidence has to come from a real win."
-            className="border-t-2 md:border-l-0 md:border-r-2 md:border-t-0 md:border-dashed"
-          />
-          <TicketCard
-            passLabel="Pass № 03"
-            seat="C·03"
-            title={
-              <>
-                Kenya, not <em>generic</em>
-              </>
-            }
-            description="NTSA categories. Real Nairobi junctions. KES, M-Pesa, Kiswahili. Woven in, never bolted on."
-            className="border-t-2 md:border-t-0"
-          />
-        </div>
-      </Container>
-    </section>
-  );
-}
-
-/* =============================================================
-   Curriculum preview — boarding cards
-   ============================================================= */
-
-const chapters: Array<{
-  num: number;
-  title: string;
-  lessons: number;
-  questions: number;
-  pct: number;
-  locked?: boolean;
-}> = [
-  { num: 1, title: "Highway code basics", lessons: 5, questions: 18, pct: 100 },
+const CHAPTERS = [
+  {
+    num: 1,
+    title: "Highway code basics",
+    lessons: 5,
+    questions: 18,
+    href: "/practice",
+  },
   {
     num: 2,
     title: "Road signs & markings",
     lessons: 8,
     questions: 36,
-    pct: 75,
+    href: "/practice?mode=signs",
   },
   {
     num: 3,
     title: "Traffic lights & signals",
     lessons: 6,
     questions: 24,
-    pct: 40,
+    href: "/practice",
   },
   {
     num: 4,
     title: "Hazard perception",
     lessons: 10,
     questions: 30,
-    pct: 0,
-    locked: true,
+    href: "/practice?mode=challenge",
   },
   {
     num: 5,
     title: "Mechanical knowledge",
     lessons: 7,
     questions: 22,
-    pct: 0,
-    locked: true,
+    href: "/practice",
   },
 ];
 
 function Curriculum() {
   return (
-    <section id="curriculum" className="border-b-2 border-ink py-16">
+    <section id="curriculum" className="border-b-2 border-ink py-12 sm:py-16">
       <Container>
-        <div className="mb-9 flex flex-wrap items-baseline justify-between gap-3 border-b border-ink pb-4">
-          <h2 className="m-0 font-display text-[clamp(28px,4vw,44px)] font-extrabold uppercase leading-tight tracking-tight">
-            Five{" "}
-            <em className="font-serif font-normal italic text-ink-3 text-[0.7em]">
-              chapters
-            </em>
-            , every one tested
-          </h2>
-          <span className="font-mono text-[11px] uppercase tracking-widest text-ink-3">
-            Class B · light vehicle
-          </span>
-        </div>
+        <SectionHead
+          title={
+            <>
+              Five <em>chapters</em>, every one tested
+            </>
+          }
+          stamp="Class B · light vehicle"
+        />
 
-        <div className="grid gap-3.5">
-          {chapters.map((c) => (
-            <BoardingCard
-              key={c.num}
-              num={c.num}
-              eyebrow={
-                c.locked
-                  ? `Chapter № ${c.num} · Locked`
-                  : `Chapter № ${c.num} · ${c.pct === 100 ? "Complete" : "Now boarding"}`
-              }
-              title={c.title}
-              meta={[
-                `${c.lessons} lessons`,
-                `${c.questions} questions`,
-                c.locked ? (
-                  <span key="locked">Finish prior chapter to board</span>
-                ) : (
-                  <span
-                    key="pct"
-                    className={c.pct === 100 ? "text-kenya-green" : "text-rush"}
-                  >
-                    {c.pct}% complete
-                  </span>
-                ),
-              ]}
-              stub={{
-                label: "XP",
-                value: c.locked ? "·" : `+${c.lessons * 40}`,
-                code: `B/${String(c.num).padStart(2, "0")}`,
-              }}
-              locked={c.locked}
-            />
+        <motion.div
+          className="grid gap-3.5"
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEWPORT}
+          variants={variants.staggerList}
+        >
+          {CHAPTERS.map((c) => (
+            <motion.div key={c.num} variants={variants.fadeUp}>
+              <Link
+                to={c.href}
+                className="block outline-none focus-visible:[&_article]:shadow-stamp-rush"
+              >
+                <BoardingCard
+                  num={c.num}
+                  eyebrow={`Chapter № ${c.num} · Practice`}
+                  title={c.title}
+                  meta={[
+                    `${c.lessons} lessons`,
+                    `${c.questions} questions`,
+                    <span key="open" className="text-rush">
+                      Open
+                    </span>,
+                  ]}
+                  stub={{
+                    label: "XP",
+                    value: `+${c.lessons * 40}`,
+                    code: `B/${String(c.num).padStart(2, "0")}`,
+                  }}
+                />
+              </Link>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </Container>
     </section>
   );
 }
 
 /* =============================================================
-   Features grid
+   Features — what's in the box. 6 tiles + 4 NTSA class chips.
    ============================================================= */
 
-const features: Array<{
-  icon: typeof Tick02FreeIcons;
+const FEATURES: Array<{
+  icon: IconSvgElement;
   title: string;
   copy: string;
   tone: "rush" | "ink" | "amber" | "green" | "blue" | "cyan";
@@ -527,7 +596,7 @@ const features: Array<{
   {
     icon: TrafficLightFreeIcons,
     title: "Real Kenyan signs",
-    copy: "120 signs from the NTSA highway code, with colour, shape, and class. Not stock images from a textbook.",
+    copy: "120 signs from the NTSA highway code. Colour, shape, class. Not stock images from a textbook.",
     tone: "rush",
   },
   {
@@ -538,20 +607,20 @@ const features: Array<{
   },
   {
     icon: SmartPhone01FreeIcons,
-    title: "M-Pesa from day one",
-    copy: "STK push. KES 499/month or KES 4,999/year. Cancel from inside the app. No support tickets.",
+    title: "M-Pesa, when ready",
+    copy: "STK push if you decide to upgrade. KES 499/month. Cancel from inside the app.",
     tone: "green",
   },
   {
     icon: ChartIncreaseFreeIcons,
     title: "Honest stats",
-    copy: "Per-chapter score, per-sign accuracy, weakest topics. No vanity dashboards. We tell you what's broken.",
+    copy: "Per-chapter score, per-sign accuracy, weakest topics. We tell you what's broken.",
     tone: "blue",
   },
   {
     icon: Fire02FreeIcons,
     title: "Streaks that matter",
-    copy: "A streak only banks if you actually worked. Five lazy minutes won't save it. The fire is earned.",
+    copy: "A streak only banks if you actually worked. Five lazy minutes won't save it.",
     tone: "amber",
   },
   {
@@ -562,16 +631,7 @@ const features: Array<{
   },
 ];
 
-const toneText = {
-  rush: "text-rush",
-  ink: "text-ink",
-  amber: "text-amber",
-  green: "text-kenya-green",
-  blue: "text-plate-blue",
-  cyan: "text-route-cyan",
-} as const;
-
-const toneBg = {
+const TONE_BG = {
   rush: "bg-rush",
   ink: "bg-ink",
   amber: "bg-amber",
@@ -580,7 +640,7 @@ const toneBg = {
   cyan: "bg-route-cyan",
 } as const;
 
-const toneFg = {
+const TONE_FG = {
   rush: "text-white",
   ink: "text-paper",
   amber: "text-ink",
@@ -589,54 +649,81 @@ const toneFg = {
   cyan: "text-ink",
 } as const;
 
+const TONE_TEXT = {
+  rush: "text-rush",
+  ink: "text-ink",
+  amber: "text-amber",
+  green: "text-kenya-green",
+  blue: "text-plate-blue",
+  cyan: "text-route-cyan",
+} as const;
+
 function Features() {
   return (
-    <section id="features" className="border-b-2 border-ink bg-paper-3 py-16">
+    <section
+      id="features"
+      className="border-b-2 border-ink bg-paper-3 py-12 sm:py-16"
+    >
       <Container>
-        <div className="mb-9 flex flex-wrap items-baseline justify-between gap-3 border-b border-ink pb-4">
-          <h2 className="m-0 font-display text-[clamp(28px,4vw,44px)] font-extrabold uppercase leading-tight tracking-tight">
-            What's in{" "}
-            <em className="font-serif font-normal italic text-ink-3 text-[0.7em]">
-              the box
-            </em>
-          </h2>
-          <span className="font-mono text-[11px] uppercase tracking-widest text-ink-3">
-            Six things, all working
-          </span>
-        </div>
+        <SectionHead
+          title={
+            <>
+              What's in <em>the box</em>
+            </>
+          }
+          stamp="Six things, all working"
+        />
 
-        <div className="grid gap-0 border-2 border-ink md:grid-cols-3">
-          {features.map((f, i) => (
-            <article
+        <motion.div
+          className="grid gap-0 border-2 border-ink md:grid-cols-3"
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEWPORT}
+          variants={variants.staggerList}
+        >
+          {FEATURES.map((f, i) => (
+            <motion.article
               key={f.title}
+              variants={variants.fadeUp}
               className={`relative bg-surface p-6 ${
                 i % 3 !== 2 ? "md:border-r-2 md:border-ink" : ""
-              } ${i < features.length - 3 ? "border-b-2 border-ink" : "border-b-2 border-ink md:border-b-0"}`}
+              } ${
+                i < FEATURES.length - 3
+                  ? "border-b-2 border-ink"
+                  : "border-b-2 border-ink md:border-b-0"
+              }`}
             >
               <div
-                className={`mb-4 flex size-14 items-center justify-center border-2 border-ink ${toneBg[f.tone]} ${toneFg[f.tone]}`}
+                className={`mb-4 flex size-14 items-center justify-center border-2 border-ink ${TONE_BG[f.tone]} ${TONE_FG[f.tone]}`}
               >
                 <HugeiconsIcon icon={f.icon} size={26} strokeWidth={2.25} />
               </div>
               <h3
-                className={`m-0 mb-2 font-display text-lg font-extrabold uppercase tracking-wide ${toneText[f.tone]}`}
+                className={`m-0 mb-2 font-display text-lg font-extrabold uppercase tracking-wide ${TONE_TEXT[f.tone]}`}
               >
                 {f.title}
               </h3>
               <p className="m-0 text-sm leading-relaxed text-ink-2">{f.copy}</p>
-            </article>
+            </motion.article>
           ))}
-        </div>
+        </motion.div>
 
-        <div className="mt-10 grid gap-3 sm:grid-cols-4">
+        <motion.div
+          className="mt-10 grid gap-3 sm:grid-cols-4"
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEWPORT}
+          variants={variants.staggerList}
+        >
           {[
             { icon: Motorbike01FreeIcons, code: "A", label: "Motorbike" },
             { icon: CarFreeIcons, code: "B", label: "Light vehicle" },
             { icon: DeliveryTruck01FreeIcons, code: "C", label: "Light goods" },
             { icon: BusFreeIcons, code: "D", label: "PSV" },
           ].map((cls) => (
-            <div
+            <motion.div
               key={cls.code}
+              variants={variants.fadeUp}
               className="flex items-center gap-3 border-2 border-ink bg-surface p-4"
             >
               <div className="flex size-12 items-center justify-center border-2 border-ink bg-amber text-ink">
@@ -650,85 +737,319 @@ function Features() {
                   {cls.label}
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </Container>
     </section>
   );
 }
 
 /* =============================================================
-   Pricing
+   Principles — the three brand rules.
+   ============================================================= */
+
+function Principles() {
+  return (
+    <section className="border-b-2 border-ink py-12 sm:py-16">
+      <Container>
+        <SectionHead
+          title={
+            <>
+              How we <em>build</em>
+            </>
+          }
+          stamp="Three rules · zero negotiable"
+        />
+
+        <motion.div
+          className="grid border-2 border-ink md:grid-cols-3"
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEWPORT}
+          variants={variants.staggerList}
+        >
+          <motion.div variants={variants.fadeUp}>
+            <TicketCard
+              passLabel="Pass № 01"
+              seat="A·01"
+              title={
+                <>
+                  Fast over <em>fancy</em>
+                </>
+              }
+              description="Two taps to learning. Cut transitions. Kill loaders. Default to the action. Students don't have time, and neither do we."
+              className="border-r-0 border-t-0 md:border-r-2 md:border-dashed"
+            />
+          </motion.div>
+          <motion.div variants={variants.fadeUp}>
+            <TicketCard
+              passLabel="Pass № 02"
+              seat="B·02"
+              title={
+                <>
+                  Earned, not <em>given</em>
+                </>
+              }
+              description="Streaks, XP and badges only land if work was done. We never inflate. Confidence has to come from a real win."
+              className="border-l-0 border-t-2 md:border-l-0 md:border-r-2 md:border-t-0 md:border-dashed"
+            />
+          </motion.div>
+          <motion.div variants={variants.fadeUp}>
+            <TicketCard
+              passLabel="Pass № 03"
+              seat="C·03"
+              title={
+                <>
+                  Kenya, not <em>generic</em>
+                </>
+              }
+              description="NTSA categories. Real Nairobi junctions. KES, M-Pesa, Kiswahili. Woven in, never bolted on."
+              className="border-t-2 md:border-t-0"
+            />
+          </motion.div>
+        </motion.div>
+      </Container>
+    </section>
+  );
+}
+
+/* =============================================================
+   Pricing. Two equal-weight cards. No "Most popular", no urgency.
+   Free is genuinely useful. Premium is more, not different.
    ============================================================= */
 
 function Pricing() {
   return (
-    <section id="pricing" className="border-b-2 border-ink py-16">
+    <section id="pricing" className="border-b-2 border-ink py-12 sm:py-16">
       <Container>
-        <div className="mb-9 flex flex-wrap items-baseline justify-between gap-3 border-b border-ink pb-4">
-          <h2 className="m-0 font-display text-[clamp(28px,4vw,44px)] font-extrabold uppercase leading-tight tracking-tight">
-            Pricing,{" "}
-            <em className="font-serif font-normal italic text-ink-3 text-[0.7em]">
-              no asterisk
-            </em>
-          </h2>
-          <span className="font-mono text-[11px] uppercase tracking-widest text-ink-3">
-            Pay with M-Pesa
-          </span>
-        </div>
+        <SectionHead
+          title={
+            <>
+              Free is the <em>whole experience</em>
+            </>
+          }
+          stamp="Premium is for going further"
+        />
 
-        <div className="grid gap-5 md:grid-cols-3">
-          <PriceCard
-            name="Free"
-            price="KES 0"
-            period="forever"
-            blurb="The first chapter, full access. See the system before you pay."
-            features={[
-              "Chapter 1 · Highway code basics",
-              "5 lessons · 18 questions",
-              "1 mock exam · 20 questions",
-              "Streak tracking",
-            ]}
-            cta="Start free"
-          />
-          <PriceCard
-            name="Monthly"
-            price="KES 499"
-            period="/month"
-            blurb="The full course, one month at a time. Cancel anytime in the app."
-            features={[
-              "All 5 chapters · 36 lessons",
-              "8 timed mock exams",
-              "120 NTSA road signs",
-              "Per-topic stats",
-              "Hazard perception clips",
-            ]}
-            cta="Subscribe"
-            highlight
-          />
-          <PriceCard
-            name="Yearly"
-            price="KES 4,999"
-            period="/year"
-            blurb="Two months free. Best value if you're sitting the test in 2026."
-            features={[
-              "Everything in Monthly",
-              "2 months free",
-              "Priority on new chapters",
-              "Refund if you fail twice",
-            ]}
-            cta="Save 17%"
-          />
-        </div>
+        <motion.div
+          className="grid gap-5 md:grid-cols-2"
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEWPORT}
+          variants={variants.staggerList}
+        >
+          <motion.div variants={variants.fadeUp}>
+            <PriceCard
+              name="Free"
+              price="KES 0"
+              period="forever"
+              blurb="Genuinely useful. Most people pass on this alone. We don't gate the basics."
+              features={[
+                "Quick practice (5 questions, no timer)",
+                "Quick test (10 questions, timed)",
+                "All road-sign questions",
+                "Right-of-way scenarios",
+                "Daily question, every day",
+                "Progress saved on this device",
+              ]}
+              cta={{
+                label: "Start practicing",
+                href: "/practice",
+                variant: "rush",
+              }}
+            />
+          </motion.div>
+          <motion.div variants={variants.fadeUp}>
+            <PriceCard
+              name="Premium"
+              price="KES 499"
+              period="/ month · KES 4,999/yr"
+              blurb="For when you want more reps. Adds the deep question bank and cross-device sync."
+              features={[
+                "Everything in Free",
+                "200+ extra past papers",
+                "Unlimited timed mock exams",
+                "Cross-device progress sync",
+                "Offline mode for the bus",
+                "New questions every week",
+              ]}
+              cta={{ label: "See what's coming", href: "#", variant: "ink" }}
+              softTag="Coming soon"
+            />
+          </motion.div>
+        </motion.div>
 
         <p className="mt-6 text-center font-mono text-[11px] uppercase tracking-widest text-ink-3">
-          Prices in Kenyan Shillings · VAT inclusive · STK push from the app
+          Premium is optional. Free practice never stops working.
         </p>
       </Container>
     </section>
   );
 }
+
+/* =============================================================
+   Trust strip. Compact, no fake metrics.
+   ============================================================= */
+
+function TrustStrip() {
+  const items: Array<{ label: string; value: string }> = [
+    { label: "Made for", value: "Kenya · NTSA" },
+    { label: "Classes", value: "A · B · C · D" },
+    { label: "Account", value: "Not required" },
+    { label: "Pay", value: "Only if you want more" },
+  ];
+  return (
+    <section className="border-b-2 border-ink bg-paper-3 py-8">
+      <Container>
+        <ul className="m-0 grid list-none grid-cols-2 gap-0 border-2 border-ink bg-surface p-0 sm:grid-cols-4">
+          {items.map((it, i, arr) => (
+            <li
+              key={it.label}
+              className={`p-4 text-center ${
+                i < arr.length - 1 ? "sm:border-r-2 sm:border-ink" : ""
+              } ${
+                i < arr.length - 2 ? "border-b-2 border-ink sm:border-b-0" : ""
+              }`}
+            >
+              <div className="font-mono text-[10px] uppercase tracking-widest text-ink-3">
+                {it.label}
+              </div>
+              <div className="mt-1 font-display text-[14px] font-extrabold uppercase tracking-tight text-ink">
+                {it.value}
+              </div>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-4 flex flex-wrap items-center justify-center gap-2 text-center font-mono text-[11px] uppercase tracking-widest text-ink-3">
+          <HugeiconsIcon
+            icon={WifiOffFreeIcons}
+            size={12}
+            strokeWidth={2.5}
+            className="text-kenya-green"
+          />
+          Save your progress on this device. Works offline.
+        </p>
+      </Container>
+    </section>
+  );
+}
+
+/* =============================================================
+   Final CTA. Action, not signup. Banner-slam on view.
+   ============================================================= */
+
+function FinalCta() {
+  return (
+    <section className="border-b-2 border-ink py-12 sm:py-14">
+      <Container>
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEWPORT}
+          variants={variants.bannerSlam}
+        >
+          <FeedbackBanner
+            tone="win"
+            icon={GlobalEducationFreeIcons}
+            title="Sawa sawa. Ready to start?"
+            description="Five questions, two minutes. No card. No account."
+            action={
+              <Button variant="ink" size="lg" asChild>
+                <Link to="/practice">
+                  Start practice
+                  <HugeiconsIcon
+                    icon={ArrowRight02FreeIcons}
+                    size={16}
+                    strokeWidth={2.5}
+                  />
+                </Link>
+              </Button>
+            }
+          />
+        </motion.div>
+      </Container>
+    </section>
+  );
+}
+
+/* =============================================================
+   Footer.
+   ============================================================= */
+
+function SiteFooter() {
+  return (
+    <footer className="border-t-4 border-double border-ink bg-ink py-12 text-paper">
+      <Container>
+        <div className="grid gap-6 border-b border-paper/20 pb-7 md:grid-cols-[2fr_1fr_1fr_1fr]">
+          <div>
+            <Logo variant="plain" height={64} knockout />
+            <p className="mt-4 max-w-sm font-serif text-base leading-snug opacity-80">
+              The NTSA prep app that takes your test as seriously as you do.
+            </p>
+          </div>
+          <FooterCol
+            heading="Practice"
+            items={[
+              { label: "Quick practice", href: "/practice" },
+              { label: "Quick test", href: "/practice?mode=test" },
+              { label: "Road signs", href: "/practice?mode=signs" },
+              { label: "Scenarios", href: "/practice?mode=challenge" },
+            ]}
+          />
+          <FooterCol
+            heading="Product"
+            items={[
+              { label: "Pricing", href: "#pricing" },
+              { label: "Curriculum", href: "#curriculum" },
+              { label: "Features", href: "#features" },
+            ]}
+          />
+          <FooterCol
+            heading="Brand"
+            items={[{ label: "Design system", href: "/design" }]}
+          />
+        </div>
+        <div className="flex flex-wrap justify-between gap-3 pt-6 font-mono text-[11px] uppercase tracking-widest opacity-60">
+          <span>© 2026 DriveRush.ke</span>
+          <span>Learn · Drive · Succeed</span>
+          <span>Nairobi · KE</span>
+        </div>
+      </Container>
+    </footer>
+  );
+}
+
+/* =============================================================
+   Helpers
+   ============================================================= */
+
+function SectionHead({
+  title,
+  stamp,
+}: {
+  title: React.ReactNode;
+  stamp?: React.ReactNode;
+}) {
+  return (
+    <div className="mb-7 flex flex-wrap items-baseline justify-between gap-3 border-b border-ink pb-3">
+      <h2 className="m-0 font-display text-[clamp(24px,3vw,36px)] font-extrabold uppercase leading-tight tracking-tight [&_em]:font-serif [&_em]:font-normal [&_em]:italic [&_em]:normal-case [&_em]:text-ink-3 [&_em]:text-[0.7em]">
+        {title}
+      </h2>
+      {stamp && (
+        <span className="font-mono text-[11px] uppercase tracking-widest text-ink-3">
+          {stamp}
+        </span>
+      )}
+    </div>
+  );
+}
+
+type PriceCta = {
+  label: string;
+  href: string;
+  variant: "rush" | "ink" | "paper";
+};
 
 function PriceCard({
   name,
@@ -737,23 +1058,22 @@ function PriceCard({
   blurb,
   features,
   cta,
-  highlight = false,
+  softTag,
 }: {
   name: string;
   price: string;
   period: string;
   blurb: string;
   features: string[];
-  cta: string;
-  highlight?: boolean;
+  cta: PriceCta;
+  softTag?: string;
 }) {
+  const isInternal = cta.href.startsWith("/");
   return (
-    <article
-      className={`relative flex flex-col border-2 border-ink bg-surface ${highlight ? "shadow-stamp-lg" : ""}`}
-    >
-      {highlight && (
+    <article className="relative flex h-full flex-col border-2 border-ink bg-surface">
+      {softTag && (
         <div className="absolute -top-3 left-5">
-          <Badge variant="rush">★ Most popular</Badge>
+          <Badge variant="ink">{softTag}</Badge>
         </div>
       )}
       <header className="border-b-2 border-dashed border-ink px-6 py-5">
@@ -774,7 +1094,7 @@ function PriceCard({
         {features.map((f) => (
           <li key={f} className="flex items-start gap-2.5 text-sm text-ink">
             <span
-              className={`mt-0.5 flex size-5 shrink-0 items-center justify-center border-2 border-ink ${highlight ? "bg-rush text-white" : "bg-paper-3 text-ink"}`}
+              className={`mt-0.5 flex size-5 shrink-0 items-center justify-center border-2 border-ink ${cta.variant === "rush" ? "bg-rush text-white" : "bg-paper-3 text-ink"}`}
             >
               <HugeiconsIcon icon={Tick02FreeIcons} size={11} strokeWidth={3} />
             </span>
@@ -783,126 +1103,29 @@ function PriceCard({
         ))}
       </ul>
       <footer className="mt-auto border-t-2 border-dashed border-ink p-5">
-        <Button
-          variant={highlight ? "rush" : "paper"}
-          size="lg"
-          className="w-full"
-          asChild
-        >
-          <a href="#">
-            {cta}
-            <HugeiconsIcon
-              icon={ArrowRight02FreeIcons}
-              size={16}
-              strokeWidth={2.5}
-            />
-          </a>
+        <Button variant={cta.variant} size="lg" className="w-full" asChild>
+          {isInternal ? (
+            <Link to={cta.href}>
+              {cta.label}
+              <HugeiconsIcon
+                icon={ArrowRight02FreeIcons}
+                size={16}
+                strokeWidth={2.5}
+              />
+            </Link>
+          ) : (
+            <a href={cta.href}>
+              {cta.label}
+              <HugeiconsIcon
+                icon={ArrowRight02FreeIcons}
+                size={16}
+                strokeWidth={2.5}
+              />
+            </a>
+          )}
         </Button>
       </footer>
     </article>
-  );
-}
-
-/* =============================================================
-   Final CTA
-   ============================================================= */
-
-function FinalCta() {
-  return (
-    <section className="border-b-2 border-ink py-14">
-      <Container>
-        <FeedbackBanner
-          tone="win"
-          icon={GlobalEducationFreeIcons}
-          title="Sawa sawa. Ready to start?"
-          description="14 days, free. No card. Just M-Pesa when you're sure."
-          action={
-            <Button variant="ink" size="lg" asChild>
-              <a href="#">
-                Start free
-                <HugeiconsIcon
-                  icon={ArrowRight02FreeIcons}
-                  size={16}
-                  strokeWidth={2.5}
-                />
-              </a>
-            </Button>
-          }
-        />
-      </Container>
-    </section>
-  );
-}
-
-/* =============================================================
-   Footer
-   ============================================================= */
-
-function SiteFooter() {
-  return (
-    <footer className="border-t-4 border-double border-ink bg-ink py-14 text-paper">
-      <Container>
-        <div className="grid gap-6 border-b border-paper/20 pb-9 md:grid-cols-[2fr_1fr_1fr_1fr]">
-          <div>
-            <Logo variant="plain" height={72} knockout />
-            <p className="mt-4 max-w-sm font-serif text-lg leading-snug opacity-80">
-              DriveRush · the learning platform that takes your NTSA exam as
-              seriously as you do.
-            </p>
-            <div className="mt-5 flex items-center gap-2">
-              <Badge variant="ink" className="border-paper text-paper">
-                <HugeiconsIcon
-                  icon={OctagonFreeIcons}
-                  size={11}
-                  strokeWidth={2.5}
-                />
-                NTSA aligned
-              </Badge>
-              <Badge variant="ink" className="border-paper text-paper">
-                <HugeiconsIcon
-                  icon={AlertCircleFreeIcons}
-                  size={11}
-                  strokeWidth={2.5}
-                />
-                Made in Nairobi
-              </Badge>
-            </div>
-          </div>
-
-          <FooterCol
-            heading="Product"
-            items={[
-              { label: "Curriculum", href: "#curriculum" },
-              { label: "Features", href: "#features" },
-              { label: "Pricing", href: "#pricing" },
-              { label: "Mock exams", href: "#" },
-            ]}
-          />
-          <FooterCol
-            heading="Company"
-            items={[
-              { label: "About", href: "#" },
-              { label: "Blog", href: "#" },
-              { label: "Careers", href: "#" },
-              { label: "Contact", href: "#" },
-            ]}
-          />
-          <FooterCol
-            heading="System"
-            items={[
-              { label: "Design system", href: "/design" },
-              { label: "Brand", href: "/design" },
-              { label: "Voice", href: "/design" },
-            ]}
-          />
-        </div>
-        <div className="flex flex-wrap justify-between gap-3 pt-6 font-mono text-[11px] uppercase tracking-widest opacity-60">
-          <span>© 2026 DriveRush.ke</span>
-          <span>Learn · Drive · Succeed</span>
-          <span>Nairobi · KE</span>
-        </div>
-      </Container>
-    </footer>
   );
 }
 
@@ -915,14 +1138,11 @@ function FooterCol({
 }) {
   return (
     <div>
-      <h4 className="m-0 mb-3 font-display text-xs font-extrabold uppercase tracking-widest">
+      <h3 className="m-0 mb-3 font-display text-xs font-extrabold uppercase tracking-widest">
         {heading}
-      </h4>
+      </h3>
       <ul className="m-0 list-none p-0">
         {items.map((it) => {
-          // Real internal routes (/design) get React Router's Link for client
-          // navigation; everything else (placeholder #, future /signup) renders
-          // as a plain anchor so the URL is honest about not yet existing.
           const isInternal = it.href.startsWith("/");
           return (
             <li key={it.label} className="py-1">
