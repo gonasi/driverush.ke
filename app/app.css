@@ -4,19 +4,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
-html,
-body {
-  @apply bg-background text-foreground;
-
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
-  }
-}
-
 /* =============================================================
-   DriveRush.ke — Design Tokens
-   Brand: modern driving school. Red = action, Charcoal = authority,
-   Cream = clarity. Amber = caution, Green = success, Blue = info.
+   DriveRush.ke — Brutalist editorial design system
+   Newspaper masthead × racing program. Hard 2px ink borders,
+   flat stamp shadows (never blurred), italic display type, paper
+   grain background. Brand palette is hex (source of truth from
+   the design HTML); derived alphas use color-mix.
    ============================================================= */
 
 @theme inline {
@@ -27,19 +20,20 @@ body {
     "Segoe UI Symbol", "Noto Color Emoji";
   --font-display: "Sora", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-heading: "Sora", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "DM Serif Display", Georgia, "Times New Roman", serif;
   --font-mono:
     "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
 
   /* Tracking — display copy reads tight, body relaxed, eyebrows wide */
-  --tracking-tighter: -0.04em;
-  --tracking-tight: -0.02em;
+  --tracking-tighter: -0.045em;
+  --tracking-tight: -0.025em;
   --tracking-normal: 0em;
-  --tracking-wide: 0.02em;
-  --tracking-wider: 0.06em;
-  --tracking-widest: 0.14em;
+  --tracking-wide: 0.04em;
+  --tracking-wider: 0.08em;
+  --tracking-widest: 0.16em;
 
-  /* ---------- Core surfaces ---------- */
+  /* ---------- shadcn semantic tokens (mapped to brand below) ---------- */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -60,32 +54,65 @@ body {
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  /* ---------- Brand semantic tokens ---------- */
+  /* ---------- Brand cores (raw hex, exact spec) ---------- */
+  --color-rush: var(--rush);
+  --color-rush-deep: var(--rush-deep);
+  --color-rush-soft: var(--rush-soft);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-ink-4: var(--ink-4);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-paper-3: var(--paper-3);
+  --color-surface: var(--surface);
+
+  /* ---------- Brand voices (12 supporting accents) ---------- */
+  --color-kenya-green: var(--kenya-green);
+  --color-kenya-black: var(--kenya-black);
+  --color-kenya-gold: var(--kenya-gold);
+  --color-signal-green: var(--signal-green);
+  --color-amber: var(--amber);
+  --color-hazard: var(--hazard);
+  --color-plate-blue: var(--plate-blue);
+  --color-route-cyan: var(--route-cyan);
+  --color-magenta: var(--magenta);
+  --color-cream: var(--cream);
+  --color-rust: var(--rust);
+  --color-olive: var(--olive);
+
+  /* ---------- Status — semantic aliases over brand voices ---------- */
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
-  --color-success-soft: var(--success-soft);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
-  --color-warning-soft: var(--warning-soft);
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
-  --color-info-soft: var(--info-soft);
-  --color-danger-soft: var(--danger-soft);
 
-  /* Brand reds — explicit ramp for hero / pricing / hover states */
-  --color-brand-50: var(--brand-50);
-  --color-brand-100: var(--brand-100);
-  --color-brand-200: var(--brand-200);
-  --color-brand-300: var(--brand-300);
-  --color-brand-400: var(--brand-400);
-  --color-brand-500: var(--brand-500);
-  --color-brand-600: var(--brand-600);
-  --color-brand-700: var(--brand-700);
-  --color-brand-800: var(--brand-800);
-  --color-brand-900: var(--brand-900);
-  --color-brand-950: var(--brand-950);
+  /* ---------- Rush (red) ramp 50 → 700 ---------- */
+  --color-rush-50: #fef2f4;
+  --color-rush-100: #fee6e9;
+  --color-rush-200: #fcbfc8;
+  --color-rush-300: #f77b8a;
+  --color-rush-400: #ee3d52;
+  --color-rush-500: #e11d2e;
+  --color-rush-600: #960f1b;
+  --color-rush-700: #5a0810;
 
-  /* ---------- Charts (driving-themed: stop, slow, go, info, slate) ---------- */
+  /* ---------- Ink (charcoal) ramp 0 → 900 ---------- */
+  --color-ink-0: #ffffff;
+  --color-ink-50: #f4f6fa;
+  --color-ink-100: #e4e7ed;
+  --color-ink-200: #c0c5cf;
+  --color-ink-300: #8a9099;
+  --color-ink-400: #5b6068;
+  --color-ink-500: #3d4148;
+  --color-ink-600: #2a2d33;
+  --color-ink-900: #0e1014;
+
+  /* ---------- Charts: stop · slow · go · info · slate ---------- */
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -102,38 +129,48 @@ body {
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* ---------- Radius — slightly softened from default for friendliness ---------- */
-  --radius-xs: calc(var(--radius) * 0.4);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  /* ---------- Radius — kept tight, this system is straight lines ---------- */
+  --radius-none: 0px;
+  --radius-edge: 2px;
+  --radius-soft: 4px;
+  --radius-xs: 0px;
+  --radius-sm: 2px;
+  --radius-md: 2px;
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xl: 6px;
+  --radius-2xl: 8px;
+  --radius-3xl: 12px;
+  --radius-4xl: 16px;
+  --radius-full: 9999px;
 
-  /* ---------- Elevation — warm shadows that read on cream + on charcoal ---------- */
-  --shadow-xs: 0 1px 2px 0 oklch(0.18 0.02 260 / 0.04);
-  --shadow-sm:
-    0 1px 2px 0 oklch(0.18 0.02 260 / 0.05),
-    0 1px 3px 0 oklch(0.18 0.02 260 / 0.06);
-  --shadow-md:
-    0 4px 8px -2px oklch(0.18 0.02 260 / 0.08),
-    0 2px 4px -2px oklch(0.18 0.02 260 / 0.06);
-  --shadow-lg:
-    0 12px 24px -8px oklch(0.18 0.02 260 / 0.12),
-    0 4px 8px -4px oklch(0.18 0.02 260 / 0.08);
-  --shadow-xl: 0 24px 48px -12px oklch(0.18 0.02 260 / 0.18);
-  --shadow-glow:
-    0 0 0 1px oklch(0.62 0.24 29 / 0.18),
-    0 8px 24px -6px oklch(0.62 0.24 29 / 0.35);
+  /* ---------- Stamp shadow — flat, never blurred. The whole system. ---------- */
+  --shadow-stamp-xs: 1px 1px 0 var(--ink);
+  --shadow-stamp-sm: 2px 2px 0 var(--ink);
+  --shadow-stamp: 4px 4px 0 var(--ink);
+  --shadow-stamp-md: 4px 4px 0 var(--ink);
+  --shadow-stamp-lg: 5px 5px 0 var(--ink);
+  --shadow-stamp-xl: 8px 8px 0 var(--ink);
+  --shadow-stamp-rush: 4px 4px 0 var(--rush);
+  --shadow-stamp-soft: 4px 4px 0 var(--line-soft);
 
-  /* ---------- Motion — fast and decisive, like a quick lane change ---------- */
+  /* Map shadcn shadow tokens to stamp shadows so primitives inherit the look */
+  --shadow-2xs: 1px 1px 0 var(--ink);
+  --shadow-xs: 2px 2px 0 var(--ink);
+  --shadow-sm: 3px 3px 0 var(--ink);
+  --shadow-md: 4px 4px 0 var(--ink);
+  --shadow-lg: 5px 5px 0 var(--ink);
+  --shadow-xl: 8px 8px 0 var(--ink);
+  --shadow-2xl: 10px 10px 0 var(--ink);
+
+  /* ---------- Borders — 2px ink is the law ---------- */
+  --border-default: 2px;
+
+  /* ---------- Motion — fast, decisive, like a quick lane change ---------- */
   --ease-snap: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
   --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
 
-  /* ---------- Container — generous gutters on mobile, capped on desktop ---------- */
+  /* ---------- Container — newsprint gutters ---------- */
   --container-2xs: 18rem;
   --container-xs: 22rem;
   --container-sm: 26rem;
@@ -144,164 +181,189 @@ body {
   --container-3xl: 64rem;
   --container-4xl: 72rem;
   --container-5xl: 80rem;
-  --container-6xl: 88rem;
+  --container-6xl: 82.5rem; /* 1320px — masthead width */
   --container-7xl: 96rem;
   --container-prose: 65ch;
 }
 
 /* =============================================================
-   LIGHT — clean cream base, charcoal type, vibrant red action
+   LIGHT — newsprint paper, charcoal ink, vibrant rush red
+   Hex values are the source of truth from DriveRush brand spec.
    ============================================================= */
 :root {
-  /* Surfaces */
-  --background: oklch(0.98 0.005 250); /* near-white cream */
-  --foreground: oklch(0.18 0.02 260); /* charcoal */
-  --card: oklch(1 0 0); /* pure white card lifts off cream */
-  --card-foreground: oklch(0.18 0.02 260);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.02 260);
+  /* Brand cores */
+  --rush: #e11d2e;
+  --rush-deep: #960f1b;
+  --rush-soft: #fee6e9;
 
-  /* Primary — vibrant red */
-  --primary: oklch(0.62 0.24 29);
-  --primary-foreground: oklch(0.99 0.005 0);
+  --ink: #0e1014;
+  --ink-2: #2a2d33;
+  --ink-3: #5b6068;
+  --ink-4: #8a9099;
+  --line: #1e2128;
+  --line-soft: #dce0e7;
 
-  /* Secondary — neutral cool gray, sits behind primary without competing */
-  --secondary: oklch(0.96 0.005 260);
-  --secondary-foreground: oklch(0.22 0.02 260);
+  --paper: #f2ede3;
+  --paper-2: #e8e1d2;
+  --paper-3: #fbf7ee;
+  --surface: #ffffff;
 
-  /* Muted — quieter than secondary, for placeholders + disabled */
-  --muted: oklch(0.95 0.005 260);
-  --muted-foreground: oklch(0.5 0.015 260);
+  /* Diverse voices */
+  --kenya-green: #1e8449;
+  --kenya-black: #0e1014;
+  --kenya-gold: #d4a017;
+  --signal-green: #0f7a3b;
+  --amber: #e6a100;
+  --hazard: #ff7a1a;
+  --plate-blue: #1640b6;
+  --route-cyan: #1fb6c1;
+  --magenta: #b6177f;
+  --cream: #ffeec4;
+  --rust: #7a2a12;
+  --olive: #4f5b26;
 
-  /* Accent — hover states on neutral controls */
-  --accent: oklch(0.94 0.008 260);
-  --accent-foreground: oklch(0.18 0.02 260);
+  /* shadcn semantic mapping — primitives resolve to brand */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
 
-  /* Destructive — same red family as primary, slightly punchier */
-  --destructive: oklch(0.58 0.245 27);
-  --destructive-foreground: oklch(0.99 0.005 0);
-  --danger-soft: oklch(0.96 0.04 25); /* red-tinted bg for STOP cards */
+  --primary: var(--rush);
+  --primary-foreground: #ffffff;
 
-  /* Status — success / warning / info */
-  --success: oklch(0.62 0.16 150);
-  --success-foreground: oklch(0.99 0.005 0);
-  --success-soft: oklch(0.95 0.05 150);
-  --warning: oklch(0.78 0.17 85);
-  --warning-foreground: oklch(0.18 0.02 60);
-  --warning-soft: oklch(0.96 0.06 85);
-  --info: oklch(0.62 0.16 240);
-  --info-foreground: oklch(0.99 0.005 0);
-  --info-soft: oklch(0.95 0.04 240);
+  --secondary: var(--paper-3);
+  --secondary-foreground: var(--ink);
 
-  /* Lines */
-  --border: oklch(0.9 0.008 260);
-  --input: oklch(0.92 0.008 260);
-  --ring: oklch(0.62 0.24 29 / 0.55); /* red focus ring */
+  --muted: var(--paper-2);
+  --muted-foreground: var(--ink-3);
 
-  /* Brand red ramp */
-  --brand-50: oklch(0.97 0.02 25);
-  --brand-100: oklch(0.94 0.05 25);
-  --brand-200: oklch(0.88 0.1 27);
-  --brand-300: oklch(0.8 0.16 28);
-  --brand-400: oklch(0.71 0.21 28);
-  --brand-500: oklch(0.62 0.24 29); /* primary */
-  --brand-600: oklch(0.55 0.23 28);
-  --brand-700: oklch(0.47 0.2 28);
-  --brand-800: oklch(0.38 0.16 27);
-  --brand-900: oklch(0.3 0.12 27);
-  --brand-950: oklch(0.2 0.08 27);
+  --accent: var(--paper-3);
+  --accent-foreground: var(--ink);
+
+  --destructive: var(--rush);
+  --destructive-foreground: #ffffff;
+
+  --border: var(--ink);
+  --input: var(--ink);
+  --ring: var(--rush);
+
+  /* Status — semantic aliases */
+  --success: var(--kenya-green);
+  --success-foreground: #ffffff;
+  --warning: var(--amber);
+  --warning-foreground: var(--ink);
+  --info: var(--plate-blue);
+  --info-foreground: #ffffff;
 
   /* Charts: stop · slow · go · info · slate */
-  --chart-1: oklch(0.62 0.24 29); /* red — answers wrong */
-  --chart-2: oklch(0.78 0.17 85); /* amber — needs review */
-  --chart-3: oklch(0.62 0.16 150); /* green — answers correct */
-  --chart-4: oklch(0.62 0.16 240); /* blue — info / neutral */
-  --chart-5: oklch(0.45 0.03 260); /* slate — totals */
+  --chart-1: var(--rush);
+  --chart-2: var(--amber);
+  --chart-3: var(--kenya-green);
+  --chart-4: var(--plate-blue);
+  --chart-5: var(--ink-3);
 
-  /* Radius */
-  --radius: 0.75rem;
+  /* Radius — base unit. Defaults to 0; primitives opt into edge/soft. */
+  --radius: 0px;
 
-  /* Sidebar — slightly cooler than page bg so it reads as a panel */
-  --sidebar: oklch(0.985 0.004 250);
-  --sidebar-foreground: oklch(0.22 0.02 260);
-  --sidebar-primary: oklch(0.62 0.24 29);
-  --sidebar-primary-foreground: oklch(0.99 0.005 0);
-  --sidebar-accent: oklch(0.94 0.008 260);
-  --sidebar-accent-foreground: oklch(0.18 0.02 260);
-  --sidebar-border: oklch(0.9 0.008 260);
-  --sidebar-ring: oklch(0.62 0.24 29 / 0.45);
+  /* Sidebar */
+  --sidebar: var(--paper-3);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--rush);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--paper-2);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--ink);
+  --sidebar-ring: var(--rush);
 }
 
 /* =============================================================
-   DARK — deep charcoal, brighter red so it still pops at night
+   DARK — deep ink, paper-on-dark text, brighter rush so it pops
    ============================================================= */
 .dark {
-  --background: oklch(0.15 0.015 260);
-  --foreground: oklch(0.96 0.005 250);
-  --card: oklch(0.19 0.018 260);
-  --card-foreground: oklch(0.96 0.005 250);
-  --popover: oklch(0.19 0.018 260);
-  --popover-foreground: oklch(0.96 0.005 250);
+  --rush: #ff3d4f;
+  --rush-deep: #c71728;
+  --rush-soft: #2a0f12;
 
-  /* Primary — lift chroma + lightness slightly, red has to hold against black */
-  --primary: oklch(0.68 0.22 29);
-  --primary-foreground: oklch(0.14 0.02 30);
+  --ink: #f4efe2;
+  --ink-2: #d6d1c4;
+  --ink-3: #8e8b81;
+  --ink-4: #5b594f;
+  --line: #e8e1d2;
+  --line-soft: #2a2d33;
 
-  --secondary: oklch(0.25 0.015 260);
-  --secondary-foreground: oklch(0.96 0.005 250);
+  --paper: #14161b;
+  --paper-2: #1b1e25;
+  --paper-3: #0b0d11;
+  --surface: #1b1e25;
 
-  --muted: oklch(0.23 0.013 260);
-  --muted-foreground: oklch(0.68 0.012 260);
+  --kenya-green: #34c779;
+  --kenya-black: #0a0c10;
+  --kenya-gold: #f4c95b;
+  --signal-green: #36c275;
+  --amber: #ffd24a;
+  --hazard: #ff9446;
+  --plate-blue: #5c82ff;
+  --route-cyan: #4de1ed;
+  --magenta: #ff5db7;
+  --cream: #ffe9b0;
+  --rust: #e0764a;
+  --olive: #b6c26b;
 
-  --accent: oklch(0.26 0.015 260);
-  --accent-foreground: oklch(0.96 0.005 250);
+  /* shadcn semantic mapping — note --ink is now light text on dark paper */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
 
-  --destructive: oklch(0.66 0.22 27);
-  --destructive-foreground: oklch(0.99 0.005 0);
-  --danger-soft: oklch(0.3 0.1 27);
+  --primary: var(--rush);
+  --primary-foreground: #14161b;
 
-  --success: oklch(0.74 0.17 150);
-  --success-foreground: oklch(0.14 0.04 150);
-  --success-soft: oklch(0.3 0.08 150);
-  --warning: oklch(0.82 0.17 85);
-  --warning-foreground: oklch(0.18 0.04 60);
-  --warning-soft: oklch(0.32 0.08 85);
-  --info: oklch(0.72 0.15 240);
-  --info-foreground: oklch(0.14 0.04 240);
-  --info-soft: oklch(0.3 0.06 240);
+  --secondary: var(--paper-2);
+  --secondary-foreground: var(--ink);
 
-  --border: oklch(1 0 0 / 0.1);
-  --input: oklch(1 0 0 / 0.14);
-  --ring: oklch(0.68 0.22 29 / 0.65);
+  --muted: var(--paper-3);
+  --muted-foreground: var(--ink-3);
 
-  --brand-50: oklch(0.22 0.06 27);
-  --brand-100: oklch(0.28 0.1 27);
-  --brand-200: oklch(0.36 0.14 27);
-  --brand-300: oklch(0.45 0.18 28);
-  --brand-400: oklch(0.55 0.22 28);
-  --brand-500: oklch(0.68 0.22 29); /* dark-mode primary */
-  --brand-600: oklch(0.75 0.2 30);
-  --brand-700: oklch(0.82 0.16 32);
-  --brand-800: oklch(0.88 0.11 35);
-  --brand-900: oklch(0.93 0.06 38);
-  --brand-950: oklch(0.97 0.03 40);
+  --accent: var(--paper-2);
+  --accent-foreground: var(--ink);
 
-  --chart-1: oklch(0.68 0.22 29);
-  --chart-2: oklch(0.82 0.17 85);
-  --chart-3: oklch(0.74 0.17 150);
-  --chart-4: oklch(0.72 0.15 240);
-  --chart-5: oklch(0.7 0.02 260);
+  --destructive: var(--rush);
+  --destructive-foreground: #14161b;
 
-  --sidebar: oklch(0.17 0.015 260);
-  --sidebar-foreground: oklch(0.92 0.008 250);
-  --sidebar-primary: oklch(0.68 0.22 29);
-  --sidebar-primary-foreground: oklch(0.14 0.02 30);
-  --sidebar-accent: oklch(0.26 0.015 260);
-  --sidebar-accent-foreground: oklch(0.96 0.005 250);
-  --sidebar-border: oklch(1 0 0 / 0.1);
-  --sidebar-ring: oklch(0.68 0.22 29 / 0.55);
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--rush);
+
+  --success: var(--kenya-green);
+  --success-foreground: #0a0c10;
+  --warning: var(--amber);
+  --warning-foreground: #14161b;
+  --info: var(--plate-blue);
+  --info-foreground: #14161b;
+
+  --chart-1: var(--rush);
+  --chart-2: var(--amber);
+  --chart-3: var(--kenya-green);
+  --chart-4: var(--plate-blue);
+  --chart-5: var(--ink-3);
+
+  --sidebar: var(--paper-3);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--rush);
+  --sidebar-primary-foreground: #14161b;
+  --sidebar-accent: var(--paper-2);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--line);
+  --sidebar-ring: var(--rush);
 }
 
+/* =============================================================
+   Base layer — paper-grain background, type defaults, selection
+   ============================================================= */
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -312,38 +374,84 @@ body {
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background: var(--paper);
+    color: var(--ink);
+
+    @media (prefers-color-scheme: dark) {
+      color-scheme: dark;
+    }
   }
 
   body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "cv11", "ss01", "ss03"; /* Inter alt features */
+    background:
+      radial-gradient(
+          circle at 30% 20%,
+          rgba(0, 0, 0, 0.018) 1px,
+          transparent 1.5px
+        )
+        0 0 / 3px 3px,
+      radial-gradient(
+          circle at 70% 60%,
+          rgba(0, 0, 0, 0.022) 1px,
+          transparent 1.5px
+        )
+        1px 1px / 4px 4px,
+      var(--paper);
+    color: var(--ink);
+    font-feature-settings: "cv11", "ss01", "ss03";
+    overflow-x: hidden;
   }
 
-  /* Display copy: Sora, tight tracking, weight 700 */
+  .dark body {
+    background:
+      radial-gradient(
+          circle at 30% 20%,
+          rgba(255, 255, 255, 0.025) 1px,
+          transparent 1.5px
+        )
+        0 0 / 3px 3px,
+      radial-gradient(
+          circle at 70% 60%,
+          rgba(255, 255, 255, 0.03) 1px,
+          transparent 1.5px
+        )
+        1px 1px / 4px 4px,
+      var(--paper);
+  }
+
+  /* Display copy: Sora, tight tracking, weight 800 by default for headings */
   h1,
   h2,
   h3,
   h4,
   h5,
   h6 {
-    font-family: var(--font-heading);
+    font-family: var(--font-display);
     letter-spacing: var(--tracking-tight);
-    font-weight: 700;
+    font-weight: 800;
   }
   h1 {
     letter-spacing: var(--tracking-tighter);
   }
 
-  /* Eyebrows / button labels in caps benefit from extra tracking */
+  /* Eyebrows / overlines — Sora caps, wide-tracked */
   .eyebrow,
   [data-eyebrow] {
-    font-family: var(--font-heading);
+    font-family: var(--font-display);
     text-transform: uppercase;
     letter-spacing: var(--tracking-widest);
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 11px;
   }
 
-  /* Tabular numbers everywhere a count, score, or timer appears */
+  /* Editorial italic asides — DM Serif. Never for UI labels. */
+  .serif,
+  [data-serif] {
+    font-family: var(--font-serif);
+    font-style: italic;
+  }
+
+  /* Tabular numerals everywhere a count, score, plate, or timer appears */
   .tabular,
   [data-tabular],
   time,
@@ -357,9 +465,28 @@ body {
     cursor: pointer;
   }
 
-  /* Selection picks up brand red so it always feels on-brand */
+  /* Selection picks up rush red — always feels on-brand */
   ::selection {
-    background: oklch(0.62 0.24 29 / 0.2);
+    background: color-mix(in oklab, var(--rush) 25%, transparent);
     color: inherit;
+  }
+}
+
+/* Shared keyframes used across components (Skeleton shimmer, indeterminate progress, etc.) */
+@keyframes dr-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes dr-stripe-move {
+  0% {
+    transform: translateX(-22px);
+  }
+  100% {
+    transform: translateX(0);
   }
 }

@@ -1,0 +1,21 @@
+[01:25:24.716] [INFO] storybook v10.3.5
+[01:25:26.540] [DEBUG] Getting package.json info for /Users/dc_dalin/Projects/DriveRush.ke/package.json...
+[01:25:26.998] [INFO] Starting...
+[01:25:27.009] [WARN] unable to find package.json for radix-ui
+[01:25:27.012] [WARN] No story files found for the specified pattern: app/**/*.stories.@(ts|tsx|mdx)
+[01:25:27.090] [DEBUG] Starting preview..
+[01:25:27.253] [DEBUG] Using tsconfig paths for react-docgen
+[01:25:30.552] [ERROR] Failed to build the preview
+[01:25:30.572] [ERROR] [38;2;241;97;97mError: The React Router Vite plugin requires the use of a Vite config file[39m
+    at BasicMinimalPluginContext.configResolved (./node_modules/@react-router/dev/dist/vite.js:3659:17)
+    at async Promise.all (index 5)
+    at resolveConfig (file://./node_modules/vite/dist/node/chunks/node.js:34507:2)
+    at _createServer (file://./node_modules/vite/dist/node/chunks/node.js:26029:65)
+    at Module.start (file://./node_modules/@storybook/builder-vite/dist/index.js:1557:17)
+    at storybookDevServer (file://./node_modules/storybook/dist/core-server/index.js:7503:83)
+    at buildOrThrow (file://./node_modules/storybook/dist/core-server/index.js:4508:12)
+    at buildDevStandalone (file://./node_modules/storybook/dist/core-server/index.js:8033:41)
+    at withTelemetry (file://./node_modules/storybook/dist/_node-chunks/chunk-FIR43JGQ.js:225:12)
+    at dev (file://./node_modules/storybook/dist/bin/core.js:2736:3)
+[01:25:30.573] [WARN] Broken build, fix the error above.
+You may need to refresh the browser.
