@@ -8,12 +8,12 @@ const buttonVariants = cva(
   [
     // Base — stamped, bordered, Sora caps. Press recipe in CSS so any
     // <button> or [role=button] gets the lane-change tactile feel without JS.
-    "group/button inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap select-none",
+    "group/button inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap select-none",
     "border-2 border-ink font-display font-extrabold uppercase tracking-wider",
     "bg-clip-padding outline-none transition-[transform,box-shadow] duration-75 ease-snap",
     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rush",
     "active:translate-x-[3px] active:translate-y-[3px]",
-    "disabled:pointer-events-none disabled:opacity-50",
+    "disabled:pointer-events-none disabled:cursor-default disabled:opacity-50",
     "[&_svg]:pointer-events-none [&_svg]:shrink-0",
   ].join(" "),
   {

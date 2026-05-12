@@ -8,6 +8,8 @@ type ProgressProps = React.ComponentProps<typeof ProgressPrimitive.Root> & {
   showTicks?: boolean;
   /** Render the diagonal-stripe rush fill (default) or a flat green fill. */
   tone?: "rush" | "green";
+  /** Extra classes for the fill — e.g. swap the easing for a live countdown. */
+  indicatorClassName?: string;
 };
 
 function Progress({
@@ -15,6 +17,7 @@ function Progress({
   value,
   showTicks = true,
   tone = "rush",
+  indicatorClassName,
   ...props
 }: ProgressProps) {
   const pct = Math.max(0, Math.min(100, value ?? 0));
@@ -35,6 +38,7 @@ function Progress({
           tone === "rush"
             ? "bg-[repeating-linear-gradient(45deg,var(--rush)_0_8px,var(--rush-deep)_8px_16px)]"
             : "bg-kenya-green",
+          indicatorClassName,
         )}
         style={{ width: `${pct}%` }}
       />
