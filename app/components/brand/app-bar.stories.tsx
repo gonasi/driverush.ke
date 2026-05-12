@@ -15,8 +15,11 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (
+    // `static` here so the bar doesn't pin to the Storybook canvas top — in
+    // the app it defaults to `sticky top-0`.
     <div className="w-[860px]">
       <AppBar
+        className="static"
         nav={
           <>
             <AppBarLink href="#" active>

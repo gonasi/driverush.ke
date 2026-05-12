@@ -1,60 +1,75 @@
 import * as React from "react";
+import { Slot } from "radix-ui";
 
 import { cn } from "~/lib/utils";
 
 import { Logo } from "./logo";
 
 type AppBarProps = React.ComponentProps<"header"> & {
-  /** Override the brand mark; defaults to the official DR monogram logo. */
+  /** Override the brand mark; defaults to the official DriveRush lockup. */
   brand?: React.ReactNode;
-  /** Center nav slot — typically <NavLink>s. */
+  /** Desktop nav slot — typically <AppBarLink>s. Hidden below `md`. */
   nav?: React.ReactNode;
-  /** Right-side slot — streak/XP tags, avatar, etc. */
+  /** Right-side slot — primary action, mobile menu trigger, avatar, etc. */
   trailing?: React.ReactNode;
 };
 
-/** Top navigation shell. Brand mark · nav · trailing actions. */
+/**
+ * Sticky top navigation. A full-bleed bar pinned to the viewport top with a
+ * single 2px ink underline — no boxed border. Brand, nav and trailing actions
+ * sit in a centered max-width row. The `nav` slot is desktop-only; pass a
+ * mobile menu trigger through `trailing` for small screens.
+ *
+ * Override `position` via `className` (e.g. `static`) when embedding in a
+ * showcase rather than at the top of a page.
+ */
 function AppBar({ className, brand, nav, trailing, ...props }: AppBarProps) {
   return (
     <header
       data-slot="app-bar"
       className={cn(
-        "grid grid-cols-[auto_1fr_auto] items-center gap-3.5 border-2 border-ink bg-surface px-3.5 py-2.5",
+        "sticky top-0 z-40 w-full border-b-2 border-ink bg-surface",
         className,
       )}
       {...props}
     >
-      <div className="shrink-0">
-        {brand ?? <Logo variant="main" height={72} priority />}
-      </div>
-      {nav && (
-        <nav className="inline-flex items-center gap-1 justify-self-center">
-          {nav}
-        </nav>
-      )}
-      {trailing && (
-        <div className="inline-flex items-center gap-2 justify-self-end">
+      <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-4 px-5 sm:px-9">
+        <div className="flex flex-1 items-center">
+          {brand ?? <Logo variant="main" height={44} priority />}
+        </div>
+        {nav && <nav className="hidden items-center gap-1 md:flex">{nav}</nav>}
+        <div className="flex flex-1 items-center justify-end gap-2">
           {trailing}
         </div>
-      )}
+      </div>
     </header>
   );
 }
 
 type AppBarLinkProps = React.ComponentProps<"a"> & {
+  /** Render the styling onto the child element (e.g. a router <Link>). */
+  asChild?: boolean;
+  /** Current-page styling — inverts to an ink block with paper type. */
   active?: boolean;
 };
 
 /** Nav link for use inside <AppBar nav={…}>. Active inverts to ink/paper. */
-function AppBarLink({ className, active = false, ...props }: AppBarLinkProps) {
+function AppBarLink({
+  className,
+  asChild = false,
+  active = false,
+  ...props
+}: AppBarLinkProps) {
+  const Comp = asChild ? Slot.Root : "a";
   return (
-    <a
+    <Comp
       data-slot="app-bar-link"
       data-active={active || undefined}
       className={cn(
-        "border-2 border-transparent px-3 py-2 font-display text-[11px] font-bold uppercase tracking-wider text-ink-2",
+        "inline-flex items-center border-2 border-transparent px-3 py-2",
+        "font-display text-[11px] font-bold uppercase tracking-wider text-ink-2",
         "outline-none transition-colors duration-100 ease-snap",
-        "hover:text-ink focus-visible:bg-paper-3 focus-visible:text-ink",
+        "hover:text-ink focus-visible:border-ink focus-visible:bg-paper-3 focus-visible:text-ink",
         active && "bg-ink text-paper hover:text-paper",
         className,
       )}

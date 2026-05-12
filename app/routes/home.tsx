@@ -19,6 +19,7 @@ import {
   SmartPhone01FreeIcons,
   GlobalEducationFreeIcons,
   WifiOffFreeIcons,
+  Mortarboard01FreeIcons,
 } from "@hugeicons/core-free-icons";
 import { motion } from "framer-motion";
 
@@ -26,6 +27,7 @@ import type { Route } from "./+types/home";
 
 import { absUrl, SITE } from "~/lib/site";
 import { getTodaysQuestion } from "~/lib/questions";
+import { COURSES, type Course, type CourseAccent } from "~/lib/courses";
 import { variants } from "~/lib/motion";
 
 import { Badge } from "~/components/ui/badge";
@@ -50,8 +52,9 @@ import { Rail } from "~/components/brand/rail";
 import { TicketCard } from "~/components/brand/ticket-card";
 
 export function meta(_: Route.MetaArgs) {
-  const title = "DriveRush · Practice for the NTSA exam, no signup";
-  const description = SITE.description;
+  const title = "DriveRush · Driving courses + NTSA practice, no signup";
+  const description =
+    "Full driving courses for Kenya — highway code, road signs, junctions, hazard perception and real-road driving, taught in order. Plus quick practice and timed mock exams. No signup to start. Pay with M-Pesa.";
   const url = absUrl("/");
   const ogImage = absUrl(SITE.ogImage);
 
@@ -98,6 +101,21 @@ export function meta(_: Route.MetaArgs) {
         inLanguage: "en-KE",
       },
     },
+    ...COURSES.map((c) => ({
+      "script:ld+json": {
+        "@context": "https://schema.org",
+        "@type": "Course",
+        name: c.title,
+        description: c.blurb,
+        url: absUrl("/courses"),
+        inLanguage: ["en", "sw"],
+        provider: {
+          "@type": "Organization",
+          name: SITE.name,
+          sameAs: SITE.url,
+        },
+      },
+    })),
   ];
 }
 
@@ -112,140 +130,146 @@ const VIEWPORT = { once: true, margin: "-60px" } as const;
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-paper text-ink">
-      <Rail />
-
-      <Container>
-        <div className="pt-6">
-          <SiteNav />
-        </div>
-      </Container>
-
-      <Hero />
-      <TodaysQuestion />
-      <QuickActions />
-      <Curriculum />
-      <Features />
-      <Principles />
-      <Pricing />
-      <TrustStrip />
-      <FinalCta />
-      <SiteFooter />
-    </main>
-  );
-}
-
-/* =============================================================
-   Top nav. No signup CTAs, just paths to action.
-   ============================================================= */
-
-const NAV_LINKS = [
-  { label: "Practice", href: "/practice" },
-  { label: "Quick test", href: "/practice?mode=test" },
-  { label: "Signs", href: "/practice?mode=signs" },
-  { label: "Challenges", href: "/practice?mode=challenge" },
-];
-
-function SiteNav() {
-  return (
     <>
-      {/* Desktop */}
-      <div className="hidden md:block">
-        <AppBar
-          nav={NAV_LINKS.map((l) => (
-            <AppBarLink key={l.href} href={l.href}>
-              {l.label}
-            </AppBarLink>
-          ))}
-          trailing={
-            <Button variant="rush" size="sm" asChild>
-              <Link to="/practice">
-                Start practice
-                <HugeiconsIcon
-                  icon={ArrowRight02FreeIcons}
-                  size={14}
-                  strokeWidth={2.5}
-                />
-              </Link>
-            </Button>
-          }
-        />
-      </div>
+      <SiteNav />
+      <main className="min-h-screen bg-paper text-ink">
+        <Rail />
 
-      {/* Mobile */}
-      <div className="md:hidden">
-        <AppBar
-          nav={null}
-          trailing={
-            <>
-              <Button variant="rush" size="sm" asChild>
-                <Link to="/practice">Start</Link>
-              </Button>
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="paper" size="sm" aria-label="Open menu">
-                    <HugeiconsIcon
-                      icon={Menu01FreeIcons}
-                      size={16}
-                      strokeWidth={2.5}
-                    />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right">
-                  <SheetHeader>
-                    <SheetTitle>Menu</SheetTitle>
-                  </SheetHeader>
-                  <SheetBody>
-                    <nav className="grid gap-3">
-                      {NAV_LINKS.map((l) => (
-                        <SheetClose asChild key={l.href}>
-                          <Link
-                            to={l.href}
-                            className="border-2 border-ink bg-surface px-4 py-3 font-display text-[13px] font-bold uppercase tracking-wider text-ink shadow-stamp-sm hover:bg-paper-3"
-                          >
-                            {l.label}
-                          </Link>
-                        </SheetClose>
-                      ))}
-                      <SheetClose asChild>
-                        <a
-                          href="#pricing"
-                          className="border-2 border-dashed border-ink bg-surface px-4 py-3 font-display text-[13px] font-bold uppercase tracking-wider text-ink-3 hover:text-ink"
-                        >
-                          Pricing
-                        </a>
-                      </SheetClose>
-                    </nav>
-                    <div className="mt-6">
-                      <Button
-                        variant="rush"
-                        size="lg"
-                        asChild
-                        className="w-full"
-                      >
-                        <Link to="/practice">
-                          Start practice
-                          <HugeiconsIcon
-                            icon={ArrowRight02FreeIcons}
-                            size={16}
-                            strokeWidth={2.5}
-                          />
-                        </Link>
-                      </Button>
-                    </div>
-                  </SheetBody>
-                </SheetContent>
-              </Sheet>
-            </>
-          }
-        />
-      </div>
+        <Hero />
+        <Courses />
+        <QuickActions />
+        <TodaysQuestion />
+        <Curriculum />
+        <Features />
+        <Principles />
+        <Pricing />
+        <TrustStrip />
+        <FinalCta />
+      </main>
+      <SiteFooter />
     </>
   );
 }
 
 /* =============================================================
-   Hero. Action first. No motion — page transition handles route entry.
+   Top nav. Courses first — that's the path we want most people on.
+   ============================================================= */
+
+const NAV_LINKS = [
+  { label: "Courses", href: "/courses" },
+  { label: "Practice", href: "/practice" },
+  { label: "Quick test", href: "/practice?mode=test" },
+  { label: "Signs", href: "/practice?mode=signs" },
+];
+
+function SiteNav() {
+  return (
+    <AppBar
+      nav={NAV_LINKS.map((l) => (
+        <AppBarLink key={l.href} asChild>
+          <Link to={l.href}>{l.label}</Link>
+        </AppBarLink>
+      ))}
+      trailing={
+        <>
+          <Button variant="rush" size="sm" asChild>
+            <Link to="/courses">
+              <span className="hidden sm:inline">Browse courses</span>
+              <span className="sm:hidden">Courses</span>
+              <HugeiconsIcon
+                icon={ArrowRight02FreeIcons}
+                size={14}
+                strokeWidth={2.5}
+              />
+            </Link>
+          </Button>
+
+          {/* Mobile menu — desktop shows the inline nav instead */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="paper"
+                size="sm"
+                aria-label="Open menu"
+                className="md:hidden"
+              >
+                <HugeiconsIcon
+                  icon={Menu01FreeIcons}
+                  size={16}
+                  strokeWidth={2.5}
+                />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right">
+              <SheetHeader>
+                <SheetTitle>Menu</SheetTitle>
+              </SheetHeader>
+              <SheetBody>
+                <nav className="grid gap-3">
+                  <SheetClose asChild>
+                    <Link
+                      to="/courses"
+                      className="flex items-center justify-between gap-3 border-2 border-ink bg-rush px-4 py-3 font-display text-[13px] font-bold uppercase tracking-wider text-white shadow-stamp-sm"
+                    >
+                      Courses
+                      <HugeiconsIcon
+                        icon={ArrowRight02FreeIcons}
+                        size={14}
+                        strokeWidth={2.5}
+                      />
+                    </Link>
+                  </SheetClose>
+                  {NAV_LINKS.filter((l) => l.href !== "/courses").map((l) => (
+                    <SheetClose asChild key={l.href}>
+                      <Link
+                        to={l.href}
+                        className="border-2 border-ink bg-surface px-4 py-3 font-display text-[13px] font-bold uppercase tracking-wider text-ink shadow-stamp-sm hover:bg-paper-3"
+                      >
+                        {l.label}
+                      </Link>
+                    </SheetClose>
+                  ))}
+                  <SheetClose asChild>
+                    <Link
+                      to="/practice?mode=challenge"
+                      className="border-2 border-ink bg-surface px-4 py-3 font-display text-[13px] font-bold uppercase tracking-wider text-ink shadow-stamp-sm hover:bg-paper-3"
+                    >
+                      Scenarios
+                    </Link>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <a
+                      href="#pricing"
+                      className="border-2 border-dashed border-ink bg-surface px-4 py-3 font-display text-[13px] font-bold uppercase tracking-wider text-ink-3 hover:text-ink"
+                    >
+                      Pricing
+                    </a>
+                  </SheetClose>
+                </nav>
+                <div className="mt-6">
+                  <Button variant="paper" size="lg" asChild className="w-full">
+                    <Link to="/practice?mode=test">
+                      Take a quick test
+                      <HugeiconsIcon
+                        icon={ArrowRight02FreeIcons}
+                        size={16}
+                        strokeWidth={2.5}
+                      />
+                    </Link>
+                  </Button>
+                </div>
+              </SheetBody>
+            </SheetContent>
+          </Sheet>
+        </>
+      }
+    />
+  );
+}
+
+/* =============================================================
+   Hero. Courses first, practice second. No motion — page
+   transition handles route entry.
    ============================================================= */
 
 function Hero() {
@@ -254,30 +278,32 @@ function Hero() {
       <Container>
         <div className="grid gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="rush">★ NTSA · Class B</Badge>
-            <Badge variant="ink">No signup</Badge>
+            <Badge variant="rush">★ Full driving courses</Badge>
+            <Badge variant="ink">+ free practice</Badge>
           </div>
           <h1 className="m-0 mt-3 font-display font-extrabold uppercase leading-[0.88] tracking-tighter text-ink text-[clamp(48px,9vw,112px)]">
-            Pick a test. <span className="italic text-rush">Start now.</span>
+            Take the course.{" "}
+            <span className="italic text-rush">Pass the test.</span>
           </h1>
           <p className="mt-5 max-w-2xl font-serif text-[clamp(17px,2.2vw,24px)] leading-tight text-ink-2">
-            Real Nairobi junctions. Real past papers. Bite-sized, scored
-            instantly. No card, no account.
+            Full courses on the highway code, Kenyan signs, junctions and
+            real-road driving — taught in order, with practice and mock papers
+            built in. Plus quick drills for when five minutes is all you've got.
           </p>
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <Button variant="rush" size="lg" asChild>
-              <Link to="/practice">
+              <Link to="/courses">
                 <HugeiconsIcon
-                  icon={PlayCircleFreeIcons}
+                  icon={Mortarboard01FreeIcons}
                   size={18}
                   strokeWidth={2.25}
                 />
-                Start practice
+                Browse courses
               </Link>
             </Button>
             <Button variant="paper" size="lg" asChild>
               <Link to="/practice?mode=test">
-                Take a quick test
+                Or take a quick test
                 <HugeiconsIcon
                   icon={ArrowRight02FreeIcons}
                   size={16}
@@ -287,9 +313,222 @@ function Hero() {
             </Button>
           </div>
           <p className="mt-3 font-mono text-[11px] uppercase tracking-widest text-ink-3">
-            Free forever · Practice as a guest · Built for Kenya
+            Start free · No signup to begin · Pay with M-Pesa
           </p>
         </div>
+      </Container>
+    </section>
+  );
+}
+
+/* =============================================================
+   Courses — the main path. Two full courses for now; this is
+   where we want most people to start.
+   ============================================================= */
+
+const COURSE_ACCENT: Record<CourseAccent, { block: string; title: string }> = {
+  rush: { block: "bg-rush text-white", title: "text-rush" },
+  ink: { block: "bg-ink text-paper", title: "text-ink" },
+};
+
+function Courses() {
+  return (
+    <section
+      id="courses"
+      className="border-b-2 border-ink bg-paper-3 py-12 sm:py-16"
+    >
+      <Container>
+        <SectionHead
+          title={
+            <>
+              Start with a <em>full course</em>
+            </>
+          }
+          stamp="Two now · more on the way"
+        />
+        <p className="mb-8 max-w-2xl font-serif text-[clamp(16px,2vw,22px)] leading-tight text-ink-2 [&_em]:text-rush">
+          Quizzes get you reps. A course gets you <em>ready</em> — every topic
+          taught in sequence, with the practice and mock papers built into each
+          lesson. This is where we'd start.
+        </p>
+
+        <motion.div
+          className="grid gap-5 lg:grid-cols-2"
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEWPORT}
+          variants={variants.staggerList}
+        >
+          {COURSES.map((c) => (
+            <motion.div key={c.slug} variants={variants.fadeUp}>
+              <CourseCard course={c} />
+            </motion.div>
+          ))}
+        </motion.div>
+
+        <p className="mt-6 text-center font-mono text-[11px] uppercase tracking-widest text-ink-3">
+          More courses in the workshop · Class A, C &amp; D next
+        </p>
+      </Container>
+    </section>
+  );
+}
+
+function CourseCard({ course }: { course: Course }) {
+  const a = COURSE_ACCENT[course.accent];
+  return (
+    <article className="relative flex h-full flex-col border-2 border-ink bg-surface shadow-stamp">
+      {course.tag && (
+        <div className="absolute -top-3 right-5">
+          <Badge variant="ink">{course.tag}</Badge>
+        </div>
+      )}
+
+      <header className="flex items-start gap-4 border-b-2 border-dashed border-ink p-5 sm:p-6">
+        <div
+          className={`flex size-12 shrink-0 items-center justify-center border-2 border-ink ${a.block}`}
+        >
+          <HugeiconsIcon icon={course.icon} size={24} strokeWidth={2.25} />
+        </div>
+        <div className="min-w-0">
+          <span className="font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
+            {course.kicker}
+          </span>
+          <h3
+            className={`m-0 mt-1.5 font-display text-[clamp(22px,2.6vw,28px)] font-extrabold uppercase leading-[0.95] tracking-tight ${a.title}`}
+          >
+            {course.title}
+          </h3>
+        </div>
+      </header>
+
+      <div className="flex flex-1 flex-col gap-5 p-5 sm:p-6">
+        <p className="m-0 text-[14.5px] leading-relaxed text-ink-2">
+          {course.blurb}
+        </p>
+
+        <div>
+          <div className="mb-2.5 flex items-center gap-3 font-mono text-[10px] uppercase tracking-widest text-ink-3">
+            <span className="h-px flex-1 bg-line-soft" aria-hidden />
+            What you'll cover
+            <span className="h-px flex-1 bg-line-soft" aria-hidden />
+          </div>
+          <ul className="m-0 grid list-none gap-2 p-0">
+            {course.syllabus.map((s, i) => (
+              <li
+                key={s}
+                className="flex items-start gap-2.5 text-[13.5px] leading-snug text-ink"
+              >
+                <span className="mt-px shrink-0 font-mono text-[11px] tabular-nums text-ink-3">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span>{s}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <footer className="mt-auto border-t-2 border-dashed border-ink p-5 sm:p-6">
+        <div className="mb-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
+          <span>{course.meta.modules} modules</span>
+          <span aria-hidden>·</span>
+          <span>{course.meta.lessons} lessons</span>
+          <span aria-hidden>·</span>
+          <span>{course.meta.hours}</span>
+          <span aria-hidden>·</span>
+          <span>{course.meta.level}</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button variant={course.accent} size="lg" asChild>
+            <Link to={course.to}>
+              View the course
+              <HugeiconsIcon
+                icon={ArrowRight02FreeIcons}
+                size={16}
+                strokeWidth={2.5}
+              />
+            </Link>
+          </Button>
+          <span className="font-mono text-[11px] uppercase tracking-wide text-ink-3">
+            {course.price}
+          </span>
+        </div>
+      </footer>
+    </article>
+  );
+}
+
+/* =============================================================
+   Quick-action tiles — the fast lane. No course, no signup,
+   just five minutes of reps. Mobile-first, staggered on view.
+   ============================================================= */
+
+function QuickActions() {
+  const tiles = [
+    {
+      to: "/practice",
+      icon: PlayCircleFreeIcons,
+      accent: "rush" as const,
+      title: "Quick practice",
+      copy: "Five questions, no timer. Build the habit.",
+      meta: "5 Qs · open",
+    },
+    {
+      to: "/practice?mode=test",
+      icon: TimeQuarterFreeIcons,
+      accent: "ink" as const,
+      title: "Quick test",
+      copy: "Ten questions, eight minutes. Test centre shape.",
+      meta: "10 Qs · 8 min",
+    },
+    {
+      to: "/practice?mode=signs",
+      icon: TrafficLightFreeIcons,
+      accent: "amber" as const,
+      title: "Road signs",
+      copy: "Master the Kenyan signs you'll see on the road.",
+      meta: "5 Qs · signs",
+    },
+    {
+      to: "/practice?mode=challenge",
+      icon: AwardFreeIcons,
+      accent: "green" as const,
+      title: "Scenarios",
+      copy: "Right-of-way and hazards from real junctions.",
+      meta: "5 Qs · daily",
+    },
+  ];
+
+  return (
+    <section className="border-b-2 border-ink py-12 sm:py-16">
+      <Container>
+        <SectionHead
+          title={
+            <>
+              The quick <em>lane</em>
+            </>
+          }
+          stamp="No course needed · guest, free"
+        />
+        <p className="mb-8 max-w-2xl font-serif text-[clamp(16px,2vw,22px)] leading-tight text-ink-2">
+          When five minutes is all you've got. Pick a drill, get scored, get on
+          with your day — a course can wait until tonight.
+        </p>
+
+        <motion.div
+          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEWPORT}
+          variants={variants.staggerList}
+        >
+          {tiles.map((t) => (
+            <motion.div key={t.to} variants={variants.fadeUp}>
+              <QuickAction {...t} />
+            </motion.div>
+          ))}
+        </motion.div>
       </Container>
     </section>
   );
@@ -322,8 +561,9 @@ function TodaysQuestion() {
               Try one, <span className="italic text-rush">free</span>.
             </h2>
             <p className="text-[14px] leading-relaxed text-ink-2">
-              Same shape as the real NTSA paper. Pick an answer, see whether
-              it's right, read why. No counter, no streak required.
+              A taste of what's inside a course — same shape as the real NTSA
+              paper. Pick an answer, see whether it's right, read why. No
+              counter, no streak required.
             </p>
             {revealed && (
               <Button
@@ -419,115 +659,46 @@ function TodaysQuestion() {
 }
 
 /* =============================================================
-   Quick action tiles. Mobile-first, staggered on view.
+   Curriculum. The Class B course, module by module. Every module
+   is reachable from the course; the cards just show what's inside.
    ============================================================= */
 
-function QuickActions() {
-  const tiles = [
-    {
-      to: "/practice",
-      icon: PlayCircleFreeIcons,
-      accent: "rush" as const,
-      title: "Quick practice",
-      copy: "Five questions, no timer. Build the habit.",
-      meta: "5 Qs · open",
-    },
-    {
-      to: "/practice?mode=test",
-      icon: TimeQuarterFreeIcons,
-      accent: "ink" as const,
-      title: "Quick test",
-      copy: "Ten questions, eight minutes. Test centre shape.",
-      meta: "10 Qs · 8 min",
-    },
-    {
-      to: "/practice?mode=signs",
-      icon: TrafficLightFreeIcons,
-      accent: "amber" as const,
-      title: "Road signs",
-      copy: "Master the Kenyan signs you'll see on the road.",
-      meta: "5 Qs · signs",
-    },
-    {
-      to: "/practice?mode=challenge",
-      icon: AwardFreeIcons,
-      accent: "green" as const,
-      title: "Scenarios",
-      copy: "Right-of-way and hazards from real junctions.",
-      meta: "5 Qs · daily",
-    },
-  ];
-
-  return (
-    <section className="border-b-2 border-ink py-12 sm:py-16">
-      <Container>
-        <SectionHead
-          title={
-            <>
-              Pick your <em>lane</em>
-            </>
-          }
-          stamp="All free, all guest"
-        />
-
-        <motion.div
-          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
-          initial="hidden"
-          whileInView="visible"
-          viewport={VIEWPORT}
-          variants={variants.staggerList}
-        >
-          {tiles.map((t) => (
-            <motion.div key={t.to} variants={variants.fadeUp}>
-              <QuickAction {...t} />
-            </motion.div>
-          ))}
-        </motion.div>
-      </Container>
-    </section>
-  );
-}
-
-/* =============================================================
-   Curriculum. Topic preview, no locked chapters — every chapter
-   is accessible via /practice. The cards just show what's covered.
-   ============================================================= */
-
-const CHAPTERS = [
+const CLASS_B_MODULES = [
   {
     num: 1,
-    title: "Highway code basics",
-    lessons: 5,
-    questions: 18,
-    href: "/practice",
+    title: "Highway code & rules of the road",
+    lessons: 7,
+    questions: 24,
   },
   {
     num: 2,
-    title: "Road signs & markings",
+    title: "Road signs, signals & markings",
     lessons: 8,
-    questions: 36,
-    href: "/practice?mode=signs",
+    questions: 40,
   },
   {
     num: 3,
-    title: "Traffic lights & signals",
-    lessons: 6,
-    questions: 24,
-    href: "/practice",
+    title: "Junctions, roundabouts & right of way",
+    lessons: 7,
+    questions: 28,
   },
   {
     num: 4,
-    title: "Hazard perception",
-    lessons: 10,
-    questions: 30,
-    href: "/practice?mode=challenge",
+    title: "Hazard perception on Nairobi streets",
+    lessons: 6,
+    questions: 26,
   },
   {
     num: 5,
-    title: "Mechanical knowledge",
-    lessons: 7,
+    title: "Mechanical knowledge & vehicle checks",
+    lessons: 6,
     questions: 22,
-    href: "/practice",
+  },
+  {
+    num: 6,
+    title: "Full mock papers & exam-day routine",
+    lessons: 8,
+    questions: 60,
   },
 ];
 
@@ -538,10 +709,10 @@ function Curriculum() {
         <SectionHead
           title={
             <>
-              Five <em>chapters</em>, every one tested
+              Inside the Class B course, <em>module by module</em>
             </>
           }
-          stamp="Class B · light vehicle"
+          stamp="Six modules · taught in order"
         />
 
         <motion.div
@@ -551,27 +722,27 @@ function Curriculum() {
           viewport={VIEWPORT}
           variants={variants.staggerList}
         >
-          {CHAPTERS.map((c) => (
-            <motion.div key={c.num} variants={variants.fadeUp}>
+          {CLASS_B_MODULES.map((m) => (
+            <motion.div key={m.num} variants={variants.fadeUp}>
               <Link
-                to={c.href}
+                to="/courses"
                 className="block outline-none focus-visible:[&_article]:shadow-stamp-rush"
               >
                 <BoardingCard
-                  num={c.num}
-                  eyebrow={`Chapter № ${c.num} · Practice`}
-                  title={c.title}
+                  num={m.num}
+                  eyebrow={`Module № ${m.num} · Class B course`}
+                  title={m.title}
                   meta={[
-                    `${c.lessons} lessons`,
-                    `${c.questions} questions`,
-                    <span key="open" className="text-rush">
-                      Open
+                    `${m.lessons} lessons`,
+                    `${m.questions} questions`,
+                    <span key="in" className="text-rush">
+                      In Class B
                     </span>,
                   ]}
                   stub={{
                     label: "XP",
-                    value: `+${c.lessons * 40}`,
-                    code: `B/${String(c.num).padStart(2, "0")}`,
+                    value: `+${m.lessons * 40}`,
+                    code: `B/${String(m.num).padStart(2, "0")}`,
                   }}
                 />
               </Link>
@@ -594,27 +765,27 @@ const FEATURES: Array<{
   tone: "rush" | "ink" | "amber" | "green" | "blue" | "cyan";
 }> = [
   {
-    icon: TrafficLightFreeIcons,
-    title: "Real Kenyan signs",
-    copy: "120 signs from the NTSA highway code. Colour, shape, class. Not stock images from a textbook.",
+    icon: Mortarboard01FreeIcons,
+    title: "Courses, not just quizzes",
+    copy: "Full courses that teach a topic in order — highway code to mock papers — with the practice baked into every lesson.",
     tone: "rush",
   },
   {
     icon: TimeQuarterFreeIcons,
     title: "Timed mock exams",
-    copy: "Eight full-length papers. Same question count, same minutes, same fail thresholds as the test centre.",
+    copy: "Full-length papers — same question count, same minutes, same fail thresholds as the test centre.",
     tone: "ink",
   },
   {
     icon: SmartPhone01FreeIcons,
     title: "M-Pesa, when ready",
-    copy: "STK push if you decide to upgrade. KES 499/month. Cancel from inside the app.",
+    copy: "STK push if you decide to upgrade. KES 499/month for every course. Cancel from inside the app.",
     tone: "green",
   },
   {
     icon: ChartIncreaseFreeIcons,
     title: "Honest stats",
-    copy: "Per-chapter score, per-sign accuracy, weakest topics. We tell you what's broken.",
+    copy: "Per-module score, per-sign accuracy, weakest topics. We tell you what's broken.",
     tone: "blue",
   },
   {
@@ -624,9 +795,9 @@ const FEATURES: Array<{
     tone: "amber",
   },
   {
-    icon: AwardFreeIcons,
-    title: "Built for the practical",
-    copy: "Hazard perception clips, junction reading, defensive driving. The same gut work the examiner watches for.",
+    icon: TrafficLightFreeIcons,
+    title: "Built for Kenyan roads",
+    copy: "Real Kenyan signs, real Nairobi junctions, hazard clips, defensive driving. Not stock images from a textbook.",
     tone: "cyan",
   },
 ];
@@ -815,8 +986,8 @@ function Principles() {
 }
 
 /* =============================================================
-   Pricing. Two equal-weight cards. No "Most popular", no urgency.
-   Free is genuinely useful. Premium is more, not different.
+   Pricing. Free is enough to start any course; Premium unlocks
+   every course end to end. No "Most popular", no urgency.
    ============================================================= */
 
 function Pricing() {
@@ -826,10 +997,10 @@ function Pricing() {
         <SectionHead
           title={
             <>
-              Free is the <em>whole experience</em>
+              Start free. <em>Go all in</em> later
             </>
           }
-          stamp="Premium is for going further"
+          stamp="One price · every course"
         />
 
         <motion.div
@@ -844,8 +1015,9 @@ function Pricing() {
               name="Free"
               price="KES 0"
               period="forever"
-              blurb="Genuinely useful. Most people pass on this alone. We don't gate the basics."
+              blurb="Enough to start any course and pass on practice alone. We don't gate the basics."
               features={[
+                "First module of every course — free",
                 "Quick practice (5 questions, no timer)",
                 "Quick test (10 questions, timed)",
                 "All road-sign questions",
@@ -854,8 +1026,8 @@ function Pricing() {
                 "Progress saved on this device",
               ]}
               cta={{
-                label: "Start practicing",
-                href: "/practice",
+                label: "Browse courses",
+                href: "/courses",
                 variant: "rush",
               }}
             />
@@ -865,23 +1037,27 @@ function Pricing() {
               name="Premium"
               price="KES 499"
               period="/ month · KES 4,999/yr"
-              blurb="For when you want more reps. Adds the deep question bank and cross-device sync."
+              blurb="Every course, start to finish — plus the deep question bank and cross-device sync."
               features={[
-                "Everything in Free",
-                "200+ extra past papers",
+                "Every course, every module",
                 "Unlimited timed mock exams",
+                "200+ extra past papers",
                 "Cross-device progress sync",
                 "Offline mode for the bus",
-                "New questions every week",
+                "New lessons every week",
               ]}
-              cta={{ label: "See what's coming", href: "#", variant: "ink" }}
+              cta={{
+                label: "See what's coming",
+                href: "/courses",
+                variant: "ink",
+              }}
               softTag="Coming soon"
             />
           </motion.div>
         </motion.div>
 
         <p className="mt-6 text-center font-mono text-[11px] uppercase tracking-widest text-ink-3">
-          Premium is optional. Free practice never stops working.
+          Premium is optional · free practice never stops working
         </p>
       </Container>
     </section>
@@ -894,10 +1070,10 @@ function Pricing() {
 
 function TrustStrip() {
   const items: Array<{ label: string; value: string }> = [
-    { label: "Made for", value: "Kenya · NTSA" },
+    { label: "Learn", value: "Courses + drills" },
     { label: "Classes", value: "A · B · C · D" },
     { label: "Account", value: "Not required" },
-    { label: "Pay", value: "Only if you want more" },
+    { label: "Pay", value: "M-Pesa · Premium only" },
   ];
   return (
     <section className="border-b-2 border-ink bg-paper-3 py-8">
@@ -936,7 +1112,7 @@ function TrustStrip() {
 }
 
 /* =============================================================
-   Final CTA. Action, not signup. Banner-slam on view.
+   Final CTA. Push to courses. Banner-slam on view.
    ============================================================= */
 
 function FinalCta() {
@@ -952,12 +1128,12 @@ function FinalCta() {
           <FeedbackBanner
             tone="win"
             icon={GlobalEducationFreeIcons}
-            title="Sawa sawa. Ready to start?"
-            description="Five questions, two minutes. No card. No account."
+            title="Ready to learn this properly?"
+            description="Start the Class B course free — first module, no card, no account."
             action={
               <Button variant="ink" size="lg" asChild>
-                <Link to="/practice">
-                  Start practice
+                <Link to="/courses">
+                  Browse courses
                   <HugeiconsIcon
                     icon={ArrowRight02FreeIcons}
                     size={16}
@@ -985,9 +1161,17 @@ function SiteFooter() {
           <div>
             <Logo variant="plain" height={64} knockout />
             <p className="mt-4 max-w-sm font-serif text-base leading-snug opacity-80">
-              The NTSA prep app that takes your test as seriously as you do.
+              Full driving courses and NTSA practice, built for Kenyan roads.
             </p>
           </div>
+          <FooterCol
+            heading="Courses"
+            items={[
+              { label: "Class B — full course", href: "/courses" },
+              { label: "Confident on Kenyan roads", href: "/courses" },
+              { label: "All courses", href: "/courses" },
+            ]}
+          />
           <FooterCol
             heading="Practice"
             items={[
@@ -998,16 +1182,13 @@ function SiteFooter() {
             ]}
           />
           <FooterCol
-            heading="Product"
+            heading="More"
             items={[
               { label: "Pricing", href: "#pricing" },
-              { label: "Curriculum", href: "#curriculum" },
+              { label: "Course outline", href: "#curriculum" },
               { label: "Features", href: "#features" },
+              { label: "Design system", href: "/design" },
             ]}
-          />
-          <FooterCol
-            heading="Brand"
-            items={[{ label: "Design system", href: "/design" }]}
           />
         </div>
         <div className="flex flex-wrap justify-between gap-3 pt-6 font-mono text-[11px] uppercase tracking-widest opacity-60">

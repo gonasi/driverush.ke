@@ -1438,6 +1438,7 @@ export default function Design() {
             {/* App bar */}
             <PaneFull title="App bar · navigation shell" code=".app-bar">
               <AppBar
+                className="static"
                 nav={
                   <>
                     <AppBarLink href="#" active>
