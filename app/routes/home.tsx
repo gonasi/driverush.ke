@@ -17,7 +17,6 @@ import {
   BusFreeIcons,
   ChartIncreaseFreeIcons,
   SmartPhone01FreeIcons,
-  GlobalEducationFreeIcons,
   WifiOffFreeIcons,
   Mortarboard01FreeIcons,
 } from "@hugeicons/core-free-icons";
@@ -139,9 +138,9 @@ export default function Home() {
 
         <Hero />
         <RoadSigns />
-        <Courses />
         <QuickActions />
         <TodaysQuestion />
+        <Courses />
         <Curriculum />
         <Features />
         <Principles />
@@ -271,8 +270,9 @@ function SiteNav() {
 }
 
 /* =============================================================
-   Hero. Courses first, practice second. No motion — page
-   transition handles route entry.
+   Hero. Road signs first — the live product; the courses, mock
+   papers and the rest are next. No motion — page transition
+   handles route entry.
    ============================================================= */
 
 function Hero() {
@@ -281,32 +281,32 @@ function Hero() {
       <Container>
         <div className="grid gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="rush">★ Full driving courses</Badge>
-            <Badge variant="ink">+ free practice</Badge>
+            <Badge variant="rush">★ Road signs · live now</Badge>
+            <Badge variant="ink">Courses · coming soon</Badge>
           </div>
           <h1 className="m-0 mt-3 font-display font-extrabold uppercase leading-[0.88] tracking-tighter text-ink text-[clamp(48px,9vw,112px)]">
-            Take the course.{" "}
-            <span className="italic text-rush">Pass the test.</span>
+            Master road signs.{" "}
+            <span className="italic text-rush">Start free.</span>
           </h1>
           <p className="mt-5 max-w-2xl font-serif text-[clamp(17px,2.2vw,24px)] leading-tight text-ink-2">
-            Full courses on the highway code, Kenyan signs, junctions and
-            real-road driving — taught in order, with practice and mock papers
-            built in. Plus quick drills for when five minutes is all you've got.
+            DriveRush is starting with the part most people get wrong — the
+            Kenyan road signs. Quick memory games and the classic quiz, free, no
+            signup. The full courses, mock papers and the rest are on the way.
           </p>
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <Button variant="rush" size="lg" asChild>
-              <Link to="/courses">
+              <Link to="/road-signs">
                 <HugeiconsIcon
-                  icon={Mortarboard01FreeIcons}
+                  icon={TrafficLightFreeIcons}
                   size={18}
                   strokeWidth={2.25}
                 />
-                Browse courses
+                Train the signs
               </Link>
             </Button>
             <Button variant="paper" size="lg" asChild>
-              <Link to="/practice?mode=test">
-                Or take a quick test
+              <Link to="/practice?mode=signs">
+                Or the classic sign quiz
                 <HugeiconsIcon
                   icon={ArrowRight02FreeIcons}
                   size={16}
@@ -316,7 +316,7 @@ function Hero() {
             </Button>
           </div>
           <p className="mt-3 font-mono text-[11px] uppercase tracking-widest text-ink-3">
-            Start free · No signup to begin · Pay with M-Pesa
+            Free · No signup to start · Built for Kenya
           </p>
         </div>
       </Container>
@@ -395,15 +395,16 @@ function Courses() {
         <SectionHead
           title={
             <>
-              Start with a <em>full course</em>
+              Next up · <em>full courses</em>
             </>
           }
-          stamp="Two now · more on the way"
+          stamp="Coming soon · in the workshop"
         />
         <p className="mb-8 max-w-2xl font-serif text-[clamp(16px,2vw,22px)] leading-tight text-ink-2 [&_em]:text-rush">
-          Quizzes get you reps. A course gets you <em>ready</em> — every topic
-          taught in sequence, with the practice and mock papers built into each
-          lesson. This is where we'd start.
+          While you drill the signs, we're building the rest — full courses on
+          the highway code, junctions, hazard perception and the mechanical
+          basics, each topic <em>in order</em>, with practice and mock papers
+          built in. Here's the plan.
         </p>
 
         <motion.div
@@ -421,7 +422,7 @@ function Courses() {
         </motion.div>
 
         <p className="mt-6 text-center font-mono text-[11px] uppercase tracking-widest text-ink-3">
-          More courses in the workshop · Class A, C &amp; D next
+          Class B first · then A, C &amp; D
         </p>
       </Container>
     </section>
@@ -496,7 +497,7 @@ function CourseCard({ course }: { course: Course }) {
         <div className="flex flex-wrap items-center gap-3">
           <Button variant={course.accent} size="lg" asChild>
             <Link to={course.to}>
-              View the course
+              See what's coming
               <HugeiconsIcon
                 icon={ArrowRight02FreeIcons}
                 size={16}
@@ -563,11 +564,11 @@ function QuickActions() {
               The quick <em>lane</em>
             </>
           }
-          stamp="No course needed · guest, free"
+          stamp="Live now · guest, free"
         />
         <p className="mb-8 max-w-2xl font-serif text-[clamp(16px,2vw,22px)] leading-tight text-ink-2">
           When five minutes is all you've got. Pick a drill, get scored, get on
-          with your day — a course can wait until tonight.
+          with your day — the rest of DriveRush can wait.
         </p>
 
         <motion.div
@@ -615,9 +616,9 @@ function TodaysQuestion() {
               Try one, <span className="italic text-rush">free</span>.
             </h2>
             <p className="text-[14px] leading-relaxed text-ink-2">
-              A taste of what's inside a course — same shape as the real NTSA
-              paper. Pick an answer, see whether it's right, read why. No
-              counter, no streak required.
+              Same shape as the real NTSA paper. Pick an answer, see whether
+              it's right, read why. No counter, no streak required — and it's
+              here every day.
             </p>
             {revealed && (
               <Button
@@ -766,7 +767,7 @@ function Curriculum() {
               Inside the Class B course, <em>module by module</em>
             </>
           }
-          stamp="Six modules · taught in order"
+          stamp="Class B course · coming soon"
         />
 
         <motion.div
@@ -790,7 +791,7 @@ function Curriculum() {
                     `${m.lessons} lessons`,
                     `${m.questions} questions`,
                     <span key="in" className="text-rush">
-                      In Class B
+                      Coming soon
                     </span>,
                   ]}
                   stub={{
@@ -1051,10 +1052,10 @@ function Pricing() {
         <SectionHead
           title={
             <>
-              Start free. <em>Go all in</em> later
+              Free now. <em>Premium</em> when courses land
             </>
           }
-          stamp="One price · every course"
+          stamp="Sign training free · always"
         />
 
         <motion.div
@@ -1069,21 +1070,22 @@ function Pricing() {
               name="Free"
               price="KES 0"
               period="forever"
-              blurb="Enough to start any course and pass on practice alone. We don't gate the basics."
+              blurb="Everything that's live today — and it stays free, even after the courses arrive."
               features={[
-                "First module of every course — free",
-                "Quick practice (5 questions, no timer)",
-                "Quick test (10 questions, timed)",
-                "All road-sign questions",
+                "Road-sign trainers (Pelican & 3D)",
+                "The classic road-sign quiz",
+                "Quick practice & timed tests",
                 "Right-of-way scenarios",
                 "Daily question, every day",
                 "Progress saved on this device",
+                "Everything new, as it ships",
               ]}
               cta={{
-                label: "Browse courses",
-                href: "/courses",
+                label: "Train the signs",
+                href: "/road-signs",
                 variant: "rush",
               }}
+              softTag="Live now"
             />
           </motion.div>
           <motion.div variants={variants.fadeUp}>
@@ -1091,7 +1093,7 @@ function Pricing() {
               name="Premium"
               price="KES 499"
               period="/ month · KES 4,999/yr"
-              blurb="Every course, start to finish — plus the deep question bank and cross-device sync."
+              blurb="Lands with the full courses — the deep question bank, mock exams and cross-device sync."
               features={[
                 "Every course, every module",
                 "Unlimited timed mock exams",
@@ -1111,7 +1113,7 @@ function Pricing() {
         </motion.div>
 
         <p className="mt-6 text-center font-mono text-[11px] uppercase tracking-widest text-ink-3">
-          Premium is optional · free practice never stops working
+          Free now and always · courses, mock exams &amp; Premium land later
         </p>
       </Container>
     </section>
@@ -1166,7 +1168,7 @@ function TrustStrip() {
 }
 
 /* =============================================================
-   Final CTA. Push to courses. Banner-slam on view.
+   Final CTA. Push to the live thing — road signs. Banner-slam on view.
    ============================================================= */
 
 function FinalCta() {
@@ -1181,13 +1183,13 @@ function FinalCta() {
         >
           <FeedbackBanner
             tone="win"
-            icon={GlobalEducationFreeIcons}
-            title="Ready to learn this properly?"
-            description="Start the Class B course free — first module, no card, no account."
+            icon={TrafficLightFreeIcons}
+            title="Start where it counts — the signs."
+            description="Two memory games and the classic quiz. Free, no card, no account."
             action={
               <Button variant="ink" size="lg" asChild>
-                <Link to="/courses">
-                  Browse courses
+                <Link to="/road-signs">
+                  Train the signs
                   <HugeiconsIcon
                     icon={ArrowRight02FreeIcons}
                     size={16}

@@ -45,7 +45,7 @@ export const COURSES: Course[] = [
       "Everything between you and the licence. The highway code, every Kenyan road sign, junctions, hazard perception and the mechanical basics — taught in order, then tested in the exact shape of the NTSA paper. Finish it and walk into the test centre knowing you're ready.",
     icon: Mortarboard01FreeIcons,
     accent: "rush",
-    tag: "Start here",
+    tag: "Coming soon",
     syllabus: [
       "Highway code & the rules of the road",
       "Road signs, signals & markings",
@@ -71,7 +71,7 @@ export const COURSES: Course[] = [
       "A licence isn't the same as knowing how to handle Thika Road at 6pm. Real defensive driving for matatus, boda bodas, roundabouts that ignore the rules, night, rain and the long-haul highway — plus exactly what to do when the car stops moving.",
     icon: RoadLocation01FreeIcons,
     accent: "ink",
-    tag: "New",
+    tag: "Coming soon",
     syllabus: [
       "Reading traffic: matatus & boda bodas",
       "Roundabouts & busy junctions, for real",
