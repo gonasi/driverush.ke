@@ -52,6 +52,9 @@ const sheetVariants = cva(
 type SheetContentProps = React.ComponentProps<typeof DialogPrimitive.Content> &
   VariantProps<typeof sheetVariants> & {
     showCloseButton?: boolean;
+    /** Skip the dimmed backdrop — pair with `<Sheet modal={false}>` for a
+     *  non-blocking sheet (e.g. an answer panel that leaves the page usable). */
+    hideOverlay?: boolean;
   };
 
 function SheetContent({
@@ -59,11 +62,12 @@ function SheetContent({
   side,
   children,
   showCloseButton = true,
+  hideOverlay = false,
   ...props
 }: SheetContentProps) {
   return (
     <SheetPortal>
-      <SheetOverlay />
+      {!hideOverlay && <SheetOverlay />}
       <DialogPrimitive.Content
         data-slot="sheet-content"
         className={cn(sheetVariants({ side }), className)}

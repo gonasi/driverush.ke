@@ -4,6 +4,7 @@ import { Slot } from "radix-ui";
 import { cn } from "~/lib/utils";
 
 import { Logo } from "./logo";
+import { ThemeToggle } from "./theme-toggle";
 
 type AppBarProps = React.ComponentProps<"header"> & {
   /** Override the brand mark; defaults to the official DriveRush lockup. */
@@ -12,6 +13,8 @@ type AppBarProps = React.ComponentProps<"header"> & {
   nav?: React.ReactNode;
   /** Right-side slot — primary action, mobile menu trigger, avatar, etc. */
   trailing?: React.ReactNode;
+  /** Show the light/dark switcher in the trailing cluster. Default `true`. */
+  themeToggle?: boolean;
 };
 
 /**
@@ -22,8 +25,19 @@ type AppBarProps = React.ComponentProps<"header"> & {
  *
  * Override `position` via `className` (e.g. `static`) when embedding in a
  * showcase rather than at the top of a page.
+ *
+ * Carries the light/dark switcher on the right by default — it's the one place
+ * it lives now, so it stays out of the games. Pass `themeToggle={false}` to
+ * drop it.
  */
-function AppBar({ className, brand, nav, trailing, ...props }: AppBarProps) {
+function AppBar({
+  className,
+  brand,
+  nav,
+  trailing,
+  themeToggle = true,
+  ...props
+}: AppBarProps) {
   return (
     <header
       data-slot="app-bar"
@@ -39,6 +53,7 @@ function AppBar({ className, brand, nav, trailing, ...props }: AppBarProps) {
         </div>
         {nav && <nav className="hidden items-center gap-1 md:flex">{nav}</nav>}
         <div className="flex flex-1 items-center justify-end gap-2">
+          {themeToggle && <ThemeToggle />}
           {trailing}
         </div>
       </div>

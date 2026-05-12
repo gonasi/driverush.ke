@@ -12,10 +12,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import type { Route } from "./+types/root";
 import "./app.css";
 import { Toaster } from "~/components/ui/sonner";
-import {
-  ThemeToggle,
-  THEME_INIT_SCRIPT,
-} from "~/components/brand/theme-toggle";
+import { THEME_INIT_SCRIPT, useThemeSync } from "~/lib/theme";
 import { variants } from "~/lib/motion";
 import { SITE } from "~/lib/site";
 
@@ -65,6 +62,10 @@ export function meta() {
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  // Track live OS changes / cross-tab choices. The toggle itself lives in the
+  // main nav (see <AppBar>) — it used to float over every page, which got in
+  // the way of the games on mobile.
+  useThemeSync();
   return (
     <html lang={SITE.lang}>
       <head>
@@ -77,7 +78,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
-        <ThemeToggle className="fixed bottom-4 left-4 z-50" />
         <Toaster />
         <ScrollRestoration />
         <Scripts />

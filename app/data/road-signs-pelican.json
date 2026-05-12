@@ -1,0 +1,65 @@
+{
+  "imageSrc": "/assets/road-signs/road-signs.svg",
+  "imageWidth": 1920,
+  "imageHeight": 1080,
+  "settings": {
+    "revealMode": "auto",
+    "defaultRevealDelay": 4,
+    "blurIntensity": 8,
+    "dimIntensity": 0.6,
+    "initialDisplayDuration": 1,
+    "betweenRegionsDuration": 0.8,
+    "animationDuration": 600,
+    "autoAdvance": true,
+    "autoAdvanceDelay": 3,
+    "randomization": "none",
+    "loopPlayback": true,
+    "startIndex": 0,
+    "reverseOrder": false,
+    "playAudio": true
+  },
+  "regions": [
+    {
+      "id": "region-50hvr4",
+      "name": "Keep going",
+      "category": "warning",
+      "index": 0,
+      "x": 42.78,
+      "y": 29.43,
+      "width": 7.26,
+      "height": 12.9,
+      "zoom": 7.75,
+      "cropX": 244.51,
+      "cropY": 540.54,
+      "code": "M.2"
+    },
+    {
+      "id": "region-jn78ns",
+      "name": "Bend Left",
+      "category": "warning",
+      "index": 1,
+      "x": 6.82,
+      "y": 2.4,
+      "width": 7.3,
+      "height": 12.98,
+      "zoom": 7.705,
+      "cropX": 2675.89,
+      "cropY": 1565.39,
+      "code": "W.1"
+    },
+    {
+      "id": "region-pjj0pr",
+      "name": "Ng'ombe",
+      "category": "mandatory",
+      "index": 2,
+      "x": 50.04,
+      "y": 70.11,
+      "width": 7.12,
+      "height": 12.66,
+      "zoom": 7.896,
+      "cropX": -249.78,
+      "cropY": -1031.69,
+      "code": "M.9"
+    }
+  ]
+}

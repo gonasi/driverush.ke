@@ -11,6 +11,16 @@ const meta: Meta<typeof ThemeToggle> = {
 export default meta;
 type Story = StoryObj<typeof ThemeToggle>;
 
-export const Default: Story = {
+/** Sun glyph — the resting state on a light page. */
+export const Light: Story = {
   render: () => <ThemeToggle />,
+};
+
+/** Moon glyph — wrapped in `.dark` so CSS swaps the icon, as it does on <html>. */
+export const Dark: Story = {
+  render: () => (
+    <div className="dark inline-flex bg-surface p-6">
+      <ThemeToggle />
+    </div>
+  ),
 };

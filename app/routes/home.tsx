@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import {
   ArrowRight02FreeIcons,
+  ArrowUpRight01FreeIcons,
   Menu01FreeIcons,
   PlayCircleFreeIcons,
   TimeQuarterFreeIcons,
@@ -27,6 +28,7 @@ import type { Route } from "./+types/home";
 import { absUrl, SITE } from "~/lib/site";
 import { getTodaysQuestion } from "~/lib/questions";
 import { COURSES, type Course, type CourseAccent } from "~/lib/courses";
+import { PARTNERS, type Partner } from "~/lib/partners";
 import { SIGN_GAMES } from "~/lib/road-signs";
 import { variants } from "~/lib/motion";
 
@@ -144,6 +146,7 @@ export default function Home() {
         <Curriculum />
         <Features />
         <Principles />
+        <Partners />
         <Pricing />
         <TrustStrip />
         <FinalCta />
@@ -1038,6 +1041,117 @@ function Principles() {
       </Container>
     </section>
   );
+}
+
+/* =============================================================
+   Partners — what the content is built on. Two for now: the NTSA
+   (highway code + official sign set) and Pelican Signs (the real
+   sign artwork). White logo band, surface caption; linkable cards
+   lift on hover like the quick-action tiles.
+   ============================================================= */
+
+function Partners() {
+  return (
+    <section
+      id="partners"
+      className="border-b-2 border-ink bg-paper-3 py-12 sm:py-16"
+    >
+      <Container>
+        <SectionHead
+          title={
+            <>
+              Straight from <em>the source</em>
+            </>
+          }
+          stamp="NTSA-aligned · genuine sign art"
+        />
+        <p className="mb-8 max-w-2xl font-serif text-[clamp(16px,2vw,22px)] leading-tight text-ink-2 [&_em]:text-rush">
+          We don't redraw the signs from memory. The highway code and the full
+          sign set follow the <em>NTSA</em>'s published material, and the
+          artwork is the genuine <em>Pelican Signs</em> set you'll see bolted to
+          poles on Kenyan roads — so what you learn here is what you'll meet out
+          there.
+        </p>
+
+        <motion.div
+          className="grid max-w-3xl gap-4 sm:grid-cols-2"
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEWPORT}
+          variants={variants.staggerList}
+        >
+          {PARTNERS.map((p) => (
+            <motion.div key={p.name} variants={variants.fadeUp}>
+              <PartnerCard partner={p} />
+            </motion.div>
+          ))}
+        </motion.div>
+
+        <p className="mt-6 font-mono text-[11px] uppercase tracking-widest text-ink-3">
+          Logos shown to credit our sources — not an endorsement
+        </p>
+      </Container>
+    </section>
+  );
+}
+
+const PARTNER_CARD_BASE =
+  "group/partner relative flex h-full flex-col overflow-hidden border-2 border-ink bg-surface shadow-stamp";
+const PARTNER_CARD_LINK =
+  " outline-none transition-[transform,box-shadow] duration-100 ease-snap hover:-translate-x-px hover:-translate-y-px hover:shadow-stamp-lg active:translate-x-[3px] active:translate-y-[3px] active:shadow-stamp-sm focus-visible:-translate-x-px focus-visible:-translate-y-px focus-visible:shadow-stamp-rush";
+
+function PartnerCard({ partner }: { partner: Partner }) {
+  const body = (
+    <>
+      {/* White band — the logo art has a white field, so keep it white in
+          both themes rather than letting dark surface bleed through. */}
+      <div className="flex flex-1 items-center justify-center border-b-2 border-dashed border-ink bg-white px-6 py-7">
+        <img
+          src={partner.logo}
+          alt={`${partner.name} logo`}
+          loading="lazy"
+          className="h-10 w-auto max-w-[70%] object-contain sm:h-12"
+        />
+      </div>
+      <div className="flex items-center justify-between gap-3 px-4 py-3.5">
+        <div className="min-w-0">
+          <div className="font-display text-[13px] font-extrabold uppercase tracking-tight text-ink">
+            {partner.name}
+          </div>
+          <div className="truncate font-mono text-[10px] uppercase tracking-widest text-ink-3">
+            {partner.note}
+          </div>
+        </div>
+        {partner.href && (
+          <span
+            aria-hidden
+            className="flex size-7 shrink-0 items-center justify-center border-2 border-ink bg-paper-3 text-ink transition-colors group-hover/partner:bg-ink group-hover/partner:text-paper"
+          >
+            <HugeiconsIcon
+              icon={ArrowUpRight01FreeIcons}
+              size={13}
+              strokeWidth={2.5}
+            />
+          </span>
+        )}
+      </div>
+    </>
+  );
+
+  if (partner.href) {
+    return (
+      <a
+        href={partner.href}
+        target="_blank"
+        rel="noreferrer noopener"
+        aria-label={`${partner.name} — opens in a new tab`}
+        className={PARTNER_CARD_BASE + PARTNER_CARD_LINK}
+      >
+        {body}
+      </a>
+    );
+  }
+  return <div className={PARTNER_CARD_BASE}>{body}</div>;
 }
 
 /* =============================================================
