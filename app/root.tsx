@@ -12,6 +12,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import type { Route } from "./+types/root";
 import "./app.css";
 import { Toaster } from "~/components/ui/sonner";
+import { NavigationProgressBar } from "~/components/brand/navigation-progress-bar";
 import { THEME_INIT_SCRIPT, useThemeSync } from "~/lib/theme";
 import { variants } from "~/lib/motion";
 import { SITE, absUrl } from "~/lib/site";
@@ -85,6 +86,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
+        <NavigationProgressBar />
         {children}
         <Toaster />
         <ScrollRestoration />
