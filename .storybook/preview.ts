@@ -1,5 +1,7 @@
+import * as React from "react";
 import type { Preview } from "@storybook/react-vite";
 import { withThemeByClassName } from "@storybook/addon-themes";
+import { MemoryRouter } from "react-router";
 
 import "../app/app.css";
 
@@ -25,6 +27,10 @@ const preview: Preview = {
     },
   },
   decorators: [
+    // Router context so components that render <Link> (e.g. SignGameCard) work
+    // in isolation.
+    (Story) =>
+      React.createElement(MemoryRouter, null, React.createElement(Story)),
     withThemeByClassName({
       themes: {
         light: "",

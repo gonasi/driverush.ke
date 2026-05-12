@@ -28,6 +28,7 @@ import type { Route } from "./+types/home";
 import { absUrl, SITE } from "~/lib/site";
 import { getTodaysQuestion } from "~/lib/questions";
 import { COURSES, type Course, type CourseAccent } from "~/lib/courses";
+import { SIGN_GAMES } from "~/lib/road-signs";
 import { variants } from "~/lib/motion";
 
 import { Badge } from "~/components/ui/badge";
@@ -49,6 +50,7 @@ import { FeedbackBanner } from "~/components/brand/feedback-banner";
 import { Logo } from "~/components/brand/logo";
 import { QuickAction } from "~/components/brand/quick-action";
 import { Rail } from "~/components/brand/rail";
+import { SignGameCard } from "~/components/brand/sign-game-card";
 import { TicketCard } from "~/components/brand/ticket-card";
 
 export function meta(_: Route.MetaArgs) {
@@ -136,6 +138,7 @@ export default function Home() {
         <Rail />
 
         <Hero />
+        <RoadSigns />
         <Courses />
         <QuickActions />
         <TodaysQuestion />
@@ -159,7 +162,7 @@ const NAV_LINKS = [
   { label: "Courses", href: "/courses" },
   { label: "Practice", href: "/practice" },
   { label: "Quick test", href: "/practice?mode=test" },
-  { label: "Signs", href: "/practice?mode=signs" },
+  { label: "Signs", href: "/road-signs" },
 ];
 
 function SiteNav() {
@@ -316,6 +319,57 @@ function Hero() {
             Start free · No signup to begin · Pay with M-Pesa
           </p>
         </div>
+      </Container>
+    </section>
+  );
+}
+
+/* =============================================================
+   Road signs — the first thing you can actually play. Two
+   memorisation mini-games: Pelican (recall) and 3D (recognition).
+   ============================================================= */
+
+function RoadSigns() {
+  return (
+    <section id="road-signs" className="border-b-2 border-ink py-12 sm:py-16">
+      <Container>
+        <SectionHead
+          title={
+            <>
+              Start with the <em>signs</em>
+            </>
+          }
+          stamp="Two mini-games · play now"
+        />
+        <p className="mb-8 max-w-2xl font-serif text-[clamp(16px,2vw,22px)] leading-tight text-ink-2 [&_em]:text-rush">
+          The fastest way in. Two five-minute games that drill the Kenyan road
+          signs until they're <em>automatic</em> — recall under pressure, then
+          recognition from any angle.
+        </p>
+
+        <motion.div
+          className="grid gap-5 sm:grid-cols-2"
+          initial="hidden"
+          whileInView="visible"
+          viewport={VIEWPORT}
+          variants={variants.staggerList}
+        >
+          {SIGN_GAMES.map((g) => (
+            <motion.div key={g.slug} variants={variants.fadeUp}>
+              <SignGameCard game={g} />
+            </motion.div>
+          ))}
+        </motion.div>
+
+        <p className="mt-6 text-center font-mono text-[11px] uppercase tracking-widest text-ink-3">
+          More sign trainers coming ·{" "}
+          <Link
+            to="/road-signs"
+            className="text-rush underline-offset-2 hover:underline"
+          >
+            all sign training →
+          </Link>
+        </p>
       </Container>
     </section>
   );
@@ -1177,7 +1231,7 @@ function SiteFooter() {
             items={[
               { label: "Quick practice", href: "/practice" },
               { label: "Quick test", href: "/practice?mode=test" },
-              { label: "Road signs", href: "/practice?mode=signs" },
+              { label: "Road signs", href: "/road-signs" },
               { label: "Scenarios", href: "/practice?mode=challenge" },
             ]}
           />
