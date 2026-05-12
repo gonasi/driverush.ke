@@ -48,7 +48,7 @@ export default function Practice() {
   const questions = getQuestionsForMode(mode);
 
   return (
-    <main className="min-h-screen bg-paper text-ink">
+    <main className="min-h-screen text-ink">
       <Rail />
 
       <div className="mx-auto w-full max-w-3xl px-5 pb-20 pt-6 sm:px-9 sm:pt-10">

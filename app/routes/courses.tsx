@@ -35,7 +35,7 @@ export function meta(_: Route.MetaArgs) {
 
 export default function Courses() {
   return (
-    <main className="min-h-screen bg-paper text-ink">
+    <main className="min-h-screen text-ink">
       <Rail />
 
       <div className="mx-auto w-full max-w-5xl px-5 pb-20 pt-6 sm:px-9 sm:pt-10">

@@ -132,7 +132,7 @@ export default function Home() {
   return (
     <>
       <SiteNav />
-      <main className="min-h-screen bg-paper text-ink">
+      <main className="min-h-screen text-ink">
         <Rail />
 
         <Hero />

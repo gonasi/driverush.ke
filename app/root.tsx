@@ -12,6 +12,10 @@ import { AnimatePresence, motion } from "framer-motion";
 import type { Route } from "./+types/root";
 import "./app.css";
 import { Toaster } from "~/components/ui/sonner";
+import {
+  ThemeToggle,
+  THEME_INIT_SCRIPT,
+} from "~/components/brand/theme-toggle";
 import { variants } from "~/lib/motion";
 import { SITE } from "~/lib/site";
 
@@ -66,11 +70,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        {/* Settle light/dark before first paint — no flash. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <Meta />
         <Links />
       </head>
       <body>
         {children}
+        <ThemeToggle className="fixed bottom-4 left-4 z-50" />
         <Toaster />
         <ScrollRestoration />
         <Scripts />

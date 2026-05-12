@@ -376,6 +376,10 @@
     -moz-osx-font-smoothing: grayscale;
     background: var(--paper);
     color: var(--ink);
+    /* Smooth the light/dark flip (matches the design system). */
+    transition:
+      background 0.25s ease,
+      color 0.25s ease;
 
     @media (prefers-color-scheme: dark) {
       color-scheme: dark;
@@ -398,7 +402,6 @@
         1px 1px / 4px 4px,
       var(--paper);
     color: var(--ink);
-    font-feature-settings: "cv11", "ss01", "ss03";
     overflow-x: hidden;
   }
 
