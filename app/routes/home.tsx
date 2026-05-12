@@ -53,6 +53,7 @@ import { QuickAction } from "~/components/brand/quick-action";
 import { Rail } from "~/components/brand/rail";
 import { SignGameCard } from "~/components/brand/sign-game-card";
 import { TicketCard } from "~/components/brand/ticket-card";
+import { TrafficLoader } from "~/components/brand/traffic-loader";
 
 export function meta(_: Route.MetaArgs) {
   const title = "DriveRush · Driving courses + NTSA practice, no signup";
@@ -157,8 +158,8 @@ export default function Home() {
 }
 
 /* =============================================================
-   Top nav. Courses first — that's the path we want most people on.
-   ============================================================= */
+    Top nav. Courses first — that's the path we want most people on.
+============================================================= */
 
 const NAV_LINKS = [
   { label: "Courses", href: "/courses" },
@@ -274,13 +275,25 @@ function SiteNav() {
 
 /* =============================================================
    Hero. Road signs first — the live product; the courses, mock
-   papers and the rest are next. No motion — page transition
-   handles route entry.
+   papers and the rest are next. No entry animation — the page
+   transition handles route entry; the only motion here is the
+   ambient traffic-signal backdrop bleeding off the left edge.
    ============================================================= */
 
 function Hero() {
   return (
-    <section className="border-b-2 border-ink py-14 sm:py-20">
+    <section className="relative isolate overflow-hidden border-b-2 border-ink py-14 sm:py-20">
+      {/* Ambient backdrop — a live traffic-light signal bleeding off the left
+          edge, dimmed to ~50% so it reads as motion-y texture behind the
+          headline rather than competing with it. Decorative only; hidden on
+          phones where it would crowd the copy. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-14 top-1/2 -z-10 hidden -translate-y-1/2 opacity-50 sm:block lg:-left-6"
+      >
+        <TrafficLoader size="xl" aria-hidden />
+      </div>
+
       <Container>
         <div className="grid gap-3">
           <div className="flex flex-wrap items-center gap-2">
@@ -955,7 +968,7 @@ function Features() {
               variants={variants.fadeUp}
               className="flex items-center gap-3 border-2 border-ink bg-surface p-4"
             >
-              <div className="flex size-12 items-center justify-center border-2 border-ink bg-amber text-ink">
+              <div className="flex size-12 items-center justify-center border-2 border-ink bg-amber text-amber-foreground">
                 <HugeiconsIcon icon={cls.icon} size={22} strokeWidth={2.25} />
               </div>
               <div>

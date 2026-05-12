@@ -24,9 +24,9 @@ const buttonVariants = cva(
         // Confirming neutral action — ink block, paper type
         ink: "bg-ink text-paper shadow-stamp active:shadow-stamp-sm",
         // Cautionary, save-for-later
-        amber: "bg-amber text-ink shadow-stamp active:shadow-stamp-sm",
+        amber: "bg-amber text-amber-foreground shadow-stamp active:shadow-stamp-sm",
         // Pass / sawa / success
-        green: "bg-kenya-green text-white shadow-stamp active:shadow-stamp-sm",
+        green: "bg-kenya-green text-kenya-green-foreground shadow-stamp active:shadow-stamp-sm",
         // Quiet outline default
         paper: "bg-surface text-ink shadow-stamp active:shadow-stamp-sm",
         // No border, no shadow — for in-text cancel / skip

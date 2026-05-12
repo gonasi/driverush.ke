@@ -138,21 +138,15 @@ export function PelicanSettingsSheet() {
               label="Sign order"
               value={settings.order}
               options={[
-                { value: "sequential", label: "Sequential — board order" },
-                { value: "shuffle", label: "Shuffled — random each run" },
+                { value: "sequential", label: "Sequential · board order" },
+                { value: "shuffle", label: "Shuffled · random each run" },
               ]}
               onValueChange={(v) => setSetting({ order: v })}
             />
             <ToggleRow
-              label="Loop"
-              description="When you reach the end, start over from the top"
-              checked={settings.loop}
-              onCheckedChange={(b) => setSetting({ loop: b })}
-            />
-            <ToggleRow
               label="Reverse"
               description={
-                shuffled ? "Off while shuffled" : "Play the list last → first"
+                shuffled ? "Off while shuffled" : "Play the list last to first"
               }
               checked={settings.reverse}
               onCheckedChange={(b) => setSetting({ reverse: b })}
@@ -166,8 +160,8 @@ export function PelicanSettingsSheet() {
               label="Reveal mode"
               value={settings.revealMode}
               options={[
-                { value: "auto", label: "Auto — reveal after a timer" },
-                { value: "manual", label: "Manual — tap to reveal" },
+                { value: "auto", label: "Auto · reveal after a timer" },
+                { value: "manual", label: "Manual · tap to reveal" },
               ]}
               onValueChange={(v) => setSetting({ revealMode: v })}
             />
@@ -186,7 +180,7 @@ export function PelicanSettingsSheet() {
               label="Auto-advance"
               description={
                 settings.selfGrading
-                  ? "Off while self-grading — you advance with a Knew it / Missed it tap"
+                  ? "Not used while self-grading: a Knew it / Missed it tap moves you on"
                   : "Move to the next sign after the answer shows"
               }
               checked={settings.autoAdvance && !settings.selfGrading}
@@ -216,9 +210,11 @@ export function PelicanSettingsSheet() {
             />
             <p className="text-[11.5px] leading-snug text-ink-2">
               When on, each answer shows <strong>Knew it</strong> /{" "}
-              <strong>Missed it</strong>. Missed signs come back within a few
-              cards; get one right 3 times and it's <strong>mastered</strong>.
-              Progress is saved on this device only.
+              <strong>Missed it</strong>. Missed signs come back later in the
+              run, so a run only ends once you've recalled every sign. Recall a
+              sign cleanly a couple of times and it counts as{" "}
+              <strong>mastered</strong>: a meter that builds across runs (a miss
+              only nudges it down a notch). Saved on this device only.
             </p>
             <div className="flex items-center justify-between gap-3 border-2 border-ink bg-paper-3 px-3 py-2">
               <span className="font-mono text-[10.5px] uppercase tracking-widest text-ink-2">
@@ -229,14 +225,12 @@ export function PelicanSettingsSheet() {
                 size="sm"
                 onClick={() => {
                   if (
-                    window.confirm(
-                      "Reset your mastery progress for every sign?",
-                    )
+                    window.confirm("Reset your mastery meter for every sign?")
                   )
                     resetProgress();
                 }}
               >
-                Reset progress
+                Reset mastery
               </Button>
             </div>
           </SettingSection>

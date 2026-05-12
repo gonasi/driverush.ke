@@ -10,32 +10,52 @@ import {
 
 import type { Route } from "./+types/road-signs-pelican";
 
-import { absUrl } from "~/lib/site";
+import { absUrl, breadcrumbLd, keywords, ROAD_SIGN_KEYWORDS } from "~/lib/site";
 import type { ImageFocusData } from "~/lib/image-focus";
 import pelicanJson from "~/data/road-signs-pelican.json";
 import { getPracticeRegions, usePelicanStore } from "~/lib/pelican-store";
+import { useLoadingFloor } from "~/lib/loading";
 
 import { Button } from "~/components/ui/button";
 import { FeedbackBanner } from "~/components/brand/feedback-banner";
 import { Rail } from "~/components/brand/rail";
-import { Spinner } from "~/components/brand/spinner";
+import { LoadingPanel } from "~/components/brand/traffic-loader";
 import { ImageFocusPlayer } from "~/components/brand/image-focus-player";
 import { PelicanSettingsSheet } from "~/components/brand/pelican-settings-sheet";
 
 const board = pelicanJson as ImageFocusData;
 
+const PATH = "/road-signs/pelican";
+
 export function meta(_: Route.MetaArgs) {
-  const title = "Pelican signs · DriveRush";
+  const title = "Pelican signs: Kenya road-sign recall game · DriveRush";
   const description =
-    "Pelican signs — a fast road-sign recall mini-game. Signs zoom past one at a time; name each before it lands, and mark what you know.";
+    "A fast Kenyan road-sign recall game. One sign zooms in at a time, name it before the timer drops, and the ones you miss come back sooner. Free, no signup, solid prep for the NTSA road-sign test.";
+  const url = absUrl(PATH);
   return [
     { title },
     { name: "description", content: description },
-    { tagName: "link", rel: "canonical", href: absUrl("/road-signs/pelican") },
+    {
+      name: "keywords",
+      content: keywords(
+        "Kenya road signs game",
+        "road signs quiz Kenya",
+        ...ROAD_SIGN_KEYWORDS,
+      ),
+    },
+    { tagName: "link", rel: "canonical", href: url },
     { property: "og:title", content: title },
     { property: "og:description", content: description },
+    { property: "og:url", content: url },
     { name: "twitter:title", content: title },
     { name: "twitter:description", content: description },
+    {
+      "script:ld+json": breadcrumbLd([
+        { name: "Home", url: "/" },
+        { name: "Road signs", url: "/road-signs" },
+        { name: "Pelican signs", url: PATH },
+      ]),
+    },
   ];
 }
 
@@ -53,6 +73,9 @@ export default function PelicanSigns() {
   }, []);
 
   const hasBoard = board.regions.length > 0;
+  // Hold the loader for a beat even when the chart is already cached — a
+  // sub-second flash on/off reads as a glitch, not a load.
+  const showLoader = useLoadingFloor(hasBoard && assetStatus !== "ready");
   const practiceCount = getPracticeRegions(board, categories).length;
 
   return (
@@ -83,9 +106,9 @@ export default function PelicanSigns() {
             Pelican <span className="italic text-rush">signs</span>
           </h1>
           <p className="mt-5 max-w-2xl font-serif text-[clamp(17px,2.2vw,22px)] leading-tight text-ink-2">
-            One sign at a time — the board zooms in, the rest blurs out. Name it
-            before the timer drops, then mark whether you knew it. Misses come
-            back sooner; the ones you've got drift away.
+            One Kenyan road sign at a time. The board zooms in, the rest blurs
+            out. Name it before the timer drops, then mark whether you knew it.
+            Misses come back sooner; the ones you've got drift away.
           </p>
         </header>
 
@@ -96,7 +119,7 @@ export default function PelicanSigns() {
                 tone="info"
                 icon={BirdFreeIcons}
                 title="In the workshop"
-                description="The Pelican trainer isn't loaded yet — no signs have been mapped. Until then, the classic road-sign quiz is live."
+                description="The Pelican trainer isn't loaded yet; no signs have been mapped. Until then, the classic road-sign quiz is live."
                 action={
                   <Button variant="ink" size="lg" asChild>
                     <Link to="/practice?mode=signs">
@@ -125,13 +148,13 @@ export default function PelicanSigns() {
               </div>
             </div>
           </>
-        ) : assetStatus !== "ready" ? (
+        ) : showLoader ? (
           <div className="mt-10 grid gap-3">
             <div className="font-mono text-[10px] uppercase tracking-widest text-ink-3">
               [ Game board · loading ]
             </div>
             <div className="flex aspect-video items-center justify-center border-2 border-ink bg-paper-3">
-              <Spinner label="Loading the chart…" />
+              <LoadingPanel label="Loading the chart" size="lg" />
             </div>
           </div>
         ) : practiceCount === 0 ? (

@@ -1,0 +1,324 @@
+/* =============================================================
+   Traffic-light loader — paired with traffic-loader.tsx.
+   The signal lenses cycle red → red+amber → green → amber on a loop,
+   the housing sways in the wind, and a faint glint walks down it.
+   Ported from the brand "Traffic Light Loader" HTML — keep the
+   look-and-feel in sync with that source.
+
+   Plain CSS on purpose (no Tailwind directives) so it can live in its
+   own file. Imported as a side effect from traffic-loader.tsx.
+
+   Tunables (set by size classes, overridable inline):
+     --dr-traffic-size   px width of the lockup (height = 2.55× via aspect-ratio)
+     --dr-traffic-cycle  one full red→green→red signal cycle
+   ============================================================= */
+.dr-traffic {
+  --dr-traffic-size: 56px;
+  --dr-traffic-cycle: 3.2s;
+  display: inline-block;
+  position: relative;
+  width: var(--dr-traffic-size);
+  aspect-ratio: 1 / 2.55;
+}
+.dr-traffic > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.dr-traffic--sm {
+  --dr-traffic-size: 28px;
+  --dr-traffic-cycle: 2.4s;
+}
+.dr-traffic--md {
+  --dr-traffic-size: 56px;
+  --dr-traffic-cycle: 3.2s;
+}
+.dr-traffic--lg {
+  --dr-traffic-size: 96px;
+  --dr-traffic-cycle: 3.6s;
+}
+.dr-traffic--xl {
+  --dr-traffic-size: 160px;
+  --dr-traffic-cycle: 4s;
+}
+
+/* lens glow halos (sit outside the lens disc) */
+.dr-traffic .dr-traffic-halo {
+  transform-origin: center;
+  transform-box: fill-box;
+  opacity: 0;
+  animation-duration: var(--dr-traffic-cycle);
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+.dr-traffic .dr-traffic-halo--red {
+  animation-name: dr-traffic-halo-red;
+}
+.dr-traffic .dr-traffic-halo--amber {
+  animation-name: dr-traffic-halo-amber;
+}
+.dr-traffic .dr-traffic-halo--green {
+  animation-name: dr-traffic-halo-green;
+}
+
+/* lens cores (the bright glowing disc) */
+.dr-traffic .dr-traffic-lens {
+  opacity: 0;
+  animation-duration: var(--dr-traffic-cycle);
+  animation-iteration-count: infinite;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+.dr-traffic .dr-traffic-lens--red {
+  animation-name: dr-traffic-lens-red;
+}
+.dr-traffic .dr-traffic-lens--amber {
+  animation-name: dr-traffic-lens-amber;
+}
+.dr-traffic .dr-traffic-lens--green {
+  animation-name: dr-traffic-lens-green;
+}
+
+/* subtle housing sway, like wind on the cable */
+.dr-traffic .dr-traffic-housing {
+  transform-origin: 50% 100%;
+  transform-box: fill-box;
+  animation: dr-traffic-sway 4.8s ease-in-out infinite;
+}
+
+/* a faint sweep glint that walks the housing — adds polish */
+.dr-traffic .dr-traffic-glint {
+  animation: dr-traffic-glint var(--dr-traffic-cycle) linear infinite;
+}
+
+/* status caption — Sora caps with a stepped "..." that pairs with the loader.
+   Colour is left to the caller (a Tailwind text-* class) so it adapts to theme. */
+.dr-loader-status {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.dr-loader-status::after {
+  content: "";
+  display: inline-block;
+  width: 1.25em;
+  text-align: left;
+  animation: dr-loader-dots 1.4s steps(4, end) infinite;
+}
+
+/* cycle map: 0–.28 RED · .28–.36 RED+AMBER · .36–.66 GREEN · .66–.78 AMBER · .78–1 → RED */
+@keyframes dr-traffic-lens-red {
+  0% {
+    opacity: 1;
+  }
+  26% {
+    opacity: 1;
+  }
+  32% {
+    opacity: 0;
+  }
+  78% {
+    opacity: 0;
+  }
+  84% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes dr-traffic-lens-amber {
+  0%,
+  26% {
+    opacity: 0;
+  }
+  28% {
+    opacity: 1;
+  } /* prep, alongside red */
+  34% {
+    opacity: 1;
+  }
+  36% {
+    opacity: 0;
+  }
+  64% {
+    opacity: 0;
+  }
+  68% {
+    opacity: 1;
+  } /* solo amber after green */
+  76% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes dr-traffic-lens-green {
+  0%,
+  34% {
+    opacity: 0;
+  }
+  38% {
+    opacity: 1;
+  }
+  62% {
+    opacity: 1;
+  }
+  66% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes dr-traffic-halo-red {
+  0%,
+  26% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  32% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  78% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  84%,
+  100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+}
+@keyframes dr-traffic-halo-amber {
+  0%,
+  26% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  28% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  34% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  36% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  64% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  68% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  76% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  80% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+@keyframes dr-traffic-halo-green {
+  0%,
+  34% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  38% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  62% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  66% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+@keyframes dr-traffic-sway {
+  0%,
+  100% {
+    transform: rotate(-0.6deg);
+  }
+  50% {
+    transform: rotate(0.6deg);
+  }
+}
+@keyframes dr-traffic-glint {
+  0% {
+    transform: translateY(-6%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateY(40%);
+    opacity: 0.05;
+  }
+  80% {
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(70%);
+    opacity: 0;
+  }
+}
+@keyframes dr-loader-dots {
+  0% {
+    content: "";
+  }
+  25% {
+    content: ".";
+  }
+  50% {
+    content: "..";
+  }
+  75% {
+    content: "...";
+  }
+  100% {
+    content: "";
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dr-traffic .dr-traffic-housing,
+  .dr-traffic .dr-traffic-halo,
+  .dr-traffic .dr-traffic-lens,
+  .dr-traffic .dr-traffic-glint,
+  .dr-loader-status::after {
+    animation: none !important;
+  }
+  /* settle on a lit amber — a calm "working" state, no flashing */
+  .dr-traffic .dr-traffic-lens--amber {
+    opacity: 1;
+  }
+  .dr-traffic .dr-traffic-halo--amber {
+    opacity: 0.6;
+  }
+}

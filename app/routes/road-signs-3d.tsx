@@ -8,24 +8,43 @@ import {
 
 import type { Route } from "./+types/road-signs-3d";
 
-import { absUrl } from "~/lib/site";
+import { absUrl, breadcrumbLd, keywords, ROAD_SIGN_KEYWORDS } from "~/lib/site";
 
 import { Button } from "~/components/ui/button";
 import { FeedbackBanner } from "~/components/brand/feedback-banner";
 import { Rail } from "~/components/brand/rail";
 
+const PATH = "/road-signs/3d";
+
 export function meta(_: Route.MetaArgs) {
-  const title = "3D signs · DriveRush";
+  const title = "3D signs: read a Kenyan road sign from any angle · DriveRush";
   const description =
-    "3D signs — read a road sign from any angle. In the workshop; the classic sign quiz is live in the meantime.";
+    "Spin a Kenyan road sign in 3D and read it from any angle, the way you actually see them on the road, half-turned and half-lit. In the workshop; the classic road-sign quiz is live in the meantime.";
+  const url = absUrl(PATH);
   return [
     { title },
     { name: "description", content: description },
-    { tagName: "link", rel: "canonical", href: absUrl("/road-signs/3d") },
+    {
+      name: "keywords",
+      content: keywords(
+        "3D road signs",
+        "recognise road signs Kenya",
+        ...ROAD_SIGN_KEYWORDS,
+      ),
+    },
+    { tagName: "link", rel: "canonical", href: url },
     { property: "og:title", content: title },
     { property: "og:description", content: description },
+    { property: "og:url", content: url },
     { name: "twitter:title", content: title },
     { name: "twitter:description", content: description },
+    {
+      "script:ld+json": breadcrumbLd([
+        { name: "Home", url: "/" },
+        { name: "Road signs", url: "/road-signs" },
+        { name: "3D signs", url: PATH },
+      ]),
+    },
   ];
 }
 
@@ -58,8 +77,8 @@ export default function ThreeDSigns() {
             3D <span className="italic text-rush">signs</span>
           </h1>
           <p className="mt-5 max-w-2xl font-serif text-[clamp(17px,2.2vw,22px)] leading-tight text-ink-2">
-            Spin a sign in 3D and read it from any angle — the way you actually
-            see them on Nairobi roads, half-turned and half-lit.
+            Spin a Kenyan road sign in 3D and read it from any angle, the way
+            you actually see them on Nairobi roads, half-turned and half-lit.
           </p>
         </header>
 
@@ -68,7 +87,7 @@ export default function ThreeDSigns() {
             tone="info"
             icon={ThreeDViewFreeIcons}
             title="In the workshop"
-            description="The 3D trainer isn't playable yet — we're building it. Until then, the classic road-sign quiz is live."
+            description="The 3D trainer isn't playable yet; we're building it. Until then, the classic road-sign quiz is live."
             action={
               <Button variant="ink" size="lg" asChild>
                 <Link to="/practice?mode=signs">

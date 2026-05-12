@@ -14,7 +14,7 @@ import "./app.css";
 import { Toaster } from "~/components/ui/sonner";
 import { THEME_INIT_SCRIPT, useThemeSync } from "~/lib/theme";
 import { variants } from "~/lib/motion";
-import { SITE } from "~/lib/site";
+import { SITE, absUrl } from "~/lib/site";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -25,7 +25,7 @@ export const links: Route.LinksFunction = () => [
   },
   {
     rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=DM+Serif+Display&display=swap",
+    href: "https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400;1,700&display=swap",
   },
   // Favicons. Explicit links so browsers and crawlers pick the right size
   // instead of guessing from /favicon.ico alone.
@@ -47,9 +47,11 @@ export const links: Route.LinksFunction = () => [
 
 /**
  * Site-wide meta defaults. Route-level `meta()` exports merge with these and
- * override by `name` / `property` / `title`.
+ * override by `name` / `property` / `title`. The default OG/Twitter image is
+ * the DriveRush lockup; routes with a better card override `og:image`.
  */
 export function meta() {
+  const ogImage = absUrl(SITE.ogImage);
   return [
     { name: "theme-color", content: SITE.themeColor },
     { name: "robots", content: "index, follow" },
@@ -57,7 +59,13 @@ export function meta() {
     { property: "og:site_name", content: SITE.name },
     { property: "og:locale", content: SITE.locale },
     { property: "og:type", content: "website" },
+    { property: "og:image", content: ogImage },
+    { property: "og:image:width", content: String(SITE.ogImageWidth) },
+    { property: "og:image:height", content: String(SITE.ogImageHeight) },
+    { property: "og:image:alt", content: SITE.ogImageAlt },
     { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:image", content: ogImage },
+    { name: "twitter:image:alt", content: SITE.ogImageAlt },
   ];
 }
 

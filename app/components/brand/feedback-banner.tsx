@@ -10,9 +10,9 @@ const bannerVariants = cva(
   {
     variants: {
       tone: {
-        win: "bg-kenya-green text-white",
+        win: "bg-kenya-green text-kenya-green-foreground",
         fail: "bg-rush text-white",
-        info: "bg-plate-blue text-white",
+        info: "bg-plate-blue text-plate-blue-foreground",
         neutral: "bg-surface text-ink",
       },
     },
@@ -25,9 +25,9 @@ const iconBoxVariants = cva(
   {
     variants: {
       tone: {
-        win: "bg-white text-kenya-green",
-        fail: "bg-white text-rush",
-        info: "bg-white text-plate-blue",
+        win: "bg-paper text-kenya-green",
+        fail: "bg-paper text-rush",
+        info: "bg-paper text-plate-blue",
         neutral: "bg-paper-3 text-ink",
       },
     },

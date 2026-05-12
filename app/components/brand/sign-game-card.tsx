@@ -11,9 +11,9 @@ const ACCENT: Record<
   SignGameAccent,
   { block: string; title: string; button: "amber" | "ink" }
 > = {
-  amber: { block: "bg-amber text-ink", title: "text-ink", button: "amber" },
+  amber: { block: "bg-amber text-amber-foreground", title: "text-ink", button: "amber" },
   blue: {
-    block: "bg-plate-blue text-white",
+    block: "bg-plate-blue text-plate-blue-foreground",
     title: "text-plate-blue",
     button: "ink",
   },

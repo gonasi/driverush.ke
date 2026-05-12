@@ -22,7 +22,7 @@ type LeaderboardEntry = {
 };
 
 const MEDAL_BADGE: Record<LeaderboardMedal, string> = {
-  gold: "bg-amber text-ink",
+  gold: "bg-amber text-amber-foreground",
   silver: "bg-paper-2 text-ink",
   bronze: "bg-rust text-cream",
 };

@@ -33,7 +33,7 @@ const keyVariants = cva(
       state: {
         idle: "bg-paper-3 text-ink",
         selected: "bg-ink text-paper",
-        correct: "bg-kenya-green text-white",
+        correct: "bg-kenya-green text-kenya-green-foreground",
         wrong: "bg-rush text-white",
         disabled: "bg-paper-3 text-ink-3",
       },

@@ -9,10 +9,10 @@ import { cn } from "~/lib/utils";
 const accentBg = {
   rush: "bg-rush text-white",
   ink: "bg-ink text-paper",
-  amber: "bg-amber text-ink",
-  green: "bg-kenya-green text-white",
-  blue: "bg-plate-blue text-white",
-  cyan: "bg-route-cyan text-ink",
+  amber: "bg-amber text-amber-foreground",
+  green: "bg-kenya-green text-kenya-green-foreground",
+  blue: "bg-plate-blue text-plate-blue-foreground",
+  cyan: "bg-route-cyan text-route-cyan-foreground",
 } as const;
 
 const tileVariants = cva(

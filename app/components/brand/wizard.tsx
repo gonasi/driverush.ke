@@ -34,7 +34,7 @@ function Wizard({ className, steps, ...props }: WizardProps) {
             data-state={state}
             className={cn(
               "border-r-2 border-ink p-3.5 px-4 last:border-r-0",
-              state === "done" && "bg-kenya-green text-white",
+              state === "done" && "bg-kenya-green text-kenya-green-foreground",
               state === "active" && "bg-rush text-white",
             )}
           >

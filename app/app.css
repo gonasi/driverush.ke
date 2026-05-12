@@ -15,12 +15,12 @@
 @theme inline {
   /* ---------- Typography ---------- */
   --font-sans:
-    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Montserrat", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji",
     "Segoe UI Symbol", "Noto Color Emoji";
-  --font-display: "Sora", "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-heading: "Sora", "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "DM Serif Display", Georgia, "Times New Roman", serif;
+  --font-display: "Sora", "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Sora", "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Libre Baskerville", Georgia, "Times New Roman", serif;
   --font-mono:
     "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
@@ -82,6 +82,19 @@
   --color-cream: var(--cream);
   --color-rust: var(--rust);
   --color-olive: var(--olive);
+
+  /* On-voice text. Each voice brightens in dark mode, so a fixed `text-ink`
+     (which itself flips light/dark) goes low-contrast on it — these pick the
+     readable text colour per theme. Pair them with their bg, e.g.
+     `bg-amber text-amber-foreground`. */
+  --color-amber-foreground: var(--amber-foreground);
+  --color-cream-foreground: var(--cream-foreground);
+  --color-kenya-gold-foreground: var(--kenya-gold-foreground);
+  --color-route-cyan-foreground: var(--route-cyan-foreground);
+  --color-hazard-foreground: var(--hazard-foreground);
+  --color-kenya-green-foreground: var(--kenya-green-foreground);
+  --color-plate-blue-foreground: var(--plate-blue-foreground);
+  --color-magenta-foreground: var(--magenta-foreground);
 
   /* ---------- Status — semantic aliases over brand voices ---------- */
   --color-success: var(--success);
@@ -222,6 +235,19 @@
   --rust: #7a2a12;
   --olive: #4f5b26;
 
+  /* On-voice text. The light voices (amber, cream, gold, cyan, hazard) carry
+     near-black text in both themes — `var(--kenya-black)` re-resolves per
+     theme so it stays near-black. The deeper voices (green, blue, magenta) take
+     white here; the .dark block flips them to near-black because they brighten. */
+  --amber-foreground: var(--kenya-black);
+  --cream-foreground: var(--kenya-black);
+  --kenya-gold-foreground: var(--kenya-black);
+  --route-cyan-foreground: var(--kenya-black);
+  --hazard-foreground: var(--kenya-black);
+  --kenya-green-foreground: #ffffff;
+  --plate-blue-foreground: #ffffff;
+  --magenta-foreground: #ffffff;
+
   /* shadcn semantic mapping — primitives resolve to brand */
   --background: var(--paper);
   --foreground: var(--ink);
@@ -310,6 +336,13 @@
   --cream: #ffe9b0;
   --rust: #e0764a;
   --olive: #b6c26b;
+
+  /* The brand voices are all bright on dark paper, so on-voice text is
+     near-black across the board (white would drop to ~2:1 on these). The
+     light-voice foregrounds already resolve to --kenya-black via :root. */
+  --kenya-green-foreground: var(--kenya-black);
+  --plate-blue-foreground: var(--kenya-black);
+  --magenta-foreground: var(--kenya-black);
 
   /* shadcn semantic mapping — note --ink is now light text on dark paper */
   --background: var(--paper);
@@ -447,7 +480,7 @@
     font-size: 11px;
   }
 
-  /* Editorial italic asides — DM Serif. Never for UI labels. */
+  /* Editorial italic asides — Libre Baskerville. Never for UI labels. */
   .serif,
   [data-serif] {
     font-family: var(--font-serif);

@@ -14,8 +14,6 @@ export type PelicanUserSettings = {
   categories: SignCategoryId[];
   /** Walk signs in board order vs a fresh shuffle each run. */
   order: SignOrder;
-  /** Wrap from the last sign back to the first instead of stopping. */
-  loop: boolean;
   /** Play sequential order last → first (ignored when shuffled). */
   reverse: boolean;
   /** Auto-reveal after a timer, or wait for a tap. */
@@ -39,7 +37,6 @@ export type PelicanUserSettings = {
 export const DEFAULT_PELICAN_SETTINGS: PelicanUserSettings = {
   categories: [],
   order: "sequential",
-  loop: true,
   reverse: false,
   revealMode: "auto",
   revealDelay: 3,

@@ -1,0 +1,11 @@
+# DriveRush.ke · https://driverush.ke
+# Public pages are open to all crawlers. Internal authoring tools and the
+# design system are not meant to be indexed.
+
+User-agent: *
+Allow: /
+Disallow: /tools
+Disallow: /tools/
+Disallow: /design
+
+Sitemap: https://driverush.ke/sitemap.xml

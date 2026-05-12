@@ -35,7 +35,7 @@ function VoiceCard({
           className={cn(
             "border-2 border-ink px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-widest",
             isDo
-              ? "rotate-2 bg-kenya-green text-white"
+              ? "rotate-2 bg-kenya-green text-kenya-green-foreground"
               : "-rotate-2 bg-rush text-white",
           )}
         >

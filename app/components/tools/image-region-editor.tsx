@@ -339,8 +339,8 @@ export function ImageRegionEditor({
                   active
                     ? "bg-rush text-white"
                     : named
-                      ? "bg-kenya-green text-white"
-                      : "bg-hazard text-ink",
+                      ? "bg-kenya-green text-kenya-green-foreground"
+                      : "bg-hazard text-hazard-foreground",
                 )}
               >
                 {r.index + 1}

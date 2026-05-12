@@ -35,10 +35,10 @@ const iconBoxVariants = cva(
   {
     variants: {
       variant: {
-        info: "bg-plate-blue text-white",
-        warn: "bg-amber text-ink",
+        info: "bg-plate-blue text-plate-blue-foreground",
+        warn: "bg-amber text-amber-foreground",
         error: "bg-rush text-white",
-        ok: "bg-kenya-green text-white",
+        ok: "bg-kenya-green text-kenya-green-foreground",
         neutral: "bg-paper-3 text-ink",
       },
     },

@@ -486,8 +486,8 @@ export default function ImageCoordsTool({ loaderData }: Route.ComponentProps) {
                       className={cn(
                         "flex size-6 shrink-0 items-center justify-center border-2 border-ink font-mono text-[11px] font-bold",
                         named
-                          ? "bg-kenya-green text-white"
-                          : "bg-hazard text-ink",
+                          ? "bg-kenya-green text-kenya-green-foreground"
+                          : "bg-hazard text-hazard-foreground",
                       )}
                     >
                       {i + 1}

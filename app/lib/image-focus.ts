@@ -95,6 +95,30 @@ export function getSignCategory(id: string): SignCategory {
   );
 }
 
+/** One category as a noun phrase that reads after a count: "34 warning signs". */
+function categoryNounPhrase(id: SignCategoryId): string {
+  const label = getSignCategory(id).label.toLowerCase();
+  return /\b(signs|panels)$/.test(label) ? label : `${label} signs`;
+}
+
+/**
+ * A readable label for a chosen practice-category set — `[]` means "every sign"
+ * (no filter). Used in the trainer's completion copy.
+ *   []                       → "every sign"
+ *   ["warning"]              → "warning signs"
+ *   ["warning","mandatory"]  → "warning signs & mandatory signs"
+ *   four or more             → "4 sign categories"
+ */
+export function describeCategorySet(ids: readonly SignCategoryId[]): string {
+  if (ids.length === 0) return "every sign";
+  if (ids.length === 1) return categoryNounPhrase(ids[0]);
+  if (ids.length <= 3) {
+    const parts = ids.map((id) => getSignCategory(id).label.toLowerCase());
+    return `${parts.slice(0, -1).join(", ")} & ${parts[parts.length - 1]}`;
+  }
+  return `${ids.length} sign categories`;
+}
+
 /** A single focusable region on the image. */
 export type FocusRegion = {
   /** Stable id / slug, e.g. `"pelican-crossing"`. Used for React keys + URLs. */

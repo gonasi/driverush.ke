@@ -6,9 +6,9 @@ type NotifTone = "rush" | "amber" | "green" | "blue" | "ink";
 
 const ICON_BG: Record<NotifTone, string> = {
   rush: "bg-rush text-white",
-  amber: "bg-amber text-ink",
-  green: "bg-kenya-green text-white",
-  blue: "bg-plate-blue text-white",
+  amber: "bg-amber text-amber-foreground",
+  green: "bg-kenya-green text-kenya-green-foreground",
+  blue: "bg-plate-blue text-plate-blue-foreground",
   ink: "bg-ink text-paper",
 };
 

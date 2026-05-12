@@ -10,9 +10,9 @@ const prefixVariants = cva(
       tone: {
         ink: "bg-ink text-paper",
         rush: "bg-rush text-white",
-        amber: "bg-amber text-ink",
-        green: "bg-kenya-green text-white",
-        blue: "bg-plate-blue text-white",
+        amber: "bg-amber text-amber-foreground",
+        green: "bg-kenya-green text-kenya-green-foreground",
+        blue: "bg-plate-blue text-plate-blue-foreground",
       },
     },
     defaultVariants: { tone: "ink" },

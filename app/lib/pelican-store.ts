@@ -135,6 +135,13 @@ type PelicanState = {
   queue: FocusRegion[];
   pos: number;
   timeRemaining: number;
+  // ---- this run (transient, self-grading) ----
+  /** Distinct region ids graded "Knew it" so far this run. */
+  runRecalled: string[];
+  /** Distinct region ids missed at least once this run. */
+  runMissed: string[];
+  /** Total "Missed it" taps this run (counts repeats). */
+  runMissCount: number;
   // ---- actions ----
   configure: (board: ImageFocusData) => void;
   preload: (imageSrc: string) => void;
@@ -177,6 +184,9 @@ export const usePelicanStore = create<PelicanState>()(
       queue: [],
       pos: 0,
       timeRemaining: 0,
+      runRecalled: [],
+      runMissed: [],
+      runMissCount: 0,
 
       // ---- config / preload ----
       configure: (board) => set({ board }),
@@ -247,6 +257,9 @@ export const usePelicanStore = create<PelicanState>()(
           running: true,
           settingsOpen: false,
           timeRemaining: 0,
+          runRecalled: [],
+          runMissed: [],
+          runMissCount: 0,
         });
         get()._armInitial();
       },
@@ -294,11 +307,25 @@ export const usePelicanStore = create<PelicanState>()(
         if (!region) return;
         if (settings.playAudio) playSfx(r === "knew" ? "correct" : "wrong");
         set((s) => ({ progress: applyGrade(s.progress, region.id, r) }));
-        if (r === "missed") {
+        if (r === "knew") {
+          set((s) => ({
+            runRecalled: s.runRecalled.includes(region.id)
+              ? s.runRecalled
+              : [...s.runRecalled, region.id],
+          }));
+        } else {
+          // Missed → it comes back a couple of signs later in this run, and
+          // it's logged so the result card can show first-try accuracy.
           set((s) => {
             const q = [...s.queue];
             q.splice(Math.min(s.pos + 2, q.length), 0, region);
-            return { queue: q };
+            return {
+              queue: q,
+              runMissCount: s.runMissCount + 1,
+              runMissed: s.runMissed.includes(region.id)
+                ? s.runMissed
+                : [...s.runMissed, region.id],
+            };
           });
         }
         get()._toBetween();
@@ -319,6 +346,9 @@ export const usePelicanStore = create<PelicanState>()(
           queue: [],
           pos: 0,
           timeRemaining: 0,
+          runRecalled: [],
+          runMissed: [],
+          runMissCount: 0,
         });
       },
 
@@ -394,7 +424,11 @@ export const usePelicanStore = create<PelicanState>()(
         clearTimers();
         stopRegionAudio();
         const { settings, queue, pos } = get();
-        if (pos >= queue.length - 1 && !settings.loop) {
+        // Queue exhausted → the run's over. Every "Missed it" re-queues the
+        // sign within the run, so in self-grading mode reaching the end means
+        // every sign was ultimately recalled — that's a win, hence the fanfare.
+        if (pos >= queue.length - 1) {
+          if (settings.selfGrading && settings.playAudio) playSfx("complete");
           set({ phase: "complete", running: false });
           return;
         }
@@ -402,29 +436,21 @@ export const usePelicanStore = create<PelicanState>()(
         get()._armBetween();
       },
       _advance: () => {
-        const { board, settings, queue, pos } = get();
-        if (pos >= queue.length - 1) {
-          const next = buildQueue(board, settings);
-          if (next.length === 0) {
-            get().exit();
-            return;
-          }
-          set({ queue: next, pos: 0 });
-        } else {
-          set({ pos: pos + 1 });
-        }
+        // `_armBetween` is only armed when there's another sign queued (see
+        // `_toBetween`'s else branch), so pos + 1 is always valid here.
+        set((s) => ({ pos: s.pos + 1 }));
         get()._toFocused();
       },
     }),
     {
       name: "driverush:pelican",
-      version: 3,
+      version: 5,
       storage: createJSONStorage(() =>
         typeof window !== "undefined" ? window.localStorage : noopStorage,
       ),
       partialize: (s) => ({ settings: s.settings, progress: s.progress }),
       // Settings/defaults churned a lot during early dev — for any saved blob
-      // older than v3, drop prefs back to the current defaults but keep the
+      // older than v5, drop prefs back to the current defaults but keep the
       // mastery progress.
       migrate: (persisted, version) => {
         const prev = persisted as {
@@ -432,7 +458,7 @@ export const usePelicanStore = create<PelicanState>()(
           progress?: SignProgress;
         } | null;
         const progress = prev?.progress ?? {};
-        return version < 3
+        return version < 5
           ? { settings: DEFAULT_PELICAN_SETTINGS, progress }
           : { settings: prev?.settings ?? DEFAULT_PELICAN_SETTINGS, progress };
       },

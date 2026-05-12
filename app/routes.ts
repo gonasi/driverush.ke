@@ -15,6 +15,9 @@ export default [
   route("practice", "routes/practice.tsx"),
   route("design", "routes/design.tsx"),
 
+  // SEO resource route — XML sitemap at /sitemap.xml (referenced by robots.txt).
+  route("sitemap.xml", "routes/sitemap-xml.ts"),
+
   // Internal authoring tools — own dashboard layout (sidebar + mobile sheet).
   ...prefix("tools", [
     layout("routes/layouts/tools-layout.tsx", [

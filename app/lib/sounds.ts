@@ -7,6 +7,7 @@ const SOUNDS = {
   correct: "/assets/sounds/correct.mp3", // "knew it"
   wrong: "/assets/sounds/wrong.mp3", // "missed it"
   whoosh: "/assets/sounds/whoosh.mp3", // camera flies to a sign
+  complete: "/assets/sounds/complete.mp3", // every sign mastered — the fanfare
 } as const;
 export type SfxName = keyof typeof SOUNDS;
 

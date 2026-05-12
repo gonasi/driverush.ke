@@ -13,14 +13,14 @@ const avatarVariants = cva(
   {
     variants: {
       tone: {
-        cream: "bg-cream text-ink",
+        cream: "bg-cream text-cream-foreground",
         rush: "bg-rush text-white",
         ink: "bg-ink text-paper",
-        green: "bg-kenya-green text-white",
-        blue: "bg-plate-blue text-white",
-        amber: "bg-amber text-ink",
-        cyan: "bg-route-cyan text-ink",
-        magenta: "bg-magenta text-white",
+        green: "bg-kenya-green text-kenya-green-foreground",
+        blue: "bg-plate-blue text-plate-blue-foreground",
+        amber: "bg-amber text-amber-foreground",
+        cyan: "bg-route-cyan text-route-cyan-foreground",
+        magenta: "bg-magenta text-magenta-foreground",
         paper: "bg-surface text-ink",
       },
       size: {

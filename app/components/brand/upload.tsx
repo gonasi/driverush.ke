@@ -46,9 +46,9 @@ type FileExtTone = "rush" | "blue" | "magenta" | "green" | "ink";
 
 const EXT_BG: Record<FileExtTone, string> = {
   rush: "bg-rush text-white",
-  blue: "bg-plate-blue text-white",
-  magenta: "bg-magenta text-white",
-  green: "bg-kenya-green text-white",
+  blue: "bg-plate-blue text-plate-blue-foreground",
+  magenta: "bg-magenta text-magenta-foreground",
+  green: "bg-kenya-green text-kenya-green-foreground",
   ink: "bg-ink text-paper",
 };
 

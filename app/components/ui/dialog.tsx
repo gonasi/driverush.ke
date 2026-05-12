@@ -54,43 +54,38 @@ function DialogContent({
         )}
         {...rest}
       >
-        <DialogTitleBar />
+        <DialogTitleBar showClose={showCloseButton} />
         <div className="contents">{children}</div>
-        {showCloseButton && (
-          <DialogPrimitive.Close
-            aria-label="Close"
-            className={cn(
-              "absolute right-3 top-3 inline-flex size-7 items-center justify-center",
-              "border-2 border-paper text-paper outline-none",
-              "transition-[transform,box-shadow] duration-100 ease-snap",
-              "hover:bg-paper hover:text-ink",
-              "focus-visible:bg-paper focus-visible:text-ink",
-            )}
-          >
-            <HugeiconsIcon
-              icon={Cancel01FreeIcons}
-              size={14}
-              strokeWidth={2.5}
-            />
-          </DialogPrimitive.Close>
-        )}
       </DialogPrimitive.Content>
     </DialogPortal>
   );
 }
 
-function DialogTitleBar() {
+function DialogTitleBar({ showClose }: { showClose: boolean }) {
   return (
     <div
       data-slot="dialog-titlebar"
-      className="flex items-center justify-between bg-ink px-4 py-2.5 font-mono text-[10.5px] font-bold uppercase tracking-widest text-paper"
+      className="flex items-center justify-between gap-3 bg-ink px-4 py-2.5 font-mono text-[10.5px] font-bold uppercase tracking-widest text-paper"
     >
       <span>DR · DIALOG</span>
-      <span className="inline-flex gap-1.5" aria-hidden>
-        <span className="size-2.5 rounded-full bg-rush" />
-        <span className="size-2.5 rounded-full bg-amber" />
-        <span className="size-2.5 rounded-full bg-kenya-green" />
-      </span>
+      {showClose && (
+        <DialogPrimitive.Close
+          aria-label="Close dialog"
+          className={cn(
+            "-my-1 inline-flex size-6 shrink-0 items-center justify-center",
+            "border-2 border-paper text-paper outline-none",
+            "transition-colors duration-100",
+            "hover:bg-paper hover:text-ink",
+            "focus-visible:bg-paper focus-visible:text-ink",
+          )}
+        >
+          <HugeiconsIcon
+            icon={Cancel01FreeIcons}
+            size={13}
+            strokeWidth={2.75}
+          />
+        </DialogPrimitive.Close>
+      )}
     </div>
   );
 }

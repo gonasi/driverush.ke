@@ -163,7 +163,7 @@ function DrPlate({
       data-slot="dr-plate"
       aria-label={`DriveRush plate ${region} ${code} ${year}`}
       className={cn(
-        "inline-flex items-center gap-1 border-2 border-ink bg-amber px-2.5 py-1.5 text-ink",
+        "inline-flex items-center gap-1 border-2 border-ink bg-amber px-2.5 py-1.5 text-amber-foreground",
         "font-display text-xl font-extrabold tracking-wide",
         "shadow-[inset_0_0_0_1px_rgba(0,0,0,0.15)]",
         className,

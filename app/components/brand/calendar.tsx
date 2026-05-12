@@ -97,7 +97,7 @@ function Calendar({
               className={cn(
                 "relative flex aspect-square items-center justify-center border-2 border-ink bg-surface font-mono text-xs font-bold tabular-nums",
                 c.dim && "border-line-soft text-ink-4",
-                isStreak && "bg-amber text-ink",
+                isStreak && "bg-amber text-amber-foreground",
                 isExam && "bg-ink text-paper",
                 isToday && "bg-rush text-white shadow-[3px_3px_0_var(--ink)]",
               )}
