@@ -44,7 +44,8 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "fixed left-1/2 top-1/2 z-50 grid w-full max-w-md -translate-x-1/2 -translate-y-1/2",
+          "fixed left-1/2 top-1/2 z-50 flex w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col",
+          "max-h-[calc(100dvh-2rem)] overflow-hidden",
           "border-2 border-ink bg-surface text-foreground shadow-stamp-xl",
           "data-[state=open]:animate-in data-[state=closed]:animate-out",
           "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
@@ -65,7 +66,7 @@ function DialogTitleBar({ showClose }: { showClose: boolean }) {
   return (
     <div
       data-slot="dialog-titlebar"
-      className="flex items-center justify-between gap-3 bg-ink px-4 py-2.5 font-mono text-[10.5px] font-bold uppercase tracking-widest text-paper"
+      className="flex shrink-0 items-center justify-between gap-3 bg-ink px-4 py-2.5 font-mono text-[10.5px] font-bold uppercase tracking-widest text-paper"
     >
       <span>DR · DIALOG</span>
       {showClose && (
@@ -94,7 +95,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2 px-6 pt-6", className)}
+      className={cn("flex shrink-0 flex-col gap-2 px-6 pt-6", className)}
       {...props}
     />
   );
@@ -105,7 +106,7 @@ function DialogBody({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="dialog-body"
       className={cn(
-        "px-6 pb-3 text-[14px] leading-relaxed text-ink-2",
+        "min-h-0 overflow-y-auto px-6 pb-3 text-[14px] leading-relaxed text-ink-2",
         className,
       )}
       {...props}
@@ -118,7 +119,9 @@ function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="dialog-footer"
       className={cn(
-        "flex justify-end gap-2.5 border-t-2 border-dashed border-ink px-6 py-4",
+        "flex shrink-0 flex-col-reverse gap-2 border-t-2 border-dashed border-ink px-6 py-4",
+        "sm:flex-row sm:justify-end sm:gap-2.5",
+        "[&>button]:w-full sm:[&>button]:w-auto",
         className,
       )}
       {...props}
