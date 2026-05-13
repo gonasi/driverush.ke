@@ -61,21 +61,28 @@ export function meta(_: Route.MetaArgs) {
 
 export default function PelicanSigns() {
   const assetStatus = usePelicanStore((s) => s.assetStatus);
+  const assetProgress = usePelicanStore((s) => s.assetProgress);
   const categories = usePelicanStore((s) => s.settings.categories);
   const setSettingsOpen = usePelicanStore((s) => s.setSettingsOpen);
 
-  // The trainer is entirely client-side: stash the board, then preload the
-  // chart image + gameplay SFX (the page below gates on `assetStatus`).
+  // The trainer is entirely client-side: stash the board, then preload
+  // everything it needs — the chart image, the gameplay SFX, and every
+  // per-sign voice clip — so playback is smooth from the first sign. The page
+  // below gates Start on `assetStatus` (and shows progress meanwhile).
   useEffect(() => {
     const store = usePelicanStore.getState();
     store.configure(board);
-    store.preload(board.imageSrc);
+    store.preload();
   }, []);
 
   const hasBoard = board.regions.length > 0;
-  // Hold the loader for a beat even when the chart is already cached — a
+  // Hold the loader for a beat even when assets are already cached — a
   // sub-second flash on/off reads as a glitch, not a load.
   const showLoader = useLoadingFloor(hasBoard && assetStatus !== "ready");
+  const loadPct =
+    assetProgress > 0 && assetProgress < 1
+      ? Math.round(assetProgress * 100)
+      : null;
   const practiceCount = getPracticeRegions(board, categories).length;
 
   return (
@@ -154,7 +161,10 @@ export default function PelicanSigns() {
               [ Game board · loading ]
             </div>
             <div className="flex aspect-video items-center justify-center border-2 border-ink bg-paper-3">
-              <LoadingPanel label="Loading the chart" size="lg" />
+              <LoadingPanel
+                label={`Loading the trainer${loadPct != null ? ` · ${loadPct}%` : ""}`}
+                size="lg"
+              />
             </div>
           </div>
         ) : practiceCount === 0 ? (

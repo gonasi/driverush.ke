@@ -20,9 +20,9 @@ type Entry = {
 
 const PAGES: Entry[] = [
   { path: "/", changefreq: "weekly", priority: "1.0" },
-  { path: "/road-signs", changefreq: "monthly", priority: "0.9" },
-  { path: "/road-signs/pelican", changefreq: "monthly", priority: "0.7" },
-  { path: "/road-signs/3d", changefreq: "monthly", priority: "0.4" },
+  { path: "/road-signs", changefreq: "weekly", priority: "0.9" },
+  { path: "/road-signs/pelican", changefreq: "weekly", priority: "0.7" },
+  { path: "/road-signs/3d", changefreq: "weekly", priority: "0.4" },
   { path: "/courses", changefreq: "weekly", priority: "0.8" },
   { path: "/practice", changefreq: "weekly", priority: "0.8" },
 ];

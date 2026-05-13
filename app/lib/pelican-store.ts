@@ -31,14 +31,20 @@ import {
   type GradeResult,
   type SignProgress,
 } from "./pelican-progress";
-import { playSfx, preloadSfx, stopAllSfx } from "./sounds";
+import {
+  playSfx,
+  playVoice,
+  preloadSfx,
+  preloadVoices,
+  stopAllSfx,
+  stopVoice,
+} from "./sounds";
 
 // ---------------------------------------------------------------------------
 // module-scope engine bits (one trainer instance — fine to keep these here)
 // ---------------------------------------------------------------------------
 let phaseTimer: ReturnType<typeof setTimeout> | null = null;
 let countdownInt: ReturnType<typeof setInterval> | null = null;
-let regionAudio: HTMLAudioElement | null = null;
 
 function clearTimers() {
   if (phaseTimer) {
@@ -50,27 +56,10 @@ function clearTimers() {
     countdownInt = null;
   }
 }
-function stopRegionAudio() {
-  if (regionAudio) {
-    try {
-      regionAudio.pause();
-    } catch {
-      /* ignore */
-    }
-    regionAudio = null;
-  }
-}
-function playRegionAudio(src: string | undefined | null) {
-  if (!src) return;
-  stopRegionAudio();
-  try {
-    const a = new Audio(src);
-    regionAudio = a;
-    void a.play().catch(() => {});
-  } catch {
-    /* bad path — ignore */
-  }
-}
+// The per-sign voice clip is owned by `sounds.ts` (cached + preloadable);
+// these are just the trainer-engine call sites.
+const stopRegionAudio = stopVoice;
+const playRegionAudio = playVoice;
 
 function practiceRegions(
   board: ImageFocusData | null,
@@ -128,6 +117,8 @@ type PelicanState = {
   // ---- transient ----
   board: ImageFocusData | null;
   assetStatus: AssetStatus;
+  /** 0–1 — how much of the board's audio has buffered (drives the loader %). */
+  assetProgress: number;
   overlayOpen: boolean;
   running: boolean;
   settingsOpen: boolean;
@@ -144,7 +135,7 @@ type PelicanState = {
   runMissCount: number;
   // ---- actions ----
   configure: (board: ImageFocusData) => void;
-  preload: (imageSrc: string) => void;
+  preload: () => void;
   setSetting: (p: Partial<PelicanUserSettings>) => void;
   resetSettings: () => void;
   resetProgress: () => void;
@@ -177,6 +168,7 @@ export const usePelicanStore = create<PelicanState>()(
 
       board: null,
       assetStatus: "idle",
+      assetProgress: 0,
       overlayOpen: false,
       running: false,
       settingsOpen: false,
@@ -191,19 +183,39 @@ export const usePelicanStore = create<PelicanState>()(
       // ---- config / preload ----
       configure: (board) => set({ board }),
 
-      preload: (imageSrc) => {
+      // Warm *everything* the trainer needs — the chart image, the gameplay
+      // SFX, and every per-sign voice clip on the board — before the page lets
+      // the user press Start, so a run never stalls fetching an asset. Call
+      // after `configure(board)`. Client-only; safe to call more than once.
+      preload: () => {
         if (typeof window === "undefined" || get().assetStatus !== "idle")
           return;
-        set({ assetStatus: "loading" });
+        const board = get().board;
+        set({ assetStatus: "loading", assetProgress: 0 });
+
         const imgDone = new Promise<void>((resolve) => {
+          const src = board?.imageSrc;
+          if (!src) {
+            resolve();
+            return;
+          }
           const img = new Image();
           img.onload = () => resolve();
           img.onerror = () => resolve();
-          img.src = imageSrc;
+          img.src = src;
           if (img.complete) resolve();
         });
-        void Promise.all([imgDone, preloadSfx()]).then(() =>
-          set({ assetStatus: "ready" }),
+
+        const voices = (board?.regions ?? [])
+          .map((r) => r.audioSrc)
+          .filter((s): s is string => typeof s === "string" && s.length > 0);
+        const voicesDone = preloadVoices(voices, {
+          onProgress: (done, total) =>
+            set({ assetProgress: total > 0 ? done / total : 1 }),
+        });
+
+        void Promise.all([imgDone, preloadSfx(), voicesDone]).then(() =>
+          set({ assetStatus: "ready", assetProgress: 1 }),
         );
       },
 
