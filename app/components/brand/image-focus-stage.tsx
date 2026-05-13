@@ -45,7 +45,16 @@ export function ImageFocusStage(props: ImageFocusStageProps) {
 // transition in sync with the camera. A CSS `transition` is the camera move.
 // ---------------------------------------------------------------------------
 
-const TARGET = 82; // % of the viewport's limiting dimension the sign should fill
+// % of the viewport's limiting dimension the sign should fill. Tight on a phone
+// (tiny screen → zoom in hard so the sign reads), eased back as the viewport
+// widens — on a desktop an 82%-tall sign swamps the screen and hurts more than
+// it helps, so we ramp down to ~50% by the time we're at a laptop width.
+const TARGET_PHONE = 82;
+const TARGET_WIDE = 50;
+function targetFill(vpW: number) {
+  const t = Math.max(0, Math.min(1, (vpW - 600) / (1024 - 600)));
+  return TARGET_PHONE + (TARGET_WIDE - TARGET_PHONE) * t;
+}
 const MAX_SCALE = 14;
 const PORTRAIT_LIFT = 10; // % of the viewport — sit the sign a little above centre
 
@@ -122,9 +131,10 @@ function CameraStage({
     height: number;
   } | null = null;
   if (focused && region) {
+    const target = targetFill(vp.w);
     scale = Math.min(
-      TARGET / (region.width * fracW),
-      TARGET / (region.height * fracH),
+      target / (region.width * fracW),
+      target / (region.height * fracH),
       MAX_SCALE,
     );
     tx = -((region.x + region.width / 2 - 50) * scale);
