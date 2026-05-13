@@ -16,6 +16,7 @@ import { NavigationProgressBar } from "~/components/brand/navigation-progress-ba
 import { THEME_INIT_SCRIPT, useThemeSync } from "~/lib/theme";
 import { variants } from "~/lib/motion";
 import { SITE, absUrl } from "~/lib/site";
+import { usePageviews } from "~/lib/analytics";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -98,6 +99,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const location = useLocation();
+  usePageviews();
   return (
     // mode="wait" → outgoing route fully exits before the next enters, so
     // there's no overlap to fight with the page's stamped layout.

@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { cn } from "~/lib/utils";
 import { type Question, type QuizMode, MODE_LABELS } from "~/lib/questions";
 import { recordAnswer } from "~/lib/progress";
+import { analytics } from "~/lib/analytics";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -42,6 +43,11 @@ export function QuizFlow({ questions, mode }: QuizFlowProps) {
   const [answers, setAnswers] = React.useState<Answer[]>([]);
   const [picked, setPicked] = React.useState<number | null>(null);
   const [done, setDone] = React.useState(false);
+
+  // Track session start once per quiz mount with a non-empty bank.
+  React.useEffect(() => {
+    if (questions.length > 0) analytics.quizStarted(mode, questions.length);
+  }, [mode, questions.length]);
 
   if (questions.length === 0) {
     return <EmptyMode mode={mode} />;
@@ -76,6 +82,16 @@ export function QuizFlow({ questions, mode }: QuizFlowProps) {
 
   function handleNext() {
     if (isLast) {
+      const finalAnswers = answers;
+      const correctCount = finalAnswers.filter((a) => a.correct).length;
+      const scorePct = Math.round((correctCount / total) * 100);
+      analytics.quizCompleted({
+        mode,
+        total,
+        correct: correctCount,
+        scorePct,
+        passed: scorePct >= 70,
+      });
       setDone(true);
       return;
     }
@@ -353,6 +369,7 @@ function ScoreTile({
 
 function SoftSignupCard() {
   function handleSave() {
+    analytics.saveProgressClicked();
     toast.success("Your progress is safe on this device", {
       description:
         "Account sync is coming soon. Keep practicing and we'll bring it across automatically.",

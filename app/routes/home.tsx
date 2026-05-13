@@ -31,6 +31,7 @@ import { COURSES, type Course, type CourseAccent } from "~/lib/courses";
 import { PARTNERS, type Partner } from "~/lib/partners";
 import { SIGN_GAMES } from "~/lib/road-signs";
 import { variants } from "~/lib/motion";
+import { analytics } from "~/lib/analytics";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -1152,13 +1153,17 @@ function PartnerCard({ partner }: { partner: Partner }) {
   );
 
   if (partner.href) {
+    const href = partner.href;
     return (
       <a
-        href={partner.href}
+        href={href}
         target="_blank"
         rel="noreferrer noopener"
         aria-label={`${partner.name} — opens in a new tab`}
         className={PARTNER_CARD_BASE + PARTNER_CARD_LINK}
+        onClick={() =>
+          analytics.partnerClicked({ name: partner.name, url: href })
+        }
       >
         {body}
       </a>

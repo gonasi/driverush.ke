@@ -31,6 +31,7 @@ import {
   type GradeResult,
   type SignProgress,
 } from "./pelican-progress";
+import { analytics } from "./analytics";
 import {
   playSfx,
   playVoice,
@@ -287,6 +288,10 @@ export const usePelicanStore = create<PelicanState>()(
           runMissed: [],
           runMissCount: 0,
         });
+        analytics.pelicanStarted({
+          signsTotal: queue.length,
+          categories: get().settings.categories,
+        });
         get()._armInitial();
       },
 
@@ -455,6 +460,12 @@ export const usePelicanStore = create<PelicanState>()(
         // every sign was ultimately recalled — that's a win, hence the fanfare.
         if (pos >= queue.length - 1) {
           if (settings.selfGrading && settings.playAudio) playSfx("complete");
+          const { runRecalled, runMissed, runMissCount } = get();
+          analytics.pelicanCompleted({
+            signsTotal: runRecalled.length + runMissed.length,
+            knewFirstTry: runRecalled.length,
+            missCount: runMissCount,
+          });
           set({ phase: "complete", running: false });
           return;
         }
