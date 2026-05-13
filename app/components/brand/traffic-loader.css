@@ -43,6 +43,17 @@
   --dr-traffic-cycle: 4s;
 }
 
+/* The big presets are sized for desktop panels; on a phone they overrun
+   small containers (the lockup is 2.55× tall), so step lg/xl down there. */
+@media (max-width: 640px) {
+  .dr-traffic--lg {
+    --dr-traffic-size: 64px;
+  }
+  .dr-traffic--xl {
+    --dr-traffic-size: 104px;
+  }
+}
+
 /* lens glow halos (sit outside the lens disc) */
 .dr-traffic .dr-traffic-halo {
   transform-origin: center;

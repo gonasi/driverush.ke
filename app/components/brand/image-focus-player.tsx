@@ -216,7 +216,7 @@ export function ImageFocusPlayer({ className }: { className?: string }) {
               {total} sign{total === 1 ? "" : "s"}
             </span>
             {settings.selfGrading && (
-              <div className="w-full max-w-[220px]">
+              <div className="w-full max-w-55">
                 <Progress
                   value={masteryPct}
                   tone="green"

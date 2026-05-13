@@ -465,7 +465,7 @@ function LoadingPanel({
       role="status"
       aria-live="polite"
       className={cn(
-        "flex flex-col items-center justify-center gap-4 py-12",
+        "flex flex-col items-center justify-center gap-4 py-8 sm:py-12",
         className,
       )}
       {...props}

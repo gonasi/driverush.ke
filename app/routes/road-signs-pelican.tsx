@@ -160,7 +160,7 @@ export default function PelicanSigns() {
             <div className="font-mono text-[10px] uppercase tracking-widest text-ink-3">
               [ Game board · loading ]
             </div>
-            <div className="flex aspect-video items-center justify-center border-2 border-ink bg-paper-3">
+            <div className="flex min-h-72 w-full items-center justify-center border-2 border-ink bg-paper-3 sm:aspect-video sm:min-h-0">
               <LoadingPanel
                 label={`Loading the trainer${loadPct != null ? ` · ${loadPct}%` : ""}`}
                 size="lg"
