@@ -32,11 +32,15 @@ export type PelicanUserSettings = {
   dimIntensity: number;
   /** Show "knew it / missed it" taps and track mastery. */
   selfGrading: boolean;
+  /** Has the player seen the one-time "make it yours" intro modal? */
+  hasSeenIntro: boolean;
 };
 
 export const DEFAULT_PELICAN_SETTINGS: PelicanUserSettings = {
   categories: [],
-  order: "sequential",
+  // Shuffled by default so back-to-back runs don't just memorise positions —
+  // the player has to recognise each sign on its own merits.
+  order: "shuffle",
   reverse: false,
   revealMode: "auto",
   revealDelay: 3,
@@ -49,6 +53,7 @@ export const DEFAULT_PELICAN_SETTINGS: PelicanUserSettings = {
   // mastery. While it's on, auto-advance is held off — you control the pace.
   // Turn it off for a hands-free timed run-through.
   selfGrading: true,
+  hasSeenIntro: false,
 };
 
 /** localStorage key the old (pre-Zustand) settings hook used — for migration. */
@@ -63,5 +68,6 @@ export function normalizeSettings(
     ...DEFAULT_PELICAN_SETTINGS,
     ...raw,
     categories: Array.isArray(raw.categories) ? raw.categories : [],
+    hasSeenIntro: Boolean(raw.hasSeenIntro),
   };
 }

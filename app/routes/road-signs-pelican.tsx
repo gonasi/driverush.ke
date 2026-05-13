@@ -21,6 +21,7 @@ import { FeedbackBanner } from "~/components/brand/feedback-banner";
 import { Rail } from "~/components/brand/rail";
 import { LoadingPanel } from "~/components/brand/traffic-loader";
 import { ImageFocusPlayer } from "~/components/brand/image-focus-player";
+import { PelicanIntroDialog } from "~/components/brand/pelican-intro-dialog";
 import { PelicanSettingsSheet } from "~/components/brand/pelican-settings-sheet";
 
 const board = pelicanJson as ImageFocusData;
@@ -197,7 +198,12 @@ export default function PelicanSigns() {
         )}
       </div>
 
-      {hasBoard && <PelicanSettingsSheet />}
+      {hasBoard && (
+        <>
+          <PelicanIntroDialog />
+          <PelicanSettingsSheet />
+        </>
+      )}
     </main>
   );
 }

@@ -108,6 +108,7 @@ export function ImageFocusPlayer({ className }: { className?: string }) {
       runMissCount: st.runMissCount,
       // actions (stable references)
       start: st.start,
+      openIntro: st.setIntroOpen,
       pause: st.pause,
       resume: st.resume,
       next: st.next,
@@ -208,7 +209,13 @@ export function ImageFocusPlayer({ className }: { className?: string }) {
             animationDuration={s.board.settings.animationDuration}
           />
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-ink/45 px-6 text-center backdrop-blur-[1px]">
-            <Button variant="rush" size="lg" onClick={() => s.start()}>
+            <Button
+              variant="rush"
+              size="lg"
+              onClick={() =>
+                settings.hasSeenIntro ? s.start() : s.openIntro(true)
+              }
+            >
               <HugeiconsIcon icon={PlayFreeIcons} size={18} strokeWidth={2.5} />
               Start trainer
             </Button>

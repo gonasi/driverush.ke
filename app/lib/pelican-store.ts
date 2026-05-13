@@ -122,6 +122,8 @@ type PelicanState = {
   overlayOpen: boolean;
   running: boolean;
   settingsOpen: boolean;
+  /** One-time "make it yours" pre-run nudge — gated on `settings.hasSeenIntro`. */
+  introOpen: boolean;
   phase: TrainerPhase;
   queue: FocusRegion[];
   pos: number;
@@ -140,6 +142,9 @@ type PelicanState = {
   resetSettings: () => void;
   resetProgress: () => void;
   setSettingsOpen: (open: boolean) => void;
+  setIntroOpen: (open: boolean) => void;
+  /** Mark the intro as seen and close it; used by both CTAs in the dialog. */
+  dismissIntro: () => void;
   start: () => void;
   pause: () => void;
   resume: () => void;
@@ -172,6 +177,7 @@ export const usePelicanStore = create<PelicanState>()(
       overlayOpen: false,
       running: false,
       settingsOpen: false,
+      introOpen: false,
       phase: "ready",
       queue: [],
       pos: 0,
@@ -250,6 +256,14 @@ export const usePelicanStore = create<PelicanState>()(
           stopRegionAudio();
         } else if (get().running && get().overlayOpen) {
           get().resume();
+        }
+      },
+
+      setIntroOpen: (open) => set({ introOpen: open }),
+      dismissIntro: () => {
+        set({ introOpen: false });
+        if (!get().settings.hasSeenIntro) {
+          get().setSetting({ hasSeenIntro: true });
         }
       },
 
@@ -456,21 +470,21 @@ export const usePelicanStore = create<PelicanState>()(
     }),
     {
       name: "driverush:pelican",
-      version: 5,
+      version: 6,
       storage: createJSONStorage(() =>
         typeof window !== "undefined" ? window.localStorage : noopStorage,
       ),
       partialize: (s) => ({ settings: s.settings, progress: s.progress }),
       // Settings/defaults churned a lot during early dev — for any saved blob
-      // older than v5, drop prefs back to the current defaults but keep the
-      // mastery progress.
+      // older than v6, drop prefs back to the current defaults but keep the
+      // mastery progress. v6 also re-shows the one-time intro modal.
       migrate: (persisted, version) => {
         const prev = persisted as {
           settings?: PelicanUserSettings;
           progress?: SignProgress;
         } | null;
         const progress = prev?.progress ?? {};
-        return version < 5
+        return version < 6
           ? { settings: DEFAULT_PELICAN_SETTINGS, progress }
           : { settings: prev?.settings ?? DEFAULT_PELICAN_SETTINGS, progress };
       },
