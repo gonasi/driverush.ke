@@ -17,6 +17,7 @@ import { THEME_INIT_SCRIPT, useThemeSync } from "~/lib/theme";
 import { variants } from "~/lib/motion";
 import { SITE, absUrl } from "~/lib/site";
 import { usePageviews } from "~/lib/analytics";
+import { useUtmCapture } from "~/lib/utm";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -99,6 +100,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const location = useLocation();
+  useUtmCapture();
   usePageviews();
   return (
     // mode="wait" → outgoing route fully exits before the next enters, so

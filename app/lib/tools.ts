@@ -8,6 +8,7 @@ import type { IconSvgElement } from "@hugeicons/react";
 import {
   ImageCropFreeIcons,
   Image02FreeIcons,
+  Link04FreeIcons,
   VolumeHighFreeIcons,
 } from "@hugeicons/core-free-icons";
 
@@ -33,6 +34,15 @@ export const TOOLS: Tool[] = [
     blurb:
       "Map focus regions on the road-sign sheet — drag a crop box, set the name & metadata, preview the zoom-and-blur playback, then save to app/data/road-signs-pelican.json (the trainer's source of truth).",
     icon: ImageCropFreeIcons,
+    status: "live",
+  },
+  {
+    slug: "share",
+    path: "/tools/share",
+    title: "Share builder",
+    blurb:
+      "Tag any DriveRush link with UTMs before posting — pick a channel preset, set the campaign, copy the tagged URL. Keeps GA attribution clean and the campaign vocabulary consistent.",
+    icon: Link04FreeIcons,
     status: "live",
   },
   {

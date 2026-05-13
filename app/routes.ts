@@ -23,6 +23,7 @@ export default [
     layout("routes/layouts/tools-layout.tsx", [
       index("routes/tools/index.tsx"),
       route("image-coords", "routes/tools/image-coords.tsx"),
+      route("share", "routes/tools/share.tsx"),
     ]),
   ]),
 ] satisfies RouteConfig;

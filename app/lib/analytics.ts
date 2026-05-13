@@ -2,6 +2,8 @@ import * as React from "react";
 import { useLocation } from "react-router";
 import ReactGA from "react-ga4";
 
+import { getPersistedUtms } from "./utm";
+
 /**
  * Google Analytics 4 — thin wrapper around `react-ga4`. The package handles
  * loading the gtag script and the `window.dataLayer` boilerplate; we drive
@@ -46,7 +48,16 @@ export function usePageviews() {
 
 function emit(name: string, params?: Record<string, unknown>) {
   if (!initialized) return;
-  ReactGA.event(name, params);
+  // Auto-merge the session's landing UTMs so every event carries attribution
+  // for custom reports. Explicit `params` always win on key collision.
+  const utms = getPersistedUtms();
+  const utmParams: Record<string, unknown> = {};
+  if (utms.source) utmParams.session_utm_source = utms.source;
+  if (utms.medium) utmParams.session_utm_medium = utms.medium;
+  if (utms.campaign) utmParams.session_utm_campaign = utms.campaign;
+  if (utms.term) utmParams.session_utm_term = utms.term;
+  if (utms.content) utmParams.session_utm_content = utms.content;
+  ReactGA.event(name, { ...utmParams, ...params });
 }
 
 /**
