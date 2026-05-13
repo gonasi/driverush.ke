@@ -1,0 +1,116 @@
+---
+title: How to apply for an NTSA driving licence in Kenya in 2026
+description: "A clean, step-by-step walkthrough of the NTSA process: TIMS account, provisional driving licence (PDL), theory test, practical test, and the Smart DL card. Updated for 2026."
+slug: ntsa-driving-licence-kenya-2026
+date: "2026-05-13"
+readingMinutes: 7
+tone: practical
+category: Licensing
+tags: [NTSA, TIMS, Smart DL, provisional, theory test]
+lede: Six steps, the right order, and where most people lose a week of their lives. The clean version.
+kicker: "Dispatch № 01 · Licensing"
+---
+
+import { Link } from "react-router";
+import {
+  Alert,
+  AlertBody,
+  AlertTitle,
+  AlertDescription,
+} from "~/components/ui/alert";
+import { Accordion, AccordionItem } from "~/components/brand/accordion";
+import { TicketCard } from "~/components/brand/ticket-card";
+import { Button } from "~/components/ui/button";
+
+Getting a driving licence in Kenya is not hard. It just looks hard because the steps are scattered across three websites, two physical visits and one moment of confusion at the Cyber. This is the clean version, in the order it actually happens in 2026.
+
+If you only have time for one thing on this page, it's this: open a [TIMS account](https://tims.ntsa.go.ke) before you do anything else. Everything downstream needs it.
+
+## The six steps, in order
+
+1. **Create a TIMS account.** Use your real name as it appears on your ID. Verify the phone number you actually use, because your appointment SMSes go there.
+2. **Apply for the Provisional Driving Licence (PDL).** Choose the class you want (we wrote a whole piece on [picking between Class B, C and D](/blogs/class-b-c-d-licence-kenya) if you're not sure). PDL is valid for three months at a time; you only need it valid on the day you sit the theory test.
+3. **Book and sit the theory test.** It's multiple-choice, sat at an NTSA centre, and the pass mark is high enough that "I've driven for years" is not a strategy. Practise it like a test, not like a vibe. The fastest way in is our [quick NTSA test mode](/practice?mode=test).
+4. **Do the practical test.** Yard work then road. Most people fail on the yard, not the road. Reverse-into-bay and three-point-turn lose more candidates than any junction.
+5. **Pay the Smart DL fee on TIMS.** Once the practical is signed off, the Smart DL card is the last step. Pay via M-Pesa from inside TIMS. Pay from the wrong page and the receipt does not bind to your account.
+6. **Collect the card.** Walk in with your ID, walk out with a card the size of a credit card and the weight of two months of your life.
+
+<Alert variant="warn" className="my-7">
+  <AlertBody>
+    <AlertTitle>Heads up</AlertTitle>
+    <AlertDescription>
+      The order matters. Skipping straight to the theory test without a valid
+      PDL is the most common reason booked slots get cancelled at the door.
+    </AlertDescription>
+  </AlertBody>
+</Alert>
+
+## What "passing" actually means in 2026
+
+The theory test is the bit most people underestimate. It blends road signs, road markings, right-of-way and basic mechanical knowledge. The signs section alone has tripped more candidates than the entire mechanical section. We listed the [twelve signs that most often get people on the test](/blogs/road-signs-people-fail-ntsa) so you can target them directly.
+
+If you want signs drilled into muscle memory in about a week, two short games on this site do it for free, no signup:
+
+<div className="my-7 grid gap-3 sm:grid-cols-2 not-prose">
+  <Button variant="rush" size="lg" asChild>
+    <Link to="/road-signs/pelican">Pelican trainer</Link>
+  </Button>
+  <Button variant="paper" size="lg" asChild>
+    <Link to="/road-signs/3d">3D sign recognition</Link>
+  </Button>
+</div>
+
+The practical test is sat at a designated NTSA centre with an examiner. They are looking for one thing: that you are not a danger. Smooth observations, hands at quarter-to-three (or close to it), and a stop that actually stops. The yard component (reverse, three-point, hill start) is where most candidates lose. Practice the yard somewhere quiet for a week before test day; it costs almost nothing and removes the only bit that catches people off-guard.
+
+## The realistic timeline
+
+<TicketCard
+  passLabel="Pass № 01 · Timeline"
+  seat="2026"
+  title={
+    <>
+      Six to ten <em>weeks</em>, if you're focused.
+    </>
+  }
+  description={
+    <>
+      Two weeks of theory prep, three to four weeks of practical, one week of
+      buffer for booking and re-booking, and one week for the Smart DL to print
+      and reach the collection point. The realistic worst case, with one missed
+      slot, is ten weeks. The realistic best case, if you're disciplined and
+      unlucky-free, is six.
+    </>
+  }
+/>
+
+## The bits nobody warns you about
+
+<Accordion className="my-6">
+  <AccordionItem summary="Cyber receipts are not government receipts">
+    If a Cyber prints you a receipt and your TIMS account doesn't reflect the
+    payment, the payment has not happened. Re-check on TIMS before you leave the
+    shop.
+  </AccordionItem>
+  <AccordionItem summary="Your ID photo has to match the card">
+    The Smart DL pulls your photo from IPRS, the national ID database. If you've
+    changed dramatically since your ID was issued, request a re-photograph
+    during the application step, not after the card is printed.
+  </AccordionItem>
+  <AccordionItem summary="Practical bookings cancel for weather">
+    A heavy Nairobi rain shut every test yard in the city for half of last
+    March. Book early in your PDL window so you have room for one or two
+    reschedules.
+  </AccordionItem>
+  <AccordionItem summary="Driving school is optional, but only if you can drive">
+    NTSA does not require a driving school certificate for the test itself. They
+    require you to pass. There is a long way to look at that question, and we
+    put it in a separate post:{" "}
+    <Link to="/blogs/driving-school-or-self-study">school or self-study?</Link>
+  </AccordionItem>
+</Accordion>
+
+## After the card
+
+The day you get your Smart DL is not the day you become a driver. Kenyan roads have rules that are not in the highway code, and the first time you take a roundabout at Westlands at 6pm, you'll feel it. We started a guide to that part of driving too: [the unwritten rules of Kenyan roads](/blogs/boda-bodas-matatus-unwritten-rules), and a [first-timer's piece on Thika Road](/blogs/first-timers-guide-thika-road) for when you're ready to be alone in the car.
+
+Until then: pass the test. Then learn to drive. Those are two different sentences.

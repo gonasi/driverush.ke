@@ -14,7 +14,7 @@ import {
   absUrl,
   breadcrumbLd,
   faqPageLd,
-  keywords,
+  pageMeta,
   ROAD_SIGN_KEYWORDS,
 } from "~/lib/site";
 import { SIGN_GAMES } from "~/lib/road-signs";
@@ -39,21 +39,15 @@ const PATH = "/road-signs";
 const TOTAL_SIGNS = SIGN_CATEGORIES.reduce((n, c) => n + c.signs.length, 0);
 
 export function meta(_: Route.MetaArgs) {
-  const title = "Road signs in Kenya: every sign, what it means · DriveRush";
-  const description =
-    "Two quick games that drill the Kenyan road signs until naming one is instant, plus the full reference: warning, regulatory, mandatory, information, traffic-light signals and road markings, each with what it means. Free, no signup.";
-  const url = absUrl(PATH);
-
   return [
-    { title },
-    { name: "description", content: description },
-    { name: "keywords", content: keywords(...ROAD_SIGN_KEYWORDS) },
-    { tagName: "link", rel: "canonical", href: url },
-    { property: "og:title", content: title },
-    { property: "og:description", content: description },
-    { property: "og:url", content: url },
-    { name: "twitter:title", content: title },
-    { name: "twitter:description", content: description },
+    ...pageMeta({
+      title:
+        "Kenya road signs and meanings — full NTSA chart with recall games",
+      description:
+        "Every Kenyan road sign with its meaning: warning, regulatory, mandatory, information, traffic-light signals and road markings, as the NTSA Highway Code lays them out. Free recall games drill them until naming one is instant.",
+      path: PATH,
+      extraKeywords: ROAD_SIGN_KEYWORDS,
+    }),
     {
       "script:ld+json": breadcrumbLd([
         { name: "Home", url: "/" },

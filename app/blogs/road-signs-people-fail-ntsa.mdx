@@ -1,0 +1,99 @@
+---
+title: "The 12 Kenyan road signs people fail the NTSA test on"
+description: A ranked field guide to the road signs most commonly mistaken on the NTSA theory test, with what each one actually means and how to lock them in.
+slug: road-signs-people-fail-ntsa
+date: "2026-05-06"
+readingMinutes: 6
+tone: listicle
+category: Road signs
+tags: [NTSA, road signs, theory test, warning, regulatory]
+lede: Not the obvious ones. The sneaky ones. Rank-ordered by how often they get people on the day.
+kicker: "Dispatch № 02 · Road signs"
+---
+
+import { Link } from "react-router";
+import {
+  Alert,
+  AlertBody,
+  AlertTitle,
+  AlertDescription,
+} from "~/components/ui/alert";
+import { Button } from "~/components/ui/button";
+
+There are about 250 road signs in the Kenyan highway code, depending on how you count road markings. You will not be tested on all of them. You will be tested on roughly the same 30 over and over, and inside that 30, the same dozen catch out the same people.
+
+This is the field guide to that dozen. Pulled from years of theory test pass rates, lightly anonymised candidate post-mortems and our own [Pelican trainer](/road-signs/pelican) telemetry. Rank-ordered by how often each one gets confused for something else.
+
+<Alert variant="info" className="my-7">
+  <AlertBody>
+    <AlertTitle>Skip ahead</AlertTitle>
+    <AlertDescription>
+      If you'd rather just train them,{" "}
+      <Link to="/road-signs/pelican">play the Pelican trainer</Link>. Five
+      minutes a day for a week handles roughly 80% of the test.
+    </AlertDescription>
+  </AlertBody>
+</Alert>
+
+## 1. Give Way vs Stop
+
+The inverted triangle is "Give Way". The octagon is "Stop". Different words, different actions. **Give Way** means yield to anything that has the right of way; if the road is empty, you don't have to come to a full stop. **Stop** means come to a complete stop, then proceed. People conflate the two and lose easy marks.
+
+## 2. No Entry vs Do Not Enter
+
+Both are red circles. **No Entry** has the horizontal white bar; it means this road is closed to all vehicles travelling in your direction. **Do Not Enter** (the red circle with a slash) is paired with a specific vehicle icon and only applies to that vehicle class. If the test asks "may a saloon car enter?" and you only saw "red circle", you guessed.
+
+## 3. Roundabout warning vs Roundabout direction
+
+The **warning** sign is a triangle with three curved arrows; it says one is coming. The **direction** sign is a blue circle with three white arrows; it means you must travel anti-clockwise around it. Same arrows, different shape, different meaning. If you only memorise "three arrows", the test will catch you. We wrote a whole piece on [reading a Kenyan roundabout in the wild](/blogs/roundabouts-kenya-yield-signal-survive).
+
+## 4. Pedestrian crossing ahead vs Pedestrians
+
+The crossing-ahead triangle has zebra stripes. The pedestrians-around triangle has a walking figure. One tells you to slow because a marked crossing is coming. The other tells you pedestrians are in the area (typically near a school). Different responses, different points.
+
+## 5. Single-carriageway-ends vs Lanes-merge
+
+Both are warnings about lane count changing. The single-carriageway sign shows two arrows narrowing toward each other. The lane-merge sign shows one lane joining another from the side. The test loves to flip them on candidates who skimmed.
+
+## 6. Steep hill vs Gradient
+
+A gradient sign is a triangle with a single sloped line and a percentage. A "steep hill ahead" sign is a triangle with a thick wedge shape, no percentage. Both warn you to gear down. They are not the same sign and they sit in different parts of the question bank.
+
+## 7. Slippery road vs Loose chippings
+
+The squiggle on the triangle is **slippery road** (wet, ice, oil). The triangle with little flecks is **loose chippings** (a fresh road surface that throws stones). Same situation (lose grip), totally different cause and response. Slow down for either, but the test wants you to identify which.
+
+## 8. T-junction vs Side road
+
+A T-junction sign shows the road ending in a perpendicular bar. A side-road sign shows a road joining yours at an angle. T-junction: you must yield to crossing traffic. Side road: traffic is joining you, you generally have right of way. Flip them and you fail the right-of-way question.
+
+## 9. No overtaking vs End of no overtaking
+
+The cross-out version is the rule. The grey-bar version cancels it. People remember the prohibition and forget the cancellation, which means they fail the "what does this sign mean?" question on the cancellation half.
+
+## 10. Speed limit vs Advisory speed
+
+A red circle with a number is a **legal** speed limit. A square yellow plate with a number, often paired with a curve sign, is an **advisory** speed. Advisory is what the road geometry suggests; the legal limit may be higher. They are not the same and the test asks both.
+
+## 11. Children warning vs School zone
+
+The triangle with two stick figures is **children near road**. The school-zone sign is rectangular, blue, and shows a school building. Children warning is anywhere kids might be. School zone has specific speed-limit implications during school hours.
+
+## 12. Bus stop vs Bus lane
+
+Rectangular blue with a white bus is a **bus stop** marker. A road-marking rectangle with the word BUS painted inside is a **bus lane** (and you may not drive in it during posted hours). Both have buses on them. They are not the same and the test will eventually catch the person who can't tell them apart.
+
+## How to actually fix this
+
+Reading a list is not learning a sign. The signs that catch you on the test are the ones you've **seen** but never **drilled**. The fix is repetition under mild pressure, which is what our trainers are for:
+
+<div className="my-7 grid gap-3 sm:grid-cols-2 not-prose">
+  <Button variant="rush" size="lg" asChild>
+    <Link to="/road-signs/pelican">Train with Pelican</Link>
+  </Button>
+  <Button variant="paper" size="lg" asChild>
+    <Link to="/road-signs/3d">3D sign recognition</Link>
+  </Button>
+</div>
+
+If you want the wider reference (every Kenyan road sign with what it means, grouped by class), the [/road-signs](/road-signs) page has it. If you want a timed run, [the quick test](/practice?mode=test) puts you under real conditions in three minutes. And if you want the full picture of the test itself, the [step-by-step NTSA guide](/blogs/ntsa-driving-licence-kenya-2026) walks the whole process.

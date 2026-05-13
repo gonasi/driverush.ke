@@ -1,0 +1,110 @@
+---
+title: "The Smart DL: replace, renew, or recover a lost driving licence in Kenya"
+description: A service-piece on the Kenyan Smart DL card. What to do when yours is lost, expiring, damaged or has incorrect details, with the exact TIMS steps and the fees you'll pay.
+slug: smart-dl-replace-renew-lost
+date: "2026-03-18"
+readingMinutes: 5
+tone: service-piece
+category: Licensing
+tags: [Smart DL, NTSA, TIMS, renewal, lost licence]
+lede: Lost it? Expired? Cracked? Wrong photo? Here's exactly what to click, in order.
+kicker: "Dispatch № 08 · Licensing"
+---
+
+import { Link } from "react-router";
+import {
+  Alert,
+  AlertBody,
+  AlertTitle,
+  AlertDescription,
+} from "~/components/ui/alert";
+import { Accordion, AccordionItem } from "~/components/brand/accordion";
+
+The Smart DL is the credit-card-sized driving licence that replaced the old red book in 2018. It's valid for three years from the date of issue. This is the lookup table for what to do in the four situations that bring people to TIMS in a panic.
+
+If you're applying for the first time (not replacing), the post you want is the [2026 NTSA walkthrough](/blogs/ntsa-driving-licence-kenya-2026).
+
+## 1. The card is lost or stolen
+
+You'll do four things, in this order.
+
+1. **Report the loss at a police station.** Get an OB (Occurrence Book) number. This is free.
+2. **Log in to TIMS,** go to Driving Licence → Apply for Replacement of Smart DL.
+3. **Upload a scan of the OB report** when prompted.
+4. **Pay the replacement fee** (around KSh 3,050) via M-Pesa, from inside TIMS.
+
+Print the new application receipt. The replacement card typically arrives at your nominated NTSA office within two to three weeks. Use the SMS tracking number TIMS sends you to check status.
+
+<Alert variant="warn" className="my-7">
+  <AlertBody>
+    <AlertTitle>Watch out</AlertTitle>
+    <AlertDescription>
+      Do not let a third-party Cyber upload the OB report on your behalf if you
+      don't supervise the scan. Wrong OB numbers attached to the wrong
+      applications is the single most common reason replacements stall.
+    </AlertDescription>
+  </AlertBody>
+</Alert>
+
+## 2. The card is expiring or expired
+
+The Smart DL renewal window opens about 60 days before expiry. You can renew up to 12 months after expiry without sitting any tests again. Beyond that, you may be required to redo the theory test, so don't sit on it.
+
+1. **Log in to TIMS,** go to Driving Licence → Renew Smart DL.
+2. **Choose your validity:** 1 year, 3 years, or 5 years. The 3-year option is the default and almost always the right pick.
+3. **Pay the renewal fee** (around KSh 1,000 per year of validity) via M-Pesa.
+4. **Pick up the new card** at the NTSA office shown on the receipt, typically two to four weeks later.
+
+If you've been off the road and your current card is still in your pocket, surrender the old one when you collect the new one. Don't drive on the old card past its expiry; that's an instant fine if you're stopped.
+
+## 3. The card is damaged
+
+A bent or cracked Smart DL is treated as a replacement, not a renewal. Same process as the "lost" path, minus the OB report. The fee is the same. The card you'll receive has the same expiry as your damaged one (you do not get extra time for replacing it).
+
+If the chip is damaged but the card is intact, NTSA office staff can sometimes re-encode the chip without a full replacement. Walk into the office with your damaged card and ID before you start a TIMS application.
+
+## 4. The details on the card are wrong
+
+This one is rare but it happens: name spelt wrong, wrong date of birth, wrong photo, wrong class. The fix depends on whether the error is **yours** (on the application) or **theirs** (on the card despite a correct application).
+
+**If it's their error:** walk into the issuing NTSA office with the card and your ID. They will re-issue at no charge. Bring the original payment receipt if you have it; it shortens the conversation.
+
+**If it's your error:** TIMS → Driving Licence → Amend Smart DL. Pay the amendment fee (around KSh 1,500). The replacement card with corrected details typically arrives in three weeks.
+
+## A few realities of the TIMS interface
+
+<Accordion className="my-6">
+  <AccordionItem summary="Pay through TIMS, not external Pay Bills">
+    The M-Pesa Paybill numbers floating around Cyber whiteboards are usually
+    correct but the binding step is fragile. Always pay from the green "Pay"
+    button inside your TIMS account so the receipt binds to your specific
+    application.
+  </AccordionItem>
+  <AccordionItem summary="The collection point matters">
+    The application asks you to select an NTSA office for card collection. Pick
+    the one nearest your home, not the one you happened to be at when you
+    applied. Cards do not get transferred easily.
+  </AccordionItem>
+  <AccordionItem summary="SMS tracking is the source of truth">
+    The SMS NTSA sends after payment is the only authoritative status. The web
+    portal sometimes lags by several days. Wait for the SMS before you queue at
+    the office to collect.
+  </AccordionItem>
+  <AccordionItem summary="The DOB field locks you out">
+    If your date of birth on TIMS doesn't match IPRS (the national ID database),
+    almost every action will fail with a non-specific error. Get IPRS and TIMS
+    reconciled before you try to pay; it saves a day.
+  </AccordionItem>
+</Accordion>
+
+## After the new card
+
+A fresh Smart DL is the right moment to think about whether the licence on the card is the licence you actually need. If you've moved into a logistics or transport role, you may want to upgrade to Class C or D. We covered that decision in [Class B vs C vs D](/blogs/class-b-c-d-licence-kenya).
+
+If it's been a while since you drove and you want to refresh the theory before you get back on the road, the [Pelican trainer](/road-signs/pelican) handles signs in a week and the [quick test](/practice?mode=test) is the closest thing to the NTSA paper outside the test centre.
+
+## When in doubt
+
+The single most useful posture toward NTSA bureaucracy: take screenshots at every step. Receipt screen, payment confirmation, SMS, status page. When something goes sideways (it occasionally does), the person who has the timestamps wins. We've never lost a renewal disagreement by being the one with more screenshots.
+
+Drive safe. Renew on time.

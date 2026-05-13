@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import {
   ArrowRight02FreeIcons,
@@ -25,13 +25,21 @@ import { motion } from "framer-motion";
 
 import type { Route } from "./+types/home";
 
-import { absUrl, SITE } from "~/lib/site";
+import {
+  absUrl,
+  faqPageLd,
+  organizationLd,
+  pageTitle,
+  SITE,
+  websiteLd,
+} from "~/lib/site";
 import { getTodaysQuestion } from "~/lib/questions";
 import { COURSES, type Course, type CourseAccent } from "~/lib/courses";
 import { PARTNERS, type Partner } from "~/lib/partners";
 import { SIGN_GAMES } from "~/lib/road-signs";
 import { variants } from "~/lib/motion";
 import { analytics } from "~/lib/analytics";
+import { isNavLinkActive } from "~/lib/nav";
 import { addUtm, utmSlug } from "~/lib/utm";
 
 import { Badge } from "~/components/ui/badge";
@@ -46,6 +54,7 @@ import {
   SheetTrigger,
 } from "~/components/ui/sheet";
 
+import { Accordion, AccordionItem } from "~/components/brand/accordion";
 import { AppBar, AppBarLink } from "~/components/brand/app-bar";
 import { BoardingCard } from "~/components/brand/boarding-card";
 import { ChoiceCard } from "~/components/brand/choice-card";
@@ -57,10 +66,44 @@ import { SignGameCard } from "~/components/brand/sign-game-card";
 import { TicketCard } from "~/components/brand/ticket-card";
 import { TrafficLoader } from "~/components/brand/traffic-loader";
 
+/**
+ * Common questions surfaced as FAQPage JSON-LD for the answer-box / SGE. Kept
+ * here (not in a separate data file) because they only appear in the home
+ * `<head>` — moving them would split editorial copy across two places.
+ */
+const HOME_FAQ = [
+  {
+    q: "How do I learn to drive in Kenya?",
+    a: "Start with the road signs and the NTSA highway code, then move to junction scenarios and timed mock exams. DriveRush walks you through it in order — free road-sign games, the classic NTSA quiz and full Class A, B, C, D courses, online, no signup to start.",
+  },
+  {
+    q: "What is the NTSA test and how do I pass it?",
+    a: "The NTSA test is Kenya's official driving theory exam — multiple-choice on road signs, road markings, right of way and basic mechanical knowledge. Pass it by drilling past papers under time pressure and memorising the Kenyan road signs cold. DriveRush bundles both into one practice flow.",
+  },
+  {
+    q: "Can I learn to drive online in Kenya?",
+    a: "Yes. The NTSA theory test is sat in person, but everything that prepares you for it — road signs, past papers, junction scenarios, the highway code — works online. DriveRush is the online driving school built for Kenyan roads and pays through M-Pesa when you upgrade.",
+  },
+  {
+    q: "How much does a driving school in Kenya cost?",
+    a: "Traditional driving schools in Kenya run roughly KES 8,000–15,000 for the theory + practical package, on top of NTSA fees. DriveRush's online theory practice is free; Premium is KES 499/month or KES 4,999/year, paid by M-Pesa.",
+  },
+  {
+    q: "What are the Kenyan road signs and what do they mean?",
+    a: "Kenyan road signs follow the NTSA highway code: red triangles warn, red rings and the red octagon forbid, blue circles command, and rectangles inform. DriveRush has the full set with meanings at /road-signs and two recall games that drill them until naming a sign is instant.",
+  },
+  {
+    q: "What's the difference between Class A, B, C and D licences?",
+    a: "Class A is motorbikes, Class B is light vehicles (cars), Class C is light goods vehicles and Class D is public service vehicles (matatus, buses). Each class has its own theory and practical test. DriveRush has a full course for each.",
+  },
+];
+
 export function meta(_: Route.MetaArgs) {
-  const title = "DriveRush · Driving courses + NTSA practice, no signup";
+  const title = pageTitle(
+    "Learn to drive in Kenya online — NTSA prep & road signs",
+  );
   const description =
-    "Full driving courses for Kenya — highway code, road signs, junctions, hazard perception and real-road driving, taught in order. Plus quick practice and timed mock exams. No signup to start. Pay with M-Pesa.";
+    "DriveRush is the online driving school for Kenya. NTSA-aligned road signs, past papers, junction scenarios and full Class A, B, C, D courses. Free to start, no signup, pay with M-Pesa when ready.";
   const url = absUrl("/");
   const ogImage = absUrl(SITE.ogImage);
 
@@ -68,6 +111,9 @@ export function meta(_: Route.MetaArgs) {
     { title },
     { name: "description", content: description },
     { name: "keywords", content: SITE.keywords.join(", ") },
+    { name: "application-name", content: SITE.name },
+    { name: "apple-mobile-web-app-title", content: SITE.name },
+    { name: "author", content: SITE.name },
     { tagName: "link", rel: "canonical", href: url },
     { property: "og:title", content: title },
     { property: "og:description", content: description },
@@ -80,33 +126,11 @@ export function meta(_: Route.MetaArgs) {
     { name: "twitter:description", content: description },
     { name: "twitter:image", content: ogImage },
     { name: "twitter:image:alt", content: `${SITE.name} logo` },
-    {
-      "script:ld+json": {
-        "@context": "https://schema.org",
-        "@type": "EducationalOrganization",
-        name: SITE.name,
-        legalName: SITE.legalName,
-        url: SITE.url,
-        logo: ogImage,
-        description,
-        address: {
-          "@type": "PostalAddress",
-          addressLocality: "Nairobi",
-          addressCountry: "KE",
-        },
-        areaServed: { "@type": "Country", name: "Kenya" },
-        inLanguage: ["en", "sw"],
-      },
-    },
-    {
-      "script:ld+json": {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        name: SITE.name,
-        url: SITE.url,
-        inLanguage: "en-KE",
-      },
-    },
+    // Organization + WebSite (with SearchAction) anchor brand-entity queries
+    // like "driverush", "drive rush kenya". FAQ feeds the answer box / SGE.
+    { "script:ld+json": organizationLd() },
+    { "script:ld+json": websiteLd() },
+    { "script:ld+json": faqPageLd(HOME_FAQ) },
     ...COURSES.map((c) => ({
       "script:ld+json": {
         "@context": "https://schema.org",
@@ -117,6 +141,7 @@ export function meta(_: Route.MetaArgs) {
         inLanguage: ["en", "sw"],
         provider: {
           "@type": "Organization",
+          "@id": `${SITE.url}#organization`,
           name: SITE.name,
           sameAs: SITE.url,
         },
@@ -140,7 +165,6 @@ export default function Home() {
       <SiteNav />
       <main className="min-h-screen text-ink">
         <Rail />
-
         <Hero />
         <RoadSigns />
         <QuickActions />
@@ -151,6 +175,7 @@ export default function Home() {
         <Principles />
         <Partners />
         <Pricing />
+        <Faq />
         <TrustStrip />
         <FinalCta />
       </main>
@@ -168,13 +193,19 @@ const NAV_LINKS = [
   { label: "Practice", href: "/practice" },
   { label: "Quick test", href: "/practice?mode=test" },
   { label: "Signs", href: "/road-signs" },
+  { label: "Blog", href: "/blogs" },
 ];
 
 function SiteNav() {
+  const { pathname, search } = useLocation();
   return (
     <AppBar
       nav={NAV_LINKS.map((l) => (
-        <AppBarLink key={l.href} asChild>
+        <AppBarLink
+          key={l.href}
+          asChild
+          active={isNavLinkActive(l.href, pathname, search)}
+        >
           <Link to={l.href}>{l.label}</Link>
         </AppBarLink>
       ))}
@@ -1262,6 +1293,55 @@ function Pricing() {
 }
 
 /* =============================================================
+   FAQ — head queries we want to rank for. Mirrors HOME_FAQ above
+   so the FAQPage JSON-LD has a visible match in the DOM (Google
+   needs both, otherwise the rich result is dropped).
+   ============================================================= */
+
+function Faq() {
+  return (
+    <section id="faq" className="border-b-2 border-ink py-12 sm:py-16">
+      <Container>
+        <div className="mb-7 flex flex-wrap items-baseline justify-between gap-3 border-b border-ink pb-3">
+          <h2 className="m-0 font-display text-[clamp(24px,3vw,36px)] font-extrabold uppercase leading-tight tracking-tight text-ink">
+            Common{" "}
+            <span className="italic font-serif font-normal normal-case text-ink-3">
+              questions
+            </span>
+          </h2>
+          <span className="font-mono text-[11px] uppercase tracking-widest text-ink-3">
+            Learning to drive in Kenya · NTSA
+          </span>
+        </div>
+        <Accordion>
+          {HOME_FAQ.map((item, i) => (
+            <AccordionItem key={item.q} summary={item.q} open={i === 0}>
+              {item.a}
+            </AccordionItem>
+          ))}
+        </Accordion>
+        <p className="mt-6 font-mono text-[11px] uppercase tracking-widest text-ink-3">
+          More →{" "}
+          <Link
+            to="/blogs/learning-to-drive-in-kenya"
+            className="text-rush hover:underline"
+          >
+            Full guide to learning to drive in Kenya
+          </Link>{" "}
+          ·{" "}
+          <Link
+            to="/blogs/ntsa-test-prep-kenya"
+            className="text-rush hover:underline"
+          >
+            NTSA test prep
+          </Link>
+        </p>
+      </Container>
+    </section>
+  );
+}
+
+/* =============================================================
    Trust strip. Compact, no fake metrics.
    ============================================================= */
 
@@ -1381,6 +1461,7 @@ function SiteFooter() {
           <FooterCol
             heading="More"
             items={[
+              { label: "Blog", href: "/blogs" },
               { label: "Pricing", href: "#pricing" },
               { label: "Course outline", href: "#curriculum" },
               { label: "Features", href: "#features" },

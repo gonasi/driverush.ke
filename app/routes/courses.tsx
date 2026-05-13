@@ -8,7 +8,7 @@ import {
 
 import type { Route } from "./+types/courses";
 
-import { absUrl, SITE } from "~/lib/site";
+import { absUrl, breadcrumbLd, pageMeta, SITE } from "~/lib/site";
 import { COURSES } from "~/lib/courses";
 
 import { Badge } from "~/components/ui/badge";
@@ -17,19 +17,51 @@ import { FeedbackBanner } from "~/components/brand/feedback-banner";
 import { Rail } from "~/components/brand/rail";
 
 export function meta(_: Route.MetaArgs) {
-  const title = "Courses · DriveRush";
-  const description =
-    "Full driving courses for Kenya — highway code, road signs, junctions, hazard perception and real-road driving. Taught in order, with practice and mock papers built in.";
   return [
-    { title },
-    { name: "description", content: description },
-    { name: "keywords", content: SITE.keywords.join(", ") },
-    { tagName: "link", rel: "canonical", href: absUrl("/courses") },
-    { property: "og:title", content: title },
-    { property: "og:description", content: description },
-    { property: "og:url", content: absUrl("/courses") },
-    { name: "twitter:title", content: title },
-    { name: "twitter:description", content: description },
+    ...pageMeta({
+      title:
+        "Driving courses in Kenya — Class B, NTSA-aligned, online & self-paced",
+      description:
+        "Full online driving courses for Kenya: highway code, Kenyan road signs, junctions, hazard perception and real-road driving. Class B first, then A, C and D. Free practice, M-Pesa for Premium.",
+      path: "/courses",
+      extraKeywords: [
+        "driving courses Kenya",
+        "Kenya driving course online",
+        "Class B course Kenya",
+        "online driving course Kenya",
+        "NTSA driving course",
+      ],
+    }),
+    {
+      "script:ld+json": breadcrumbLd([
+        { name: "Home", url: "/" },
+        { name: "Courses", url: "/courses" },
+      ]),
+    },
+    {
+      "script:ld+json": {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name: "DriveRush driving courses",
+        itemListElement: COURSES.map((c, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          item: {
+            "@type": "Course",
+            name: c.title,
+            description: c.blurb,
+            url: absUrl("/courses"),
+            inLanguage: ["en", "sw"],
+            provider: {
+              "@type": "Organization",
+              "@id": `${SITE.url}#organization`,
+              name: SITE.name,
+              sameAs: SITE.url,
+            },
+          },
+        })),
+      },
+    },
   ];
 }
 

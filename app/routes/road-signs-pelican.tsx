@@ -10,7 +10,7 @@ import {
 
 import type { Route } from "./+types/road-signs-pelican";
 
-import { absUrl, breadcrumbLd, keywords, ROAD_SIGN_KEYWORDS } from "~/lib/site";
+import { breadcrumbLd, pageMeta, ROAD_SIGN_KEYWORDS } from "~/lib/site";
 import type { ImageFocusData } from "~/lib/image-focus";
 import pelicanJson from "~/data/road-signs-pelican.json";
 import { getPracticeRegions, usePelicanStore } from "~/lib/pelican-store";
@@ -29,27 +29,19 @@ const board = pelicanJson as ImageFocusData;
 const PATH = "/road-signs/pelican";
 
 export function meta(_: Route.MetaArgs) {
-  const title = "Pelican signs: Kenya road-sign recall game · DriveRush";
-  const description =
-    "A fast Kenyan road-sign recall game. One sign zooms in at a time, name it before the timer drops, and the ones you miss come back sooner. Free, no signup, solid prep for the NTSA road-sign test.";
-  const url = absUrl(PATH);
   return [
-    { title },
-    { name: "description", content: description },
-    {
-      name: "keywords",
-      content: keywords(
+    ...pageMeta({
+      title: "Kenya road signs game — Pelican recall trainer for NTSA",
+      description:
+        "A fast Kenyan road-sign recall game. One sign zooms in at a time, name it before the timer drops, the ones you miss come back sooner. Free, no signup, solid prep for the NTSA road-sign test.",
+      path: PATH,
+      extraKeywords: [
         "Kenya road signs game",
         "road signs quiz Kenya",
+        "NTSA road signs practice",
         ...ROAD_SIGN_KEYWORDS,
-      ),
-    },
-    { tagName: "link", rel: "canonical", href: url },
-    { property: "og:title", content: title },
-    { property: "og:description", content: description },
-    { property: "og:url", content: url },
-    { name: "twitter:title", content: title },
-    { name: "twitter:description", content: description },
+      ],
+    }),
     {
       "script:ld+json": breadcrumbLd([
         { name: "Home", url: "/" },

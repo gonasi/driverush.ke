@@ -4,7 +4,7 @@ import { ArrowLeft02FreeIcons } from "@hugeicons/core-free-icons";
 
 import type { Route } from "./+types/practice";
 
-import { absUrl } from "~/lib/site";
+import { pageMeta } from "~/lib/site";
 import {
   getQuestionsForMode,
   MODE_LABELS,
@@ -22,24 +22,33 @@ function asMode(raw: string | null): QuizMode {
     : "quick";
 }
 
+// Lead phrase per mode — keyword-rich so the head of the title is what a Kenyan
+// learner would actually search for. Brand suffix is added by `pageTitle()`.
+const MODE_TITLE: Record<QuizMode, string> = {
+  quick: "NTSA practice questions for Kenya — quick drills",
+  test: "NTSA test simulator for Kenya — timed mock exam",
+  signs: "Kenyan road signs quiz — NTSA practice",
+  challenge: "Kenyan driving scenarios — right of way & hazards",
+};
+
 export function meta({ location }: Route.MetaArgs) {
   const sp = new URLSearchParams(location.search);
   const mode = asMode(sp.get("mode"));
-  const label = MODE_LABELS[mode].title;
-  const title = `${label} · DriveRush`;
-  const description = `${MODE_LABELS[mode].copy} No signup. No card. Built for Kenya.`;
-  return [
-    { title },
-    { name: "description", content: description },
-    // The same surface, four modes — keep one canonical to avoid duplicate
-    // content. Mode-specific URLs still work, they just don't compete in SERP.
-    { tagName: "link", rel: "canonical", href: absUrl("/practice") },
-    // Page-specific OG / Twitter overrides
-    { property: "og:title", content: title },
-    { property: "og:description", content: description },
-    { name: "twitter:title", content: title },
-    { name: "twitter:description", content: description },
-  ];
+  const description = `${MODE_LABELS[mode].copy} Free, no signup, no card. Built for Kenyan roads and the NTSA test.`;
+  // The same surface, four modes — keep one canonical at `/practice` to avoid
+  // duplicate-content competition between mode URLs in SERP.
+  return pageMeta({
+    title: MODE_TITLE[mode],
+    description,
+    path: "/practice",
+    extraKeywords: [
+      "NTSA practice questions",
+      "NTSA past papers Kenya",
+      "Kenya driving test online",
+      "NTSA mock exam",
+      "Kenya road signs quiz",
+    ],
+  });
 }
 
 export default function Practice() {

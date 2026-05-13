@@ -8,7 +8,7 @@ import {
 
 import type { Route } from "./+types/road-signs-3d";
 
-import { absUrl, breadcrumbLd, keywords, ROAD_SIGN_KEYWORDS } from "~/lib/site";
+import { breadcrumbLd, pageMeta, ROAD_SIGN_KEYWORDS } from "~/lib/site";
 
 import { Button } from "~/components/ui/button";
 import { FeedbackBanner } from "~/components/brand/feedback-banner";
@@ -17,27 +17,19 @@ import { Rail } from "~/components/brand/rail";
 const PATH = "/road-signs/3d";
 
 export function meta(_: Route.MetaArgs) {
-  const title = "3D signs: read a Kenyan road sign from any angle · DriveRush";
-  const description =
-    "Spin a Kenyan road sign in 3D and read it from any angle, the way you actually see them on the road, half-turned and half-lit. In the workshop; the classic road-sign quiz is live in the meantime.";
-  const url = absUrl(PATH);
   return [
-    { title },
-    { name: "description", content: description },
-    {
-      name: "keywords",
-      content: keywords(
+    ...pageMeta({
+      title: "Recognise Kenyan road signs in 3D from any angle",
+      description:
+        "Spin a Kenyan road sign in 3D and read it from any angle, the way you actually see them on the road, half-turned and half-lit. In the workshop; the classic road-sign quiz is live in the meantime.",
+      path: PATH,
+      extraKeywords: [
         "3D road signs",
         "recognise road signs Kenya",
+        "Kenya road signs from angles",
         ...ROAD_SIGN_KEYWORDS,
-      ),
-    },
-    { tagName: "link", rel: "canonical", href: url },
-    { property: "og:title", content: title },
-    { property: "og:description", content: description },
-    { property: "og:url", content: url },
-    { name: "twitter:title", content: title },
-    { name: "twitter:description", content: description },
+      ],
+    }),
     {
       "script:ld+json": breadcrumbLd([
         { name: "Home", url: "/" },
