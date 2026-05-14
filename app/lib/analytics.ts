@@ -3,6 +3,7 @@ import { useLocation } from "react-router";
 import ReactGA from "react-ga4";
 
 import { getPersistedUtms } from "./utm";
+import type { AdBlockReason, AdSlotId, AdTriggerEvent } from "./ads/ad-types";
 
 /**
  * Google Analytics 4 — thin wrapper around `react-ga4`. The package handles
@@ -47,6 +48,12 @@ export function usePageviews() {
 }
 
 function emit(name: string, params?: Record<string, unknown>) {
+  // In DEV, mirror the event to the console so we can verify dispatch
+  // without firing a real GA hit. PROD: GA only.
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.log(`[analytics] ${name}`, params ?? {});
+  }
   if (!initialized) return;
   // Auto-merge the session's landing UTMs so every event carries attribution
   // for custom reports. Explicit `params` always win on key collision.
@@ -115,4 +122,35 @@ export const analytics = {
 
   /** User tapped "Save progress" on the post-quiz card — signup intent proxy. */
   saveProgressClicked: () => emit("save_progress_clicked"),
+
+  // ----- ad orchestration -----
+  // Every decision the ad engine makes flows through here, including blocks.
+  // That gives us one place to look for "why didn't an ad show?" answers.
+
+  /** A controlled ad modal opened for a given event/slot/provider. */
+  adShown: (args: {
+    event: AdTriggerEvent;
+    slot: AdSlotId;
+    provider: string;
+  }) =>
+    emit("ad_shown", {
+      event: args.event,
+      slot: args.slot,
+      provider: args.provider,
+    }),
+
+  /** Modal closed via X / Continue / Escape. `dwellMs` measures attention. */
+  adClosed: (args: { slot: AdSlotId; dwellMs: number }) =>
+    emit("ad_closed", { slot: args.slot, dwell_ms: args.dwellMs }),
+
+  /** Provider couldn't paint an impression in time. */
+  adFailed: (args: { slot: AdSlotId; reason: string }) =>
+    emit("ad_failed", { slot: args.slot, reason: args.reason }),
+
+  /** Trigger arrived while a modal was already open — we suppressed it. */
+  adSkipped: (args: { slot: AdSlotId }) => emit("ad_skipped", args),
+
+  /** Engine refused a trigger. `reason` pinpoints which guard fired. */
+  adBlockedByRules: (args: { event: AdTriggerEvent; reason: AdBlockReason }) =>
+    emit("ad_blocked_by_rules", { event: args.event, reason: args.reason }),
 };

@@ -32,6 +32,7 @@ import {
   type SignProgress,
 } from "./pelican-progress";
 import { analytics } from "./analytics";
+import { triggerAdAndAwaitClose, triggerAdFromNonReact } from "./ads/ad-engine";
 import {
   playSfx,
   playVoice,
@@ -81,6 +82,63 @@ function buildQueue(
   });
 }
 
+/**
+ * In-progress run snapshot. Persisted to localStorage so users can pick up
+ * where they left off across reloads / tab closes. We save just enough to
+ * deterministically reconstruct the in-flight run (the queue as sign IDs +
+ * the per-run grading state), plus signatures that let us refuse to resume
+ * when the user's settings or the board itself have changed.
+ *
+ * Always saved with `phase: "between"` because that's the only point in the
+ * state machine where pausing the world is safe — we never try to resume
+ * mid-countdown or mid-reveal.
+ */
+type InProgressRun = {
+  queueIds: string[];
+  pos: number;
+  runRecalled: string[];
+  runMissed: string[];
+  runMissCount: number;
+  runSeen: number;
+  /** Stable hash of queue-affecting settings — invalidates the save if they change. */
+  settingsSig: string;
+  /** Stable hash of the board — invalidates the save if the data file changes shape. */
+  boardSig: string;
+  savedAt: number;
+};
+
+function computeSettingsSig(s: PelicanUserSettings): string {
+  // Only settings that change the queue contents/order need to invalidate
+  // a resume. Visual prefs (blur, dim, audio) can mutate freely.
+  return JSON.stringify({
+    c: [...s.categories].sort(),
+    o: s.order,
+    r: s.reverse,
+  });
+}
+
+function computeBoardSig(b: ImageFocusData | null): string {
+  if (!b) return "";
+  return `${b.imageSrc}::${b.regions.length}`;
+}
+
+function hydrateQueueFromIds(
+  board: ImageFocusData | null,
+  ids: string[],
+): FocusRegion[] | null {
+  if (!board) return null;
+  const byId = new Map(board.regions.map((r) => [r.id, r]));
+  const out: FocusRegion[] = [];
+  for (const id of ids) {
+    const region = byId.get(id);
+    // If any saved sign is missing (data change), bail — partial resume
+    // would be worse than starting fresh.
+    if (!region) return null;
+    out.push(region);
+  }
+  return out;
+}
+
 // SSR-safe storage: real localStorage on the client, a no-op on the server.
 const noopStorage: StateStorage = {
   getItem: () => null,
@@ -115,6 +173,12 @@ type PelicanState = {
   // ---- persisted ----
   settings: PelicanUserSettings;
   progress: SignProgress;
+  /**
+   * Saved in-flight run. Survives reload so the user resumes between signs
+   * instead of restarting from scratch. Cleared on completion, explicit
+   * exit, fresh Start, or settings/progress reset. `null` means no save.
+   */
+  inProgressRun: InProgressRun | null;
   // ---- transient ----
   board: ImageFocusData | null;
   assetStatus: AssetStatus;
@@ -136,6 +200,13 @@ type PelicanState = {
   runMissed: string[];
   /** Total "Missed it" taps this run (counts repeats). */
   runMissCount: number;
+  /**
+   * Sign cycles the user has *finished* this run (incremented at the
+   * inter-sign boundary, never on completion). Used for resume display
+   * and as the "natural break" boundary at which gameplay_milestone fires.
+   * Transient — resets per run.
+   */
+  runSeen: number;
   // ---- actions ----
   configure: (board: ImageFocusData) => void;
   preload: () => void;
@@ -147,6 +218,13 @@ type PelicanState = {
   /** Mark the intro as seen and close it; used by both CTAs in the dialog. */
   dismissIntro: () => void;
   start: () => void;
+  /**
+   * Restore the saved in-progress run, if any. Validates the saved
+   * signatures (board + settings) against current state — if anything has
+   * shifted, the saved run is silently discarded. No-op if there's nothing
+   * to resume.
+   */
+  resumeRun: () => void;
   pause: () => void;
   resume: () => void;
   next: () => void;
@@ -171,6 +249,7 @@ export const usePelicanStore = create<PelicanState>()(
     (set, get) => ({
       settings: DEFAULT_PELICAN_SETTINGS,
       progress: readLegacy<SignProgress>(LEGACY_PROGRESS_KEY, {}),
+      inProgressRun: null,
 
       board: null,
       assetStatus: "idle",
@@ -186,6 +265,7 @@ export const usePelicanStore = create<PelicanState>()(
       runRecalled: [],
       runMissed: [],
       runMissCount: 0,
+      runSeen: 0,
 
       // ---- config / preload ----
       configure: (board) => set({ board }),
@@ -232,6 +312,20 @@ export const usePelicanStore = create<PelicanState>()(
         set({ settings: next });
         const touchedOrder =
           "categories" in p || "order" in p || "reverse" in p;
+        // Any change that affects the queue means "the run the user is
+        // doing isn't the run they'd be doing now" — so wipe both the
+        // saved checkpoint and the in-flight tallies. Continuing with stale
+        // runRecalled/runMissed/runMissCount/runSeen would leave references
+        // to signs that may no longer even be in the queue.
+        if (touchedOrder) {
+          set({
+            inProgressRun: null,
+            runRecalled: [],
+            runMissed: [],
+            runMissCount: 0,
+            runSeen: 0,
+          });
+        }
         if (touchedOrder && get().overlayOpen) {
           clearTimers();
           stopRegionAudio();
@@ -247,7 +341,7 @@ export const usePelicanStore = create<PelicanState>()(
         }
       },
       resetSettings: () => get().setSetting({ ...DEFAULT_PELICAN_SETTINGS }),
-      resetProgress: () => set({ progress: {} }),
+      resetProgress: () => set({ progress: {}, inProgressRun: null }),
 
       setSettingsOpen: (open) => {
         set({ settingsOpen: open });
@@ -287,12 +381,57 @@ export const usePelicanStore = create<PelicanState>()(
           runRecalled: [],
           runMissed: [],
           runMissCount: 0,
+          runSeen: 0,
+          // Fresh Start = wipe any prior save. The first _toBetween writes
+          // a new checkpoint at the first "between" boundary.
+          inProgressRun: null,
         });
         analytics.pelicanStarted({
           signsTotal: queue.length,
           categories: get().settings.categories,
         });
         get()._armInitial();
+      },
+
+      resumeRun: () => {
+        const state = get();
+        const run = state.inProgressRun;
+        if (!run || !state.board) return;
+        // Refuse to resume if the world has shifted underneath the save.
+        if (run.settingsSig !== computeSettingsSig(state.settings)) {
+          set({ inProgressRun: null });
+          return;
+        }
+        if (run.boardSig !== computeBoardSig(state.board)) {
+          set({ inProgressRun: null });
+          return;
+        }
+        const queue = hydrateQueueFromIds(state.board, run.queueIds);
+        if (!queue || run.pos < 0 || run.pos >= queue.length) {
+          set({ inProgressRun: null });
+          return;
+        }
+        clearTimers();
+        stopAllSfx();
+        stopRegionAudio();
+        // Snap to "between" — the safe inter-sign boundary — and let
+        // _armBetween advance into the next focused sign cleanly. The user
+        // doesn't lose the just-graded sign because pos is the LAST graded.
+        set({
+          queue,
+          pos: run.pos,
+          phase: "between",
+          overlayOpen: true,
+          running: true,
+          settingsOpen: false,
+          introOpen: false,
+          timeRemaining: 0,
+          runRecalled: run.runRecalled,
+          runMissed: run.runMissed,
+          runMissCount: run.runMissCount,
+          runSeen: run.runSeen,
+        });
+        get()._armBetween();
       },
 
       pause: () => {
@@ -370,6 +509,12 @@ export const usePelicanStore = create<PelicanState>()(
         clearTimers();
         stopAllSfx();
         stopRegionAudio();
+        // Exit closes the overlay and clears transient run state, but
+        // DELIBERATELY preserves the persisted `inProgressRun`. Closing
+        // the trainer is "I'm done for now," not "wipe my progress" — the
+        // user returns later to a Resume CTA. The only paths that wipe
+        // the save are: fresh Start (start), Reset Progress (resetProgress),
+        // queue-affecting settings changes (setSetting), or completion.
         set({
           overlayOpen: false,
           running: false,
@@ -380,6 +525,7 @@ export const usePelicanStore = create<PelicanState>()(
           runRecalled: [],
           runMissed: [],
           runMissCount: 0,
+          runSeen: 0,
         });
       },
 
@@ -466,10 +612,63 @@ export const usePelicanStore = create<PelicanState>()(
             knewFirstTry: runRecalled.length,
             missCount: runMissCount,
           });
-          set({ phase: "complete", running: false });
+          // Zustand store can't use React hooks — route the trigger through
+          // the engine singleton instead. Silent no-op if the AdProvider
+          // hasn't mounted yet (it has, by the time you can finish a run).
+          triggerAdFromNonReact("chapter_complete");
+          // Run is done — no point saving a resume point.
+          set({ phase: "complete", running: false, inProgressRun: null });
           return;
         }
-        set({ phase: "between" });
+
+        // Mid-run: tick the seen counter, snapshot the run for resume, and
+        // *always* announce the inter-sign break point to the ad engine.
+        // The engine's active-session budget decides whether to actually
+        // fire — most calls block silently with `session_budget_not_met`.
+        // We commit the phase *before* potentially firing so that when the
+        // ad closes, resume() finds phase="between" and re-arms _armBetween
+        // cleanly — no special-case path needed in resume().
+        const snapshotState = get();
+        const nextSeen = snapshotState.runSeen + 1;
+
+        set({
+          phase: "between",
+          runSeen: nextSeen,
+          // Checkpoint the run for reload-safe resume. Saved at every
+          // "between" boundary because that's the only phase where
+          // snapping back is safe — no in-flight timers, no mid-countdown
+          // to recover.
+          inProgressRun: {
+            queueIds: snapshotState.queue.map((r) => r.id),
+            pos: snapshotState.pos,
+            runRecalled: snapshotState.runRecalled,
+            runMissed: snapshotState.runMissed,
+            runMissCount: snapshotState.runMissCount,
+            runSeen: nextSeen,
+            settingsSig: computeSettingsSig(snapshotState.settings),
+            boardSig: computeBoardSig(snapshotState.board),
+            savedAt: Date.now(),
+          },
+        });
+
+        {
+          const opened = triggerAdAndAwaitClose("gameplay_milestone", () => {
+            // resume() switches on phase and calls _armBetween() — gameplay
+            // picks up exactly where it left off. running=true flips back too.
+            get().resume();
+          });
+          if (opened) {
+            // pause() already does clearTimers + stopAllSfx + stopRegionAudio
+            // and flips running=false. The engine's subscription above will
+            // fire resume() when the user closes the ad.
+            get().pause();
+            return;
+          }
+          // Trigger was blocked (budget not met, premium, etc.) — fall through and
+          // arm the between phase like nothing happened. newNextMilestone has
+          // already been advanced, so we won't retry on the next sign.
+        }
+
         get()._armBetween();
       },
       _advance: () => {
@@ -481,23 +680,41 @@ export const usePelicanStore = create<PelicanState>()(
     }),
     {
       name: "driverush:pelican",
-      version: 6,
+      version: 8,
       storage: createJSONStorage(() =>
         typeof window !== "undefined" ? window.localStorage : noopStorage,
       ),
-      partialize: (s) => ({ settings: s.settings, progress: s.progress }),
+      partialize: (s) => ({
+        settings: s.settings,
+        progress: s.progress,
+        inProgressRun: s.inProgressRun,
+      }),
       // Settings/defaults churned a lot during early dev — for any saved blob
       // older than v6, drop prefs back to the current defaults but keep the
-      // mastery progress. v6 also re-shows the one-time intro modal.
+      // mastery progress. v6 also re-shows the one-time intro modal. v7 added
+      // the in-progress run save. v8 added a (now-removed) `nextMilestoneAt`
+      // to the saved run — current code ignores that vestigial field, so v8
+      // blobs are forward-compatible. Older versions get a fresh `null`.
       migrate: (persisted, version) => {
         const prev = persisted as {
           settings?: PelicanUserSettings;
           progress?: SignProgress;
+          inProgressRun?: InProgressRun | null;
         } | null;
         const progress = prev?.progress ?? {};
-        return version < 6
-          ? { settings: DEFAULT_PELICAN_SETTINGS, progress }
-          : { settings: prev?.settings ?? DEFAULT_PELICAN_SETTINGS, progress };
+        const base =
+          version < 6
+            ? { settings: DEFAULT_PELICAN_SETTINGS, progress }
+            : {
+                settings: prev?.settings ?? DEFAULT_PELICAN_SETTINGS,
+                progress,
+              };
+        return {
+          ...base,
+          // Honour an existing save only if it's a v8+ blob (matches the
+          // current InProgressRun shape).
+          inProgressRun: version >= 8 ? (prev?.inProgressRun ?? null) : null,
+        };
       },
       onRehydrateStorage: () => (state) => {
         if (state) state.settings = normalizeSettings(state.settings);
@@ -527,4 +744,35 @@ export function getMasteredCount(
   regions: FocusRegion[],
 ): number {
   return regions.filter((r) => isMastered(progress, r.id)).length;
+}
+
+/**
+ * Whether the saved run can actually be resumed in the current world.
+ * Returns false if there's no save, if assets haven't finished preloading,
+ * or if the user's settings / the board itself have shifted since the save.
+ */
+export function selectCanResume(s: PelicanState): boolean {
+  const run = s.inProgressRun;
+  if (!run || !s.board) return false;
+  if (s.assetStatus !== "ready") return false;
+  if (run.settingsSig !== computeSettingsSig(s.settings)) return false;
+  if (run.boardSig !== computeBoardSig(s.board)) return false;
+  if (run.pos < 0 || run.pos >= run.queueIds.length) return false;
+  const ids = new Set(s.board.regions.map((r) => r.id));
+  return run.queueIds.every((id) => ids.has(id));
+}
+
+/** Display stats for the Resume CTA. Returns null when there's nothing to show. */
+export function selectResumeStats(
+  s: PelicanState,
+): { signsDone: number; total: number; recalled: number } | null {
+  const run = s.inProgressRun;
+  if (!run) return null;
+  return {
+    // `pos` is the index of the just-graded sign; "done" feels more
+    // natural as a count, so use pos+1.
+    signsDone: run.pos + 1,
+    total: run.queueIds.length,
+    recalled: run.runRecalled.length,
+  };
 }

@@ -10,7 +10,17 @@ import {
 import type { Route } from "./+types/tools-layout";
 
 import { TOOLS } from "~/lib/tools";
+import type { AdRouteHandle } from "~/lib/ads/ad-types";
 import { cn } from "~/lib/utils";
+
+/**
+ * Route-level ad gate. The /tools/* surfaces are internal authoring tools —
+ * never the right place for an ad to fire, regardless of how a trigger arrives.
+ * Nested routes inherit this via `useMatches()` in <RouteAdGate />.
+ */
+export const handle: AdRouteHandle = {
+  ads: { interruptible: false },
+};
 
 import { Button } from "~/components/ui/button";
 import {

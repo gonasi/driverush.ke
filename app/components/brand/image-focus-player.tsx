@@ -22,6 +22,7 @@ import { isMastered } from "~/lib/pelican-progress";
 import {
   getMasteredCount,
   getPracticeRegions,
+  selectCanResume,
   usePelicanStore,
 } from "~/lib/pelican-store";
 import { cn } from "~/lib/utils";
@@ -106,8 +107,16 @@ export function ImageFocusPlayer({ className }: { className?: string }) {
       runRecalled: st.runRecalled,
       runMissed: st.runMissed,
       runMissCount: st.runMissCount,
+      canResume: selectCanResume(st),
+      // Pull the run by reference — it's stable across renders (only
+      // mutated when we explicitly set it) — and derive display stats
+      // inline in JSX. Returning a fresh `{ signsDone, total, ... }` from
+      // the selector here breaks useShallow's equality check and infinite
+      // re-renders the player.
+      inProgressRun: st.inProgressRun,
       // actions (stable references)
       start: st.start,
+      resumeRun: st.resumeRun,
       openIntro: st.setIntroOpen,
       pause: st.pause,
       resume: st.resume,
@@ -143,8 +152,12 @@ export function ImageFocusPlayer({ className }: { className?: string }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [s.overlayOpen]);
 
-  // Tear down timers/audio if the player unmounts (e.g. navigating away).
-  React.useEffect(() => () => usePelicanStore.getState().exit(), []);
+  // Tear down timers/audio if the player unmounts (e.g. navigating away or
+  // refreshing). DELIBERATELY pause() here, not exit() — we want the saved
+  // run (inProgressRun in localStorage) to survive navigation so the user
+  // returns to a Resume CTA. exit() wipes that save and is reserved for
+  // explicit user-initiated exit buttons.
+  React.useEffect(() => () => usePelicanStore.getState().pause(), []);
 
   const practiced = React.useMemo(
     () => getPracticeRegions(s.board, s.settings.categories),
@@ -209,19 +222,60 @@ export function ImageFocusPlayer({ className }: { className?: string }) {
             animationDuration={s.board.settings.animationDuration}
           />
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-ink/45 px-6 text-center backdrop-blur-[1px]">
-            <Button
-              variant="rush"
-              size="lg"
-              onClick={() =>
-                settings.hasSeenIntro ? s.start() : s.openIntro(true)
-              }
-            >
-              <HugeiconsIcon icon={PlayFreeIcons} size={18} strokeWidth={2.5} />
-              Start trainer
-            </Button>
-            <span className="font-mono text-[11px] uppercase tracking-widest text-paper">
-              {total} sign{total === 1 ? "" : "s"}
-            </span>
+            {s.canResume && s.inProgressRun ? (
+              <>
+                {/* Saved run from a prior visit — primary action is Resume,
+                    "Start new" stays available below as the escape hatch. */}
+                <Button variant="rush" size="lg" onClick={() => s.resumeRun()}>
+                  <HugeiconsIcon
+                    icon={PlayFreeIcons}
+                    size={18}
+                    strokeWidth={2.5}
+                  />
+                  Resume run
+                </Button>
+                <span className="font-mono text-[11px] uppercase tracking-widest text-paper">
+                  Sign{" "}
+                  {Math.min(
+                    s.inProgressRun.pos + 2,
+                    s.inProgressRun.queueIds.length,
+                  )}{" "}
+                  of {s.inProgressRun.queueIds.length}
+                  {s.inProgressRun.runRecalled.length > 0
+                    ? ` · ${s.inProgressRun.runRecalled.length} recalled`
+                    : ""}
+                </span>
+                <Button
+                  variant="paper"
+                  size="sm"
+                  onClick={() =>
+                    settings.hasSeenIntro ? s.start() : s.openIntro(true)
+                  }
+                >
+                  Start new run
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="rush"
+                  size="lg"
+                  onClick={() =>
+                    settings.hasSeenIntro ? s.start() : s.openIntro(true)
+                  }
+                >
+                  <HugeiconsIcon
+                    icon={PlayFreeIcons}
+                    size={18}
+                    strokeWidth={2.5}
+                  />
+                  Start trainer
+                </Button>
+                <span className="font-mono text-[11px] uppercase tracking-widest text-paper">
+                  {total} sign{total === 1 ? "" : "s"}
+                </span>
+              </>
+            )}
             {settings.selfGrading && (
               <div className="w-full max-w-55">
                 <Progress

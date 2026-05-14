@@ -31,13 +31,17 @@ function DialogOverlay({
 function DialogContent({
   className,
   children,
+  showCloseButton = true,
+  titlebarLabel = "DR · DIALOG",
+  closeAriaLabel = "Close dialog",
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
+  /** Tiny stamped label in the titlebar. Override per surface (e.g. AdModal). */
+  titlebarLabel?: string;
+  /** Accessible name for the close button. Override for context-specific copy. */
+  closeAriaLabel?: string;
 }) {
-  const { showCloseButton = true, ...rest } = props as typeof props & {
-    showCloseButton?: boolean;
-  };
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -53,25 +57,37 @@ function DialogContent({
           "data-[state=open]:slide-in-from-top-1 data-[state=closed]:slide-out-to-top-1",
           className,
         )}
-        {...rest}
+        {...props}
       >
-        <DialogTitleBar showClose={showCloseButton} />
+        <DialogTitleBar
+          showClose={showCloseButton}
+          label={titlebarLabel}
+          closeAriaLabel={closeAriaLabel}
+        />
         <div className="contents">{children}</div>
       </DialogPrimitive.Content>
     </DialogPortal>
   );
 }
 
-function DialogTitleBar({ showClose }: { showClose: boolean }) {
+function DialogTitleBar({
+  showClose,
+  label,
+  closeAriaLabel,
+}: {
+  showClose: boolean;
+  label: string;
+  closeAriaLabel: string;
+}) {
   return (
     <div
       data-slot="dialog-titlebar"
       className="flex shrink-0 items-center justify-between gap-3 bg-ink px-4 py-2.5 font-mono text-[10.5px] font-bold uppercase tracking-widest text-paper"
     >
-      <span>DR · DIALOG</span>
+      <span>{label}</span>
       {showClose && (
         <DialogPrimitive.Close
-          aria-label="Close dialog"
+          aria-label={closeAriaLabel}
           className={cn(
             "-my-1 inline-flex size-6 shrink-0 items-center justify-center",
             "border-2 border-paper text-paper outline-none",

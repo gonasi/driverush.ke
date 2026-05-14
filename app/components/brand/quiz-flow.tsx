@@ -14,6 +14,7 @@ import { cn } from "~/lib/utils";
 import { type Question, type QuizMode, MODE_LABELS } from "~/lib/questions";
 import { recordAnswer } from "~/lib/progress";
 import { analytics } from "~/lib/analytics";
+import { useAdEngine } from "~/lib/ads/ad-context";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -43,6 +44,7 @@ export function QuizFlow({ questions, mode }: QuizFlowProps) {
   const [answers, setAnswers] = React.useState<Answer[]>([]);
   const [picked, setPicked] = React.useState<number | null>(null);
   const [done, setDone] = React.useState(false);
+  const { triggerAd } = useAdEngine();
 
   // Track session start once per quiz mount with a non-empty bank.
   React.useEffect(() => {
@@ -92,6 +94,10 @@ export function QuizFlow({ questions, mode }: QuizFlowProps) {
         scorePct,
         passed: scorePct >= 70,
       });
+      // Fire the lesson_complete trigger after analytics so a provider
+      // failure can never suppress the GA event. The engine evaluates rules
+      // and may quietly block (cooldown, premium, route-uninterruptible).
+      triggerAd("lesson_complete");
       setDone(true);
       return;
     }

@@ -1,0 +1,49 @@
+/* Grace-period progress bar inside the ad modal.
+ *
+ * Drains left-to-right at a perfectly linear rate over the MIN_DISPLAY_MS
+ * window. CSS handles smoothness so we don't have to re-render React state
+ * 60× a second — the JS `secondsLeft` state only ticks the chip label.
+ *
+ * The component sets `animation-duration` inline from MIN_DISPLAY_MS, so
+ * changing the constant on the JS side keeps the animation in lockstep.
+ */
+
+@keyframes dr-ad-grace-drain {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.dr-ad-grace {
+  /* Sits flush under the "DR · SPONSORED" titlebar. Same height as our
+     other progress affordances so it reads as part of the language. */
+  position: relative;
+  height: 4px;
+  width: 100%;
+  background: color-mix(in oklab, var(--ink, #111) 8%, transparent);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.dr-ad-grace__fill {
+  position: absolute;
+  inset: 0;
+  background: var(--rush, #ee2a1c);
+  transform-origin: left center;
+  animation-name: dr-ad-grace-drain;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+  /* duration set inline from the JS constant */
+}
+
+/* Respect reduced motion: settle empty immediately. The JS grace timer
+   still enforces the dismiss block, so policy compliance is unaffected. */
+@media (prefers-reduced-motion: reduce) {
+  .dr-ad-grace__fill {
+    animation: none;
+    transform: scaleX(0);
+  }
+}

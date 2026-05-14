@@ -7,6 +7,7 @@ import {
   ScrollRestoration,
   useLocation,
 } from "react-router";
+import * as React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import type { Route } from "./+types/root";
@@ -18,6 +19,8 @@ import { variants } from "~/lib/motion";
 import { SITE, absUrl } from "~/lib/site";
 import { usePageviews } from "~/lib/analytics";
 import { useUtmCapture } from "~/lib/utm";
+import { AdProvider, RouteAdGate, useAdEngine } from "~/lib/ads/ad-context";
+import { AdModal } from "~/components/brand/ad-modal";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -78,7 +81,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
   // the way of the games on mobile.
   useThemeSync();
   return (
-    <html lang={SITE.lang}>
+    // The theme init script writes `style="color-scheme: …"` on <html> before
+    // React hydrates (so light/dark settles without a flash). That edit comes
+    // from outside React's tree, so suppress the hydration diff on this node.
+    <html lang={SITE.lang} suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -103,22 +109,49 @@ export default function App() {
   useUtmCapture();
   usePageviews();
   return (
-    // mode="wait" → outgoing route fully exits before the next enters, so
-    // there's no overlap to fight with the page's stamped layout.
-    // initial={false} → SSR's first paint isn't animated; subsequent client
-    // navigations get the snap fade/slide.
-    <AnimatePresence mode="wait" initial={false}>
-      <motion.div
-        key={location.pathname}
-        variants={variants.page}
-        initial="hidden"
-        animate="visible"
-        exit="exit"
-      >
-        <Outlet />
-      </motion.div>
-    </AnimatePresence>
+    // <AdProvider> wraps the route tree so the engine + modal survive route
+    // transitions. <RouteAdGate /> reads each match's `handle.ads` and pushes
+    // the interruptible flag into the engine. <AdModal /> is a portalled
+    // sibling of the animated outlet — it doesn't unmount when the user
+    // navigates away mid-impression.
+    <AdProvider>
+      <RouteAdGate />
+      <AmbientAdTrigger />
+      {/* mode="wait" → outgoing route fully exits before the next enters, so
+          there's no overlap to fight with the page's stamped layout.
+          initial={false} → SSR's first paint isn't animated; subsequent
+          client navigations get the snap fade/slide. */}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={location.pathname}
+          variants={variants.page}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+        >
+          <Outlet />
+        </motion.div>
+      </AnimatePresence>
+      <AdModal />
+    </AdProvider>
   );
+}
+
+/**
+ * Ambient ad trigger. Fires `route_change` on every SPA navigation. The
+ * engine gates it by the active-session budget — most calls log
+ * `session_budget_not_met` and do nothing; the call that lands after the
+ * 5-min budget hits actually opens the modal. This is the "next action
+ * fires the ad" mechanism for routes outside the game-specific trigger
+ * sites (quiz completion / pelican `_toBetween`).
+ */
+function AmbientAdTrigger() {
+  const location = useLocation();
+  const { triggerAd } = useAdEngine();
+  React.useEffect(() => {
+    triggerAd("route_change");
+  }, [location.pathname, triggerAd]);
+  return null;
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
