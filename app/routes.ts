@@ -9,6 +9,7 @@ import {
 export default [
   index("routes/home.tsx"),
   route("courses", "routes/courses.tsx"),
+  route("driving-schools-kenya", "routes/driving-schools-kenya.tsx"),
   route("road-signs", "routes/road-signs.tsx"),
   route("road-signs/pelican", "routes/road-signs-pelican.tsx"),
   route("road-signs/3d", "routes/road-signs-3d.tsx"),

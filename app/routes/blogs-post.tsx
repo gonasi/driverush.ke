@@ -54,7 +54,12 @@ export function meta({ data, params }: Route.MetaArgs) {
     ];
   }
   const { post } = data;
-  const url = absUrl(`/blogs/${post.slug}`);
+  const ownUrl = absUrl(`/blogs/${post.slug}`);
+  // When a post canonicalises to a landing page, the canonical href points
+  // there and the BlogPosting / FAQPage schema are dropped — Google should
+  // consolidate ranking signals onto the landing page, not split them.
+  const canonicalUrl = post.canonical ? absUrl(post.canonical) : ownUrl;
+  const isCanonicalised = post.canonical != null;
   const ogImage = absUrl(SITE.ogImage);
   // Brand suffix on the SERP title only — the OG/Twitter title keeps the
   // editorial wording clean (post titles often already contain "Kenya" or
@@ -68,10 +73,10 @@ export function meta({ data, params }: Route.MetaArgs) {
       name: "keywords",
       content: keywords(...post.tags, ...BLOG_KEYWORDS),
     },
-    { tagName: "link", rel: "canonical", href: url },
+    { tagName: "link", rel: "canonical", href: canonicalUrl },
     { property: "og:title", content: post.title },
     { property: "og:description", content: post.description },
-    { property: "og:url", content: url },
+    { property: "og:url", content: canonicalUrl },
     { property: "og:type", content: "article" },
     { property: "og:image", content: ogImage },
     { property: "article:published_time", content: post.date },
@@ -88,40 +93,46 @@ export function meta({ data, params }: Route.MetaArgs) {
         { name: post.title, url: `/blogs/${post.slug}` },
       ]),
     },
-    {
-      "script:ld+json": {
-        "@context": "https://schema.org",
-        "@type": "BlogPosting",
-        headline: post.title,
-        description: post.description,
-        datePublished: post.date,
-        dateModified: post.date,
-        url,
-        inLanguage: SITE.lang,
-        mainEntityOfPage: { "@type": "WebPage", "@id": url },
-        author: {
-          "@type": "Organization",
-          name: SITE.name,
-          url: SITE.url,
-        },
-        publisher: {
-          "@type": "Organization",
-          name: SITE.name,
-          url: SITE.url,
-          logo: { "@type": "ImageObject", url: ogImage },
-        },
-        image: [ogImage],
-        keywords: [...post.tags, ...BLOG_KEYWORDS].join(", "),
-        articleSection: post.category,
-        wordCount: post.readingMinutes * 220,
-      },
-    },
-    // FAQPage rich-result eligibility for cornerstone posts that ship a
-    // matching <Accordion> in the body. Guarded — most posts have no `faq`
-    // frontmatter, so this is a no-op.
-    ...(post.faq && post.faq.length > 0
-      ? [{ "script:ld+json": faqPageLd(post.faq) }]
-      : []),
+    // Skip BlogPosting + FAQPage JSON-LD on canonicalised posts so the
+    // landing page is the sole structured-data home for the topic.
+    ...(isCanonicalised
+      ? []
+      : [
+          {
+            "script:ld+json": {
+              "@context": "https://schema.org",
+              "@type": "BlogPosting",
+              headline: post.title,
+              description: post.description,
+              datePublished: post.date,
+              dateModified: post.date,
+              url: ownUrl,
+              inLanguage: SITE.lang,
+              mainEntityOfPage: { "@type": "WebPage", "@id": ownUrl },
+              author: {
+                "@type": "Organization",
+                name: SITE.name,
+                url: SITE.url,
+              },
+              publisher: {
+                "@type": "Organization",
+                name: SITE.name,
+                url: SITE.url,
+                logo: { "@type": "ImageObject", url: ogImage },
+              },
+              image: [ogImage],
+              keywords: [...post.tags, ...BLOG_KEYWORDS].join(", "),
+              articleSection: post.category,
+              wordCount: post.readingMinutes * 220,
+            },
+          },
+          // FAQPage rich-result eligibility for cornerstone posts that ship a
+          // matching <Accordion> in the body. Guarded — most posts have no
+          // `faq` frontmatter, so this is a no-op.
+          ...(post.faq && post.faq.length > 0
+            ? [{ "script:ld+json": faqPageLd(post.faq) }]
+            : []),
+        ]),
   ];
 }
 

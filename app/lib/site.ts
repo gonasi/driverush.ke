@@ -111,6 +111,29 @@ export const ROAD_SIGN_KEYWORDS = [
   "memorise road signs",
 ] as const;
 
+/**
+ * Driving-schools section keywords — appended to {@link SITE.keywords} on the
+ * `/driving-schools-kenya` landing page so the school-specific terms lead.
+ */
+export const DRIVING_SCHOOL_KEYWORDS = [
+  "driving schools in Kenya",
+  "best driving schools in Kenya",
+  "driving school Kenya",
+  "driving school Nairobi",
+  "NTSA registered driving schools",
+  "AA Kenya driving school",
+  "Petanns driving school",
+  "Glory driving school",
+  "Sunset driving school",
+  "Eagle driving school",
+  "Better Brakes driving school",
+  "driving school fees Kenya",
+  "driving school cost Kenya",
+  "driving school near me Kenya",
+  "Class B driving school Kenya",
+  "Class D PSV driving school",
+] as const;
+
 /** Build an absolute URL for a route or asset. */
 export function absUrl(path: string): string {
   if (path.startsWith("http")) return path;

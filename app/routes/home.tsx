@@ -25,14 +25,7 @@ import { motion } from "framer-motion";
 
 import type { Route } from "./+types/home";
 
-import {
-  absUrl,
-  faqPageLd,
-  organizationLd,
-  pageTitle,
-  SITE,
-  websiteLd,
-} from "~/lib/site";
+import { absUrl, organizationLd, pageTitle, SITE, websiteLd } from "~/lib/site";
 import { getTodaysQuestion } from "~/lib/questions";
 import { COURSES, type Course, type CourseAccent } from "~/lib/courses";
 import { PARTNERS, type Partner } from "~/lib/partners";
@@ -86,7 +79,7 @@ const HOME_FAQ = [
   },
   {
     q: "How much does a driving school in Kenya cost?",
-    a: "Traditional driving schools in Kenya run roughly KES 8,000–15,000 for the theory + practical package, on top of NTSA fees. DriveRush's online theory practice is free; Premium is KES 499/month or KES 4,999/year, paid by M-Pesa.",
+    a: "Traditional driving schools in Kenya run roughly KES 8,000–20,000 for the theory + practical package, on top of NTSA fees, with price bands that vary by school and county. The DriveRush directory of driving schools in Kenya compares the major NTSA-registered ones (AA Kenya, Petanns, Glory, Better Brakes, Sunset and Eagle) side by side. Splitting online theory from in-person practical typically saves KES 4,000–7,000 — DriveRush's online theory practice is free.",
   },
   {
     q: "What are the Kenyan road signs and what do they mean?",
@@ -126,28 +119,45 @@ export function meta(_: Route.MetaArgs) {
     { name: "twitter:description", content: description },
     { name: "twitter:image", content: ogImage },
     { name: "twitter:image:alt", content: `${SITE.name} logo` },
-    // Organization + WebSite (with SearchAction) anchor brand-entity queries
-    // like "driverush", "drive rush kenya". FAQ feeds the answer box / SGE.
-    { "script:ld+json": organizationLd() },
-    { "script:ld+json": websiteLd() },
-    { "script:ld+json": faqPageLd(HOME_FAQ) },
-    ...COURSES.map((c) => ({
+    // All home-page entities ship in a single @graph so there's exactly one
+    // FAQPage on the page (Google's parser was flagging two FAQPage items —
+    // one from JSON-LD and one auto-detected from the visible accordion — as
+    // "Duplicate field 'FAQPage'"). Single @graph is also the Schema.org-
+    // recommended pattern when entities cross-reference each other by @id.
+    {
       "script:ld+json": {
         "@context": "https://schema.org",
-        "@type": "Course",
-        name: c.title,
-        description: c.blurb,
-        url: absUrl("/courses"),
-        inLanguage: ["en", "sw"],
-        provider: {
-          "@type": "Organization",
-          "@id": `${SITE.url}#organization`,
-          name: SITE.name,
-          sameAs: SITE.url,
-        },
+        "@graph": [
+          stripContext(organizationLd()),
+          stripContext(websiteLd()),
+          {
+            "@type": "FAQPage",
+            "@id": `${url}#faq`,
+            mainEntity: HOME_FAQ.map(({ q, a }) => ({
+              "@type": "Question",
+              name: q,
+              acceptedAnswer: { "@type": "Answer", text: a },
+            })),
+          },
+          ...COURSES.map((c) => ({
+            "@type": "Course",
+            name: c.title,
+            description: c.blurb,
+            url: absUrl("/courses"),
+            inLanguage: ["en", "sw"],
+            provider: { "@id": `${SITE.url}#organization` },
+          })),
+        ],
       },
-    })),
+    },
   ];
+}
+
+function stripContext<T extends { "@context"?: unknown }>(
+  obj: T,
+): Omit<T, "@context"> {
+  const { "@context": _ctx, ...rest } = obj;
+  return rest;
 }
 
 const Container = ({ children }: { children: React.ReactNode }) => (
@@ -193,6 +203,7 @@ const NAV_LINKS = [
   { label: "Practice", href: "/practice" },
   { label: "Quick test", href: "/practice?mode=test" },
   { label: "Signs", href: "/road-signs" },
+  { label: "Schools", href: "/driving-schools-kenya" },
   { label: "Blog", href: "/blogs" },
 ];
 
@@ -1327,6 +1338,13 @@ function Faq() {
             className="text-rush hover:underline"
           >
             Full guide to learning to drive in Kenya
+          </Link>{" "}
+          ·{" "}
+          <Link
+            to="/driving-schools-kenya"
+            className="text-rush hover:underline"
+          >
+            Best driving schools in Kenya
           </Link>{" "}
           ·{" "}
           <Link

@@ -54,6 +54,13 @@ export type BlogFrontmatter = {
    * an `<Accordion>` of `<AccordionItem>`s near the bottom of the MDX.
    */
   faq?: BlogFaq[];
+  /**
+   * Optional canonical override — a site-relative path (e.g. `/driving-schools-kenya`)
+   * that should outrank this post in search. When set, the post emits
+   * `<link rel="canonical">` pointing there and skips the BlogPosting JSON-LD,
+   * so Google consolidates ranking signals onto the landing page.
+   */
+  canonical?: string;
 };
 
 export type BlogPost = BlogFrontmatter & {

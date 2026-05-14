@@ -10,13 +10,7 @@ import {
 
 import type { Route } from "./+types/road-signs";
 
-import {
-  absUrl,
-  breadcrumbLd,
-  faqPageLd,
-  pageMeta,
-  ROAD_SIGN_KEYWORDS,
-} from "~/lib/site";
+import { absUrl, breadcrumbLd, pageMeta, ROAD_SIGN_KEYWORDS } from "~/lib/site";
 import { SIGN_GAMES } from "~/lib/road-signs";
 import {
   SIGN_CATEGORIES,
@@ -48,27 +42,49 @@ export function meta(_: Route.MetaArgs) {
       path: PATH,
       extraKeywords: ROAD_SIGN_KEYWORDS,
     }),
-    {
-      "script:ld+json": breadcrumbLd([
-        { name: "Home", url: "/" },
-        { name: "Road signs", url: PATH },
-      ]),
-    },
+    // Single @graph: one FAQPage on the page, plus the breadcrumb and the
+    // class-list, all cross-referenced. Same shape as the home route — keeps
+    // Google's parser from seeing the visible accordion as a second FAQPage.
     {
       "script:ld+json": {
         "@context": "https://schema.org",
-        "@type": "ItemList",
-        name: "Classes of road sign in Kenya",
-        itemListElement: SIGN_CATEGORIES.map((c, i) => ({
-          "@type": "ListItem",
-          position: i + 1,
-          name: c.title,
-          url: absUrl(`${PATH}#${c.slug}`),
-        })),
+        "@graph": [
+          stripContext(
+            breadcrumbLd([
+              { name: "Home", url: "/" },
+              { name: "Road signs", url: PATH },
+            ]),
+          ),
+          {
+            "@type": "ItemList",
+            name: "Classes of road sign in Kenya",
+            itemListElement: SIGN_CATEGORIES.map((c, i) => ({
+              "@type": "ListItem",
+              position: i + 1,
+              name: c.title,
+              url: absUrl(`${PATH}#${c.slug}`),
+            })),
+          },
+          {
+            "@type": "FAQPage",
+            "@id": `${absUrl(PATH)}#faq`,
+            mainEntity: SIGN_FAQ.map(({ q, a }) => ({
+              "@type": "Question",
+              name: q,
+              acceptedAnswer: { "@type": "Answer", text: a },
+            })),
+          },
+        ],
       },
     },
-    { "script:ld+json": faqPageLd(SIGN_FAQ) },
   ];
+}
+
+function stripContext<T extends { "@context"?: unknown }>(
+  obj: T,
+): Omit<T, "@context"> {
+  const { "@context": _ctx, ...rest } = obj;
+  return rest;
 }
 
 /* Map the data's shape vocabulary onto the sign-card frame's. */
