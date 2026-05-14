@@ -12,7 +12,7 @@
 import { absUrl } from "~/lib/site";
 import { getAllPosts } from "~/lib/blog";
 
-const STATIC_LAST_MODIFIED = "2026-05-13";
+const STATIC_LAST_MODIFIED = "2026-05-14";
 
 type Entry = {
   path: string;
