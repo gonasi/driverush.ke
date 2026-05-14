@@ -7,6 +7,7 @@
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
+    "ping-indexnow": "node scripts/ping-indexnow.mjs",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
