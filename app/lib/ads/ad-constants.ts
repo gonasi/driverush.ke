@@ -12,11 +12,18 @@ export const AD_CLIENT = "ca-pub-9749836423673560";
  * Real ad-unit slot IDs from the AdSense dashboard. Empty strings mean
  * "no real slot configured yet" — the factory falls back to the mock provider
  * for that slot in development. Populate before flipping AdSense to live.
+ *
+ * Currently all three logical placements share one AdSense unit
+ * ("5315769413", a responsive auto-format unit on publisher
+ * ca-pub-9749836423673560). AdSense allows reusing a single unit across
+ * multiple placements; reporting will be aggregated. To split CTR / fill
+ * data per surface later, create distinct units in the AdSense dashboard
+ * and swap individual entries below — engine code doesn't change.
  */
 export const AD_SLOTS: Record<AdSlotId, string> = {
-  lesson_complete: "",
-  chapter_complete: "",
-  gameplay_milestone: "",
+  lesson_complete: "5315769413",
+  chapter_complete: "5315769413",
+  gameplay_milestone: "5315769413",
 };
 
 /**
