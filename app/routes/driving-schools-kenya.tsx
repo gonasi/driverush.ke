@@ -44,9 +44,10 @@ export function meta(_: Route.MetaArgs) {
       path: PATH,
       extraKeywords: DRIVING_SCHOOL_KEYWORDS,
     }),
-    // Single @graph: one FAQPage on the page, plus breadcrumb and a directory
-    // ItemList. Schools embed as Organization items inside the list, each with
-    // an `@id` and `areaServed` so search treats them as real entities.
+    // Breadcrumb + directory ItemList in a single @graph. Schools embed as
+    // Organization items inside the list, each with an `@id` and `areaServed`
+    // so search treats them as real entities. FAQPage is intentionally
+    // omitted — see app/routes/home.tsx for context.
     {
       "script:ld+json": {
         "@context": "https://schema.org",
@@ -77,15 +78,6 @@ export function meta(_: Route.MetaArgs) {
                 })),
                 ...(s.founded ? { foundingDate: String(s.founded) } : {}),
               },
-            })),
-          },
-          {
-            "@type": "FAQPage",
-            "@id": `${url}#faq`,
-            mainEntity: SCHOOLS_FAQ.map(({ q, a }) => ({
-              "@type": "Question",
-              name: q,
-              acceptedAnswer: { "@type": "Answer", text: a },
             })),
           },
         ],

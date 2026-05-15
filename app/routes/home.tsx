@@ -60,9 +60,8 @@ import { TicketCard } from "~/components/brand/ticket-card";
 import { TrafficLoader } from "~/components/brand/traffic-loader";
 
 /**
- * Common questions surfaced as FAQPage JSON-LD for the answer-box / SGE. Kept
- * here (not in a separate data file) because they only appear in the home
- * `<head>` — moving them would split editorial copy across two places.
+ * Common questions surfaced as a visible accordion on the home page. Kept here
+ * (not in a separate data file) because they only appear on this route.
  */
 const HOME_FAQ = [
   {
@@ -119,26 +118,16 @@ export function meta(_: Route.MetaArgs) {
     { name: "twitter:description", content: description },
     { name: "twitter:image", content: ogImage },
     { name: "twitter:image:alt", content: `${SITE.name} logo` },
-    // All home-page entities ship in a single @graph so there's exactly one
-    // FAQPage on the page (Google's parser was flagging two FAQPage items —
-    // one from JSON-LD and one auto-detected from the visible accordion — as
-    // "Duplicate field 'FAQPage'"). Single @graph is also the Schema.org-
-    // recommended pattern when entities cross-reference each other by @id.
+    // Single @graph so entities cross-reference each other by @id. FAQPage is
+    // intentionally omitted — Google Search Console kept flagging duplicate-
+    // FAQPage errors even after consolidation, so we surface the Q&A as visible
+    // accordion content only and skip the rich-result schema.
     {
       "script:ld+json": {
         "@context": "https://schema.org",
         "@graph": [
           stripContext(organizationLd()),
           stripContext(websiteLd()),
-          {
-            "@type": "FAQPage",
-            "@id": `${url}#faq`,
-            mainEntity: HOME_FAQ.map(({ q, a }) => ({
-              "@type": "Question",
-              name: q,
-              acceptedAnswer: { "@type": "Answer", text: a },
-            })),
-          },
           ...COURSES.map((c) => ({
             "@type": "Course",
             name: c.title,
@@ -1304,9 +1293,9 @@ function Pricing() {
 }
 
 /* =============================================================
-   FAQ — head queries we want to rank for. Mirrors HOME_FAQ above
-   so the FAQPage JSON-LD has a visible match in the DOM (Google
-   needs both, otherwise the rich result is dropped).
+   FAQ — head queries we want to rank for. Visible content only;
+   FAQPage JSON-LD is no longer emitted (Search Console kept
+   flagging duplicate-FAQPage errors).
    ============================================================= */
 
 function Faq() {

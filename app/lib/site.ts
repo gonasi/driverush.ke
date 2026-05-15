@@ -167,19 +167,6 @@ export function breadcrumbLd(crumbs: Crumb[]) {
   };
 }
 
-/** FAQPage JSON-LD built from plain question/answer pairs. */
-export function faqPageLd(qa: ReadonlyArray<{ q: string; a: string }>) {
-  return {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: qa.map(({ q, a }) => ({
-      "@type": "Question",
-      name: q,
-      acceptedAnswer: { "@type": "Answer", text: a },
-    })),
-  };
-}
-
 /**
  * Build a brand-consistent page title. We lead with the page-specific phrase
  * (the keyword the user typed in) and end with `· DriveRush — Kenya`. Brand

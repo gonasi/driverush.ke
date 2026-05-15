@@ -2,14 +2,7 @@ import { Link, isRouteErrorResponse, useRouteError } from "react-router";
 
 import type { Route } from "./+types/blogs-post";
 
-import {
-  absUrl,
-  breadcrumbLd,
-  faqPageLd,
-  keywords,
-  pageTitle,
-  SITE,
-} from "~/lib/site";
+import { absUrl, breadcrumbLd, keywords, pageTitle, SITE } from "~/lib/site";
 import {
   BLOG_KEYWORDS,
   getPostBySlug,
@@ -93,8 +86,9 @@ export function meta({ data, params }: Route.MetaArgs) {
         { name: post.title, url: `/blogs/${post.slug}` },
       ]),
     },
-    // Skip BlogPosting + FAQPage JSON-LD on canonicalised posts so the
-    // landing page is the sole structured-data home for the topic.
+    // Skip BlogPosting JSON-LD on canonicalised posts so the landing page is
+    // the sole structured-data home for the topic. FAQPage is no longer
+    // emitted anywhere (see app/routes/home.tsx for context).
     ...(isCanonicalised
       ? []
       : [
@@ -126,12 +120,6 @@ export function meta({ data, params }: Route.MetaArgs) {
               wordCount: post.readingMinutes * 220,
             },
           },
-          // FAQPage rich-result eligibility for cornerstone posts that ship a
-          // matching <Accordion> in the body. Guarded — most posts have no
-          // `faq` frontmatter, so this is a no-op.
-          ...(post.faq && post.faq.length > 0
-            ? [{ "script:ld+json": faqPageLd(post.faq) }]
-            : []),
         ]),
   ];
 }

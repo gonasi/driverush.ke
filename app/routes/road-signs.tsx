@@ -42,9 +42,9 @@ export function meta(_: Route.MetaArgs) {
       path: PATH,
       extraKeywords: ROAD_SIGN_KEYWORDS,
     }),
-    // Single @graph: one FAQPage on the page, plus the breadcrumb and the
-    // class-list, all cross-referenced. Same shape as the home route — keeps
-    // Google's parser from seeing the visible accordion as a second FAQPage.
+    // Breadcrumb + ItemList in a single @graph. FAQPage is intentionally
+    // omitted — see app/routes/home.tsx for context (Search Console kept
+    // flagging duplicate-FAQPage on this route too).
     {
       "script:ld+json": {
         "@context": "https://schema.org",
@@ -63,15 +63,6 @@ export function meta(_: Route.MetaArgs) {
               position: i + 1,
               name: c.title,
               url: absUrl(`${PATH}#${c.slug}`),
-            })),
-          },
-          {
-            "@type": "FAQPage",
-            "@id": `${absUrl(PATH)}#faq`,
-            mainEntity: SIGN_FAQ.map(({ q, a }) => ({
-              "@type": "Question",
-              name: q,
-              acceptedAnswer: { "@type": "Answer", text: a },
             })),
           },
         ],
