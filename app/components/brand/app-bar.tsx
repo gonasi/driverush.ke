@@ -49,7 +49,7 @@ function AppBar({
     >
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-4 px-5 sm:px-9">
         <div className="flex flex-1 items-center">
-          {brand ?? <Logo variant="main" height={44} priority />}
+          {brand ?? <Logo variant="plain" height={40} themed priority />}
         </div>
         {nav && <nav className="hidden items-center gap-1 md:flex">{nav}</nav>}
         <div className="flex flex-1 items-center justify-end gap-2">

@@ -25,7 +25,14 @@ import { motion } from "framer-motion";
 
 import type { Route } from "./+types/home";
 
-import { absUrl, organizationLd, pageTitle, SITE, websiteLd } from "~/lib/site";
+import {
+  absUrl,
+  GONASI,
+  organizationLd,
+  pageTitle,
+  SITE,
+  websiteLd,
+} from "~/lib/site";
 import { getTodaysQuestion } from "~/lib/questions";
 import { COURSES, type Course, type CourseAccent } from "~/lib/courses";
 import { PARTNERS, type Partner } from "~/lib/partners";
@@ -53,6 +60,7 @@ import { BoardingCard } from "~/components/brand/boarding-card";
 import { ChoiceCard } from "~/components/brand/choice-card";
 import { FeedbackBanner } from "~/components/brand/feedback-banner";
 import { Logo } from "~/components/brand/logo";
+import { PoweredByGonasi } from "~/components/brand/powered-by-gonasi";
 import { QuickAction } from "~/components/brand/quick-action";
 import { Rail } from "~/components/brand/rail";
 import { SignGameCard } from "~/components/brand/sign-game-card";
@@ -177,6 +185,7 @@ export default function Home() {
         <Faq />
         <TrustStrip />
         <FinalCta />
+        <ParentCompany />
       </main>
       <SiteFooter />
     </>
@@ -297,6 +306,13 @@ function SiteNav() {
                     </Link>
                   </Button>
                 </div>
+                <div className="mt-6 border-t border-dashed border-ink pt-4">
+                  <PoweredByGonasi
+                    variant="inline"
+                    tone="auto"
+                    utmMedium="mobile_menu"
+                  />
+                </div>
               </SheetBody>
             </SheetContent>
           </Sheet>
@@ -325,6 +341,12 @@ function Hero() {
         className="pointer-events-none absolute -left-14 top-1/2 -z-10 hidden -translate-y-1/2 opacity-50 sm:block lg:-left-6"
       >
         <TrafficLoader size="xl" aria-hidden />
+      </div>
+
+      {/* Parent-company "maker's mark" tucked into the top-right of the hero.
+          Hidden on phones where it would steal width from the H1. */}
+      <div className="pointer-events-auto absolute right-5 top-5 z-10 hidden sm:right-9 sm:block">
+        <PoweredByGonasi variant="stamp" tone="auto" utmMedium="hero_stamp" />
       </div>
 
       <Container>
@@ -1434,6 +1456,87 @@ function FinalCta() {
 }
 
 /* =============================================================
+   Parent company — DriveRush is a Gonasi product. Sits between
+   the FinalCta and the footer so it reads as a calm "who's
+   behind this" moment after the close-out ask.
+   ============================================================= */
+
+function ParentCompany() {
+  const utmHref = `${GONASI.url}/?utm_source=driverush&utm_medium=parent_strip&utm_campaign=powered_by_gonasi`;
+  return (
+    <section
+      aria-labelledby="parent-company-heading"
+      className="border-b-2 border-ink bg-paper-3 py-12 sm:py-14"
+    >
+      <Container>
+        <div className="grid items-center gap-7 border-2 border-ink bg-surface p-6 shadow-stamp sm:p-9 md:grid-cols-[1.4fr_1fr]">
+          <div>
+            <span className="font-mono text-[11px] uppercase tracking-widest text-ink-3">
+              Parent company
+            </span>
+            <h2
+              id="parent-company-heading"
+              className="m-0 mt-2 font-display text-[clamp(24px,3vw,36px)] font-extrabold uppercase leading-tight tracking-tight text-ink"
+            >
+              Made by{" "}
+              <span className="italic font-serif font-normal normal-case text-rush">
+                Gonasi
+              </span>
+              .
+            </h2>
+            <p className="mt-4 max-w-xl font-serif text-[clamp(15px,1.7vw,19px)] leading-snug text-ink-2">
+              {GONASI.blurb} DriveRush is that idea applied to driving school:
+              the NTSA highway code, the signs, the test, in a shape that
+              sticks.
+            </p>
+            <div className="mt-5">
+              <a
+                href={utmHref}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="inline-flex items-center gap-2 border-2 border-ink bg-ink px-4 py-2.5 font-display text-[12px] font-bold uppercase tracking-wider text-paper outline-none transition-[transform,box-shadow] duration-100 ease-snap hover:-translate-x-px hover:-translate-y-px hover:shadow-stamp focus-visible:-translate-x-px focus-visible:-translate-y-px focus-visible:shadow-stamp-rush"
+              >
+                Visit {GONASI.name}
+                <HugeiconsIcon
+                  icon={ArrowUpRight01FreeIcons}
+                  size={14}
+                  strokeWidth={2.5}
+                />
+              </a>
+            </div>
+          </div>
+          {/* Logo on its own. The square asset has its own field colour, so
+              we don't wrap it in a coloured band; the link itself is the
+              square box (aspect-square + max-w cap) and the images cover it.
+              Right-aligned on md+ so it balances against the text column. */}
+          <a
+            href={utmHref}
+            target="_blank"
+            rel="noreferrer noopener"
+            aria-label={`Visit ${GONASI.name}. Opens gonasi.com in a new tab.`}
+            className="group/gonasi-band relative mx-auto block aspect-square w-full max-w-70 overflow-hidden border-2 border-ink outline-none transition-[transform,box-shadow] duration-100 ease-snap hover:-translate-x-px hover:-translate-y-px hover:shadow-stamp focus-visible:-translate-x-px focus-visible:-translate-y-px focus-visible:shadow-stamp-rush md:ml-auto md:mr-0"
+          >
+            <img
+              src={GONASI.logoOnLight}
+              alt={`${GONASI.name} logo`}
+              loading="lazy"
+              className="absolute inset-0 h-full w-full object-cover dark:hidden"
+            />
+            <img
+              src={GONASI.logoOnDark}
+              alt=""
+              aria-hidden
+              loading="lazy"
+              className="absolute inset-0 hidden h-full w-full object-cover dark:block"
+            />
+          </a>
+        </div>
+      </Container>
+    </section>
+  );
+}
+
+/* =============================================================
    Footer.
    ============================================================= */
 
@@ -1443,7 +1546,7 @@ function SiteFooter() {
       <Container>
         <div className="grid gap-6 border-b border-paper/20 pb-7 md:grid-cols-[2fr_1fr_1fr_1fr]">
           <div>
-            <Logo variant="plain" height={64} knockout />
+            <Logo variant="plain" height={64} themed="on-ink" />
             <p className="mt-4 max-w-sm font-serif text-base leading-snug opacity-80">
               Full driving courses and NTSA practice, built for Kenyan roads.
             </p>
@@ -1476,10 +1579,19 @@ function SiteFooter() {
             ]}
           />
         </div>
-        <div className="flex flex-wrap justify-between gap-3 pt-6 font-mono text-[11px] uppercase tracking-widest opacity-60">
-          <span>© 2026 DriveRush.ke</span>
-          <span>Learn · Drive · Succeed</span>
-          <span>Nairobi · KE</span>
+        <div className="flex flex-col items-start gap-5 pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <PoweredByGonasi
+            variant="lockup"
+            tone="on-dark"
+            utmMedium="home_footer"
+          />
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[11px] uppercase tracking-widest opacity-60">
+            <span>© 2026 DriveRush.ke</span>
+            <span aria-hidden>·</span>
+            <span>Learn · Drive · Succeed</span>
+            <span aria-hidden>·</span>
+            <span>Nairobi · KE</span>
+          </div>
         </div>
       </Container>
     </footer>

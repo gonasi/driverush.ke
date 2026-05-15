@@ -31,6 +31,7 @@ import { AppBar, AppBarLink } from "~/components/brand/app-bar";
 import { BlogCard } from "~/components/brand/blog-card";
 import { Logo } from "~/components/brand/logo";
 import { Masthead } from "~/components/brand/masthead";
+import { PoweredByGonasi } from "~/components/brand/powered-by-gonasi";
 import { Rail } from "~/components/brand/rail";
 
 const PATH = "/blogs";
@@ -389,10 +390,19 @@ function SiteFooter() {
             ]}
           />
         </div>
-        <div className="flex flex-wrap justify-between gap-3 pt-6 font-mono text-[11px] uppercase tracking-widest opacity-60">
-          <span>© 2026 DriveRush.ke</span>
-          <span>Learn · Drive · Succeed</span>
-          <span>Nairobi · KE</span>
+        <div className="flex flex-col items-start gap-5 pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <PoweredByGonasi
+            variant="lockup"
+            tone="on-dark"
+            utmMedium="blog_footer"
+          />
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[11px] uppercase tracking-widest opacity-60">
+            <span>© 2026 DriveRush.ke</span>
+            <span aria-hidden>·</span>
+            <span>Learn · Drive · Succeed</span>
+            <span aria-hidden>·</span>
+            <span>Nairobi · KE</span>
+          </div>
         </div>
       </Container>
     </footer>

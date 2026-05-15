@@ -28,6 +28,20 @@ type LogoProps = Omit<
    * accept that trade-off; the alternative would be a separate dark-mode asset.
    */
   knockout?: boolean;
+  /**
+   * Auto-inverts the asset to match a theme-aware surface, so the same file
+   * renders correctly in both light and dark mode. SSR-safe — toggled by
+   * Tailwind's `dark:` variant off the `dark` class on <html>, no runtime
+   * theme detection needed.
+   *
+   * - `"on-paper"` (or `true`) — for surfaces that are paper-coloured in light
+   *   mode and ink-coloured in dark mode (e.g. `bg-surface`, the default app
+   *   background). Inverts in dark mode.
+   * - `"on-ink"` — for surfaces that are ink-coloured in light mode and
+   *   paper-coloured in dark mode (e.g. `bg-ink`, the footer band). Inverts in
+   *   light mode.
+   */
+  themed?: boolean | "on-paper" | "on-ink";
   /** Mark as LCP / eager load — set on hero / above-the-fold uses. */
   priority?: boolean;
   /** Override the default "DriveRush" alt text. */
@@ -44,6 +58,7 @@ function Logo({
   variant = "plain",
   height = variant === "main" ? 80 : 36,
   knockout = false,
+  themed = false,
   priority = false,
   alt,
   className,
@@ -69,6 +84,10 @@ function Logo({
       className={cn(
         "block select-none",
         knockout && "filter-[brightness(0)_invert(1)]",
+        (themed === true || themed === "on-paper") &&
+          "dark:filter-[brightness(0)_invert(1)]",
+        themed === "on-ink" &&
+          "filter-[brightness(0)_invert(1)] dark:filter-none",
         className,
       )}
       style={{ width, height, ...style }}

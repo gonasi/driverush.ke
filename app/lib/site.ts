@@ -92,6 +92,24 @@ export const SITE = {
 } as const;
 
 /**
+ * Parent company. DriveRush is one of Gonasi's products — surface that link
+ * everywhere we credit upstream (footer lockup, hero stamp, mobile menu) and
+ * in JSON-LD via `parentOrganization` so search engines connect the two
+ * entities. Logo files live in `/public/assets/gonasi/`; both are square JPGs
+ * with the wordmark — pick the right one for the surrounding band.
+ */
+export const GONASI = {
+  name: "Gonasi",
+  url: "https://www.gonasi.com",
+  blurb:
+    "Gonasi builds software for learning the stuff people usually give up on. Dense rule books, jargon-heavy exams, official material written like it doesn't want to be read.",
+  /** Logo for placement over dark backgrounds (`bg-ink`, etc.). */
+  logoOnDark: "/assets/gonasi/logo-on-dark.jpg",
+  /** Logo for placement over light backgrounds (`bg-paper`, `bg-paper-3`). */
+  logoOnLight: "/assets/gonasi/logo-on-light.jpg",
+} as const;
+
+/**
  * Road-signs section keywords — appended to {@link SITE.keywords} on the
  * `/road-signs` pages so the sign-specific terms lead.
  */
@@ -216,6 +234,16 @@ export function organizationLd() {
       "Driving lessons online",
       "Driving school in Kenya",
     ],
+    // Surfaces Gonasi as the parent company so search engines connect the
+    // DriveRush brand entity to its operator. Visible "powered by Gonasi"
+    // mentions in the footer / hero / mobile menu give Google the on-page
+    // corroboration this schema claim needs.
+    parentOrganization: {
+      "@type": "Organization",
+      "@id": `${GONASI.url}#organization`,
+      name: GONASI.name,
+      url: GONASI.url,
+    },
   };
 }
 
