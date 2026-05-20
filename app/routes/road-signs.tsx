@@ -5,6 +5,7 @@ import {
   ArrowRight02FreeIcons,
   HelpCircleFreeIcons,
   Mortarboard01FreeIcons,
+  ThreeDViewFreeIcons,
   TrafficLightFreeIcons,
 } from "@hugeicons/core-free-icons";
 
@@ -183,6 +184,16 @@ export default function RoadSigns() {
                   size={16}
                   strokeWidth={2.5}
                 />
+              </Link>
+            </Button>
+            <Button variant="paper" size="lg" asChild>
+              <Link to="/road-signs/3d">
+                <HugeiconsIcon
+                  icon={ThreeDViewFreeIcons}
+                  size={16}
+                  strokeWidth={2.5}
+                />
+                Spin signs in 3D
               </Link>
             </Button>
             <Button variant="paper" size="lg" asChild>

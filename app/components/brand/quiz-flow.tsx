@@ -330,6 +330,23 @@ function ResultScreen({ questions, answers, mode }: ResultProps) {
         </Button>
       </div>
 
+      <p className="text-center font-mono text-[11px] uppercase tracking-widest text-ink-3">
+        Lock the signs in:{" "}
+        <Link
+          to="/road-signs/pelican"
+          className="text-rush underline-offset-2 hover:underline"
+        >
+          Pelican recall
+        </Link>{" "}
+        ·{" "}
+        <Link
+          to="/road-signs/3d"
+          className="text-rush underline-offset-2 hover:underline"
+        >
+          3D recognition
+        </Link>
+      </p>
+
       <SoftSignupCard />
 
       <p className="text-center font-mono text-[11px] uppercase tracking-widest text-ink-3">

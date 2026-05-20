@@ -4,6 +4,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import {
   ArrowLeft02FreeIcons,
   ArrowRight02FreeIcons,
+  ThreeDViewFreeIcons,
   TrafficLightFreeIcons,
 } from "@hugeicons/core-free-icons";
 
@@ -115,6 +116,16 @@ export function BlogPostLayout({
                   strokeWidth={2.25}
                 />
                 Train with Pelican
+              </Link>
+            </Button>
+            <Button variant="paper" size="lg" asChild>
+              <Link to="/road-signs/3d">
+                <HugeiconsIcon
+                  icon={ThreeDViewFreeIcons}
+                  size={18}
+                  strokeWidth={2.25}
+                />
+                Spin signs in 3D
               </Link>
             </Button>
             <Button variant="paper" size="lg" asChild>

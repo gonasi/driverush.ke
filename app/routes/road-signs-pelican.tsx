@@ -6,6 +6,7 @@ import {
   ArrowRight02FreeIcons,
   BirdFreeIcons,
   Configuration01FreeIcons,
+  ThreeDViewFreeIcons,
 } from "@hugeicons/core-free-icons";
 
 import type { Route } from "./+types/road-signs-pelican";
@@ -186,6 +187,24 @@ export default function PelicanSigns() {
               {categories.length > 0 ? ` of ${board.regions.length}` : ""} ·
               authored with the image-coordinates tool
             </p>
+          </div>
+        )}
+
+        {hasBoard && (
+          <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-dashed border-ink pt-5">
+            <span className="font-mono text-[11px] uppercase tracking-widest text-ink-3">
+              Same signs in 3D
+            </span>
+            <Button variant="paper" size="sm" asChild>
+              <Link to="/road-signs/3d">
+                <HugeiconsIcon
+                  icon={ThreeDViewFreeIcons}
+                  size={14}
+                  strokeWidth={2.5}
+                />
+                Spin signs in 3D
+              </Link>
+            </Button>
           </div>
         )}
       </div>

@@ -9,6 +9,7 @@ import {
   ImageCropFreeIcons,
   Image02FreeIcons,
   Link04FreeIcons,
+  ThreeDViewFreeIcons,
   VolumeHighFreeIcons,
 } from "@hugeicons/core-free-icons";
 
@@ -34,6 +35,15 @@ export const TOOLS: Tool[] = [
     blurb:
       "Map focus regions on the road-sign sheet — drag a crop box, set the name & metadata, preview the zoom-and-blur playback, then save to app/data/road-signs-pelican.json (the trainer's source of truth).",
     icon: ImageCropFreeIcons,
+    status: "live",
+  },
+  {
+    slug: "sign-3d",
+    path: "/tools/sign-3d",
+    title: "3D sign mapper",
+    blurb:
+      "Preview each road-sign GLB, tune its name, note, audio and 3D framing (yaw / pitch / zoom), reorder, then save to app/data/road-signs-3d.json — the 3D trainer's source of truth. Flags any model that isn't mapped yet.",
+    icon: ThreeDViewFreeIcons,
     status: "live",
   },
   {

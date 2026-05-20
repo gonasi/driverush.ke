@@ -33,6 +33,27 @@ export function getActiveTheme(): Theme {
   return document.documentElement.classList.contains("dark") ? "dark" : "light";
 }
 
+/**
+ * Reactively track the theme applied to the document (the `dark` class on
+ * <html>). Updates when the user toggles, the OS changes, or another tab flips
+ * it — all of which ultimately mutate that class. SSR-safe: renders `"light"`
+ * on the server, then corrects on mount.
+ */
+export function useActiveTheme(): Theme {
+  const [theme, setTheme] = React.useState<Theme>(() => getActiveTheme());
+  React.useEffect(() => {
+    const sync = () => setTheme(getActiveTheme());
+    sync(); // catch any flip between first render and this effect
+    const obs = new MutationObserver(sync);
+    obs.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => obs.disconnect();
+  }, []);
+  return theme;
+}
+
 /** The OS preference, or `"light"` when it can't be read. */
 function systemTheme(): Theme {
   return typeof window !== "undefined" && window.matchMedia(MEDIA).matches

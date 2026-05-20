@@ -1,7 +1,8 @@
 /**
  * Road-sign trainers. The first thing DriveRush actually ships — two
- * memorisation mini-games. Both pages are minimalist placeholders for now;
- * the homepage "Road signs" section and the /road-signs hub list these.
+ * memorisation mini-games: the Pelican recall trainer (flat chart) and the 3D
+ * recognition trainer (spinnable GLB models). The homepage "Road signs" section
+ * and the /road-signs hub list these.
  */
 import type { IconSvgElement } from "@hugeicons/react";
 import { BirdFreeIcons, ThreeDViewFreeIcons } from "@hugeicons/core-free-icons";

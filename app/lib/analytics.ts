@@ -113,6 +113,25 @@ export const analytics = {
       miss_count: args.missCount,
     }),
 
+  /** 3D recognition run kicked off. */
+  signs3dStarted: (args: { signsTotal: number; categories: string[] }) =>
+    emit("signs3d_started", {
+      signs_total: args.signsTotal,
+      categories: args.categories.length ? args.categories.join(",") : "all",
+    }),
+
+  /** 3D recognition run finished (every sign eventually recalled). */
+  signs3dCompleted: (args: {
+    signsTotal: number;
+    knewFirstTry: number;
+    missCount: number;
+  }) =>
+    emit("signs3d_completed", {
+      signs_total: args.signsTotal,
+      knew_first_try: args.knewFirstTry,
+      miss_count: args.missCount,
+    }),
+
   /** Outbound click to a partner driving school — primary monetisation signal. */
   partnerClicked: (args: { name: string; url: string }) =>
     emit("partner_clicked", {
