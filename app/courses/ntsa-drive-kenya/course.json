@@ -1,0 +1,19 @@
+{
+  "id": "ntsa-drive-kenya",
+  "title": "Drive Kenya: Master Your NTSA Licence",
+  "tagline": "From zero to road-ready — interactively",
+  "version": "1.0.0",
+  "locale": "en-KE",
+  "totalXP": 4800,
+  "passMark": 80,
+  "chapters": [
+    { "id": "ch01", "dir": "01-road-foundations" },
+    { "id": "ch02", "dir": "02-the-human-factor" },
+    { "id": "ch03", "dir": "03-know-your-vehicle" },
+    { "id": "ch04", "dir": "04-reading-the-road" },
+    { "id": "ch05", "dir": "05-speed-space-survival" },
+    { "id": "ch06", "dir": "06-tough-conditions" },
+    { "id": "ch07", "dir": "07-cargo-hazards-emergencies" },
+    { "id": "ch08", "dir": "08-exam-sprint" }
+  ]
+}

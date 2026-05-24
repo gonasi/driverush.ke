@@ -9,6 +9,13 @@ import {
 export default [
   index("routes/home.tsx"),
   route("courses", "routes/courses.tsx"),
+  // Interactive course engine — overview + the lesson player. Content lives in
+  // `app/courses/<courseSlug>/...`; the manifest is built in `app/lib/course.ts`.
+  route("courses/:courseSlug", "routes/course-overview.tsx"),
+  route(
+    "courses/:courseSlug/:chapterSlug/:lessonSlug",
+    "routes/course-lesson.tsx",
+  ),
   route("driving-schools-kenya", "routes/driving-schools-kenya.tsx"),
   route("road-signs", "routes/road-signs.tsx"),
   route("road-signs/pelican", "routes/road-signs-pelican.tsx"),

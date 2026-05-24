@@ -1,7 +1,8 @@
 /**
- * Course catalogue. Two sample full courses for now — the homepage leads with
- * these and `/courses` lists them. Real per-course routes and the lesson
- * player land later; until then every `to` points at `/courses`.
+ * Course catalogue. Two full courses for now — the homepage leads with these
+ * and `/courses` lists them. The Class B course is live: its `to` points at the
+ * real course (`/courses/ntsa-drive-kenya`) served by the file-based lesson
+ * engine. The second course is still in the workshop and points at `/courses`.
  */
 import type { IconSvgElement } from "@hugeicons/react";
 import {
@@ -32,7 +33,7 @@ export type Course = {
   meta: { modules: number; lessons: number; hours: string; level: string };
   /** Short pricing line, e.g. "Free to start". */
   price: string;
-  /** Where the CTA points. Placeholder until per-course pages ship. */
+  /** Where the CTA points — a live `/courses/:slug` page, or `/courses` if still coming. */
   to: string;
 };
 
@@ -45,7 +46,7 @@ export const COURSES: Course[] = [
       "Everything between you and the licence. The highway code, every Kenyan road sign, junctions, hazard perception and the mechanical basics — taught in order, then tested in the exact shape of the NTSA paper. Finish it and walk into the test centre knowing you're ready.",
     icon: Mortarboard01FreeIcons,
     accent: "rush",
-    tag: "Coming soon",
+    tag: "Start here",
     syllabus: [
       "Highway code & the rules of the road",
       "Road signs, signals & markings",
@@ -61,7 +62,7 @@ export const COURSES: Course[] = [
       level: "Beginner → test-ready",
     },
     price: "Free to start",
-    to: "/courses",
+    to: "/courses/ntsa-drive-kenya",
   },
   {
     slug: "kenyan-roads",

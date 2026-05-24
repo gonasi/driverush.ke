@@ -12,7 +12,8 @@ import { absUrl, breadcrumbLd, pageMeta, SITE } from "~/lib/site";
 import { COURSES } from "~/lib/courses";
 
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
+import { cn } from "~/lib/utils";
 import { FeedbackBanner } from "~/components/brand/feedback-banner";
 import { Rail } from "~/components/brand/rail";
 
@@ -103,12 +104,12 @@ export default function Courses() {
           <FeedbackBanner
             tone="info"
             icon={Mortarboard01FreeIcons}
-            title="We're building these now"
-            description="The two courses below are first to land. The lesson player and per-course pages are on the way — for now, start with quick practice and we'll carry your progress over."
+            title="Class B is live"
+            description="The Class B course is playable now — lessons run one idea at a time, with the quizzes and checks built in. The second course and the rest of the chapters land week by week."
             action={
               <Button variant="ink" size="lg" asChild>
-                <Link to="/practice">
-                  Start practising
+                <Link to="/courses/ntsa-drive-kenya">
+                  Start the course
                   <HugeiconsIcon
                     icon={ArrowRight02FreeIcons}
                     size={16}
@@ -121,80 +122,111 @@ export default function Courses() {
         </div>
 
         <div className="mt-10 grid gap-5">
-          {COURSES.map((c) => (
-            <article
-              key={c.slug}
-              className="grid gap-4 border-2 border-ink bg-surface p-6 shadow-stamp sm:p-8"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <span className="font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
-                  {c.kicker}
-                </span>
-                {c.tag && <Badge variant="ink">{c.tag}</Badge>}
-              </div>
-
-              <div className="flex items-start gap-4">
-                <div
-                  className={`flex size-12 shrink-0 items-center justify-center border-2 border-ink ${c.accent === "rush" ? "bg-rush text-white" : "bg-ink text-paper"}`}
-                >
-                  <HugeiconsIcon icon={c.icon} size={24} strokeWidth={2.25} />
+          {COURSES.map((c) => {
+            const isLive = c.to.startsWith("/courses/");
+            return (
+              <article
+                key={c.slug}
+                className={cn(
+                  "relative grid gap-4 border-2 border-ink bg-surface p-6 shadow-stamp transition-[transform,box-shadow] duration-100 ease-snap sm:p-8",
+                  isLive &&
+                    "hover:-translate-x-px hover:-translate-y-px hover:shadow-stamp-lg",
+                )}
+              >
+                {/* Live course: stretched overlay link makes the whole card a
+                    single click target; the visible CTA below is decorative. */}
+                {isLive && (
+                  <Link
+                    to={c.to}
+                    aria-label={`Start the course: ${c.title}`}
+                    className="absolute inset-0 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rush"
+                  />
+                )}
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
+                    {c.kicker}
+                  </span>
+                  {c.tag && <Badge variant="ink">{c.tag}</Badge>}
                 </div>
-                <h2
-                  className={`m-0 font-display text-[clamp(24px,4vw,40px)] font-extrabold uppercase leading-[0.95] tracking-tight ${c.accent === "rush" ? "text-rush" : "text-ink"}`}
-                >
-                  {c.title}
-                </h2>
-              </div>
 
-              <p className="m-0 max-w-2xl text-[15px] leading-relaxed text-ink-2">
-                {c.blurb}
-              </p>
-
-              <div>
-                <div className="mb-2.5 font-mono text-[10px] uppercase tracking-widest text-ink-3">
-                  Modules · in order
+                <div className="flex items-start gap-4">
+                  <div
+                    className={`flex size-12 shrink-0 items-center justify-center border-2 border-ink ${c.accent === "rush" ? "bg-rush text-white" : "bg-ink text-paper"}`}
+                  >
+                    <HugeiconsIcon icon={c.icon} size={24} strokeWidth={2.25} />
+                  </div>
+                  <h2
+                    className={`m-0 font-display text-[clamp(24px,4vw,40px)] font-extrabold uppercase leading-[0.95] tracking-tight ${c.accent === "rush" ? "text-rush" : "text-ink"}`}
+                  >
+                    {c.title}
+                  </h2>
                 </div>
-                <ul className="m-0 grid list-none gap-2 p-0 sm:grid-cols-2">
-                  {c.syllabus.map((s, i) => (
-                    <li
-                      key={s}
-                      className="flex items-start gap-2.5 text-[13.5px] leading-snug text-ink"
+
+                <p className="m-0 max-w-2xl text-[15px] leading-relaxed text-ink-2">
+                  {c.blurb}
+                </p>
+
+                <div>
+                  <div className="mb-2.5 font-mono text-[10px] uppercase tracking-widest text-ink-3">
+                    Modules · in order
+                  </div>
+                  <ul className="m-0 grid list-none gap-2 p-0 sm:grid-cols-2">
+                    {c.syllabus.map((s, i) => (
+                      <li
+                        key={s}
+                        className="flex items-start gap-2.5 text-[13.5px] leading-snug text-ink"
+                      >
+                        <span className="mt-px shrink-0 font-mono text-[11px] tabular-nums text-ink-3">
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <span>{s}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 border-t border-line-soft pt-4 font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
+                  <span>{c.meta.modules} modules</span>
+                  <span aria-hidden>·</span>
+                  <span>{c.meta.lessons} lessons</span>
+                  <span aria-hidden>·</span>
+                  <span>{c.meta.hours}</span>
+                  <span aria-hidden>·</span>
+                  <span>{c.meta.level}</span>
+                  <span aria-hidden>·</span>
+                  <span className="text-ink">{c.price}</span>
+                </div>
+
+                <div>
+                  {isLive ? (
+                    <span
+                      className={cn(
+                        buttonVariants({ variant: c.accent, size: "lg" }),
+                      )}
                     >
-                      <span className="mt-px shrink-0 font-mono text-[11px] tabular-nums text-ink-3">
-                        {String(i + 1).padStart(2, "0")}
-                      </span>
-                      <span>{s}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 border-t border-line-soft pt-4 font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
-                <span>{c.meta.modules} modules</span>
-                <span aria-hidden>·</span>
-                <span>{c.meta.lessons} lessons</span>
-                <span aria-hidden>·</span>
-                <span>{c.meta.hours}</span>
-                <span aria-hidden>·</span>
-                <span>{c.meta.level}</span>
-                <span aria-hidden>·</span>
-                <span className="text-ink">{c.price}</span>
-              </div>
-
-              <div>
-                <Button variant={c.accent} size="lg" asChild>
-                  <Link to="/practice">
-                    Preview with practice
-                    <HugeiconsIcon
-                      icon={ArrowRight02FreeIcons}
-                      size={16}
-                      strokeWidth={2.5}
-                    />
-                  </Link>
-                </Button>
-              </div>
-            </article>
-          ))}
+                      Start the course
+                      <HugeiconsIcon
+                        icon={ArrowRight02FreeIcons}
+                        size={16}
+                        strokeWidth={2.5}
+                      />
+                    </span>
+                  ) : (
+                    <Button variant={c.accent} size="lg" asChild>
+                      <Link to="/practice">
+                        Preview with practice
+                        <HugeiconsIcon
+                          icon={ArrowRight02FreeIcons}
+                          size={16}
+                          strokeWidth={2.5}
+                        />
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              </article>
+            );
+          })}
         </div>
 
         <p className="mt-8 text-center font-mono text-[11px] uppercase tracking-widest text-ink-3">
