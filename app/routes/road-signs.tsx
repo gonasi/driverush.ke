@@ -3,7 +3,6 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import {
   ArrowLeft02FreeIcons,
   ArrowRight02FreeIcons,
-  HelpCircleFreeIcons,
   Mortarboard01FreeIcons,
   ThreeDViewFreeIcons,
   TrafficLightFreeIcons,
@@ -15,7 +14,6 @@ import { absUrl, breadcrumbLd, pageMeta, ROAD_SIGN_KEYWORDS } from "~/lib/site";
 import { SIGN_GAMES } from "~/lib/road-signs";
 import {
   SIGN_CATEGORIES,
-  SIGN_FAQ,
   type SignShape,
   type SignTone,
 } from "~/data/road-signs-reference";
@@ -359,35 +357,6 @@ export default function RoadSigns() {
           </details>
         </section>
 
-        {/* ── 04 · FAQ ──────────────────────────────────────────────────── */}
-        <section className="mt-14 scroll-mt-8" id="faq">
-          <SectionHead
-            num="04"
-            title={
-              <>
-                Road signs in Kenya <em>FAQ</em>
-              </>
-            }
-            stamp={
-              <span className="inline-flex items-center gap-1.5">
-                <HugeiconsIcon
-                  icon={HelpCircleFreeIcons}
-                  size={13}
-                  strokeWidth={2.5}
-                />
-                {SIGN_FAQ.length} questions
-              </span>
-            }
-          />
-          <Accordion>
-            {SIGN_FAQ.map((item, i) => (
-              <AccordionItem key={item.q} summary={item.q} open={i === 0}>
-                {item.a}
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </section>
-
         {/* ── Closing CTA — the bigger picture ──────────────────────────── */}
         <section className="mt-14">
           <div className="grid gap-5 border-2 border-ink bg-surface p-6 shadow-stamp sm:grid-cols-[1fr_auto] sm:items-center sm:p-8">
@@ -397,11 +366,9 @@ export default function RoadSigns() {
                 Sitting the <span className="italic text-rush">NTSA test?</span>
               </p>
               <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-ink-2">
-                Road signs are one slice of it. If you are learning to drive in
-                Kenya, quick practice covers signs, junctions, hazard perception
-                and the rules from real past papers, and the courses teach the
-                lot in order. No signup to start, pay with M-Pesa when you are
-                ready.
+                Signs are one slice. Practice covers junctions, hazards and the
+                rules too, and the course teaches the lot in order. Free to
+                start.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -427,9 +394,6 @@ export default function RoadSigns() {
               </Button>
             </div>
           </div>
-          <p className="mt-6 text-center font-mono text-[11px] uppercase tracking-widest text-ink-3">
-            Highway Code source · Traffic Signs Rules, LN 310 of 1974 · NTSA
-          </p>
         </section>
       </div>
     </main>

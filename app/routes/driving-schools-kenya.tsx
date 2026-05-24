@@ -6,7 +6,6 @@ import {
   ArrowUpRight01FreeIcons,
   Mortarboard01FreeIcons,
   TrafficLightFreeIcons,
-  Tick02FreeIcons,
 } from "@hugeicons/core-free-icons";
 
 import type { Route } from "./+types/driving-schools-kenya";
@@ -20,14 +19,12 @@ import {
 } from "~/lib/site";
 import {
   DRIVING_SCHOOLS,
-  SCHOOLS_FAQ,
   schoolsByPrice,
   type DrivingSchool,
 } from "~/data/driving-schools";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Accordion, AccordionItem } from "~/components/brand/accordion";
 import { Rail } from "~/components/brand/rail";
 import { SectionHead } from "~/components/brand/section-head";
 
@@ -142,12 +139,12 @@ export default function DrivingSchoolsKenya() {
           </span>
           <h1 className="m-0 mt-3 font-display text-[clamp(38px,7vw,80px)] font-extrabold uppercase leading-[0.9] tracking-tighter">
             Driving schools in Kenya.{" "}
-            <span className="italic text-rush">The honest comparison.</span>
+            <span className="italic text-rush">Compared.</span>
           </h1>
           <p className="mt-5 max-w-2xl font-serif text-[clamp(17px,2.2vw,24px)] leading-tight text-ink-2">
-            The major NTSA-registered driving schools, what they cost, where
-            they teach, and the one decision that quietly saves most learners
-            KES 4,000–7,000: do not pay a school for theory.
+            The major NTSA-registered schools side by side: price, branches and
+            licence classes. Theory practice here is free, so you only pay a
+            school for the practical.
           </p>
 
           <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -171,16 +168,6 @@ export default function DrivingSchoolsKenya() {
                 />
               </Link>
             </Button>
-            <Button variant="paper" size="lg" asChild>
-              <Link to="/courses">
-                <HugeiconsIcon
-                  icon={Mortarboard01FreeIcons}
-                  size={16}
-                  strokeWidth={2.25}
-                />
-                See the courses
-              </Link>
-            </Button>
             <a
               href="#schools"
               className="font-mono text-[11px] uppercase tracking-widest text-ink-3 underline-offset-4 outline-none hover:text-ink hover:underline focus-visible:text-ink"
@@ -190,90 +177,17 @@ export default function DrivingSchoolsKenya() {
           </div>
         </header>
 
-        {/* ── 01 · The split: theory online, practical at a school ──────── */}
-        <section className="mt-14">
+        {/* ── 01 · The directory ────────────────────────────────────────── */}
+        <section id="schools" className="mt-12 scroll-mt-20">
           <SectionHead
             num="01"
-            title={
-              <>
-                Theory online, <em>practical at a school</em>
-              </>
-            }
-            stamp="The KES 4–7k save"
-            lede="A driving school in Kenya is mandatory for one reason: the NTSA needs a registered school to certify your practical hours. Everything else is optional."
-          />
-          <div className="grid gap-5 sm:grid-cols-2">
-            <article className="border-2 border-ink bg-surface p-6">
-              <span className="eyebrow text-rush">
-                Online theory · DriveRush
-              </span>
-              <h3 className="mt-2 font-display text-[22px] font-extrabold uppercase tracking-tight text-ink">
-                Free, on your phone
-              </h3>
-              <ul className="mt-3 space-y-2 text-[15px] leading-relaxed text-ink-2">
-                {[
-                  "All Kenyan road signs with meanings, drilled by spaced recall",
-                  "NTSA past papers under timed conditions",
-                  "Junction scenarios and hazard perception",
-                  "Pay M-Pesa only when you want the deep bank",
-                ].map((t) => (
-                  <li key={t} className="flex items-start gap-2">
-                    <HugeiconsIcon
-                      icon={Tick02FreeIcons}
-                      size={14}
-                      strokeWidth={3}
-                      className="mt-1.5 shrink-0 text-rush"
-                    />
-                    <span>{t}</span>
-                  </li>
-                ))}
-              </ul>
-            </article>
-            <article className="border-2 border-ink bg-surface p-6">
-              <span className="eyebrow text-ink-3">
-                In-person driving school
-              </span>
-              <h3 className="mt-2 font-display text-[22px] font-extrabold uppercase tracking-tight text-ink">
-                Required for the practical
-              </h3>
-              <ul className="mt-3 space-y-2 text-[15px] leading-relaxed text-ink-2">
-                {[
-                  "NTSA certificate on the wall — verify it before paying",
-                  "Yard hours, then road hours, then mock test",
-                  "Books the NTSA test in your name (TIMS receipt)",
-                  "Theory is sold separately at most schools — skip that line",
-                ].map((t) => (
-                  <li key={t} className="flex items-start gap-2">
-                    <HugeiconsIcon
-                      icon={Tick02FreeIcons}
-                      size={14}
-                      strokeWidth={3}
-                      className="mt-1.5 shrink-0 text-ink"
-                    />
-                    <span>{t}</span>
-                  </li>
-                ))}
-              </ul>
-            </article>
-          </div>
-          <p className="mt-6 text-[15px] leading-relaxed text-ink-2">
-            Most NTSA failures are theory failures. If you only have budget for
-            one thing, it should not be the theory class at a driving school. It
-            should be 25 hours behind the wheel.
-          </p>
-        </section>
-
-        {/* ── 02 · The directory ────────────────────────────────────────── */}
-        <section id="schools" className="mt-14 scroll-mt-20">
-          <SectionHead
-            num="02"
             title={
               <>
                 The major <em>NTSA-registered schools</em>
               </>
             }
             stamp="Curated · 2026"
-            lede="The largest networks with branches across multiple counties. Ordered by typical Class B price band. Every school below is NTSA-registered — ask for the certificate on the wall before paying anyway."
+            lede="The largest networks with branches across multiple counties, ordered by typical Class B price band. Confirm the NTSA certificate on the wall before paying."
           />
           <ol className="space-y-4">
             {ordered.map((s, i) => (
@@ -283,57 +197,22 @@ export default function DrivingSchoolsKenya() {
             ))}
           </ol>
           <p className="mt-6 font-mono text-[11px] uppercase tracking-widest text-ink-3">
-            Coverage notes from each school's published branch list. Prices are
-            indicative bands as of 2026 — confirm the package and exclusions in
-            writing before paying.
+            Prices are indicative bands as of 2026. Confirm the package and
+            exclusions in writing before paying.
           </p>
         </section>
 
-        {/* ── 03 · How to pick one ──────────────────────────────────────── */}
+        {/* ── 02 · Price bands by class ─────────────────────────────────── */}
         <section className="mt-14">
           <SectionHead
-            num="03"
-            title={
-              <>
-                Six questions <em>before you pay</em>
-              </>
-            }
-            stamp="The vetting list"
-            lede="Good schools answer all six clearly. Walk away from the ones that don't — the cost of a bad school is far more than the deposit you'll lose."
-          />
-          <ol className="space-y-4">
-            {VETTING_QUESTIONS.map((q, i) => (
-              <li
-                key={q.q}
-                className="border-2 border-ink bg-surface p-5 sm:p-6"
-              >
-                <div className="flex items-baseline gap-3">
-                  <span className="font-display text-2xl font-extrabold italic leading-none text-rush">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <h3 className="m-0 font-display text-[18px] font-extrabold uppercase tracking-tight text-ink">
-                    {q.q}
-                  </h3>
-                </div>
-                <p className="mt-3 text-[15px] leading-relaxed text-ink-2">
-                  {q.a}
-                </p>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        {/* ── 04 · Price bands by class ─────────────────────────────────── */}
-        <section className="mt-14">
-          <SectionHead
-            num="04"
+            num="02"
             title={
               <>
                 Driving school cost <em>in Kenya · by class</em>
               </>
             }
             stamp="Indicative · 2026"
-            lede="Total spend with a typical NTSA-registered school, before NTSA test fees. Ranges reflect city-vs-county variation and bundle differences."
+            lede="Total spend with a typical NTSA-registered school, before NTSA test fees. The last column is what you pay when theory is free here and you only buy the practical."
           />
           <div className="overflow-x-auto border-2 border-ink bg-surface">
             <table className="w-full text-left text-[14.5px]">
@@ -373,59 +252,8 @@ export default function DrivingSchoolsKenya() {
             </table>
           </div>
           <p className="mt-4 text-[14px] leading-relaxed text-ink-3">
-            Bands above exclude NTSA test fees (currently KES 1,500 for the
-            theory test, KES 1,000 for the practical). Smart DL card issuance is
-            a separate fee. See the{" "}
-            <Link
-              to="/blogs/ntsa-driving-licence-kenya-2026"
-              className="text-rush hover:underline"
-            >
-              full NTSA fee breakdown
-            </Link>
-            .
-          </p>
-        </section>
-
-        {/* ── 05 · Frequently asked ────────────────────────────────────── */}
-        <section id="faq" className="mt-14 scroll-mt-20">
-          <SectionHead
-            num="05"
-            title={
-              <>
-                Common <em>questions</em>
-              </>
-            }
-            stamp="Driving schools · Kenya · NTSA"
-          />
-          <Accordion>
-            {SCHOOLS_FAQ.map((item, i) => (
-              <AccordionItem key={item.q} summary={item.q} open={i === 0}>
-                {item.a}
-              </AccordionItem>
-            ))}
-          </Accordion>
-          <p className="mt-6 font-mono text-[11px] uppercase tracking-widest text-ink-3">
-            More →{" "}
-            <Link
-              to="/blogs/learning-to-drive-in-kenya"
-              className="text-rush hover:underline"
-            >
-              Full guide to learning to drive in Kenya
-            </Link>{" "}
-            ·{" "}
-            <Link
-              to="/blogs/ntsa-test-prep-kenya"
-              className="text-rush hover:underline"
-            >
-              NTSA test prep
-            </Link>{" "}
-            ·{" "}
-            <Link
-              to="/blogs/cost-of-learning-to-drive-nairobi"
-              className="text-rush hover:underline"
-            >
-              The real Nairobi cost
-            </Link>
+            Bands exclude NTSA test fees (currently KES 1,500 theory, KES 1,000
+            practical) and Smart DL card issuance.
           </p>
         </section>
 
@@ -439,9 +267,8 @@ export default function DrivingSchoolsKenya() {
                 <span className="italic text-rush">Start practising.</span>
               </p>
               <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-ink-2">
-                The NTSA test pulls from the same bank, whether you drilled it
-                at a desk or on your phone in a matatu. Free road-sign trainer,
-                full past papers, junction scenarios. No signup to start.
+                Free road-sign trainers, full past papers and junction
+                scenarios. No signup to start.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -467,9 +294,6 @@ export default function DrivingSchoolsKenya() {
               </Button>
             </div>
           </div>
-          <p className="mt-6 text-center font-mono text-[11px] uppercase tracking-widest text-ink-3">
-            Source · NTSA Driving School Regulations · Traffic Act Cap. 403
-          </p>
         </section>
       </div>
     </main>
@@ -558,33 +382,6 @@ function SchoolCard({
     </article>
   );
 }
-
-const VETTING_QUESTIONS = [
-  {
-    q: "Are you NTSA-registered?",
-    a: "Every legitimate driving school in Kenya has an NTSA certificate on the wall. If they hesitate or wave it off, walk out. Hours from an unregistered school cannot certify you for the test.",
-  },
-  {
-    q: "What does the package include?",
-    a: "Get a written breakdown: theory hours, practical hours, dual-control car use, mock test, NTSA test booking fee. Ask which items are extra. The cheapest sticker price often has the most exclusions.",
-  },
-  {
-    q: "How many practical hours do I actually get behind the wheel?",
-    a: "An hour booked is not an hour driving. Ask whether you'll share the car with other students per session, and how much pure wheel-time you get. Below 15 driving hours total, fail rates climb sharply.",
-  },
-  {
-    q: "Who are the instructors and are they classified?",
-    a: "NTSA classifies driving instructors. Senior instructors charge more — they're also the ones who notice the bad habits. A school that won't name its instructor team is one to skip.",
-  },
-  {
-    q: "Do you book the NTSA test for me?",
-    a: "Most do. Get the TIMS receipt or booking confirmation in your name, not the school's, before the test date. Schools that hold receipts on your behalf are a common source of delays.",
-  },
-  {
-    q: "What happens if I fail the practical?",
-    a: "Reasonable schools include one retake or charge a known retake fee. The shady ones quietly upsell another full package. Get the retake policy in writing before you pay the first time.",
-  },
-] as const;
 
 const CLASS_PRICE_BANDS = [
   {
