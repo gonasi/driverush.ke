@@ -44,7 +44,7 @@ export function meta({ data, params }: Route.MetaArgs) {
   const path = `/courses/${params.courseSlug}`;
   return [
     ...pageMeta({
-      title: `${course.title} — NTSA-aligned online course`,
+      title: `${course.title} · NTSA-aligned online course`,
       description: course.tagline,
       path,
       extraKeywords: [
@@ -159,8 +159,8 @@ export default function CourseOverviewRoute({ params }: Route.ComponentProps) {
         </div>
 
         <p className="mt-12 text-center font-mono text-[11px] uppercase tracking-widest text-ink-3">
-          {lessonCount} lesson{lessonCount === 1 ? "" : "s"} live · more of the
-          course lands week by week
+          {lessonCount} lessons · {course.totalXP.toLocaleString()} XP · pass at{" "}
+          {course.passMark}%
         </p>
       </div>
     </main>

@@ -9,13 +9,31 @@
   ],
   "badgeId": "exam-badge",
   "badgeThreshold": 80,
-  "totalXP": 800,
+  "totalXP": 2800,
   "lessons": [
-    { "id": "ch08-l01", "dir": "01-regulatory-signs" },
-    { "id": "ch08-l02", "dir": "02-warning-signs" },
-    { "id": "ch08-l03", "dir": "03-information-signs" },
-    { "id": "ch08-l04", "dir": "04-customer-care-work-planning" },
-    { "id": "ch08-l05", "dir": "05-simulated-exam" },
-    { "id": "ch08-l06", "dir": "06-exam-day" }
+    {
+      "id": "ch08-l01",
+      "dir": "01-regulatory-signs"
+    },
+    {
+      "id": "ch08-l02",
+      "dir": "02-warning-signs"
+    },
+    {
+      "id": "ch08-l03",
+      "dir": "03-information-signs"
+    },
+    {
+      "id": "ch08-l04",
+      "dir": "04-customer-care-work-planning"
+    },
+    {
+      "id": "ch08-l05",
+      "dir": "05-simulated-exam"
+    },
+    {
+      "id": "ch08-l06",
+      "dir": "06-exam-day"
+    }
   ]
 }

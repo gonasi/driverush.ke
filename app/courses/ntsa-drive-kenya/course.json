@@ -1,10 +1,10 @@
 {
   "id": "ntsa-drive-kenya",
   "title": "Drive Kenya: Master Your NTSA Licence",
-  "tagline": "From zero to road-ready — interactively",
+  "tagline": "From zero to road-ready, interactively.",
   "version": "1.0.0",
   "locale": "en-KE",
-  "totalXP": 4800,
+  "totalXP": 8962,
   "passMark": 80,
   "chapters": [
     { "id": "ch01", "dir": "01-road-foundations" },

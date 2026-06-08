@@ -26,12 +26,12 @@ data:
       prompt: "You want to make a U-TURN (return to 6 o'clock). Which lane?"
       correctLanes: [4]
       correctDirection: "u_turn_180"
-      successFeedback: "Only Lane 4 — the innermost — can stay on the circle long enough to complete a U-turn."
+      successFeedback: "Only Lane 4, the innermost, can stay on the circle long enough to complete a U-turn."
       failFeedback: "Only the innermost lane (Lane 4) can U-turn. Every other lane is forced off before reaching 6 again."
     - id: "c4"
       prompt: "You want to make a LEFT turn (9 o'clock exit). Which lane?"
       correctLanes: [1]
       correctDirection: "left_90"
-      successFeedback: "Lane 1 — the outermost — exits first. Left exits are always Lane 1."
+      successFeedback: "Lane 1, the outermost, exits first. Left exits are always Lane 1."
       failFeedback: "The 9 o'clock (left) exit comes first. Lane 1 leaves there. Anything else overshoots."
 ---
