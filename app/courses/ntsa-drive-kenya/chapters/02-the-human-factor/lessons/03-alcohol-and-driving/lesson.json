@@ -1,0 +1,16 @@
+{
+  "id": "ch02-l03",
+  "title": "Alcohol and Driving",
+  "objective": "Understand how alcohol degrades driving, where the Kenyan legal limit sits, and the only safe rule to live by.",
+  "estimatedMinutes": 6,
+  "totalXP": 125,
+  "totalWeight": 25,
+  "blocks": [
+    { "id": "ch02-l03-b001", "file": "001-cns-depressant.mdx" },
+    { "id": "ch02-l03-b002", "file": "002-bac-sim.mdx" },
+    { "id": "ch02-l03-b003", "file": "003-five-ways-reveal.mdx" },
+    { "id": "ch02-l03-b004", "file": "004-synthesis.mdx" },
+    { "id": "ch02-l03-b005", "file": "005-refusing-alcoblow-tf.mdx" },
+    { "id": "ch02-l03-b006", "file": "006-alternatives.mdx" }
+  ]
+}

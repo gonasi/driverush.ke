@@ -1,0 +1,45 @@
+---
+id: "ch05-l04-b005"
+type: "scenario_branching"
+order: 5
+weight: 8
+xp: 48
+completion: "reached_terminal"
+required: true
+data:
+  opening: "It is 9:30pm on the Nairobi-Nakuru highway. You are doing 90 km/h. Your headlights flicker and then die completely. The dashboard goes dark. The road in front of you is a black ribbon. You have maybe 3 seconds before you forget where the lane is."
+  nodes:
+    - id: "root"
+      type: "decision"
+      choices:
+        - id: "brake-hard-stop"
+          text: "Brake hard and stop in the middle of the lane until the lights come back."
+          nextNode: "rear-ended-night"
+        - id: "ease-off-hazards-coast"
+          text: "Ease off the accelerator, switch on hazard lights and indicators (which run off the battery), and coast to the left verge while you can still feel the road edge."
+          nextNode: "safe-stop"
+        - id: "high-beam-flick"
+          text: "Flick the high-beam stalk and try the headlight switch repeatedly while keeping speed."
+          nextNode: "fiddled-too-long"
+    - id: "rear-ended-night"
+      type: "outcome"
+      outcome: "negative"
+      animationId: "anim_rear_ended_night"
+      title: "Slammed from behind"
+      body: "A lorry doing 100 km/h cannot see a black car stopped in a black lane. Hard braking in the lane on an unlit highway invites a rear-end at full speed. The hazards-and-coast-to-verge plan was the safer answer."
+      terminal: true
+    - id: "safe-stop"
+      type: "outcome"
+      outcome: "positive"
+      animationId: "anim_safe_verge_stop"
+      title: "Off the road, alive"
+      body: "Hazard lights bought you a few seconds of visibility for the cars behind. Coasting let you steer while the engine and battery still had reserve power. You reach the verge, set the triangles at 30 and 60 metres, and call a mechanic. This is exactly the trained response."
+      terminal: true
+    - id: "fiddled-too-long"
+      type: "outcome"
+      outcome: "negative"
+      animationId: "anim_drifted_off_road"
+      title: "Drifted off the road"
+      body: "Five seconds of fiddling with stalks and switches at 90 km/h in the dark, your eyes off the road, ends with the car drifting into the verge or the oncoming lane. Get visible and get slow first. Diagnose the electrics from the safety of the shoulder."
+      terminal: true
+---

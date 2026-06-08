@@ -1,0 +1,16 @@
+{
+  "id": "ch02-l05",
+  "title": "Safety Belts, Children, and Passenger Limits",
+  "objective": "Make the seatbelt a non-negotiable habit, know the child restraint rules, and learn the legal passenger limits for a Category B vehicle.",
+  "estimatedMinutes": 5,
+  "totalXP": 105,
+  "totalWeight": 21,
+  "blocks": [
+    { "id": "ch02-l05-b001", "file": "001-projectile-fact.mdx" },
+    { "id": "ch02-l05-b002", "file": "002-family-car-label.mdx" },
+    { "id": "ch02-l05-b003", "file": "003-booster-tf.mdx" },
+    { "id": "ch02-l05-b004", "file": "004-cat-b-passengers-mcq.mdx" },
+    { "id": "ch02-l05-b005", "file": "005-belt-before-engine.mdx" },
+    { "id": "ch02-l05-b006", "file": "006-seatbelt-lottie.mdx" }
+  ]
+}

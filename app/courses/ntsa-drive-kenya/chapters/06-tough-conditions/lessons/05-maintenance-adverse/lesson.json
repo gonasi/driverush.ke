@@ -1,0 +1,15 @@
+{
+  "id": "ch06-l05",
+  "title": "Preventive Maintenance in Adverse Conditions",
+  "objective": "Diagnose weather-related vehicle symptoms, inspect an engine bay before a hard-conditions drive, and know who carries the legal responsibility.",
+  "estimatedMinutes": 6,
+  "totalXP": 181,
+  "totalWeight": 24,
+  "blocks": [
+    { "id": "ch06-l05-b001", "file": "001-legal-obligation.mdx" },
+    { "id": "ch06-l05-b002", "file": "002-symptom-cause-sort.mdx" },
+    { "id": "ch06-l05-b003", "file": "003-engine-bay-inspection.mdx" },
+    { "id": "ch06-l05-b004", "file": "004-responsibility-blank.mdx" },
+    { "id": "ch06-l05-b005", "file": "005-chapter-close.mdx" }
+  ]
+}

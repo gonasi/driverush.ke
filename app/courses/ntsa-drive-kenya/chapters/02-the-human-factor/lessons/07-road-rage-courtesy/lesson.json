@@ -1,0 +1,15 @@
+{
+  "id": "ch02-l07",
+  "title": "Road Rage and Road Courtesy",
+  "objective": "Recognise the road rage spiral, defuse it before it costs a life, and learn the three courtesy habits that mark a professional driver.",
+  "estimatedMinutes": 5,
+  "totalXP": 90,
+  "totalWeight": 18,
+  "blocks": [
+    { "id": "ch02-l07-b001", "file": "001-road-rage-intro.mdx" },
+    { "id": "ch02-l07-b002", "file": "002-flash-or-slow-scenario.mdx" },
+    { "id": "ch02-l07-b003", "file": "003-tailgate-tf.mdx" },
+    { "id": "ch02-l07-b004", "file": "004-three-reminders.mdx" },
+    { "id": "ch02-l07-b005", "file": "005-ch02-close.mdx" }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": "ch07",
+  "title": "Cargo, Hazards & Emergencies",
+  "description": "Carrying loads, carrying people, and acting fast when the worst happens.",
+  "outcomes": [
+    "Know commercial and PSV obligations",
+    "Classify hazardous materials correctly",
+    "Respond as a first responder at a crash scene"
+  ],
+  "badgeId": "emergencies-badge",
+  "badgeThreshold": 80,
+  "totalXP": 650,
+  "lessons": [
+    { "id": "ch07-l01", "dir": "01-conditions-of-carriage" },
+    { "id": "ch07-l02", "dir": "02-hazardous-materials" },
+    { "id": "ch07-l03", "dir": "03-first-response" },
+    { "id": "ch07-l04", "dir": "04-first-aid-bleeding" },
+    { "id": "ch07-l05", "dir": "05-shock-casualty-care" },
+    { "id": "ch07-l06", "dir": "06-reporting-documentation" }
+  ]
+}

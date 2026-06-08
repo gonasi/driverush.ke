@@ -1,0 +1,29 @@
+---
+id: "ch05-l04-b006"
+type: "sequence_builder"
+order: 6
+weight: 7
+xp: 42
+completion: "correct_order_submitted"
+required: true
+data:
+  prompt: "You hear a loud BANG and the car lurches to the right: front-right tyre blowout at 100 km/h on the Thika Superhighway. Arrange the correct response order, first action at the top."
+  allowPartialCredit: false
+  steps:
+    - id: "step-a"
+      text: "Grip the wheel firmly with both hands and hold the car straight."
+      correctPosition: 1
+    - id: "step-b"
+      text: "Ease off the accelerator gradually. Do NOT brake."
+      correctPosition: 2
+    - id: "step-c"
+      text: "Let the car slow naturally to below 40 km/h."
+      correctPosition: 3
+    - id: "step-d"
+      text: "Signal left and steer gently to the verge."
+      correctPosition: 4
+    - id: "step-e"
+      text: "Stop on flat ground, hazard lights on, set triangles at 30 m and 60 m."
+      correctPosition: 5
+  feedbackOnComplete: "Grip, ease off, wait for slow, gentle steer, safe stop. The fatal error in every blowout statistic is braking first. The correct order keeps weight off the failed corner until you are at a speed where steering inputs cannot roll the rim."
+---

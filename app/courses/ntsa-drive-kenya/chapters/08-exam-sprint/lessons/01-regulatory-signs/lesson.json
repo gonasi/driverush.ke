@@ -1,0 +1,15 @@
+{
+  "id": "ch08-l01",
+  "title": "Regulatory Signs Masterclass",
+  "objective": "Recognise every regulatory sign at a glance and instantly classify it as a must-do or must-not-do order.",
+  "estimatedMinutes": 6,
+  "totalXP": 580,
+  "totalWeight": 29,
+  "blocks": [
+    { "id": "ch08-l01-b001", "file": "001-circles-are-orders.mdx" },
+    { "id": "ch08-l01-b002", "file": "002-sign-flash-learn.mdx" },
+    { "id": "ch08-l01-b003", "file": "003-memory-match.mdx" },
+    { "id": "ch08-l01-b004", "file": "004-must-do-sort.mdx" },
+    { "id": "ch08-l01-b005", "file": "005-exam-tip.mdx" }
+  ]
+}

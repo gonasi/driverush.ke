@@ -1,0 +1,33 @@
+---
+id: "ch04-l04-b003"
+type: "gear_shift_trainer"
+order: 3
+weight: 9
+xp: 54
+completion: "all_prompts_correct"
+required: true
+data:
+  transmission: "manual"
+  mode: "sequential"
+  prompts:
+    - speed: 0
+      context: "Engine running, handbrake off, you're about to move from rest."
+      correctGear: 1
+      feedback: "Always 1st gear from rest. Trying to move off in 2nd causes stall, juddering, and clutch wear."
+    - speed: 20
+      context: "Rolling smoothly in 1st through estate traffic."
+      correctGear: 2
+      feedback: "2nd gear from about 15 to 25 km/h. The engine note drops and the car settles into town pace."
+    - speed: 45
+      context: "Steady on Thika Road service lane, traffic flowing."
+      correctGear: 3
+      feedback: "3rd gear is the urban workhorse: 35 to 55 km/h. Most town driving sits here."
+    - speed: 75
+      context: "Out on the open highway, traffic cruising at a consistent pace."
+      correctGear: 4
+      feedback: "4th gear from about 65 to 90 km/h. The engine relaxes and fuel use drops."
+    - speed: 100
+      context: "Mombasa Road highway cruise, dual carriageway, no hills."
+      correctGear: 5
+      feedback: "5th (top) gear for sustained speeds above 90 km/h. Quiet, economical, smooth."
+---

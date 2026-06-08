@@ -1,0 +1,71 @@
+---
+id: "ch03-l03-b003"
+type: "drag_and_drop_label"
+order: 3
+weight: 7
+xp: 42
+completion: "all_placed_correctly"
+required: true
+data:
+  image: "/diagrams/interior-controls.png"
+  imageAlt: "Inside view of a saloon: seat adjuster, seatbelt anchor, indicator stalk, wiper stalk, hazard switch, interior mirror"
+  imageWidth: 800
+  imageHeight: 500
+  labels:
+    - id: "label-seat-adj"
+      text: "Seat adjuster"
+      hotspot: "seat-base"
+      incorrectFeedback: "The seat adjuster is the lever or bar under the front of the seat. Pull it up to slide the seat forward or back."
+    - id: "label-belt"
+      text: "Seatbelt anchor"
+      hotspot: "belt-pillar"
+      incorrectFeedback: "The seatbelt anchor sits on the B-pillar, just behind your shoulder. The belt feeds out from there."
+    - id: "label-indicator"
+      text: "Indicator stalk"
+      hotspot: "left-stalk"
+      incorrectFeedback: "In most Kenyan saloons the indicator stalk sits on the right of the steering column, but on Japan-import vehicles it can be on the left. Push down for left turn, up for right turn."
+    - id: "label-wiper"
+      text: "Wiper stalk"
+      hotspot: "right-stalk"
+      incorrectFeedback: "The wiper stalk sits on the opposite side to the indicator. Different positions for slow, fast, and intermittent wipe, plus a button for washer fluid."
+    - id: "label-hazard"
+      text: "Hazard light switch"
+      hotspot: "centre-dash"
+      incorrectFeedback: "The hazard switch sits in the middle of the dashboard, usually a red triangle. Press once for all four indicators to flash. Use only when stopped in a dangerous spot or being towed."
+    - id: "label-mirror"
+      text: "Interior mirror"
+      hotspot: "windscreen-top"
+      incorrectFeedback: "The interior mirror hangs from the top centre of the windscreen. Adjust it so you frame the whole back windscreen, not your own face."
+  hotspots:
+    - id: "seat-base"
+      x: 200
+      y: 380
+      width: 100
+      height: 60
+    - id: "belt-pillar"
+      x: 120
+      y: 200
+      width: 60
+      height: 100
+    - id: "left-stalk"
+      x: 340
+      y: 240
+      width: 60
+      height: 50
+    - id: "right-stalk"
+      x: 440
+      y: 240
+      width: 60
+      height: 50
+    - id: "centre-dash"
+      x: 400
+      y: 320
+      width: 80
+      height: 60
+    - id: "windscreen-top"
+      x: 380
+      y: 60
+      width: 120
+      height: 70
+  feedbackOnComplete: "Six controls, all within arm's reach from the driver's seat. Knowing exactly where each one sits saves you from looking down at the wrong moment. The eyes belong on the road."
+---

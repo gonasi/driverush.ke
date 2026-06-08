@@ -1,0 +1,49 @@
+---
+id: "ch03-l02-b002"
+type: "inspection_checklist"
+order: 2
+weight: 9
+xp: 54
+completion: "all_tapped"
+required: true
+data:
+  vehicle: "saloon"
+  view: "exterior"
+  requireAllTapped: true
+  inspectionPoints:
+    - id: "front-tyre-left"
+      label: "Front left tyre"
+      status: "fault"
+      faultDescription: "Tread is worn smooth across the centre band. A coin test shows the depth is well under the legal 1.6 mm minimum."
+      safetyNote: "A tyre this bald will aquaplane in the first rain shower and double your stopping distance. Replace before you drive."
+    - id: "front-tyre-right"
+      label: "Front right tyre"
+      status: "ok"
+      okDescription: "Tread depth is healthy across all three bands, sidewall is clean, pressure looks correct by eye."
+    - id: "left-indicator-front"
+      label: "Left front indicator"
+      status: "fault"
+      faultDescription: "Bulb does not flash when tested. The amber lens is in place but the bulb behind it is blown."
+      safetyNote: "Without a working indicator you cannot legally communicate a turn or lane change. Other drivers cannot read your intentions."
+    - id: "headlights"
+      label: "Headlights"
+      status: "ok"
+      okDescription: "Both headlights are clean, intact, and switch on with both low and high beam working."
+    - id: "windscreen"
+      label: "Windscreen"
+      status: "ok"
+      okDescription: "No cracks in the driver's line of sight. Wipers sit flush, washer fluid sprays cleanly."
+    - id: "number-plate"
+      label: "Front number plate"
+      status: "ok"
+      okDescription: "Plate is clean, securely fixed, and readable from 20 metres."
+    - id: "underneath"
+      label: "Underneath the car"
+      status: "ok"
+      okDescription: "No fresh oil, coolant, or brake fluid pooled on the ground. The car is not leaking."
+    - id: "rear-lights"
+      label: "Rear lights and brake lights"
+      status: "ok"
+      okDescription: "Brake lights, reverse light, and rear indicators all respond when tested."
+  feedbackOnComplete: "You found two real faults: a bald front-left tyre and a blown left indicator. Either one is enough to fail an NTSA inspection, and either one can cause a real crash. Both must be fixed before this car moves."
+---

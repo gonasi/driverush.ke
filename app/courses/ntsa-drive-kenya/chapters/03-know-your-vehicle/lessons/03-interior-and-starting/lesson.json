@@ -1,0 +1,15 @@
+{
+  "id": "ch03-l03",
+  "title": "Interior Inspection and Starting",
+  "objective": "Run the interior setup in correct order and start the car using the POWDERY sequence.",
+  "estimatedMinutes": 6,
+  "totalXP": 144,
+  "totalWeight": 24,
+  "blocks": [
+    { "id": "ch03-l03-b001", "file": "001-intro.mdx" },
+    { "id": "ch03-l03-b002", "file": "002-cockpit-sequence.mdx" },
+    { "id": "ch03-l03-b003", "file": "003-interior-labels.mdx" },
+    { "id": "ch03-l03-b004", "file": "004-starting-cards.mdx" },
+    { "id": "ch03-l03-b005", "file": "005-powdery.mdx" }
+  ]
+}

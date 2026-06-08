@@ -1,0 +1,16 @@
+{
+  "id": "ch02-l01",
+  "title": "Eyes on the Road: Observation",
+  "objective": "Build active observation habits — what to look at, when, and how to spot the developing hazard before it arrives.",
+  "estimatedMinutes": 6,
+  "totalXP": 125,
+  "totalWeight": 25,
+  "blocks": [
+    { "id": "ch02-l01-b001", "file": "001-active-vs-passive.mdx" },
+    { "id": "ch02-l01-b002", "file": "002-habits-mcq.mdx" },
+    { "id": "ch02-l01-b003", "file": "003-hazard-clip.mdx" },
+    { "id": "ch02-l01-b004", "file": "004-blind-spot-lottie.mdx" },
+    { "id": "ch02-l01-b005", "file": "005-convex-mcq.mdx" },
+    { "id": "ch02-l01-b006", "file": "006-shoulder-check.mdx" }
+  ]
+}

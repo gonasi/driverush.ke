@@ -1,0 +1,39 @@
+---
+id: "ch02-l05-b002"
+type: "drag_and_drop_label"
+order: 2
+weight: 7
+xp: 35
+completion: "all_placed_correctly"
+required: true
+data:
+  imageAlt: "Top-down view of a family saloon car with five seats marked: driver, front passenger, rear left, rear centre, rear right. A 6-month baby, a 5-year-old child, two adults and a 9-year-old are waiting to be placed."
+  feedbackOnComplete: "Children under 12 (or under 135cm) belong in the back, in an appropriate restraint. Infants face the rear. Boosters or child seats are required until height/weight rules out the seatbelt alone. The driver and front passenger always wear belts."
+  labels:
+    - id: "l1"
+      text: "Driver: seatbelt fastened"
+      hotspot: "driver-seat"
+      incorrectFeedback: "The driver always wears the seatbelt before turning the key."
+    - id: "l2"
+      text: "Adult front passenger: seatbelt fastened"
+      hotspot: "front-passenger"
+      incorrectFeedback: "The front passenger seat is for an adult or older child, belt fastened."
+    - id: "l3"
+      text: "6-month baby: rear-facing infant seat"
+      hotspot: "rear-left"
+      incorrectFeedback: "Infants under one year ride rear-facing in an approved infant seat in the back, never in the front."
+    - id: "l4"
+      text: "5-year-old: child seat with harness"
+      hotspot: "rear-centre"
+      incorrectFeedback: "A 5-year-old is too small for an adult belt alone and needs a proper child restraint in the back."
+    - id: "l5"
+      text: "9-year-old: booster seat"
+      hotspot: "rear-right"
+      incorrectFeedback: "A 9-year-old usually still needs a booster so the adult belt sits across the chest, not the neck."
+  hotspots:
+    - id: "driver-seat"
+    - id: "front-passenger"
+    - id: "rear-left"
+    - id: "rear-centre"
+    - id: "rear-right"
+---

@@ -1,0 +1,15 @@
+{
+  "id": "ch07-l05",
+  "title": "Shock and Casualty Care",
+  "objective": "Recognise the signs of shock, treat it appropriately, and avoid the common mistakes (food, water, painkillers).",
+  "estimatedMinutes": 5,
+  "totalXP": 142.5,
+  "totalWeight": 19,
+  "blocks": [
+    { "id": "ch07-l05-b001", "file": "001-intro.mdx" },
+    { "id": "ch07-l05-b002", "file": "002-shock-treatment-reveal.mdx" },
+    { "id": "ch07-l05-b003", "file": "003-signs-mcq.mdx" },
+    { "id": "ch07-l05-b004", "file": "004-paracetamol-tf.mdx" },
+    { "id": "ch07-l05-b005", "file": "005-synthesis.mdx" }
+  ]
+}

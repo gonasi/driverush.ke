@@ -1,0 +1,45 @@
+---
+id: "ch06-l01-b004"
+type: "scenario_branching"
+order: 4
+weight: 8
+xp: 60
+completion: "reached_terminal"
+required: true
+data:
+  opening: "11pm on the old Naivasha road. You are climbing a long hill on high beam, no other traffic in sight. As you approach the crest, you see a glow of headlights bouncing into the sky on the far side. The oncoming vehicle is still hidden by the hill. You will meet them at the top in about 4 seconds."
+  nodes:
+    - id: "root"
+      type: "decision"
+      choices:
+        - id: "keep-high"
+          text: "Stay on high beam. You cannot see them yet, so they cannot be dazzled."
+          nextNode: "dazzle-outcome"
+        - id: "dip-now"
+          text: "Dip to low beam now, before you crest the hill."
+          nextNode: "safe-crest"
+        - id: "flash-and-hold"
+          text: "Flash to warn them, then stay on high beam to keep your own view."
+          nextNode: "flash-outcome"
+    - id: "dazzle-outcome"
+      type: "outcome"
+      outcome: "negative"
+      animationId: "anim_night_dazzle"
+      title: "You meet them blinded"
+      body: "The moment you crest, your high beam fires straight into their windscreen at point-blank range. They are blinded for two to three seconds: at 80 km/h, that is roughly 50 metres of road they cannot see. You meet them in that blind window. The glow over the hill was the warning. Dip before you crest."
+      terminal: true
+    - id: "safe-crest"
+      type: "outcome"
+      outcome: "positive"
+      animationId: "anim_night_dip"
+      title: "Good call"
+      body: "You drop to low beam well before the crest. As you meet over the top, neither driver is dazzled. You can still see the 30 metres in front of you, you have eased off speed to match the shorter beam, and you pass safely. The rule: if you can see any sign of oncoming light, including a glow on cloud, trees, or sky, dip."
+      terminal: true
+    - id: "flash-outcome"
+      type: "outcome"
+      outcome: "negative"
+      animationId: "anim_night_flash"
+      title: "A flash is not a substitute"
+      body: "A flash signals 'I am here' but does not undo the dazzle that follows. You still meet them at the crest on high beam, and they are still blinded. Flashing has its uses, but never as an excuse to keep your high beam on against approaching traffic. Dip, then deal."
+      terminal: true
+---

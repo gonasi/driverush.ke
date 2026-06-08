@@ -1,0 +1,72 @@
+---
+id: "ch08-l02-b004"
+type: "scenario_branching"
+order: 4
+weight: 8
+xp: 160
+completion: "reached_terminal"
+required: true
+data:
+  opening: "You are doing 80 km/h on a rural road outside Nakuru. A red-bordered triangle appears 150 metres ahead: a sharp bend to the right. The road behind you is clear. What is the first thing you do?"
+  nodes:
+    - id: "root"
+      type: "decision"
+      choices:
+        - id: "brake-now"
+          text: "Brake hard now to scrub speed before the bend."
+          nextNode: "hard-brake"
+        - id: "ease-mirror"
+          text: "Ease off the accelerator, check the mirror, gently brake on the straight."
+          nextNode: "smooth-entry"
+        - id: "hold-speed"
+          text: "Hold 80 km/h. The sign says bend, not slow down."
+          nextNode: "hold-outcome"
+    - id: "hard-brake"
+      type: "decision"
+      choices:
+        - id: "carry-on"
+          text: "You scrubbed to 50 km/h. Now you enter the bend. What next?"
+          nextNode: "mid-bend-brake"
+        - id: "reset"
+          text: "Recover and try the smoother approach."
+          nextNode: "smooth-entry"
+    - id: "mid-bend-brake"
+      type: "outcome"
+      outcome: "negative"
+      title: "Late, harsh, and unsteady"
+      body: "Hard braking in a straight line is survivable, but you wasted distance. The driver behind had no warning and nearly rear-ended you. Warning signs exist precisely so you do NOT brake at the last second. Ease off early, brake gently, arrive at the bend already at the right speed."
+      terminal: true
+    - id: "smooth-entry"
+      type: "decision"
+      choices:
+        - id: "in-bend"
+          text: "You are at 50 km/h, hands at 9 and 3, entering the bend."
+          nextNode: "bend-line"
+    - id: "bend-line"
+      type: "decision"
+      choices:
+        - id: "steady"
+          text: "Hold a steady throttle through the bend, accelerate gently on the exit."
+          nextNode: "good-bend"
+        - id: "brake-in-bend"
+          text: "Tap the brake mid-bend just to be safe."
+          nextNode: "unsettled"
+    - id: "good-bend"
+      type: "outcome"
+      outcome: "positive"
+      title: "Textbook bend"
+      body: "Slow before, steady through, accelerate out. You read the warning sign, prepared the car, and committed to a line. This is exactly how professional drivers handle every blind bend in Kenya."
+      terminal: true
+    - id: "unsettled"
+      type: "outcome"
+      outcome: "negative"
+      title: "Weight shifts the wrong way"
+      body: "Braking mid-bend transfers weight to the front tyres and lightens the rear. On wet or loose surfaces, this is how cars slide off. The rule is: slow before the bend, steady throttle through it."
+      terminal: true
+    - id: "hold-outcome"
+      type: "outcome"
+      outcome: "negative"
+      title: "Understeer and a near miss"
+      body: "At 80 km/h into a sharp bend, your tyres run out of grip and the car drifts wide toward the oncoming lane. You were lucky no truck was coming. Warning signs are not decorative. They demand a speed change, every time."
+      terminal: true
+---

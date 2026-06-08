@@ -1,0 +1,63 @@
+---
+id: "ch05-l06-b003"
+type: "scenario_branching"
+order: 3
+weight: 8
+xp: 48
+completion: "reached_terminal"
+required: true
+data:
+  opening: "You are planning a Nairobi to Kisumu drive: 350 km, mixed terrain, escarpment descents, busy market towns, expected to take 6 hours. You will leave at 4am to beat the traffic. How do you set up the trip?"
+  nodes:
+    - id: "root"
+      type: "decision"
+      choices:
+        - id: "full-prep"
+          text: "Sleep early the night before, check tyres and lights, pack water and snacks, plan two rest stops, leave at 4am."
+          nextNode: "prep-decision"
+        - id: "wing-it"
+          text: "Sleep at the usual time, leave at 4am, push through without stopping, you will rest in Kisumu."
+          nextNode: "fatigue-microsleep"
+        - id: "delay-start"
+          text: "Skip the 4am start, leave at 8am instead so you are fully awake and join normal traffic."
+          nextNode: "later-start"
+    - id: "prep-decision"
+      type: "decision"
+      title: "It is 7am, you are on the Mai Mahiu descent."
+      body: "You have been on the road three hours. You feel fine but you notice your blinks getting longer. Your first planned rest stop, Naivasha, is 40 km away."
+      choices:
+        - id: "pull-over-now"
+          text: "Pull over at the next safe layby for 15 minutes, walk, drink water, even if it is not the planned stop."
+          nextNode: "safe-arrival"
+        - id: "push-to-naivasha"
+          text: "Push the 40 km to the planned stop, you are nearly there."
+          nextNode: "microsleep-on-descent"
+    - id: "fatigue-microsleep"
+      type: "outcome"
+      outcome: "negative"
+      animationId: "anim_microsleep_highway"
+      title: "Microsleep"
+      body: "Around 6am, between Naivasha and Nakuru, you microsleep for two seconds. At 100 km/h that is 55 metres of uncontrolled vehicle. You wake up on the hard shoulder, barely. Fatigue is as dangerous as alcohol. No trip plan, no rest stops, no buffer."
+      terminal: true
+    - id: "later-start"
+      type: "outcome"
+      outcome: "neutral"
+      animationId: "anim_traffic_jam"
+      title: "Stuck in heavy traffic"
+      body: "An 8am start means you join the school run and matatu rush hour. The trip stretches from 6 hours to 9, you arrive exhausted, and the long delay raises crash risk anyway. A 4am start with proper prep was the cleaner plan, not the trip itself."
+      terminal: true
+    - id: "safe-arrival"
+      type: "outcome"
+      outcome: "positive"
+      animationId: "anim_kisumu_arrival"
+      title: "Kisumu, well and on time"
+      body: "Two short stops, no fatigue, planned escapes through the market towns, no incident. This is what defensive driving looks like on a long trip: the boring decisions, made early, that turn a 6-hour drive into nothing memorable. The best trips are the forgettable ones."
+      terminal: true
+    - id: "microsleep-on-descent"
+      type: "outcome"
+      outcome: "negative"
+      animationId: "anim_descent_microsleep"
+      title: "Slept on the descent"
+      body: "Mid-descent on Mai Mahiu, you blink long and drift across the centre line into oncoming traffic. The early warning was the long blinks. The defensive driver respects fatigue signals when they appear, not 40 km later at the planned stop."
+      terminal: true
+---

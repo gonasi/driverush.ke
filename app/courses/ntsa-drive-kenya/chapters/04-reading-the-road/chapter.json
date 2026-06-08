@@ -1,0 +1,22 @@
+{
+  "id": "ch04",
+  "title": "Reading the Road",
+  "description": "Mirrors, MSM, signals, gears, parking manoeuvres, and the cornering that separates a learner from a driver.",
+  "outcomes": [
+    "Use mirrors and the MSM technique reflexively",
+    "Start, stop, and shift gears on instinct",
+    "Park, turn, and corner with smooth control"
+  ],
+  "badgeId": "road-reading-badge",
+  "badgeThreshold": 80,
+  "totalXP": 750,
+  "lessons": [
+    { "id": "ch04-l01", "dir": "01-mirror-mastery" },
+    { "id": "ch04-l02", "dir": "02-msm-technique" },
+    { "id": "ch04-l03", "dir": "03-signals-and-communication" },
+    { "id": "ch04-l04", "dir": "04-starting-stopping-gears" },
+    { "id": "ch04-l05", "dir": "05-parking-manoeuvres" },
+    { "id": "ch04-l06", "dir": "06-bends-and-turns" },
+    { "id": "ch04-l07", "dir": "07-chapter-check" }
+  ]
+}

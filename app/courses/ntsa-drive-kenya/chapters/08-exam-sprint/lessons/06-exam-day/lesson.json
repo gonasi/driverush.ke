@@ -1,0 +1,14 @@
+{
+  "id": "ch08-l06",
+  "title": "What Happens on Exam Day",
+  "objective": "Walk into the NTSA test centre knowing the format, the rules, and how the day unfolds from arrival to result.",
+  "estimatedMinutes": 8,
+  "totalXP": 340,
+  "totalWeight": 17,
+  "blocks": [
+    { "id": "ch08-l06-b001", "file": "001-theory-exam.mdx" },
+    { "id": "ch08-l06-b002", "file": "002-practical-exam.mdx" },
+    { "id": "ch08-l06-b003", "file": "003-graduation-scenario.mdx" },
+    { "id": "ch08-l06-b004", "file": "004-final-message.mdx" }
+  ]
+}

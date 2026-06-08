@@ -1,0 +1,15 @@
+{
+  "id": "ch04-l04",
+  "title": "Starting, Stopping, Gear Mastery",
+  "objective": "Start a manual car cleanly, shift through every gear at the right speed, and stop with control.",
+  "estimatedMinutes": 8,
+  "totalXP": 162,
+  "totalWeight": 27,
+  "blocks": [
+    { "id": "ch04-l04-b001", "file": "001-intro.mdx" },
+    { "id": "ch04-l04-b002", "file": "002-starting-cards.mdx" },
+    { "id": "ch04-l04-b003", "file": "003-gear-trainer.mdx" },
+    { "id": "ch04-l04-b004", "file": "004-stopping-sequence.mdx" },
+    { "id": "ch04-l04-b005", "file": "005-freewheeling-tf.mdx" }
+  ]
+}

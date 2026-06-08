@@ -1,0 +1,45 @@
+---
+id: "ch02-l02-b003"
+type: "scenario_branching"
+order: 3
+weight: 8
+xp: 40
+completion: "reached_terminal"
+required: true
+data:
+  opening: "It is 2am on the Nairobi-Mombasa highway. You have been driving four hours straight. Your eyes are heavy and you caught yourself drifting in the lane a moment ago. The next petrol station with a lay-by is 30 kilometres away. Home is 90 kilometres."
+  nodes:
+    - id: "root"
+      type: "decision"
+      choices:
+        - id: "push"
+          text: "Push on. It is only 30km to the petrol station. Open the window for fresh air."
+          nextNode: "microsleep"
+        - id: "coffee"
+          text: "Down an energy drink and turn the music up. That should buy 30km."
+          nextNode: "false-boost"
+        - id: "pullover"
+          text: "Pull over at the next safe shoulder, switch on hazards, and sleep for 20 minutes."
+          nextNode: "safe-rest"
+    - id: "microsleep"
+      type: "outcome"
+      outcome: "negative"
+      animationId: "anim_microsleep_drift"
+      title: "Microsleep at speed"
+      body: "Eight kilometres later, you blink and your eyes do not reopen for two seconds. At 100 km/h, that is 55 metres of car with no driver. You drift onto the hard shoulder and clip a parked lorry. Cold air and music do not fight fatigue: only sleep does. Pulling over was always the answer."
+      terminal: true
+    - id: "false-boost"
+      type: "outcome"
+      outcome: "negative"
+      animationId: "anim_caffeine_crash"
+      title: "False alertness"
+      body: "The caffeine lifts you for 15 minutes. Then the crash hits harder than before. You miss a slow truck ahead and brake too late. Stimulants delay the bill, they do not cancel it. The only treatment for sleepiness is sleep."
+      terminal: true
+    - id: "safe-rest"
+      type: "outcome"
+      outcome: "positive"
+      animationId: "anim_safe_pullover"
+      title: "Professional choice"
+      body: "You pull onto a safe lay-by, switch on hazards, set the reflector triangles, lock the doors, and nap for 20 minutes. You wake clearer and finish the drive safely. Pulling over is never weak. It is what professional drivers do."
+      terminal: true
+---

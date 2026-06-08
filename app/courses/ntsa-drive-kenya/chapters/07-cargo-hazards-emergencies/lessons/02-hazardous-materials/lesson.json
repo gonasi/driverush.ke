@@ -1,0 +1,15 @@
+{
+  "id": "ch07-l02",
+  "title": "Hazardous Materials",
+  "objective": "Recognise the 9 UN classes of hazardous materials, the Kenyan agencies that license them, and the limits of a standard licence.",
+  "estimatedMinutes": 5,
+  "totalXP": 165,
+  "totalWeight": 22,
+  "blocks": [
+    { "id": "ch07-l02-b001", "file": "001-intro.mdx" },
+    { "id": "ch07-l02-b002", "file": "002-classes-reveal.mdx" },
+    { "id": "ch07-l02-b003", "file": "003-classify-sort.mdx" },
+    { "id": "ch07-l02-b004", "file": "004-licensing-mcq.mdx" },
+    { "id": "ch07-l02-b005", "file": "005-standard-licence-tf.mdx" }
+  ]
+}

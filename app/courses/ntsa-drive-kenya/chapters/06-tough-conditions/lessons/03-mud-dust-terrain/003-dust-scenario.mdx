@@ -1,0 +1,45 @@
+---
+id: "ch06-l03-b003"
+type: "scenario_branching"
+order: 3
+weight: 8
+xp: 60
+completion: "reached_terminal"
+required: true
+data:
+  opening: "You are on a dry murram road in Machakos county, late afternoon. A lorry passes you in the opposite direction, throwing up a wall of red dust behind it. The cloud rolls toward you and within seconds you cannot see more than three metres past the bonnet. You are doing 60 km/h."
+  nodes:
+    - id: "root"
+      type: "decision"
+      choices:
+        - id: "blind-push"
+          text: "Hold speed and direction. Push through the cloud, it will clear in a few seconds."
+          nextNode: "blind-push-outcome"
+        - id: "brake-pull-over"
+          text: "Brake firmly, indicate left, pull onto the verge and wait."
+          nextNode: "brake-pull-over-outcome"
+        - id: "ease-and-creep"
+          text: "Ease off the accelerator, switch on low beam and hazards, stay in your lane, creep through at walking pace."
+          nextNode: "ease-creep-outcome"
+    - id: "blind-push-outcome"
+      type: "outcome"
+      outcome: "negative"
+      animationId: "anim_dust_blind"
+      title: "Blind, then a bicycle"
+      body: "At 60 km/h you cover 17 metres a second. The cloud is 50 metres long. For three seconds you are blind. In that window a bicycle, a stray goat, a pothole, or a pedestrian could be anywhere. Holding speed in zero visibility is a coin flip with no upside. The fact that you sometimes get away with it does not make it safe."
+      terminal: true
+    - id: "brake-pull-over-outcome"
+      type: "outcome"
+      outcome: "negative"
+      animationId: "anim_dust_brake_lock"
+      title: "The vehicle behind hits you"
+      body: "Firm braking inside a dust cloud is a problem for two reasons. First, on loose murram, hard braking locks wheels and the back of the car steps out. Second, any vehicle behind you, also blinded, has no way to see your brake lights in time. Stopping in zero visibility on a live carriageway is how rear-end pile-ups start. Pulling over is right, but only after the cloud has eased and you can see the verge."
+      terminal: true
+    - id: "ease-creep-outcome"
+      type: "outcome"
+      outcome: "positive"
+      animationId: "anim_dust_safe_creep"
+      title: "Good call"
+      body: "Easing off lets the car slow without locking wheels. Low beam plus hazards makes you visible from behind without dazzling anyone in front. Staying in your lane prevents the head-on with whoever else is creeping through. Walking pace gives you a reaction window for whatever the cloud is hiding. As soon as visibility returns, hazards off, resume normal speed. This is the textbook answer for any sudden whiteout, dust or fog."
+      terminal: true
+---

@@ -1,0 +1,15 @@
+{
+  "id": "ch02-l04",
+  "title": "Distractions",
+  "objective": "Identify what counts as a distraction, what Kenyan law actually prohibits behind the wheel, and how to set the cockpit up before you move.",
+  "estimatedMinutes": 5,
+  "totalXP": 95,
+  "totalWeight": 19,
+  "blocks": [
+    { "id": "ch02-l04-b001", "file": "001-phone-risk.mdx" },
+    { "id": "ch02-l04-b002", "file": "002-legal-vs-prohibited-sort.mdx" },
+    { "id": "ch02-l04-b003", "file": "003-co-fill.mdx" },
+    { "id": "ch02-l04-b004", "file": "004-gps-mcq.mdx" },
+    { "id": "ch02-l04-b005", "file": "005-distraction-rule.mdx" }
+  ]
+}

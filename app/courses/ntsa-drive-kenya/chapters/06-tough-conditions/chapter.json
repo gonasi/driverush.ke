@@ -1,0 +1,20 @@
+{
+  "id": "ch06",
+  "title": "Tough Conditions",
+  "description": "Driving when the world is against you — night, fog, rain, mud, and the braking technique each demands.",
+  "outcomes": [
+    "Adapt speed and beams to visibility",
+    "Handle wet, dusty, and rural terrain",
+    "Use ABS or threshold braking under load"
+  ],
+  "badgeId": "weather-badge",
+  "badgeThreshold": 80,
+  "totalXP": 550,
+  "lessons": [
+    { "id": "ch06-l01", "dir": "01-night-driving" },
+    { "id": "ch06-l02", "dir": "02-fog-rain-visibility" },
+    { "id": "ch06-l03", "dir": "03-mud-dust-terrain" },
+    { "id": "ch06-l04", "dir": "04-abs-threshold-braking" },
+    { "id": "ch06-l05", "dir": "05-maintenance-adverse" }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": "ch07-l06",
+  "title": "Reporting and Documentation",
+  "objective": "Meet the legal obligations after a crash: who to call, what to say, what to record, and in what order.",
+  "estimatedMinutes": 4,
+  "totalXP": 142.5,
+  "totalWeight": 19,
+  "blocks": [
+    { "id": "ch07-l06-b001", "file": "001-intro.mdx" },
+    { "id": "ch07-l06-b002", "file": "002-reporting-sequence.mdx" },
+    { "id": "ch07-l06-b003", "file": "003-emergency-number-fill.mdx" },
+    { "id": "ch07-l06-b004", "file": "004-first-info-mcq.mdx" },
+    { "id": "ch07-l06-b005", "file": "005-chapter-close.mdx" }
+  ]
+}

@@ -1,0 +1,35 @@
+---
+id: "ch07-l03-b002"
+type: "sequence_builder"
+order: 2
+weight: 7
+xp: 52.5
+completion: "correct_order_submitted"
+required: true
+data:
+  prompt: "Order the first response steps at a crash scene. Get this right and the scene stabilises; get it wrong and you become the second casualty."
+  feedbackOnComplete: "Safety first (yourself, then scene), then warn traffic so a second crash does not happen, then call 999, then approach. Casualty assessment comes after the scene is secured, not before."
+  allowPartialCredit: false
+  steps:
+    - id: "s1"
+      text: "Pull over safely and switch on hazard lights"
+      correctPosition: 1
+    - id: "s2"
+      text: "Check that the scene is safe (no fire, no fuel leak, no live wire)"
+      correctPosition: 2
+    - id: "s3"
+      text: "Place the warning triangle 60 metres behind the crash"
+      correctPosition: 3
+    - id: "s4"
+      text: "Call 999 with location, number of casualties, and hazards"
+      correctPosition: 4
+    - id: "s5"
+      text: "Approach casualties and run Dr ABC"
+      correctPosition: 5
+    - id: "s6"
+      text: "Control any heavy bleeding and keep casualties warm"
+      correctPosition: 6
+    - id: "s7"
+      text: "Stay on scene until emergency services arrive and hand over"
+      correctPosition: 7
+---

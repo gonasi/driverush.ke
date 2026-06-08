@@ -1,0 +1,16 @@
+{
+  "id": "ch07-l03",
+  "title": "First Response at a Crash Scene",
+  "objective": "Act as a competent first responder: secure the scene, run the Dr ABC protocol, and decide when to move or stabilise a casualty.",
+  "estimatedMinutes": 6,
+  "totalXP": 217.5,
+  "totalWeight": 29,
+  "blocks": [
+    { "id": "ch07-l03-b001", "file": "001-intro.mdx" },
+    { "id": "ch07-l03-b002", "file": "002-first-response-sequence.mdx" },
+    { "id": "ch07-l03-b003", "file": "003-dr-abc-reveal.mdx" },
+    { "id": "ch07-l03-b004", "file": "004-move-vs-stabilise.mdx" },
+    { "id": "ch07-l03-b005", "file": "005-water-tf.mdx" },
+    { "id": "ch07-l03-b006", "file": "006-synthesis.mdx" }
+  ]
+}

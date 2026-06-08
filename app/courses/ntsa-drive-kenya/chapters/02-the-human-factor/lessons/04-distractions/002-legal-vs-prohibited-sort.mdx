@@ -1,0 +1,43 @@
+---
+id: "ch02-l04-b002"
+type: "sorting_game"
+order: 2
+weight: 7
+xp: 35
+completion: "all_sorted_correctly"
+required: true
+data:
+  prompt: "Sort each in-car activity: legal while driving, or prohibited?"
+  shuffleItems: true
+  feedbackOnComplete: "Hands-free Bluetooth calls are legal. Anything that requires holding a phone, looking at a screen for input, or taking eyes off the road is prohibited."
+  buckets:
+    - id: "legal"
+      label: "Legal while driving"
+    - id: "prohibited"
+      label: "Prohibited while driving"
+  items:
+    - id: "item-1"
+      text: "Taking a call on a Bluetooth headset"
+      bucketId: "legal"
+    - id: "item-2"
+      text: "Holding the phone to your ear at a red light"
+      bucketId: "prohibited"
+    - id: "item-3"
+      text: "Reading a WhatsApp message while moving"
+      bucketId: "prohibited"
+    - id: "item-4"
+      text: "Following voice directions from a mounted GPS"
+      bucketId: "legal"
+    - id: "item-5"
+      text: "Typing a new address into Google Maps while driving"
+      bucketId: "prohibited"
+    - id: "item-6"
+      text: "Eating a snack with one hand"
+      bucketId: "prohibited"
+    - id: "item-7"
+      text: "Adjusting the radio with the steering-wheel button"
+      bucketId: "legal"
+    - id: "item-8"
+      text: "Taking a selfie while overtaking a matatu"
+      bucketId: "prohibited"
+---

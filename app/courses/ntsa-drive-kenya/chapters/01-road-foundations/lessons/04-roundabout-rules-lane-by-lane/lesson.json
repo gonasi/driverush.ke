@@ -1,0 +1,18 @@
+{
+  "id": "ch01-l04",
+  "title": "Roundabout Rules: Lane by Lane",
+  "objective": "Pick the right lane on any Kenyan roundabout — straight, right, U-turn, full loop.",
+  "estimatedMinutes": 8,
+  "totalXP": 165,
+  "totalWeight": 33,
+  "blocks": [
+    { "id": "ch01-l04-b001", "file": "001-clock-five-laws.mdx" },
+    { "id": "ch01-l04-b002", "file": "002-lane-one-uturn.mdx" },
+    { "id": "ch01-l04-b003", "file": "003-lane-powers-cards.mdx" },
+    { "id": "ch01-l04-b004", "file": "004-miss-exit.mdx" },
+    { "id": "ch01-l04-b005", "file": "005-roundabout-sim.mdx" },
+    { "id": "ch01-l04-b006", "file": "006-three-lane.mdx" },
+    { "id": "ch01-l04-b007", "file": "007-consolidation.mdx" },
+    { "id": "ch01-l04-b008", "file": "008-flow-lottie.mdx" }
+  ]
+}

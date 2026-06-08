@@ -1,0 +1,87 @@
+---
+id: "ch08-l06-b003"
+type: "scenario_branching"
+order: 3
+weight: 8
+xp: 160
+completion: "reached_terminal"
+required: true
+data:
+  opening: "It is practical exam day. You have just passed theory. The examiner sits beside you in the test car at the NTSA model town. She says: 'From this junction, take a roundabout exit to your right, park in an angle bay, then return to the start.' What is your first action?"
+  nodes:
+    - id: "root"
+      type: "decision"
+      choices:
+        - id: "mirrors-first"
+          text: "Adjust your mirrors, fasten your belt, check controls, then start the engine."
+          nextNode: "good-start"
+        - id: "engine-first"
+          text: "Start the engine and pull off immediately. You know the route."
+          nextNode: "rushed-start"
+        - id: "freeze"
+          text: "Sit silently and wait for her to tell you when to begin."
+          nextNode: "silent-start"
+    - id: "rushed-start"
+      type: "outcome"
+      outcome: "negative"
+      title: "Marked down before moving"
+      body: "The examiner ticks: skipped cockpit drill. Mirrors, seat, belt, controls happen BEFORE the engine, every time. This is the first thing they look for and you missed it."
+      terminal: true
+    - id: "silent-start"
+      type: "outcome"
+      outcome: "negative"
+      title: "Hesitation read as panic"
+      body: "Quiet candidates lose marks. The examiner cannot see your thinking. Always say what you are doing: 'adjusting mirrors, fastening belt, checking neutral, starting engine.' Then move when ready."
+      terminal: true
+    - id: "good-start"
+      type: "decision"
+      choices:
+        - id: "to-roundabout"
+          text: "Approach the roundabout. You want the exit to the right (3 o'clock)."
+          nextNode: "lane-choice"
+    - id: "lane-choice"
+      type: "decision"
+      choices:
+        - id: "lane-1"
+          text: "Enter from Lane 1 (outermost). It is the closest lane."
+          nextNode: "wrong-lane"
+        - id: "lane-3"
+          text: "Signal right, mirror check, enter from Lane 3."
+          nextNode: "correct-lane"
+        - id: "lane-4"
+          text: "Enter from Lane 4 to be safe."
+          nextNode: "wrong-lane"
+    - id: "wrong-lane"
+      type: "outcome"
+      outcome: "negative"
+      title: "Wrong lane for the exit"
+      body: "Right turns at a 4-lane roundabout use Lane 3. Lane 1 exits at the first available, Lane 4 is for U-turns. This is the most common practical-test fail. Replay Chapter 1 Lesson 4."
+      terminal: true
+    - id: "correct-lane"
+      type: "decision"
+      choices:
+        - id: "to-parking"
+          text: "Exit the roundabout cleanly. Now approach the angle parking bay."
+          nextNode: "park-choice"
+    - id: "park-choice"
+      type: "decision"
+      choices:
+        - id: "park-clean"
+          text: "Signal, mirror check, slow down, angle into the bay between the lines."
+          nextNode: "park-success"
+        - id: "park-rushed"
+          text: "Swing in fast to look confident."
+          nextNode: "park-fail"
+    - id: "park-fail"
+      type: "outcome"
+      outcome: "negative"
+      title: "Tyre on the line"
+      body: "Speed in a parking bay is not skill, it is risk. Parking is judged on accuracy: between the lines, straight, with the kerb a hand-span away."
+      terminal: true
+    - id: "park-success"
+      type: "outcome"
+      outcome: "positive"
+      title: "Pass"
+      body: "Cockpit drill done, correct roundabout lane, clean angle park. The examiner ticks every box. You return to the start, hand over the keys, and walk out with a provisional licence on its way. This is what calm, prepared driving looks like."
+      terminal: true
+---

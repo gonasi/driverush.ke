@@ -1,0 +1,15 @@
+{
+  "id": "ch07-l04",
+  "title": "First Aid: Bleeding and Injury",
+  "objective": "Control heavy bleeding with direct pressure and place an unconscious-but-breathing casualty in the recovery position.",
+  "estimatedMinutes": 5,
+  "totalXP": 165,
+  "totalWeight": 22,
+  "blocks": [
+    { "id": "ch07-l04-b001", "file": "001-intro.mdx" },
+    { "id": "ch07-l04-b002", "file": "002-bleeding-reveal.mdx" },
+    { "id": "ch07-l04-b003", "file": "003-recovery-sequence.mdx" },
+    { "id": "ch07-l04-b004", "file": "004-recovery-lottie.mdx" },
+    { "id": "ch07-l04-b005", "file": "005-why-recovery.mdx" }
+  ]
+}

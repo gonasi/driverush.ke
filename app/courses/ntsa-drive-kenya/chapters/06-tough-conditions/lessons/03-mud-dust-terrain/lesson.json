@@ -1,0 +1,15 @@
+{
+  "id": "ch06-l03",
+  "title": "Mud, Dust, and Difficult Terrain",
+  "objective": "Read rural surfaces, get a car unstuck without damaging it, and handle blind dust on rural C-class roads.",
+  "estimatedMinutes": 5,
+  "totalXP": 158,
+  "totalWeight": 21,
+  "blocks": [
+    { "id": "ch06-l03-b001", "file": "001-rural-intro.mdx" },
+    { "id": "ch06-l03-b002", "file": "002-unstuck-reveal.mdx" },
+    { "id": "ch06-l03-b003", "file": "003-dust-scenario.mdx" },
+    { "id": "ch06-l03-b004", "file": "004-rocking-tf.mdx" },
+    { "id": "ch06-l03-b005", "file": "005-terrain-synthesis.mdx" }
+  ]
+}

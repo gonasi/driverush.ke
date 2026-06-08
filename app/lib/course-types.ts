@@ -131,7 +131,233 @@ export type StepRevealData = {
   cards: StepRevealCard[];
 };
 
-/** Loose data bag for unbuilt block types handled by the fallback renderer. */
+export type LottieHotspot = {
+  frame?: number;
+  x?: number;
+  y?: number;
+  label: string;
+};
+
+export type LottieBlockData = {
+  lottieId?: string;
+  lottieUrl?: string;
+  caption?: string;
+  loop?: boolean;
+  autoplay?: boolean;
+  controls?: boolean;
+  hotspots?: LottieHotspot[];
+  altText?: string;
+};
+
+export type SortingGameBucket = { id: string; label: string };
+export type SortingGameItem = {
+  id: string;
+  text: string;
+  bucketId: string;
+  feedback?: string;
+};
+export type SortingGameData = {
+  prompt: string;
+  buckets: SortingGameBucket[];
+  items: SortingGameItem[];
+  feedbackOnComplete?: string;
+  shuffleItems?: boolean;
+};
+
+export type SequenceBuilderStep = {
+  id: string;
+  text: string;
+  correctPosition: number;
+};
+export type SequenceBuilderData = {
+  prompt: string;
+  steps: SequenceBuilderStep[];
+  feedbackOnComplete?: string;
+  allowPartialCredit?: boolean;
+};
+
+export type ScenarioChoice = { id: string; text: string; nextNode: string };
+export type ScenarioNode = {
+  id: string;
+  type: "decision" | "outcome";
+  outcome?: "positive" | "negative" | "neutral";
+  title?: string;
+  body?: string;
+  animationId?: string;
+  terminal?: boolean;
+  choices?: ScenarioChoice[];
+};
+export type ScenarioBranchingData = {
+  opening: string;
+  nodes: ScenarioNode[];
+};
+
+export type SignRecognitionFlashData = {
+  mode: "learn" | "exam";
+  timePerSign?: number;
+  totalSigns: number;
+  streakMultiplier?: boolean;
+  signSet: {
+    category: "warning" | "regulatory" | "information";
+    count: number;
+  }[];
+  feedbackDelay?: number;
+  reviewMissed?: boolean;
+};
+
+export type MemoryMatchData = {
+  pairs: number;
+  cardSet: string;
+  timeLimitSeconds?: number;
+  showCategoryHint?: boolean;
+};
+
+export type SpeedRoundQuestion = {
+  id: string;
+  prompt: string;
+  options: { id: string; text: string; correct: boolean }[];
+};
+export type SpeedRoundData = {
+  questionCount: number;
+  timeLimitSeconds: number;
+  questionPool?: string;
+  showExplanationsAtEnd?: boolean;
+  passMark?: number;
+  questions?: SpeedRoundQuestion[];
+};
+
+export type DragLabel = {
+  id: string;
+  text: string;
+  hotspot: string;
+  incorrectFeedback?: string;
+};
+export type DragHotspot = {
+  id: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+};
+export type DragAndDropLabelData = {
+  image?: string;
+  imageAlt?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  labels: DragLabel[];
+  hotspots: DragHotspot[];
+  feedbackOnComplete?: string;
+};
+
+export type InspectionPoint = {
+  id: string;
+  label: string;
+  status: "ok" | "fault";
+  okDescription?: string;
+  faultDescription?: string;
+  safetyNote?: string;
+};
+export type InspectionChecklistData = {
+  vehicle?: string;
+  view?: "exterior" | "boot" | "engine_bay";
+  requireAllTapped?: boolean;
+  inspectionPoints: InspectionPoint[];
+  feedbackOnComplete?: string;
+};
+
+export type SkidType = {
+  id: string;
+  prompt: string;
+  options: {
+    id: string;
+    text: string;
+    correct: boolean;
+    feedback?: string;
+  }[];
+};
+export type SkidRecoverySimData = {
+  skidTypes: SkidType[];
+  replaySpeedMultiplier?: number;
+};
+
+export type GearShiftPrompt = {
+  speed: number;
+  context: string;
+  correctGear: number;
+  feedback: string;
+};
+export type GearShiftTrainerData = {
+  transmission?: "manual" | "automatic";
+  mode?: "challenge" | "sequential";
+  prompts: GearShiftPrompt[];
+};
+
+export type StoppingDistanceLabData = {
+  unit?: string;
+  showCarLengths?: boolean;
+  showFormula?: boolean;
+  highlightSpeeds?: number[];
+  quizMode?: boolean;
+};
+
+export type BacSimulatorData = {
+  legalLimitKE?: number;
+  showEffectsList?: boolean;
+  driveSimulation?: boolean;
+  driveSimPromptThreshold?: number;
+};
+
+export type HazardPerceptionClipData = {
+  scenario: string;
+  durationSeconds: number;
+  hazardAppearsAt: number;
+  scoreWindowSeconds: number;
+  replayWithHighlight?: boolean;
+  averageReactionSeconds?: number;
+};
+
+export type RoundaboutChallenge = {
+  id: string;
+  prompt: string;
+  correctLanes: number[];
+  correctDirection?: string;
+  successFeedback: string;
+  failFeedback: string;
+};
+export type RoundaboutSimulatorData = {
+  mode?: "free_play" | "guided_challenges";
+  showLaneLabels?: boolean;
+  challenges: RoundaboutChallenge[];
+};
+
+export type ParkingSimChallenge = {
+  id: string;
+  type: "angle" | "flush";
+  targetSpot?: number;
+  gapSize?: "tight" | "standard" | "wide";
+  successThreshold?: number;
+};
+export type ParkingSimData = {
+  mode?: "angle" | "flush" | "both" | "challenge";
+  vehicle?: string;
+  showGuides?: boolean;
+  maxAttempts?: number;
+  challenges: ParkingSimChallenge[];
+};
+
+export type ModelTownChallenge = {
+  id: string;
+  prompt: string;
+  correctPath: string[];
+  failFeedback: string;
+};
+export type ModelTownExplorerData = {
+  mode?: "explore_then_challenge" | "free_play";
+  interactiveElements?: string[];
+  challenges: ModelTownChallenge[];
+};
+
+/** Loose data bag for any block type without a dedicated data shape. */
 export type GenericBlockData = Record<string, unknown>;
 
 export type BlockData =
@@ -140,6 +366,23 @@ export type BlockData =
   | McqMultipleData
   | FillBlankData
   | StepRevealData
+  | LottieBlockData
+  | SortingGameData
+  | SequenceBuilderData
+  | ScenarioBranchingData
+  | SignRecognitionFlashData
+  | MemoryMatchData
+  | SpeedRoundData
+  | DragAndDropLabelData
+  | InspectionChecklistData
+  | SkidRecoverySimData
+  | GearShiftTrainerData
+  | StoppingDistanceLabData
+  | BacSimulatorData
+  | HazardPerceptionClipData
+  | RoundaboutSimulatorData
+  | ParkingSimData
+  | ModelTownExplorerData
   | GenericBlockData;
 
 /** A block ready to render: frontmatter + parsed data + (for rich_text) its MDX component. */

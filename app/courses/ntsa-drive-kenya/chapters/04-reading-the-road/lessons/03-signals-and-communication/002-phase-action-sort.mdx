@@ -1,0 +1,46 @@
+---
+id: "ch04-l03-b002"
+type: "sorting_game"
+order: 2
+weight: 7
+xp: 42
+completion: "all_sorted_correctly"
+required: true
+data:
+  prompt: "Match each driver action to the correct traffic light phase."
+  shuffleItems: true
+  feedbackOnComplete: "Red stops you. Red and amber prepare you. Green permits you (if clear). Amber asks you to stop unless that is unsafe. A flashing amber is a 'proceed with caution', not a free pass."
+  buckets:
+    - id: "red"
+      label: "RED"
+    - id: "red-amber"
+      label: "RED + AMBER"
+    - id: "green"
+      label: "GREEN"
+    - id: "amber"
+      label: "AMBER (steady)"
+    - id: "flashing-amber"
+      label: "FLASHING AMBER"
+  items:
+    - id: "i1"
+      text: "Stop at the line and wait. Do not enter the junction."
+      bucketId: "red"
+    - id: "i2"
+      text: "Stay stopped, but engage gear and prepare to move."
+      bucketId: "red-amber"
+    - id: "i3"
+      text: "Proceed if the junction is clear and your exit is open."
+      bucketId: "green"
+    - id: "i4"
+      text: "Stop, unless doing so would cause a collision behind you."
+      bucketId: "amber"
+    - id: "i5"
+      text: "Proceed with caution, giving way to anyone already in the junction."
+      bucketId: "flashing-amber"
+    - id: "i6"
+      text: "Look right, left, and right again before moving off."
+      bucketId: "red-amber"
+    - id: "i7"
+      text: "Brake firmly but smoothly; do not accelerate to beat the change."
+      bucketId: "amber"
+---

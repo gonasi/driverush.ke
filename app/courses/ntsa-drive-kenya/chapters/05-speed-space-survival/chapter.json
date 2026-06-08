@@ -1,0 +1,21 @@
+{
+  "id": "ch05",
+  "title": "Speed, Space & Survival",
+  "description": "The physics of stopping, the discipline of space, and the manoeuvres that save you when things go wrong.",
+  "outcomes": [
+    "Estimate stopping distances by speed",
+    "Manage following distance and reaction time",
+    "Recover from skids, blowouts, and brake failure"
+  ],
+  "badgeId": "survival-badge",
+  "badgeThreshold": 80,
+  "totalXP": 700,
+  "lessons": [
+    { "id": "ch05-l01", "dir": "01-physics-of-stopping" },
+    { "id": "ch05-l02", "dir": "02-freewheeling-danger" },
+    { "id": "ch05-l03", "dir": "03-space-management" },
+    { "id": "ch05-l04", "dir": "04-emergency-manoeuvres" },
+    { "id": "ch05-l05", "dir": "05-skid-control" },
+    { "id": "ch05-l06", "dir": "06-defensive-driving" }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "id": "ch02-l02",
+  "title": "Fatigue: The Invisible Killer",
+  "objective": "Recognise the warning signs of fatigue, understand its true cost behind the wheel, and learn the only reliable fix.",
+  "estimatedMinutes": 7,
+  "totalXP": 135,
+  "totalWeight": 27,
+  "blocks": [
+    { "id": "ch02-l02-b001", "file": "001-microsleep-fact.mdx" },
+    { "id": "ch02-l02-b002", "file": "002-causes-mcq.mdx" },
+    { "id": "ch02-l02-b003", "file": "003-push-or-pull-scenario.mdx" },
+    { "id": "ch02-l02-b004", "file": "004-anti-fatigue-toolkit.mdx" },
+    { "id": "ch02-l02-b005", "file": "005-thinking-distance-fill.mdx" },
+    { "id": "ch02-l02-b006", "file": "006-fatigue-vs-alcohol.mdx" }
+  ]
+}

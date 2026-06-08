@@ -1,0 +1,53 @@
+---
+id: "ch03-l04-b005"
+type: "sorting_game"
+order: 5
+weight: 7
+xp: 42
+completion: "all_sorted_correctly"
+required: true
+data:
+  prompt: "Sort each dashboard warning light into the correct urgency bucket."
+  shuffleItems: true
+  buckets:
+    - id: "stop-now"
+      label: "Stop now: pull over and switch off"
+    - id: "monitor"
+      label: "Monitor: drive carefully, fix soon"
+    - id: "info"
+      label: "Information: nothing wrong"
+  items:
+    - id: "item-oil"
+      text: "Red oil can light"
+      bucketId: "stop-now"
+      feedback: "Red oil light means low oil pressure. Keep driving and the engine will seize within minutes. Pull over, switch off, check the dipstick, top up or call a tow."
+    - id: "item-temp"
+      text: "Red engine temperature light"
+      bucketId: "stop-now"
+      feedback: "The engine is overheating. Carry on and the head warps. Pull over, switch off, wait at least 20 minutes before opening the bonnet."
+    - id: "item-brake"
+      text: "Red brake warning light"
+      bucketId: "stop-now"
+      feedback: "Could be the handbrake still on, but if it stays lit after releasing the handbrake it means low brake fluid or a brake fault. Do not drive: brakes can fail completely."
+    - id: "item-abs"
+      text: "Amber ABS light"
+      bucketId: "monitor"
+      feedback: "Normal brakes still work, but ABS is offline. Drive gently and get it checked the same day. Avoid hard braking on wet roads until it is fixed."
+    - id: "item-check-engine"
+      text: "Amber check engine light"
+      bucketId: "monitor"
+      feedback: "A sensor has spotted something off, often a fuel or emissions issue. Drive normally to the garage, do not delay more than a few days. Flashing check engine is more urgent: slow down and head straight to a mechanic."
+    - id: "item-airbag"
+      text: "Amber airbag light"
+      bucketId: "monitor"
+      feedback: "SRS is offline. The car drives fine but if you crash, the airbag may not fire. Get it diagnosed quickly. Until then, drive with extra space and care."
+    - id: "item-indicator"
+      text: "Green indicator arrow flashing"
+      bucketId: "info"
+      feedback: "This is just confirmation your turn signal is on. Nothing wrong, the system is working correctly."
+    - id: "item-highbeam"
+      text: "Blue high beam light"
+      bucketId: "info"
+      feedback: "Blue means your headlights are on full beam. Switch back to dipped when you meet other traffic, see oncoming headlights, or follow another car within 60 metres."
+  feedbackOnComplete: "Red lights mean stop. Amber lights mean act soon. Green and blue are information only. When a red light comes on while you are driving, the right answer is almost always pull over and switch off, then think."
+---

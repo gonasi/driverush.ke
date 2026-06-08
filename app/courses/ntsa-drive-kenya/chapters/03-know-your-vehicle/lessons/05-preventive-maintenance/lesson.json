@@ -1,0 +1,16 @@
+{
+  "id": "ch03-l05",
+  "title": "Preventive Maintenance",
+  "objective": "Spot symptoms early, run an engine-bay check, and know what only a mechanic should touch.",
+  "estimatedMinutes": 7,
+  "totalXP": 168,
+  "totalWeight": 28,
+  "blocks": [
+    { "id": "ch03-l05-b001", "file": "001-intro.mdx" },
+    { "id": "ch03-l05-b002", "file": "002-symptom-sort.mdx" },
+    { "id": "ch03-l05-b003", "file": "003-engine-bay-check.mdx" },
+    { "id": "ch03-l05-b004", "file": "004-pm-fill-blank.mdx" },
+    { "id": "ch03-l05-b005", "file": "005-mcq-multiple.mdx" },
+    { "id": "ch03-l05-b006", "file": "006-outro.mdx" }
+  ]
+}

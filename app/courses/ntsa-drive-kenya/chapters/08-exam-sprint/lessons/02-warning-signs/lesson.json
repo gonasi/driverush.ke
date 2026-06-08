@@ -1,0 +1,15 @@
+{
+  "id": "ch08-l02",
+  "title": "Warning Signs Masterclass",
+  "objective": "Read any warning sign at speed and translate it into a concrete driving adjustment.",
+  "estimatedMinutes": 7,
+  "totalXP": 600,
+  "totalWeight": 30,
+  "blocks": [
+    { "id": "ch08-l02-b001", "file": "001-triangles-warn.mdx" },
+    { "id": "ch08-l02-b002", "file": "002-sign-flash-exam.mdx" },
+    { "id": "ch08-l02-b003", "file": "003-memory-match.mdx" },
+    { "id": "ch08-l02-b004", "file": "004-sharp-bend-scenario.mdx" },
+    { "id": "ch08-l02-b005", "file": "005-synthesis.mdx" }
+  ]
+}

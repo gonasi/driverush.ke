@@ -1,0 +1,15 @@
+{
+  "id": "ch06-l02",
+  "title": "Fog, Rain, and Reduced Visibility",
+  "objective": "Adjust speed, lights, and following distance when fog, rain, or spray cuts visibility, and recognise the first-rain hazard.",
+  "estimatedMinutes": 5,
+  "totalXP": 152,
+  "totalWeight": 20,
+  "blocks": [
+    { "id": "ch06-l02-b001", "file": "001-fog-rules-reveal.mdx" },
+    { "id": "ch06-l02-b002", "file": "002-aquaplaning-lottie.mdx" },
+    { "id": "ch06-l02-b003", "file": "003-rain-behaviours.mdx" },
+    { "id": "ch06-l02-b004", "file": "004-first-rain-tf.mdx" },
+    { "id": "ch06-l02-b005", "file": "005-surface-chemistry.mdx" }
+  ]
+}

@@ -1,0 +1,45 @@
+---
+id: "ch04-l05-b004"
+type: "scenario_branching"
+order: 4
+weight: 8
+xp: 48
+completion: "reached_terminal"
+required: true
+data:
+  opening: "You are running late for a meeting in town. You spot a gap on the side of the road that looks just big enough for your car. Trouble is, the gap is roughly 10 metres from a pedestrian crossing. The kerb is grey (not yellow). What do you do?"
+  nodes:
+    - id: "root"
+      type: "decision"
+      choices:
+        - id: "park-here"
+          text: "Park there. It's not yellow, and a few metres doesn't really matter."
+          nextNode: "ticketed"
+        - id: "drive-on"
+          text: "Drive on. The 15-metre rule from a pedestrian crossing applies even on a grey kerb."
+          nextNode: "good-call"
+        - id: "check-traffic"
+          text: "Stop, hazard lights on, dash in for two minutes. It's a quick errand."
+          nextNode: "obstruction"
+    - id: "ticketed"
+      type: "outcome"
+      outcome: "negative"
+      animationId: "anim_parking_ticket"
+      title: "Ticketed and towed"
+      body: "Parking within 15 metres of a pedestrian crossing is an offence regardless of kerb colour. You return to find a ticket on the windscreen and a tow truck arriving. The meeting is now hours away and so is your car."
+      terminal: true
+    - id: "good-call"
+      type: "outcome"
+      outcome: "positive"
+      animationId: "anim_safe_drive_on"
+      title: "Good call"
+      body: "You drive on, find a legal spot two streets over, walk five minutes back. You arrive a minute late but you arrive. The 15-metre rule isn't about the kerb colour; it's about giving pedestrians a clear line of sight."
+      terminal: true
+    - id: "obstruction"
+      type: "outcome"
+      outcome: "negative"
+      animationId: "anim_hazard_lights_park"
+      title: "Hazard lights are not a parking permit"
+      body: "Hazard lights signal a stopped vehicle, not a legally parked one. You block a crossing, a parent and child have to step into the road, and an officer is already writing a ticket. Hazards do not unlock illegal spots."
+      terminal: true
+---

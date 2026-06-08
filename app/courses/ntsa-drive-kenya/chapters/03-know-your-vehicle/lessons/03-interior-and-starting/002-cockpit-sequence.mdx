@@ -1,0 +1,35 @@
+---
+id: "ch03-l03-b002"
+type: "sequence_builder"
+order: 2
+weight: 7
+xp: 42
+completion: "correct_order_submitted"
+required: true
+data:
+  prompt: "Arrange the cockpit setup steps in the correct order, from sitting down to firing the engine."
+  steps:
+    - id: "step-doors"
+      text: "Close and lock all doors"
+      correctPosition: 1
+    - id: "step-seat"
+      text: "Adjust seat: reach the clutch fully with a slight knee bend"
+      correctPosition: 2
+    - id: "step-headrest"
+      text: "Adjust headrest level with the top of your head"
+      correctPosition: 3
+    - id: "step-mirrors"
+      text: "Adjust all three mirrors: interior, left, right"
+      correctPosition: 4
+    - id: "step-belt"
+      text: "Fasten your seatbelt and check passenger belts"
+      correctPosition: 5
+    - id: "step-neutral"
+      text: "Confirm gear lever is in neutral and handbrake is up"
+      correctPosition: 6
+    - id: "step-start"
+      text: "Turn the key and check dashboard lights"
+      correctPosition: 7
+  feedbackOnComplete: "Doors, seat, headrest, mirrors, belt, neutral, start. Seven steps in that order, every single time. The order matters: belt before key, neutral before turn, mirrors before you move."
+  allowPartialCredit: false
+---

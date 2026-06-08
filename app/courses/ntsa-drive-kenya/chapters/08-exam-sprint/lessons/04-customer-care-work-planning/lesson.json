@@ -1,0 +1,16 @@
+{
+  "id": "ch08-l04",
+  "title": "Customer Care and Work Planning",
+  "objective": "Drive professionally: respect the hours rule, treat passengers like customers, and plan every trip before turning the key.",
+  "estimatedMinutes": 7,
+  "totalXP": 500,
+  "totalWeight": 25,
+  "blocks": [
+    { "id": "ch08-l04-b001", "file": "001-professional-driver.mdx" },
+    { "id": "ch08-l04-b002", "file": "002-hours-mcq.mdx" },
+    { "id": "ch08-l04-b003", "file": "003-professional-sort.mdx" },
+    { "id": "ch08-l04-b004", "file": "004-trip-planning-cards.mdx" },
+    { "id": "ch08-l04-b005", "file": "005-gps-fill.mdx" },
+    { "id": "ch08-l04-b006", "file": "006-exam-day-prep.mdx" }
+  ]
+}

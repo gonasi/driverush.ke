@@ -1,0 +1,15 @@
+{
+  "id": "ch08-l03",
+  "title": "Information and Guidance Signs",
+  "objective": "Read information and guidance signs as helpful directions, and know what to do when the signals fail.",
+  "estimatedMinutes": 6,
+  "totalXP": 480,
+  "totalWeight": 24,
+  "blocks": [
+    { "id": "ch08-l03-b001", "file": "001-rectangles-inform.mdx" },
+    { "id": "ch08-l03-b002", "file": "002-sign-flash-learn.mdx" },
+    { "id": "ch08-l03-b003", "file": "003-junction-label.mdx" },
+    { "id": "ch08-l03-b004", "file": "004-signal-blackout-mcq.mdx" },
+    { "id": "ch08-l03-b005", "file": "005-synthesis.mdx" }
+  ]
+}

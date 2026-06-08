@@ -1,0 +1,49 @@
+---
+id: "ch08-l04-b003"
+type: "sorting_game"
+order: 3
+weight: 7
+xp: 140
+completion: "all_sorted_correctly"
+required: true
+data:
+  prompt: "Sort each behaviour. Which belong to a professional driver, and which do not?"
+  shuffleItems: true
+  feedbackOnComplete: "Professionalism shows up in tiny choices: greeting passengers, planning fuel, walking around the car. Unprofessional habits show up the same way: a phone in the lap, no rest stops, a vehicle that has not seen a sponge in a month."
+  buckets:
+    - id: "pro"
+      label: "Professional"
+    - id: "unpro"
+      label: "Unprofessional"
+  items:
+    - id: "item-1"
+      text: "Greeting passengers and confirming their destination"
+      bucketId: "pro"
+    - id: "item-2"
+      text: "Doing a 2-minute walkaround inspection before every shift"
+      bucketId: "pro"
+    - id: "item-3"
+      text: "Keeping the cabin and seats clean"
+      bucketId: "pro"
+    - id: "item-4"
+      text: "Loading fares and pulling off before passengers are seated"
+      bucketId: "unpro"
+    - id: "item-5"
+      text: "Texting at every red light"
+      bucketId: "unpro"
+    - id: "item-6"
+      text: "Skipping rest breaks to finish the route faster"
+      bucketId: "unpro"
+    - id: "item-7"
+      text: "Confirming the route and fuel before pulling off"
+      bucketId: "pro"
+    - id: "item-8"
+      text: "Smoking with passengers in the vehicle"
+      bucketId: "unpro"
+    - id: "item-9"
+      text: "Driving with the radio on full volume to stay awake"
+      bucketId: "unpro"
+    - id: "item-10"
+      text: "Wearing a clean uniform and visible ID badge"
+      bucketId: "pro"
+---

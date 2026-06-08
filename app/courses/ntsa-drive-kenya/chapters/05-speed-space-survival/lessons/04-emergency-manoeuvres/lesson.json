@@ -1,0 +1,17 @@
+{
+  "id": "ch05-l04",
+  "title": "Emergency Manoeuvres",
+  "objective": "Drill the trained response for brake failure, tyre blowout, wheel off pavement, and night-time headlight failure.",
+  "estimatedMinutes": 8,
+  "totalXP": 216,
+  "totalWeight": 36,
+  "blocks": [
+    { "id": "ch05-l04-b001", "file": "001-intro.mdx" },
+    { "id": "ch05-l04-b002", "file": "002-brake-failure.mdx" },
+    { "id": "ch05-l04-b003", "file": "003-tyre-blowout.mdx" },
+    { "id": "ch05-l04-b004", "file": "004-wheel-off-pavement.mdx" },
+    { "id": "ch05-l04-b005", "file": "005-headlights-scenario.mdx" },
+    { "id": "ch05-l04-b006", "file": "006-blowout-sequence.mdx" },
+    { "id": "ch05-l04-b007", "file": "007-bridge.mdx" }
+  ]
+}

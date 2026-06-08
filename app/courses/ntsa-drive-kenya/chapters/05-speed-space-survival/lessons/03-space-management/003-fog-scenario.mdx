@@ -1,0 +1,45 @@
+---
+id: "ch05-l03-b003"
+type: "scenario_branching"
+order: 3
+weight: 8
+xp: 48
+completion: "reached_terminal"
+required: true
+data:
+  opening: "You are 10 km out of Limuru at 6:30am, doing 90 km/h on an open dual carriageway. The road state is OPEN. In 200 metres a wall of fog drops from the trees, visibility crashes to maybe 30 metres. What do you do first?"
+  nodes:
+    - id: "root"
+      type: "decision"
+      choices:
+        - id: "brake-hard"
+          text: "Brake hard immediately to get under 30 km/h."
+          nextNode: "rear-end"
+        - id: "ease-off-and-lights"
+          text: "Ease off the accelerator, switch on low-beam headlights, and let the car settle to a speed that matches what you can see."
+          nextNode: "well-managed"
+        - id: "high-beam"
+          text: "Hit the high beams and keep the same speed so you can see further."
+          nextNode: "high-beam-bounce"
+    - id: "rear-end"
+      type: "outcome"
+      outcome: "negative"
+      animationId: "anim_rear_ended_fog"
+      title: "Rear-ended in the fog"
+      body: "The matatu behind you, who could not see you brake, slams into your boot. Hard braking is the right reflex on an open road with nothing behind, but fog hides what is behind. Ease off first, then brake gently if you must."
+      terminal: true
+    - id: "well-managed"
+      type: "outcome"
+      outcome: "positive"
+      animationId: "anim_fog_settled"
+      title: "Conditions matched"
+      body: "Low beams cut under the fog, your speed drops smoothly so any car behind has time to react, and you have moved from an open road brain to a closed road brain in one breath. This is exactly how a changing road is supposed to be handled."
+      terminal: true
+    - id: "high-beam-bounce"
+      type: "outcome"
+      outcome: "negative"
+      animationId: "anim_high_beam_glare"
+      title: "Whiteout"
+      body: "High beams bounce off the water droplets straight back at you, the view goes white, and you are now driving blind at 90 km/h. In fog, low beams down, speed down, eyes on the kerb line."
+      terminal: true
+---

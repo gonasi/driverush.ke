@@ -1,0 +1,42 @@
+---
+id: "ch07-l03-b004"
+type: "scenario_branching"
+order: 4
+weight: 8
+xp: 60
+completion: "reached_terminal"
+required: true
+data:
+  opening: "You are first on scene at a saloon car crash on a busy section of Thika Road. The driver is conscious but slumped against the door, complaining of severe neck pain. The car is stationary on the shoulder, not on fire, fuel not leaking. Traffic is flowing past at speed. Ambulance is 12 minutes away."
+  nodes:
+    - id: "root"
+      type: "decision"
+      choices:
+        - id: "pull-out"
+          text: "Pull the driver out of the car and lay them on the grass to make them comfortable."
+          nextNode: "spinal-damage"
+        - id: "stabilise"
+          text: "Leave the driver in place, support the head and neck, keep them talking, wait for paramedics."
+          nextNode: "good-call"
+        - id: "force-walk"
+          text: "Help the driver stand up and walk to your car so you can rush them to hospital yourself."
+          nextNode: "force-walk-outcome"
+    - id: "spinal-damage"
+      type: "outcome"
+      outcome: "negative"
+      title: "Spinal cord injury"
+      body: "Severe neck pain after a crash is a red flag for spinal injury. Pulling the driver out without a collar and board can convert a recoverable injury into permanent paralysis. The rule: if the scene is safe, you do not move a casualty with suspected spinal injury. Stabilise the head, wait for trained help."
+      terminal: true
+    - id: "force-walk-outcome"
+      type: "outcome"
+      outcome: "negative"
+      title: "Hospital, but worse"
+      body: "Driving them yourself bypasses the only people trained to handle spinal stabilisation, and bumps on the way can make the injury permanent. Unless there is fire, drowning, or imminent further crash danger, you wait for the ambulance. Your job is to stabilise, not transport."
+      terminal: true
+    - id: "good-call"
+      type: "outcome"
+      outcome: "positive"
+      title: "Textbook response"
+      body: "Scene is safe, casualty is conscious, suspected neck injury: the right answer is to keep them still, support the head with your hands either side, keep them talking, and wait. The only reasons to move a suspected spinal casualty are immediate fire, water, or traffic risk. None apply here. You bought the paramedics the spine they need to save."
+      terminal: true
+---

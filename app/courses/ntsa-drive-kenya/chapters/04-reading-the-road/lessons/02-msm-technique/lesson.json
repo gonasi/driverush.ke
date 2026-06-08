@@ -1,0 +1,16 @@
+{
+  "id": "ch04-l02",
+  "title": "The MSM Technique",
+  "objective": "Make Mirror, Signal, Manoeuvre the automatic rhythm of every change of direction or speed.",
+  "estimatedMinutes": 7,
+  "totalXP": 186,
+  "totalWeight": 31,
+  "blocks": [
+    { "id": "ch04-l02-b001", "file": "001-msm-intro.mdx" },
+    { "id": "ch04-l02-b002", "file": "002-right-turn-sequence.mdx" },
+    { "id": "ch04-l02-b003", "file": "003-when-each-step-cards.mdx" },
+    { "id": "ch04-l02-b004", "file": "004-left-turn-hazard.mdx" },
+    { "id": "ch04-l02-b005", "file": "005-msm-triggers.mdx" },
+    { "id": "ch04-l02-b006", "file": "006-synthesis.mdx" }
+  ]
+}
