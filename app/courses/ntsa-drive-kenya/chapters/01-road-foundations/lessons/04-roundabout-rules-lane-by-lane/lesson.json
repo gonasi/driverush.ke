@@ -3,8 +3,8 @@
   "title": "Roundabout Rules: Lane by Lane",
   "objective": "Pick the right lane on any Kenyan roundabout, straight, right, U-turn, full loop.",
   "estimatedMinutes": 8,
-  "totalXP": 165,
-  "totalWeight": 33,
+  "totalXP": 155,
+  "totalWeight": 31,
   "blocks": [
     { "id": "ch01-l04-b001", "file": "001-clock-five-laws.mdx" },
     { "id": "ch01-l04-b002", "file": "002-lane-one-uturn.mdx" },

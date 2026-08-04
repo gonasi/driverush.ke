@@ -4,7 +4,7 @@
   "tagline": "From zero to road-ready, interactively.",
   "version": "1.0.0",
   "locale": "en-KE",
-  "totalXP": 8962,
+  "totalXP": 8944,
   "passMark": 80,
   "chapters": [
     { "id": "ch01", "dir": "01-road-foundations" },

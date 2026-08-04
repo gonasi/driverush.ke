@@ -3,8 +3,8 @@
   "title": "First Aid: Bleeding and Injury",
   "objective": "Control heavy bleeding with direct pressure and place an unconscious-but-breathing casualty in the recovery position.",
   "estimatedMinutes": 5,
-  "totalXP": 165,
-  "totalWeight": 22,
+  "totalXP": 157.5,
+  "totalWeight": 21,
   "blocks": [
     { "id": "ch07-l04-b001", "file": "001-intro.mdx" },
     { "id": "ch07-l04-b002", "file": "002-bleeding-reveal.mdx" },
