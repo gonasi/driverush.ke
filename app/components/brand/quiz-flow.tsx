@@ -21,6 +21,7 @@ import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
 import { ChoiceCard } from "~/components/brand/choice-card";
 import { FeedbackBanner } from "~/components/brand/feedback-banner";
+import { ShareButton } from "~/components/brand/share-button";
 
 type QuizFlowProps = {
   questions: Question[];
@@ -350,6 +351,11 @@ function ResultScreen({ questions, answers, mode }: ResultProps) {
             Try again
           </Link>
         </Button>
+        <ShareButton
+          surface="quiz_result"
+          payload={{ kind: "quiz", mode, correct: correctCount, total }}
+          label={passed ? "Share the score" : "Share the challenge"}
+        />
         <Button variant="paper" size="lg" asChild>
           <Link to="/practice?mode=test">
             Take a quick test

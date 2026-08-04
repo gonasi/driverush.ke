@@ -30,6 +30,11 @@ export default [
   route("blogs", "routes/blogs.tsx"),
   route("blogs/:slug", "routes/blogs-post.tsx"),
 
+  // Where shared achievement links land (`/s?k=quiz&…`). Deliberately short:
+  // the URL travels through WhatsApp forwards. Renders a useful page for any
+  // payload, including one that's broken or missing, and never 404s.
+  route("s", "routes/share-landing.tsx"),
+
   // SEO resource route — XML sitemap at /sitemap.xml (referenced by robots.txt).
   route("sitemap.xml", "routes/sitemap-xml.ts"),
 

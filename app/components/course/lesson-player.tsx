@@ -30,6 +30,7 @@ import { toast } from "sonner";
 
 import { Button } from "~/components/ui/button";
 import { CelebrationConfetti } from "~/components/brand/celebration-confetti";
+import { ShareButton } from "~/components/brand/share-button";
 import { LoadingPanel } from "~/components/brand/traffic-loader";
 import { getBlockRenderer } from "./block-registry";
 import { LockedPanel } from "./locked-panel";
@@ -443,6 +444,15 @@ function LessonComplete({
             />
           </Link>
         </Button>
+        <ShareButton
+          surface="lesson_complete"
+          payload={{
+            kind: "lesson",
+            courseSlug,
+            lessonId: lesson.id,
+            xp: xpEarned,
+          }}
+        />
         <Button variant="paper" size="lg" onClick={onReplay}>
           <HugeiconsIcon icon={RefreshFreeIcons} size={16} strokeWidth={2.5} />
           Replay lesson

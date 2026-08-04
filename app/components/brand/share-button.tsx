@@ -1,0 +1,182 @@
+/**
+ * The one share affordance. Drop `<ShareButton payload={…} />` next to any
+ * result screen or page header.
+ *
+ * Mobile gets the OS share sheet (`navigator.share`) because that's where the
+ * user's real chat list lives, and it costs zero extra UI. Desktop, and any
+ * browser without the API, gets our own dialog with the channels that matter
+ * here: WhatsApp first, then X, Facebook, Telegram, plus copy-link which is
+ * how a surprising number of links actually move.
+ *
+ * Every outbound link is UTM-tagged per channel, so `useUtmCapture` can
+ * attribute return traffic to the share that caused it.
+ */
+import * as React from "react";
+import { toast } from "sonner";
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import {
+  Copy01FreeIcons,
+  FacebookFreeIcons,
+  NewTwitterFreeIcons,
+  Share08FreeIcons,
+  TelegramFreeIcons,
+  WhatsappFreeIcons,
+} from "@hugeicons/core-free-icons";
+
+import { analytics } from "~/lib/analytics";
+import {
+  buildShareLink,
+  SHARE_TARGETS,
+  taggedShareUrl,
+  type SharePayload,
+} from "~/lib/share";
+import { cn } from "~/lib/utils";
+
+import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+
+const TARGET_ICONS: Record<string, IconSvgElement> = {
+  whatsapp: WhatsappFreeIcons,
+  twitter: NewTwitterFreeIcons,
+  facebook: FacebookFreeIcons,
+  telegram: TelegramFreeIcons,
+};
+
+export type ShareButtonProps = {
+  payload: SharePayload;
+  /** Where this button lives, e.g. "quiz_result". Rides on the analytics. */
+  surface: string;
+  label?: string;
+  variant?: React.ComponentProps<typeof Button>["variant"];
+  size?: React.ComponentProps<typeof Button>["size"];
+  className?: string;
+};
+
+export function ShareButton({
+  payload,
+  surface,
+  label = "Share",
+  variant = "paper",
+  size = "lg",
+  className,
+}: ShareButtonProps) {
+  const [open, setOpen] = React.useState(false);
+  const link = React.useMemo(() => buildShareLink(payload), [payload]);
+
+  async function handleClick() {
+    analytics.shareOpened({ kind: link.kind, surface });
+
+    // Native sheet where it exists. `share()` must be called straight off the
+    // click to keep the user-gesture, so no awaits before this point.
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({
+          title: link.title,
+          text: link.text,
+          url: taggedShareUrl(link.url, "native"),
+        });
+        analytics.shareCompleted({ kind: link.kind, channel: "native" });
+        return;
+      } catch (err) {
+        // The user backing out of the OS sheet is an AbortError, not a
+        // failure: respect the decision and don't second-guess it with our
+        // own dialog. Anything else means the API let us down, so fall back.
+        if (err instanceof Error && err.name === "AbortError") return;
+      }
+    }
+
+    setOpen(true);
+  }
+
+  async function copyLink() {
+    const url = taggedShareUrl(link.url, "copy");
+    try {
+      await navigator.clipboard.writeText(url);
+      analytics.shareCompleted({ kind: link.kind, channel: "copy" });
+      toast.success("Link copied");
+      setOpen(false);
+    } catch {
+      toast.error("Couldn't copy the link", {
+        description: "Long-press the address bar to copy it instead.",
+      });
+    }
+  }
+
+  return (
+    <>
+      <Button
+        variant={variant}
+        size={size}
+        onClick={handleClick}
+        className={className}
+      >
+        <HugeiconsIcon icon={Share08FreeIcons} size={16} strokeWidth={2.5} />
+        {label}
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share it</DialogTitle>
+            <DialogDescription>{link.title}</DialogDescription>
+          </DialogHeader>
+          <DialogBody>
+            <div className="grid grid-cols-2 gap-2.5">
+              {SHARE_TARGETS.map((t) => (
+                <a
+                  key={t.id}
+                  href={t.href!({
+                    ...link,
+                    url: taggedShareUrl(link.url, t.id),
+                  })}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => {
+                    analytics.shareCompleted({
+                      kind: link.kind,
+                      channel: t.id,
+                    });
+                    setOpen(false);
+                  }}
+                  className={cn(
+                    "inline-flex items-center gap-2.5 border-2 border-ink bg-surface px-4 py-3",
+                    "font-display text-[13px] font-extrabold uppercase tracking-wider text-ink",
+                    "shadow-stamp-sm outline-none transition-colors hover:bg-paper-3",
+                    "focus-visible:bg-paper-3 active:translate-x-[3px] active:translate-y-[3px] active:shadow-none",
+                  )}
+                >
+                  <HugeiconsIcon
+                    icon={TARGET_ICONS[t.id]}
+                    size={18}
+                    strokeWidth={2}
+                  />
+                  {t.label}
+                </a>
+              ))}
+            </div>
+            <Button
+              variant="ink"
+              size="lg"
+              onClick={copyLink}
+              className="mt-2.5 w-full"
+            >
+              <HugeiconsIcon
+                icon={Copy01FreeIcons}
+                size={16}
+                strokeWidth={2.5}
+              />
+              Copy link
+            </Button>
+          </DialogBody>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}

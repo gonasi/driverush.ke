@@ -213,6 +213,22 @@ export const analytics = {
   contactClicked: (args: { channel: "phone" | "email"; location: string }) =>
     emit("contact_clicked", args),
 
+  // ----- sharing -----
+  // opened → completed measures how many people who reach for share actually
+  // send something; `share_landing_viewed` closes the loop on the other side.
+
+  /** Share affordance tapped (before any channel is chosen). */
+  shareOpened: (args: { kind: string; surface: string }) =>
+    emit("share_opened", args),
+
+  /** A share was actually dispatched to a channel. */
+  shareCompleted: (args: { kind: string; channel: string }) =>
+    emit("share_completed", args),
+
+  /** Someone opened a shared link. `valid: false` means the payload was junk. */
+  shareLandingViewed: (args: { kind: string; valid: boolean }) =>
+    emit("share_landing_viewed", args),
+
   // ----- habit loop -----
   // Streak + daily goal are the retention mechanics; these two events are what
   // make "learners who hit a 3-day streak retain N× better" answerable.

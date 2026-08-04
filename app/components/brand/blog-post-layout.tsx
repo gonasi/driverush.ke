@@ -11,6 +11,7 @@ import {
 import { cn } from "~/lib/utils";
 import type { BlogPost } from "~/lib/blog";
 import { Rail } from "~/components/brand/rail";
+import { ShareButton } from "~/components/brand/share-button";
 import { SiteNav } from "~/components/brand/site-nav";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -142,22 +143,37 @@ export function BlogPostLayout({
               {post.lede}
             </p>
 
-            <div className="mt-6 flex flex-wrap items-center gap-2 font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
-              <span>{post.readingMinutes} min read</span>
-              <span aria-hidden>·</span>
-              <span>By DriveRush editors</span>
-              {post.tags.length > 0 && (
-                <>
-                  <span aria-hidden>·</span>
-                  <span className="flex flex-wrap gap-1.5">
-                    {post.tags.slice(0, 3).map((t) => (
-                      <Badge key={t} variant="outline" className="lowercase">
-                        {t}
-                      </Badge>
-                    ))}
-                  </span>
-                </>
-              )}
+            {/* Share sits with the byline, where readers look once they've
+                decided the piece is worth passing on. Posts share their own
+                canonical URL, not a /s hop, so the link equity stays here. */}
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2 font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
+                <span>{post.readingMinutes} min read</span>
+                <span aria-hidden>·</span>
+                <span>By DriveRush editors</span>
+                {post.tags.length > 0 && (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span className="flex flex-wrap gap-1.5">
+                      {post.tags.slice(0, 3).map((t) => (
+                        <Badge key={t} variant="outline" className="lowercase">
+                          {t}
+                        </Badge>
+                      ))}
+                    </span>
+                  </>
+                )}
+              </div>
+              <ShareButton
+                surface="blog_post"
+                size="sm"
+                payload={{
+                  kind: "page",
+                  path: `/blogs/${post.slug}`,
+                  title: post.title,
+                  text: post.description,
+                }}
+              />
             </div>
           </header>
 

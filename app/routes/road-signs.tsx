@@ -24,6 +24,7 @@ import { Button } from "~/components/ui/button";
 import { Accordion, AccordionItem } from "~/components/brand/accordion";
 import { Callout } from "~/components/brand/callout";
 import { Rail } from "~/components/brand/rail";
+import { ShareButton } from "~/components/brand/share-button";
 import { SiteNav } from "~/components/brand/site-nav";
 import { SectionHead } from "~/components/brand/section-head";
 import { SignCard } from "~/components/brand/sign-card";
@@ -202,6 +203,18 @@ export default function RoadSigns() {
               <Button variant="paper" size="lg" asChild>
                 <Link to="/practice?mode=signs">Classic road-sign quiz</Link>
               </Button>
+              {/* The chart is the most forwarded thing on the site: a learner
+                  sends it to the next person in the queue at NTSA. */}
+              <ShareButton
+                surface="road_signs_hero"
+                label="Send to a friend"
+                payload={{
+                  kind: "page",
+                  path: "/road-signs",
+                  title: "Every Kenyan road sign, with what it actually means",
+                  text: "The full NTSA chart plus two games that drill it into memory. Free, no signup.",
+                }}
+              />
               <a
                 href="#reference"
                 className="font-mono text-[11px] uppercase tracking-widest text-ink-3 underline-offset-4 outline-none hover:text-ink hover:underline focus-visible:text-ink"

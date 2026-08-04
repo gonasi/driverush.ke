@@ -37,6 +37,7 @@ import {
   SheetTitle,
 } from "~/components/ui/sheet";
 import { CelebrationConfetti } from "~/components/brand/celebration-confetti";
+import { ShareButton } from "~/components/brand/share-button";
 import { Sign3DViewer } from "~/components/brand/sign-3d-viewer";
 
 // --- motion -----------------------------------------------------------------
@@ -634,6 +635,10 @@ export function Sign3DPlayer({ className }: { className?: string }) {
                         />
                         Play again
                       </Button>
+                      <ShareButton
+                        surface="signs3d_complete"
+                        payload={{ kind: "signs3d", total, firstTry }}
+                      />
                       <Button
                         variant="paper"
                         size="lg"

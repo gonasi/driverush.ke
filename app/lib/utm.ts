@@ -21,6 +21,7 @@ export const UTM_CHANNELS = {
   facebook: { source: "facebook", medium: "social" },
   tiktok: { source: "tiktok", medium: "social" },
   whatsapp: { source: "whatsapp", medium: "social" },
+  telegram: { source: "telegram", medium: "social" },
   linkedin: { source: "linkedin", medium: "social" },
   youtube: { source: "youtube", medium: "social" },
   email: { source: "email", medium: "email" },

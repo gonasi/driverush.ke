@@ -43,6 +43,7 @@ const CHANNEL_OPTIONS: { value: UtmChannel | "custom"; label: string }[] = [
   { value: "facebook", label: "Facebook" },
   { value: "tiktok", label: "TikTok" },
   { value: "whatsapp", label: "WhatsApp" },
+  { value: "telegram", label: "Telegram" },
   { value: "linkedin", label: "LinkedIn" },
   { value: "youtube", label: "YouTube" },
   { value: "email", label: "Email" },

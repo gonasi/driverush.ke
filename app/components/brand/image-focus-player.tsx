@@ -37,6 +37,7 @@ import {
 } from "~/components/ui/sheet";
 import { CelebrationConfetti } from "~/components/brand/celebration-confetti";
 import { ImageFocusStage } from "~/components/brand/image-focus-stage";
+import { ShareButton } from "~/components/brand/share-button";
 
 // --- motion -----------------------------------------------------------------
 // The answer cascades in (headline → meta → note → actions) the moment the
@@ -655,6 +656,10 @@ export function ImageFocusPlayer({ className }: { className?: string }) {
                         />
                         Play again
                       </Button>
+                      <ShareButton
+                        surface="pelican_complete"
+                        payload={{ kind: "pelican", total, firstTry }}
+                      />
                       <Button
                         variant="paper"
                         size="lg"
