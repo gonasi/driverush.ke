@@ -12,6 +12,7 @@ import {
 import type { Route } from "./+types/road-signs-pelican";
 
 import { breadcrumbLd, pageMeta, ROAD_SIGN_KEYWORDS } from "~/lib/site";
+import { ogCardAlt, ogCardPath } from "~/lib/og-cards";
 import type { ImageFocusData } from "~/lib/image-focus";
 import pelicanJson from "~/data/road-signs-pelican.json";
 import { getPracticeRegions, usePelicanStore } from "~/lib/pelican-store";
@@ -37,6 +38,8 @@ export function meta(_: Route.MetaArgs) {
       description:
         "A fast Kenyan road-sign recall game. One sign zooms in at a time, name it before the timer drops, the ones you miss come back sooner. Free, no signup, solid prep for the NTSA road-sign test.",
       path: PATH,
+      ogImage: ogCardPath("pelican"),
+      ogImageAlt: ogCardAlt("pelican"),
       extraKeywords: [
         "Kenya road signs game",
         "road signs quiz Kenya",

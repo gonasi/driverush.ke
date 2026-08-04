@@ -11,6 +11,7 @@ import {
 import type { Route } from "./+types/road-signs-3d";
 
 import { breadcrumbLd, pageMeta, ROAD_SIGN_KEYWORDS } from "~/lib/site";
+import { ogCardAlt, ogCardPath } from "~/lib/og-cards";
 import type { Signs3DData } from "~/lib/signs-3d";
 import signs3dJson from "~/data/road-signs-3d.json";
 import { getPracticeSigns, useSigns3DStore } from "~/lib/signs-3d-store";
@@ -36,6 +37,8 @@ export function meta(_: Route.MetaArgs) {
       description:
         "Recognise Kenyan road signs in 3D from any angle, the way you actually see them on the road — half-turned and half-lit. One sign at a time, name it before the timer drops, the ones you miss come back sooner. Free, no signup.",
       path: PATH,
+      ogImage: ogCardPath("signs3d"),
+      ogImageAlt: ogCardAlt("signs3d"),
       extraKeywords: [
         "3D road signs",
         "recognise road signs Kenya",

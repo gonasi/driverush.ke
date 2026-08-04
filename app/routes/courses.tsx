@@ -19,6 +19,7 @@ import {
 import type { Route } from "./+types/courses";
 
 import { absUrl, breadcrumbLd, pageMeta, SITE } from "~/lib/site";
+import { ogCardAlt, ogCardPath } from "~/lib/og-cards";
 import { COURSES } from "~/lib/courses";
 import { getAllCourses } from "~/lib/course";
 
@@ -45,6 +46,8 @@ export function meta(_: Route.MetaArgs) {
       description:
         "Full online driving courses for Kenya: highway code, Kenyan road signs, junctions, hazard perception and real-road driving. Class B first, then A, C and D. Free practice, M-Pesa for Premium.",
       path: "/courses",
+      ogImage: ogCardPath("lesson"),
+      ogImageAlt: ogCardAlt("lesson"),
       extraKeywords: [
         "driving courses Kenya",
         "Kenya driving course online",

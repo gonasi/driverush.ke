@@ -3,6 +3,8 @@
  * this file the single source of truth for anything that gets serialized
  * into <head> across routes.
  */
+import { OG_HEIGHT, OG_WIDTH } from "./og-cards";
+
 export const SITE = {
   name: "DriveRush",
   legalName: "DriveRush.ke",
@@ -35,12 +37,13 @@ export const SITE = {
     "https://www.youtube.com/@driverushke",
     "https://www.linkedin.com/company/driverush",
   ],
-  // Default open graph image. The full lockup is 1536×1024 (3:2). Social
-  // platforms prefer 1.91:1 / 1200×630 — replace with a properly cropped
-  // social card when it lands.
-  ogImage: "/images/driverush-logo-main.png",
-  ogImageWidth: 1536,
-  ogImageHeight: 1024,
+  // Default social card, at the 1.91:1 every platform crops to. Built from the
+  // app itself — see `app/lib/og-cards.ts` and `/tools/og`. Pages with a
+  // better-fitting card (road signs, the course, the trainers) override it via
+  // `pageMeta({ ogImage })`.
+  ogImage: "/og/default.png",
+  ogImageWidth: 1200,
+  ogImageHeight: 630,
   ogImageAlt: "DriveRush: NTSA prep and road-sign practice for Kenyan roads",
   themeColor: "#E11D2E", // rush red
   /** Tagline used in title templates and as the default description suffix. */
@@ -310,12 +313,20 @@ export function pageMeta(opts: {
   path: string;
   /** Extra keywords prepended to the global keyword list. */
   extraKeywords?: readonly string[];
-  /** Override OG image (defaults to the site logo). */
+  /** Override OG image (defaults to the site card). */
   ogImage?: string;
+  /** Dimensions of the override image. Defaults to a 1200×630 social card. */
+  ogImageWidth?: number;
+  ogImageHeight?: number;
+  ogImageAlt?: string;
 }) {
   const title = pageTitle(opts.title);
   const url = absUrl(opts.path);
   const ogImage = absUrl(opts.ogImage ?? SITE.ogImage);
+  // Root meta declares the default card's dimensions; a page that swaps in a
+  // different image has to restate them or crawlers read the wrong aspect and
+  // some (Facebook especially) letterbox or skip the preview.
+  const isCustomImage = opts.ogImage != null;
   return [
     { title },
     { name: "description", content: opts.description },
@@ -328,6 +339,21 @@ export function pageMeta(opts: {
     { property: "og:description", content: opts.description },
     { property: "og:url", content: url },
     { property: "og:image", content: ogImage },
+    ...(isCustomImage
+      ? [
+          {
+            property: "og:image:width",
+            content: String(opts.ogImageWidth ?? OG_WIDTH),
+          },
+          {
+            property: "og:image:height",
+            content: String(opts.ogImageHeight ?? OG_HEIGHT),
+          },
+          ...(opts.ogImageAlt
+            ? [{ property: "og:image:alt", content: opts.ogImageAlt }]
+            : []),
+        ]
+      : []),
     { name: "twitter:title", content: title },
     { name: "twitter:description", content: opts.description },
     { name: "twitter:image", content: ogImage },

@@ -17,6 +17,7 @@
  * fabricate a link claiming a 10/10, which is harmless; they cannot make our
  * page say words they chose.
  */
+import type { OgCardId } from "./og-cards";
 import { MODE_LABELS, type QuizMode } from "./questions";
 import { SITE } from "./site";
 import { addUtm, UTM_CHANNELS, type UtmChannel } from "./utm";
@@ -180,6 +181,16 @@ export function taggedShareUrl(url: string, channel: string): string {
 }
 
 // ---- the `/s` landing -----------------------------------------------------
+
+/** Which social card fronts each kind of share. */
+export const SHARE_OG_CARD: Record<ShareKind | "unknown", OgCardId> = {
+  quiz: "quiz",
+  pelican: "pelican",
+  signs3d: "signs3d",
+  lesson: "lesson",
+  page: "default",
+  unknown: "default",
+};
 
 export type ResolvedShare = {
   /** False when the link is broken, truncated or from an older version. */

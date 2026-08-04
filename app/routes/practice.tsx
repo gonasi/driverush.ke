@@ -5,6 +5,7 @@ import { ArrowLeft02FreeIcons } from "@hugeicons/core-free-icons";
 import type { Route } from "./+types/practice";
 
 import { pageMeta } from "~/lib/site";
+import { ogCardAlt, ogCardPath } from "~/lib/og-cards";
 import {
   getQuestionsForMode,
   MODE_LABELS,
@@ -45,6 +46,8 @@ export function meta({ location }: Route.MetaArgs) {
       title: PICKER_TITLE,
       description: PICKER_DESCRIPTION,
       path: "/practice",
+      ogImage: ogCardPath("quiz"),
+      ogImageAlt: ogCardAlt("quiz"),
       extraKeywords: [
         "NTSA practice Kenya",
         "Kenya driving test online",
@@ -60,6 +63,8 @@ export function meta({ location }: Route.MetaArgs) {
     title: MODE_TITLE[mode],
     description,
     path: "/practice",
+    ogImage: ogCardPath("quiz"),
+    ogImageAlt: ogCardAlt("quiz"),
     extraKeywords: [
       "NTSA practice questions",
       "NTSA past papers Kenya",

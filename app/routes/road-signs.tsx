@@ -11,6 +11,7 @@ import {
 import type { Route } from "./+types/road-signs";
 
 import { absUrl, breadcrumbLd, pageMeta, ROAD_SIGN_KEYWORDS } from "~/lib/site";
+import { ogCardAlt, ogCardPath } from "~/lib/og-cards";
 import { SIGN_GAMES } from "~/lib/road-signs";
 import {
   SIGN_CATEGORIES,
@@ -41,6 +42,8 @@ export function meta(_: Route.MetaArgs) {
       description:
         "Every Kenyan road sign with its meaning: warning, regulatory, mandatory, information, traffic-light signals and road markings, as the NTSA Highway Code lays them out. Free recall games drill them until naming one is instant.",
       path: PATH,
+      ogImage: ogCardPath("road-signs"),
+      ogImageAlt: ogCardAlt("road-signs"),
       extraKeywords: ROAD_SIGN_KEYWORDS,
     }),
     // Breadcrumb + ItemList in a single @graph. FAQPage is intentionally

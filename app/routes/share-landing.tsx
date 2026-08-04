@@ -29,7 +29,8 @@ import type { Route } from "./+types/share-landing";
 
 import { analytics } from "~/lib/analytics";
 import { getCourse } from "~/lib/course";
-import { resolveShare, shareLandingMeta } from "~/lib/share";
+import { OG_CARDS, OG_HEIGHT, OG_WIDTH, ogCardPath } from "~/lib/og-cards";
+import { resolveShare, SHARE_OG_CARD, shareLandingMeta } from "~/lib/share";
 import { absUrl, SITE } from "~/lib/site";
 
 import { Button } from "~/components/ui/button";
@@ -64,7 +65,12 @@ export function meta({ data }: Route.MetaArgs) {
       ctaLabel: "",
     },
   );
-  const ogImage = absUrl(SITE.ogImage);
+  // The card matches what was shared: a Pelican run previews sign artwork, a
+  // 3D run previews the models. Falls back to the site card when the payload
+  // couldn't be read.
+  const cardId = SHARE_OG_CARD[resolved?.kind ?? "unknown"] ?? "default";
+  const card = OG_CARDS.find((c) => c.id === cardId);
+  const ogImage = absUrl(ogCardPath(cardId));
   return [
     { title },
     { name: "description", content: description },
@@ -73,9 +79,13 @@ export function meta({ data }: Route.MetaArgs) {
     { property: "og:description", content: description },
     { property: "og:type", content: "website" },
     { property: "og:image", content: ogImage },
+    { property: "og:image:width", content: String(OG_WIDTH) },
+    { property: "og:image:height", content: String(OG_HEIGHT) },
+    ...(card ? [{ property: "og:image:alt", content: card.alt }] : []),
     { name: "twitter:card", content: "summary_large_image" },
     { name: "twitter:title", content: title },
     { name: "twitter:description", content: description },
+    { name: "twitter:image", content: ogImage },
   ];
 }
 

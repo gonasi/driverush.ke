@@ -46,5 +46,8 @@ export default [
       route("sign-3d", "routes/tools/sign-3d.tsx"),
       route("share", "routes/tools/share.tsx"),
     ]),
+    // Outside the dashboard layout on purpose: `?card=<id>` must render the
+    // card alone so a 1200×630 screenshot contains nothing else.
+    route("og", "routes/tools/og.tsx"),
   ]),
 ] satisfies RouteConfig;

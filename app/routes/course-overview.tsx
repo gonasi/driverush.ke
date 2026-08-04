@@ -6,6 +6,7 @@ import type { Route } from "./+types/course-overview";
 
 import { getCourse, serialiseCourse } from "~/lib/course";
 import { absUrl, breadcrumbLd, pageMeta, SITE } from "~/lib/site";
+import { ogCardAlt, ogCardPath } from "~/lib/og-cards";
 
 import { Button } from "~/components/ui/button";
 import { Rail } from "~/components/brand/rail";
@@ -35,6 +36,8 @@ export function meta({ data, params }: Route.MetaArgs) {
       title: `${course.title} · NTSA-aligned online course`,
       description: course.tagline,
       path,
+      ogImage: ogCardPath("lesson"),
+      ogImageAlt: ogCardAlt("lesson"),
       extraKeywords: [
         "NTSA driving course",
         "Class B course Kenya",

@@ -1,0 +1,162 @@
+#!/usr/bin/env node
+/**
+ * Capture the social cards from `/tools/og` into `public/og/*.png`.
+ *
+ * The cards are authored as real app components (same fonts, same colours,
+ * real sprite crops off the NTSA sign sheet, real GLB models in the 3D card),
+ * so this script just points headless Chrome at each one and takes a picture.
+ * No image service, no runtime rendering, no cold starts: the PNGs ship as
+ * static files and only change when we redesign a card.
+ *
+ * Usage:
+ *   npm run dev                    # terminal 1, the cards render from the app
+ *   npm run build:og               # terminal 2
+ *   npm run build:og -- signs3d    # just one card
+ *   DEV_URL=http://localhost:3000 npm run build:og
+ *
+ * Requires Google Chrome. `--enable-unsafe-swiftshader` is what lets the 3D
+ * card render WebGL without a GPU; the flag only ever runs on a developer's
+ * machine against localhost, never in production.
+ */
+import { execFile } from "node:child_process";
+import { mkdir, stat } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
+
+const execFileAsync = promisify(execFile);
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const OUT_DIR = path.join(ROOT, "public", "og");
+const DEV_URL = process.env.DEV_URL ?? "http://localhost:5173";
+
+const WIDTH = 1200;
+const HEIGHT = 630;
+
+/**
+ * Keep in step with OG_CARDS in `app/lib/og-cards.ts`.
+ *
+ * `minBytes` is a blank-frame tripwire. The 3D card sometimes screenshots
+ * before SwiftShader has painted the models, and the failure is silent: you
+ * get a perfectly valid PNG with three empty tiles. An empty card compresses
+ * far smaller than one with three rendered signs in it, so a size floor
+ * catches it and we retry rather than shipping a blank preview.
+ */
+const CARDS = [
+  { id: "default", settleMs: 2500, minBytes: 20_000 },
+  { id: "quiz", settleMs: 2500, minBytes: 20_000 },
+  { id: "pelican", settleMs: 3500, minBytes: 20_000 },
+  // WebGL through SwiftShader plus three GLB loads: this one needs room.
+  { id: "signs3d", settleMs: 20000, minBytes: 50_000 },
+  { id: "lesson", settleMs: 2500, minBytes: 20_000 },
+  { id: "road-signs", settleMs: 3500, minBytes: 20_000 },
+];
+
+/** How many times to re-shoot a card that comes back under its floor. */
+const MAX_ATTEMPTS = 4;
+
+const CHROME_CANDIDATES = [
+  process.env.CHROME_PATH,
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  "/Applications/Chromium.app/Contents/MacOS/Chromium",
+  "/usr/bin/google-chrome",
+  "/usr/bin/chromium",
+  "/usr/bin/chromium-browser",
+].filter(Boolean);
+
+async function findChrome() {
+  for (const candidate of CHROME_CANDIDATES) {
+    try {
+      await stat(candidate);
+      return candidate;
+    } catch {
+      // try the next one
+    }
+  }
+  throw new Error(
+    `No Chrome found. Set CHROME_PATH to your browser binary. Looked in:\n  ${CHROME_CANDIDATES.join("\n  ")}`,
+  );
+}
+
+async function assertDevServer() {
+  try {
+    const res = await fetch(`${DEV_URL}/tools/og`, { redirect: "follow" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  } catch (err) {
+    throw new Error(
+      `Can't reach ${DEV_URL}/tools/og (${err.message}). Start the app first:\n  npm run dev`,
+    );
+  }
+}
+
+async function capture(chrome, card, attempt = 1) {
+  const out = path.join(OUT_DIR, `${card.id}.png`);
+  const url = `${DEV_URL}/tools/og?card=${encodeURIComponent(card.id)}`;
+  const settleMs = card.settleMs * attempt;
+  await execFileAsync(
+    chrome,
+    [
+      "--headless=new",
+      "--enable-unsafe-swiftshader",
+      "--hide-scrollbars",
+      // Without these the shot can land before WebGL has composited, which
+      // shows up as an empty white tile on the 3D card.
+      "--run-all-compositor-stages-before-draw",
+      "--disable-new-content-rendering-timeout",
+      "--force-device-scale-factor=1",
+      `--window-size=${WIDTH},${HEIGHT}`,
+      // Lets the page's own timers, fonts and model loads finish before the
+      // shot without us guessing at a wall-clock sleep.
+      `--virtual-time-budget=${settleMs}`,
+      `--screenshot=${out}`,
+      url,
+    ],
+    { maxBuffer: 1024 * 1024 * 16 },
+  );
+  const { size } = await stat(out);
+  return { out, size };
+}
+
+async function main() {
+  const only = process.argv.slice(2).filter((a) => !a.startsWith("-"));
+  const wanted = only.length ? CARDS.filter((c) => only.includes(c.id)) : CARDS;
+
+  if (only.length && wanted.length !== only.length) {
+    const known = CARDS.map((c) => c.id).join(", ");
+    throw new Error(`Unknown card. Known cards: ${known}`);
+  }
+
+  const chrome = await findChrome();
+  await assertDevServer();
+  await mkdir(OUT_DIR, { recursive: true });
+
+  const failed = [];
+
+  for (const card of wanted) {
+    process.stdout.write(`  ${card.id.padEnd(12)} `);
+    let size = 0;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+      // Each retry waits longer: the failure mode is "not painted yet", so
+      // more time is exactly the fix.
+      ({ size } = await capture(chrome, card, attempt));
+      if (size >= card.minBytes) break;
+      process.stdout.write(`(blank, retry ${attempt}) `);
+      if (attempt === MAX_ATTEMPTS) failed.push(card.id);
+    }
+    console.log(`${(size / 1024).toFixed(0)} kB  →  public/og/${card.id}.png`);
+  }
+
+  if (failed.length) {
+    throw new Error(
+      `Rendered blank after ${MAX_ATTEMPTS} attempts: ${failed.join(", ")}.\n` +
+        `Check the card at ${DEV_URL}/tools/og?card=${failed[0]} in a real browser.`,
+    );
+  }
+
+  console.log(`\n${wanted.length} card(s) captured at ${WIDTH}×${HEIGHT}.`);
+}
+
+main().catch((err) => {
+  console.error(`\n${err.message}\n`);
+  process.exit(1);
+});
