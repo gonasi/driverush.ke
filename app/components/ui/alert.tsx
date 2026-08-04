@@ -84,12 +84,23 @@ function Alert({ className, variant, icon, children, ...props }: AlertProps) {
   );
 }
 
-function AlertTitle({ className, ...props }: React.ComponentProps<"p">) {
+/**
+ * Title and description are `div`s, not `p`s, because alerts are written from
+ * MDX too: MDX wraps a block of text in its own `<p>`, and a paragraph inside
+ * a paragraph is invalid HTML that React reports as a hydration error.
+ *
+ * The nested paragraph also arrives wearing the prose styles from
+ * `mdx-components` (17px serif, 16px margins), which is wrong inside a compact
+ * alert box, so the description folds any direct child paragraph back into its
+ * own type scale.
+ */
+function AlertTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
-    <p
+    <div
       data-slot="alert-title"
       className={cn(
         "font-display text-[14px] font-extrabold uppercase tracking-wide text-ink",
+        "[&>p]:m-0 [&>p]:font-[inherit] [&>p]:text-[length:inherit] [&>p]:leading-[inherit] [&>p]:text-inherit",
         className,
       )}
       {...props}
@@ -97,11 +108,20 @@ function AlertTitle({ className, ...props }: React.ComponentProps<"p">) {
   );
 }
 
-function AlertDescription({ className, ...props }: React.ComponentProps<"p">) {
+function AlertDescription({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
   return (
-    <p
+    <div
       data-slot="alert-description"
-      className={cn("text-[13px] leading-relaxed text-ink-2", className)}
+      className={cn(
+        "text-[13px] leading-relaxed text-ink-2",
+        "[&>p]:m-0 [&>p]:font-[inherit] [&>p]:text-[length:inherit] [&>p]:leading-[inherit] [&>p]:text-inherit",
+        // Two paragraphs in one alert still need air between them.
+        "[&>p+p]:mt-2",
+        className,
+      )}
       {...props}
     />
   );
