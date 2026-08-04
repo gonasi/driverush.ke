@@ -17,7 +17,8 @@ import { NavigationProgressBar } from "~/components/brand/navigation-progress-ba
 import { THEME_INIT_SCRIPT, useThemeSync } from "~/lib/theme";
 import { variants } from "~/lib/motion";
 import { SITE, absUrl } from "~/lib/site";
-import { usePageviews } from "~/lib/analytics";
+import { getPostHog, initAnalytics, usePageviews } from "~/lib/analytics";
+import { useLearnerAnalytics } from "~/lib/use-learner-analytics";
 import { useUtmCapture } from "~/lib/utm";
 import { AdProvider, RouteAdGate, useAdEngine } from "~/lib/ads/ad-context";
 import { AdModal } from "~/components/brand/ad-modal";
@@ -108,6 +109,10 @@ export default function App() {
   const location = useLocation();
   useUtmCapture();
   usePageviews();
+  // Keeps PostHog person properties (streak, lessons done, accuracy) in step
+  // with the local progress stores. PostHog itself is initialised in
+  // `entry.client.tsx`, before hydration.
+  useLearnerAnalytics();
   return (
     // <AdProvider> wraps the route tree so the engine + modal survive route
     // transitions. <RouteAdGate /> reads each match's `handle.ads` and pushes
@@ -155,6 +160,12 @@ function AmbientAdTrigger() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  React.useEffect(() => {
+    void initAnalytics().then(() => {
+      getPostHog()?.captureException(error);
+    });
+  }, [error]);
+
   let message = "Oops!";
   let details = "An unexpected error occurred.";
   let stack: string | undefined;

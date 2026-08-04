@@ -28,4 +28,10 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
+  // PostHog ships browser-only ESM; bundling it into the SSR build (rather
+  // than letting Node resolve it) avoids "document is not defined" style
+  // errors during server rendering.
+  ssr: {
+    noExternal: ["posthog-js", "@posthog/react"],
+  },
 });

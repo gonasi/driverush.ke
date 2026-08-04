@@ -51,6 +51,31 @@ export function QuizFlow({ questions, mode }: QuizFlowProps) {
     if (questions.length > 0) analytics.quizStarted(mode, questions.length);
   }, [mode, questions.length]);
 
+  // Abandonment: a quiz that unmounts before the result screen. The refs keep
+  // the unmount handler from re-subscribing on every answer (which would fire
+  // a false abandon each time).
+  const progressRef = React.useRef({ answered: 0, correct: 0, done: false });
+  React.useEffect(() => {
+    progressRef.current = {
+      answered: answers.length,
+      correct: answers.filter((a) => a.correct).length,
+      done,
+    };
+  });
+  React.useEffect(() => {
+    if (questions.length === 0) return;
+    return () => {
+      const { answered, correct, done: finished } = progressRef.current;
+      if (finished || answered === 0) return;
+      analytics.quizAbandoned({
+        mode,
+        total: questions.length,
+        answered,
+        correct,
+      });
+    };
+  }, [mode, questions.length]);
+
   if (questions.length === 0) {
     return <EmptyMode mode={mode} />;
   }
@@ -70,6 +95,13 @@ export function QuizFlow({ questions, mode }: QuizFlowProps) {
     if (revealed) return;
     setPicked(choiceIndex);
     const isCorrect = choiceIndex === question.correctIndex;
+    analytics.quizQuestionAnswered({
+      mode,
+      question_id: question.id,
+      question_index: index + 1,
+      total,
+      correct: isCorrect,
+    });
     setAnswers((prev) => [
       ...prev,
       {

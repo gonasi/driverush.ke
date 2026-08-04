@@ -18,6 +18,7 @@ import {
 } from "@hugeicons/core-free-icons";
 
 import pelican from "~/data/road-signs-pelican.json";
+import { analytics } from "~/lib/analytics";
 import { useFeedback } from "~/lib/use-feedback";
 import { cn } from "~/lib/utils";
 
@@ -90,6 +91,9 @@ export function SignOfTheMoment({ className }: { className?: string }) {
   } | null>(null);
   const [chosen, setChosen] = React.useState<string | null>(null);
   const { tap, correct: sCorrect, wrong: sWrong } = useFeedback();
+  // How many questions this visit has produced — the depth of engagement with
+  // the hero game, and the first number in the activation funnel.
+  const answeredCount = React.useRef(0);
 
   React.useEffect(() => setMounted(true), []);
 
@@ -98,8 +102,13 @@ export function SignOfTheMoment({ className }: { className?: string }) {
       typeof window !== "undefined"
         ? (window.localStorage.getItem(LAST_SEEN_KEY) ?? undefined)
         : undefined;
-    setQuestion(pickQuestion(last));
+    const next = pickQuestion(last);
+    setQuestion(next);
     setChosen(null);
+    analytics.signChallengeStarted({
+      sign_id: next.sign.id,
+      category: next.sign.category,
+    });
   }
 
   function pick(opt: Region) {
@@ -109,6 +118,13 @@ export function SignOfTheMoment({ className }: { className?: string }) {
     const isCorrect = opt.id === question.sign.id;
     if (isCorrect) sCorrect();
     else sWrong();
+    answeredCount.current += 1;
+    analytics.signChallengeAnswered({
+      sign_id: question.sign.id,
+      category: question.sign.category,
+      correct: isCorrect,
+      question_index: answeredCount.current,
+    });
     if (typeof window !== "undefined") {
       window.localStorage.setItem(LAST_SEEN_KEY, question.sign.id);
     }

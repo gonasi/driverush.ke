@@ -21,6 +21,7 @@ import type { Chapter, CourseBlock, Lesson, Unit } from "~/lib/course-types";
 import { getCourse } from "~/lib/course";
 import { sampleCheckpoint } from "~/lib/checkpoint";
 import { useCourseStore } from "~/lib/course-store";
+import { analytics } from "~/lib/analytics";
 
 import { Button } from "~/components/ui/button";
 import { getBlockRenderer } from "./block-registry";
@@ -119,7 +120,15 @@ export function PlacementTest({
     setFirstTryCorrect(newCount);
     setMissedThisBlock(false);
     if (current + 1 >= blocks.length) {
-      setVerdict(newCount / blocks.length >= PASS_THRESHOLD ? "pass" : "fail");
+      const passed = newCount / blocks.length >= PASS_THRESHOLD;
+      analytics.placementTestCompleted({
+        course_slug: courseSlug,
+        target_lesson_id: targetLesson.id,
+        total: blocks.length,
+        correct: newCount,
+        passed,
+      });
+      setVerdict(passed ? "pass" : "fail");
     } else {
       setCurrent((i) => i + 1);
     }
@@ -131,11 +140,20 @@ export function PlacementTest({
       chapterSlug,
       targetLesson.slug,
     );
+    analytics.placementTestPassed({
+      course_slug: courseSlug,
+      target_lesson_id: targetLesson.id,
+      lessons_unlocked: lessons.length,
+    });
     markLessonsAsMastered(courseSlug, lessons, { scorePerBlock: 100 });
     navigate(`/courses/${courseSlug}/${chapterSlug}/${targetLesson.slug}`);
   }
 
   function retake() {
+    analytics.placementTestRetaken({
+      course_slug: courseSlug,
+      target_lesson_id: targetLesson.id,
+    });
     setCurrent(0);
     setFirstTryCorrect(0);
     setMissedThisBlock(false);

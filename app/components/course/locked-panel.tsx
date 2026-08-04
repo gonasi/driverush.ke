@@ -16,6 +16,7 @@ import {
 } from "@hugeicons/core-free-icons";
 
 import type { Lesson } from "~/lib/course-types";
+import { analytics } from "~/lib/analytics";
 
 import { Button } from "~/components/ui/button";
 import { PlacementTest } from "./placement-test";
@@ -74,7 +75,17 @@ export function LockedPanel({
             you can pick up right here.
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-3">
-            <Button variant="rush" size="lg" onClick={() => setMode("test")}>
+            <Button
+              variant="rush"
+              size="lg"
+              onClick={() => {
+                analytics.placementTestStarted({
+                  course_slug: courseSlug,
+                  target_lesson_id: lesson.id,
+                });
+                setMode("test");
+              }}
+            >
               Take placement test
               <HugeiconsIcon
                 icon={ArrowRight02FreeIcons}

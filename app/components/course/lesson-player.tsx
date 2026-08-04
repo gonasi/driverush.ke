@@ -20,6 +20,7 @@ import {
 import { selectCourseProgress, useCourseStore } from "~/lib/course-store";
 import { useCourseUiStore } from "~/lib/course-ui-store";
 import { useFeedback } from "~/lib/use-feedback";
+import { analytics } from "~/lib/analytics";
 import { preloadSfx } from "~/lib/sounds";
 import { useProgression } from "~/lib/use-progression";
 import { useStreakStore } from "~/lib/use-streak-store";
@@ -96,6 +97,30 @@ export function LessonPlayer({ courseSlug, lesson }: LessonPlayerProps) {
     preloadSfx();
   }, [initLesson, courseSlug, lesson, mounted, unlocked]);
 
+  // `lesson_started` fires once per lesson open, after the persisted store has
+  // hydrated so `entry` can tell a first attempt from a resume or a review.
+  const startedFor = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!mounted || !unlocked) return;
+    if (startedFor.current === lesson.id) return;
+    startedFor.current = lesson.id;
+    const existing = getLessonProgress(cp, lesson);
+    analytics.lessonStarted({
+      course_slug: courseSlug,
+      lesson_id: lesson.id,
+      chapter_id: lesson.chapterId,
+      blocks_total: lesson.blocks.length,
+      entry: !existing
+        ? "fresh"
+        : isLessonComplete(cp, lesson)
+          ? "review"
+          : "resume",
+    });
+    // `cp` is intentionally read, not depended on: we want the snapshot at
+    // open time, and re-running on every block completion would spam starts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, unlocked, lesson, courseSlug]);
+
   const lp = getLessonProgress(cp, lesson);
   const complete = isLessonComplete(cp, lesson);
   const currentBlockId = lp?.currentBlockId ?? lesson.blocks[0]?.id;
@@ -109,9 +134,33 @@ export function LessonPlayer({ courseSlug, lesson }: LessonPlayerProps) {
     const key = `${lesson.id}::${lp.completedAt}`;
     if (streakRecordedFor.current === key) return;
     streakRecordedFor.current = key;
+    const before = useStreakStore.getState();
     const result = recordStreak(lp.xpEarned);
     if (result.freezeSpent) {
       toast("Streak freeze used — back tomorrow.");
+    }
+    // Read back the post-write state so the events carry the real numbers
+    // rather than our guess at what the reducer did.
+    const after = useStreakStore.getState();
+    if (after.currentStreak !== before.currentStreak) {
+      analytics.streakExtended({
+        days: after.currentStreak,
+        longest: after.longestStreak,
+        freeze_spent: result.freezeSpent,
+      });
+    }
+    // The daily counter rolls over at local midnight, so yesterday's total
+    // doesn't count as "already met" for today.
+    const xpBeforeToday =
+      before.dailyXpDate === after.dailyXpDate ? before.dailyXpEarned : 0;
+    const goalWasMet = xpBeforeToday >= before.dailyGoal;
+    const goalNowMet = after.dailyXpEarned >= after.dailyGoal;
+    if (!goalWasMet && goalNowMet) {
+      analytics.dailyGoalMet({
+        goal: after.dailyGoal,
+        xp_earned: after.dailyXpEarned,
+        streak: after.currentStreak,
+      });
     }
   }, [
     mounted,
@@ -157,17 +206,34 @@ export function LessonPlayer({ courseSlug, lesson }: LessonPlayerProps) {
   }, [currentBlockId, mounted, scroll]);
 
   function advance(blockId: string, result?: BlockResult) {
+    const block = lesson.blocks.find((candidate) => candidate.id === blockId);
+    const score =
+      result && typeof result.score === "number" ? result.score : undefined;
+    analytics.lessonBlockCompleted({
+      course_slug: courseSlug,
+      lesson_id: lesson.id,
+      block_id: blockId,
+      block_type: block?.type ?? "unknown",
+      ...(score !== undefined ? { score } : {}),
+    });
+    if (blockId === lastBlockId) {
+      analytics.lessonCompleted({
+        course_slug: courseSlug,
+        lesson_id: lesson.id,
+        blocks_total: lesson.blocks.length,
+        xp_earned: lessonXpEarned(cp, lesson) + (block?.xp ?? 0),
+      });
+    }
     markBlockComplete(
       courseSlug,
       lesson,
       blockId,
-      result && typeof result.score === "number"
-        ? { score: result.score }
-        : undefined,
+      score !== undefined ? { score } : undefined,
     );
   }
 
   function handleReplay() {
+    analytics.lessonReplayed({ course_slug: courseSlug, lesson_id: lesson.id });
     resetLesson(courseSlug, lesson);
     prevActive.current = undefined;
     initLesson(courseSlug, lesson);

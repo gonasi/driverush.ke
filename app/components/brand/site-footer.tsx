@@ -8,6 +8,7 @@ import { Link } from "react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Call02FreeIcons, Mail01FreeIcons } from "@hugeicons/core-free-icons";
 
+import { analytics } from "~/lib/analytics";
 import { PARTNERS } from "~/lib/partners";
 import { SITE } from "~/lib/site";
 
@@ -38,6 +39,12 @@ export function SiteFooter() {
               <li className="py-1">
                 <a
                   href={`tel:${SITE.contact.phone}`}
+                  onClick={() =>
+                    analytics.contactClicked({
+                      channel: "phone",
+                      location: "footer",
+                    })
+                  }
                   className="inline-flex items-center gap-2 font-mono text-xs tracking-wide opacity-85 hover:underline"
                 >
                   <HugeiconsIcon
@@ -51,6 +58,12 @@ export function SiteFooter() {
               <li className="py-1">
                 <a
                   href={`mailto:${SITE.contact.email}`}
+                  onClick={() =>
+                    analytics.contactClicked({
+                      channel: "email",
+                      location: "footer",
+                    })
+                  }
                   className="inline-flex items-center gap-2 break-all font-mono text-xs tracking-wide opacity-85 hover:underline"
                 >
                   <HugeiconsIcon
@@ -99,6 +112,9 @@ export function SiteFooter() {
                 href={p.href}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() =>
+                  analytics.partnerClicked({ name: p.name, url: p.href! })
+                }
                 className="hover:opacity-100 hover:underline"
               >
                 {p.name}

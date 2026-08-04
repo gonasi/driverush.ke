@@ -17,6 +17,7 @@ import {
 } from "~/lib/course-progress";
 import { selectCourseProgress, useCourseStore } from "~/lib/course-store";
 import { useProgression } from "~/lib/use-progression";
+import { analytics } from "~/lib/analytics";
 import { cn } from "~/lib/utils";
 
 import { CheckpointNode } from "./checkpoint-node";
@@ -120,6 +121,14 @@ export function LearningPath({ course }: { course: Course }) {
                       xp={lesson.totalXP}
                       pct={pct}
                       stars={complete ? lessonStars(pct) : 0}
+                      onLockedTap={() =>
+                        analytics.lessonLockedTapped({
+                          course_slug: course.slug,
+                          lesson_id: lesson.id,
+                          unit_index: unitIdx + 1,
+                          lesson_index: lessonIdxInUnit,
+                        })
+                      }
                     />
                   </div>
                 );

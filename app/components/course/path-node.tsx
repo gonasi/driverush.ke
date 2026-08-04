@@ -38,6 +38,8 @@ export type PathNodeProps = {
   stars?: 0 | 1 | 2 | 3;
   /** Locked-reason tooltip text for the disabled node. */
   lockedHint?: string;
+  /** Fired when a learner taps a locked node — see `lesson_locked_tapped`. */
+  onLockedTap?: () => void;
 };
 
 const STATE_STYLES: Record<PathNodeState, string> = {
@@ -58,6 +60,7 @@ export function PathNode({
   pct,
   stars = 0,
   lockedHint,
+  onLockedTap,
 }: PathNodeProps) {
   const interactive = state !== "locked" && !!to;
   const inner = (
@@ -130,10 +133,14 @@ export function PathNode({
 
   if (!interactive) {
     return (
+      // Still non-interactive to assistive tech (aria-disabled, no role) — the
+      // click handler only exists to record that someone tried, which is how
+      // we find out whether the unlock rules are frustrating people.
       <span
         className={className}
         aria-disabled="true"
         title={lockedHint ?? "Complete the previous lesson to unlock"}
+        onClick={onLockedTap}
       >
         {inner}
       </span>

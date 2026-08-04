@@ -74,11 +74,10 @@ function Logo({
       height={height}
       loading={priority ? "eager" : "lazy"}
       decoding="async"
-      // fetchpriority is valid HTML — React 19 passes it through; the cast keeps TS happy.
-      {...({ fetchpriority: priority ? "high" : "auto" } as Record<
-        string,
-        string
-      >)}
+      // React 19 owns this one: the camelCase prop is what it recognises, and
+      // it renders the lowercase `fetchpriority` attribute. Passing the
+      // lowercase spelling in logs "Invalid DOM property" on every render.
+      fetchPriority={priority ? "high" : "auto"}
       data-slot="logo"
       data-variant={variant}
       className={cn(

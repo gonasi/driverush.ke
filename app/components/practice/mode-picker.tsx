@@ -17,6 +17,7 @@ import {
   TrafficLightFreeIcons,
 } from "@hugeicons/core-free-icons";
 
+import { analytics } from "~/lib/analytics";
 import { MODE_LABELS, type QuizMode } from "~/lib/questions";
 import { cn } from "~/lib/utils";
 
@@ -80,6 +81,7 @@ export function ModePicker({
       : TILES;
 
   function pick(mode: QuizMode) {
+    analytics.practiceModeSelected({ mode, source: variant });
     navigate(`/practice?mode=${mode}`, { replace: variant === "switcher" });
   }
 
