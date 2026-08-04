@@ -16,6 +16,16 @@ export const SITE = {
   url: "https://driverush.ke",
   locale: "en_KE",
   lang: "en-KE",
+  /**
+   * Public contact details. Single source of truth for the footer, `tel:` /
+   * `mailto:` links and the Organization JSON-LD `contactPoint`. `phone` is
+   * E.164 (what links and schema want), `phoneDisplay` is how it reads on page.
+   */
+  contact: {
+    phone: "+254707981956",
+    phoneDisplay: "+254 707 981 956",
+    email: "mcdalinoluoch@gmail.com",
+  },
   /** Social/brand profiles for Organization JSON-LD `sameAs`. Add real handles when live. */
   sameAs: [
     "https://twitter.com/driverushke",
@@ -220,6 +230,16 @@ export function organizationLd() {
     image: absUrl(SITE.ogImage),
     description: SITE.description,
     sameAs: SITE.sameAs,
+    telephone: SITE.contact.phone,
+    email: SITE.contact.email,
+    contactPoint: {
+      "@type": "ContactPoint",
+      contactType: "customer support",
+      telephone: SITE.contact.phone,
+      email: SITE.contact.email,
+      areaServed: "KE",
+      availableLanguage: ["en", "sw"],
+    },
     address: {
       "@type": "PostalAddress",
       addressLocality: "Nairobi",
