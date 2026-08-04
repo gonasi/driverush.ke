@@ -23,6 +23,8 @@ import type {
   Lesson,
   SerialisedBlock,
   SerialisedLesson,
+  Unit,
+  UnitTheme,
 } from "./course-types";
 
 type MdxModule = {
@@ -42,6 +44,13 @@ const JSON_MODULES = import.meta.glob<unknown>("../courses/**/*.json", {
 });
 
 // ---- raw manifest shapes (as authored in the .json files) ----
+type RawUnit = {
+  id: string;
+  title: string;
+  theme: UnitTheme;
+  chapterIds: string[];
+  checkpoint?: { questionCount?: number } | null;
+};
 type RawCourse = {
   id: string;
   title: string;
@@ -51,6 +60,7 @@ type RawCourse = {
   totalXP: number;
   passMark: number;
   chapters: { id: string; dir: string }[];
+  units?: RawUnit[];
 };
 type RawChapter = {
   id: string;
@@ -186,6 +196,32 @@ function buildChapter(
   };
 }
 
+function buildUnits(raw: RawCourse, chapters: Chapter[]): Unit[] {
+  if (raw.units && raw.units.length > 0) {
+    // Filter to chapterIds we actually built (drop roadmap-only refs silently).
+    const builtIds = new Set(chapters.map((c) => c.id));
+    return raw.units
+      .map((u) => ({
+        id: u.id,
+        title: u.title,
+        theme: u.theme,
+        chapterIds: u.chapterIds.filter((id) => builtIds.has(id)),
+        checkpoint: u.checkpoint ?? undefined,
+      }))
+      .filter((u) => u.chapterIds.length > 0);
+  }
+  // Backwards-compat: one default unit holding every built chapter.
+  return [
+    {
+      id: "unit-default",
+      title: raw.title,
+      theme: "kenya-green",
+      chapterIds: chapters.map((c) => c.id),
+      checkpoint: undefined,
+    },
+  ];
+}
+
 function buildCourse(courseDir: string, raw: RawCourse): Course {
   const chapters: Chapter[] = [];
   for (const { dir } of raw.chapters) {
@@ -205,6 +241,7 @@ function buildCourse(courseDir: string, raw: RawCourse): Course {
     totalXP: raw.totalXP,
     passMark: raw.passMark,
     chapters,
+    units: buildUnits(raw, chapters),
   };
 }
 
@@ -254,5 +291,8 @@ export function serialiseCourse(c: Course) {
       ...ch,
       lessons: ch.lessons.map(serialiseLesson),
     })),
+    // Units already store `chapterIds` (strings), so they ride the loader
+    // boundary verbatim.
+    units: c.units,
   };
 }

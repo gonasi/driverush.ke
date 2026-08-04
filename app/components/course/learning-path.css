@@ -1,0 +1,118 @@
+/**
+ * Snaking learning path. Vertical ink connector down the centre on desktop, on
+ * the left on mobile. Each node "hooks" into the line via a 2px horizontal
+ * stub so the path reads as a single continuous track rather than disjointed
+ * cards. Pure CSS — no SVG, no JS — so it reflows perfectly on resize.
+ */
+.dr-path-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  row-gap: 1.75rem;
+}
+
+.dr-path-grid::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  background: var(--color-ink);
+  transform: translateX(-50%);
+  z-index: 0;
+}
+
+.dr-path-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+}
+
+.dr-path-row[data-side="left"] {
+  grid-column: 1;
+  justify-content: flex-end;
+  padding-right: 1.25rem;
+}
+
+.dr-path-row[data-side="right"] {
+  grid-column: 2;
+  justify-content: flex-start;
+  padding-left: 1.25rem;
+}
+
+.dr-path-row::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 1.25rem;
+  height: 2px;
+  background: var(--color-ink);
+  transform: translateY(-50%);
+}
+
+.dr-path-row[data-side="left"]::after {
+  right: 0;
+}
+
+.dr-path-row[data-side="right"]::after {
+  left: 0;
+}
+
+.dr-path-row[data-full="true"] {
+  grid-column: 1 / -1;
+  justify-content: center;
+  padding: 0;
+}
+
+.dr-path-row[data-full="true"]::after {
+  display: none;
+}
+
+@keyframes dr-pulse {
+  0%,
+  100% {
+    box-shadow: var(--shadow-stamp-sm);
+    transform: translateY(0);
+  }
+  50% {
+    box-shadow: var(--shadow-stamp);
+    transform: translateY(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dr-path-grid [class*="dr-pulse"] {
+    animation: none !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .dr-path-grid {
+    grid-template-columns: 1fr;
+  }
+  .dr-path-grid::before {
+    left: 1.5rem;
+    transform: none;
+  }
+  .dr-path-row,
+  .dr-path-row[data-side="left"],
+  .dr-path-row[data-side="right"] {
+    grid-column: 1;
+    justify-content: flex-start;
+    padding-left: 3rem;
+    padding-right: 0;
+  }
+  .dr-path-row::after,
+  .dr-path-row[data-side="left"]::after,
+  .dr-path-row[data-side="right"]::after {
+    left: 1.5rem;
+    right: auto;
+    width: 1.5rem;
+  }
+  .dr-path-row[data-full="true"] {
+    grid-column: 1;
+    justify-content: flex-start;
+  }
+}

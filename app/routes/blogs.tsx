@@ -1,10 +1,9 @@
 import * as React from "react";
-import { Link, useLocation } from "react-router";
+import { Link } from "react-router";
 import { motion } from "framer-motion";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   ArrowRight02FreeIcons,
-  Menu01FreeIcons,
   TrafficLightFreeIcons,
 } from "@hugeicons/core-free-icons";
 
@@ -13,26 +12,15 @@ import type { Route } from "./+types/blogs";
 import { absUrl, breadcrumbLd, keywords, SITE } from "~/lib/site";
 import { BLOG_KEYWORDS, getAllPosts } from "~/lib/blog";
 import { variants } from "~/lib/motion";
-import { isNavLinkActive } from "~/lib/nav";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetBody,
-  SheetTrigger,
-} from "~/components/ui/sheet";
 
-import { AppBar, AppBarLink } from "~/components/brand/app-bar";
 import { BlogCard } from "~/components/brand/blog-card";
-import { Logo } from "~/components/brand/logo";
 import { Masthead } from "~/components/brand/masthead";
-import { PoweredByGonasi } from "~/components/brand/powered-by-gonasi";
 import { Rail } from "~/components/brand/rail";
+import { SiteFooter } from "~/components/brand/site-footer";
+import { SiteNav } from "~/components/brand/site-nav";
 
 const PATH = "/blogs";
 
@@ -108,13 +96,6 @@ export function meta(_: Route.MetaArgs) {
     },
   ];
 }
-
-const NAV_LINKS = [
-  { label: "Courses", href: "/courses" },
-  { label: "Practice", href: "/practice" },
-  { label: "Signs", href: "/road-signs" },
-  { label: "Blog", href: "/blogs" },
-];
 
 const VIEWPORT = { once: true, margin: "-60px" } as const;
 
@@ -277,162 +258,5 @@ export default function BlogsIndex() {
         <SiteFooter />
       </main>
     </>
-  );
-}
-
-function SiteNav() {
-  const { pathname, search } = useLocation();
-  return (
-    <AppBar
-      nav={NAV_LINKS.map((l) => (
-        <AppBarLink
-          key={l.href}
-          asChild
-          active={isNavLinkActive(l.href, pathname, search)}
-        >
-          <Link to={l.href}>{l.label}</Link>
-        </AppBarLink>
-      ))}
-      trailing={
-        <>
-          <Button variant="rush" size="sm" asChild>
-            <Link to="/courses">
-              <span className="hidden sm:inline">Browse courses</span>
-              <span className="sm:hidden">Courses</span>
-              <HugeiconsIcon
-                icon={ArrowRight02FreeIcons}
-                size={14}
-                strokeWidth={2.5}
-              />
-            </Link>
-          </Button>
-
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button
-                variant="paper"
-                size="sm"
-                aria-label="Open menu"
-                className="md:hidden"
-              >
-                <HugeiconsIcon
-                  icon={Menu01FreeIcons}
-                  size={16}
-                  strokeWidth={2.5}
-                />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right">
-              <SheetHeader>
-                <SheetTitle>Menu</SheetTitle>
-              </SheetHeader>
-              <SheetBody>
-                <nav className="grid gap-3">
-                  <SheetClose asChild>
-                    <Link
-                      to="/courses"
-                      className="flex items-center justify-between gap-3 border-2 border-ink bg-rush px-4 py-3 font-display text-[13px] font-bold uppercase tracking-wider text-white shadow-stamp-sm"
-                    >
-                      Courses
-                      <HugeiconsIcon
-                        icon={ArrowRight02FreeIcons}
-                        size={14}
-                        strokeWidth={2.5}
-                      />
-                    </Link>
-                  </SheetClose>
-                  {NAV_LINKS.filter((l) => l.href !== "/courses").map((l) => (
-                    <SheetClose asChild key={l.href}>
-                      <Link
-                        to={l.href}
-                        className="border-2 border-ink bg-surface px-4 py-3 font-display text-[13px] font-bold uppercase tracking-wider text-ink shadow-stamp-sm hover:bg-paper-3"
-                      >
-                        {l.label}
-                      </Link>
-                    </SheetClose>
-                  ))}
-                </nav>
-              </SheetBody>
-            </SheetContent>
-          </Sheet>
-        </>
-      }
-    />
-  );
-}
-
-function SiteFooter() {
-  return (
-    <footer className="border-t-4 border-double border-ink bg-ink py-12 text-paper">
-      <Container>
-        <div className="grid gap-6 border-b border-paper/20 pb-7 md:grid-cols-[2fr_1fr_1fr]">
-          <div>
-            <Logo variant="plain" height={56} knockout />
-            <p className="mt-4 max-w-sm font-serif text-base leading-snug opacity-80">
-              Full driving courses and NTSA practice, built for Kenyan roads.
-            </p>
-          </div>
-          <FooterCol
-            heading="Practice"
-            items={[
-              { label: "Pelican trainer", href: "/road-signs/pelican" },
-              { label: "3D sign recognition", href: "/road-signs/3d" },
-              { label: "Quick test", href: "/practice?mode=test" },
-              { label: "All road signs", href: "/road-signs" },
-            ]}
-          />
-          <FooterCol
-            heading="More"
-            items={[
-              { label: "Home", href: "/" },
-              { label: "Courses", href: "/courses" },
-              { label: "All blog posts", href: "/blogs" },
-            ]}
-          />
-        </div>
-        <div className="flex flex-col items-start gap-5 pt-6 sm:flex-row sm:items-center sm:justify-between">
-          <PoweredByGonasi
-            variant="lockup"
-            tone="on-dark"
-            utmMedium="blog_footer"
-          />
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[11px] uppercase tracking-widest opacity-60">
-            <span>© 2026 DriveRush.ke</span>
-            <span aria-hidden>·</span>
-            <span>Learn · Drive · Succeed</span>
-            <span aria-hidden>·</span>
-            <span>Nairobi · KE</span>
-          </div>
-        </div>
-      </Container>
-    </footer>
-  );
-}
-
-function FooterCol({
-  heading,
-  items,
-}: {
-  heading: string;
-  items: { label: string; href: string }[];
-}) {
-  return (
-    <div>
-      <h3 className="m-0 mb-3 font-mono text-[11px] font-bold uppercase tracking-widest opacity-70">
-        {heading}
-      </h3>
-      <ul className="m-0 list-none p-0">
-        {items.map((it) => (
-          <li key={it.href} className="mb-1.5 last:mb-0">
-            <Link
-              to={it.href}
-              className="font-serif text-base text-paper opacity-90 hover:opacity-100 hover:underline"
-            >
-              {it.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
   );
 }

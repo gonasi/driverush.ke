@@ -26,6 +26,7 @@ import {
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Rail } from "~/components/brand/rail";
+import { SiteNav } from "~/components/brand/site-nav";
 import { SectionHead } from "~/components/brand/section-head";
 
 const PATH = "/driving-schools-kenya";
@@ -105,176 +106,81 @@ const PRICE_BAND_BADGE = {
 export default function DrivingSchoolsKenya() {
   const ordered = schoolsByPrice();
   return (
-    <main className="min-h-screen text-ink">
-      <Rail />
+    <>
+      <SiteNav />
+      <main className="min-h-screen text-ink">
+        <Rail />
 
-      <div className="mx-auto w-full max-w-4xl px-5 pb-24 pt-6 sm:px-9 sm:pt-10">
-        <div className="mb-6 flex items-center justify-between gap-3">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-ink-3 outline-none hover:text-ink focus-visible:text-ink"
-          >
-            <HugeiconsIcon
-              icon={ArrowLeft02FreeIcons}
-              size={14}
-              strokeWidth={2.5}
-            />
-            Back
-          </Link>
-          <span className="font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
-            Driving schools · Kenya / NTSA
-          </span>
-        </div>
-
-        {/* ── Hero ─────────────────────────────────────────────────────── */}
-        <header className="border-b-2 border-ink pb-8">
-          <span className="eyebrow flex items-center gap-2 text-ink">
-            <HugeiconsIcon
-              icon={TrafficLightFreeIcons}
-              size={14}
-              strokeWidth={2.5}
-              className="text-rush"
-            />
-            DriveRush · Driving schools in Kenya
-          </span>
-          <h1 className="m-0 mt-3 font-display text-[clamp(38px,7vw,80px)] font-extrabold uppercase leading-[0.9] tracking-tighter">
-            Driving schools in Kenya.{" "}
-            <span className="italic text-rush">Compared.</span>
-          </h1>
-          <p className="mt-5 max-w-2xl font-serif text-[clamp(17px,2.2vw,24px)] leading-tight text-ink-2">
-            The major NTSA-registered schools side by side: price, branches and
-            licence classes. Theory practice here is free, so you only pay a
-            school for the practical.
-          </p>
-
-          <div className="mt-5 flex flex-wrap items-center gap-2">
-            <Badge variant="green">NTSA registered</Badge>
-            <Badge variant="amber">
-              {DRIVING_SCHOOLS.length} major schools
-            </Badge>
-            <Badge variant="ink">
-              Updated {SITE.lang.toUpperCase()} · 2026
-            </Badge>
-          </div>
-
-          <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2.5">
-            <Button variant="rush" size="lg" asChild>
-              <Link to="/practice">
-                Start free theory practice
-                <HugeiconsIcon
-                  icon={ArrowRight02FreeIcons}
-                  size={16}
-                  strokeWidth={2.5}
-                />
-              </Link>
-            </Button>
-            <a
-              href="#schools"
-              className="font-mono text-[11px] uppercase tracking-widest text-ink-3 underline-offset-4 outline-none hover:text-ink hover:underline focus-visible:text-ink"
+        <div className="mx-auto w-full max-w-4xl px-5 pb-24 pt-6 sm:px-9 sm:pt-10">
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-ink-3 outline-none hover:text-ink focus-visible:text-ink"
             >
-              ↓ Jump to the directory
-            </a>
+              <HugeiconsIcon
+                icon={ArrowLeft02FreeIcons}
+                size={14}
+                strokeWidth={2.5}
+              />
+              Back
+            </Link>
+            <span className="font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
+              Driving schools · Kenya / NTSA
+            </span>
           </div>
-        </header>
 
-        {/* ── 01 · The directory ────────────────────────────────────────── */}
-        <section id="schools" className="mt-12 scroll-mt-20">
-          <SectionHead
-            num="01"
-            title={
-              <>
-                The major <em>NTSA-registered schools</em>
-              </>
-            }
-            stamp="Curated · 2026"
-            lede="The largest networks with branches across multiple counties, ordered by typical Class B price band. Confirm the NTSA certificate on the wall before paying."
-          />
-          <ol className="space-y-4">
-            {ordered.map((s, i) => (
-              <li key={s.slug}>
-                <SchoolCard school={s} position={i + 1} />
-              </li>
-            ))}
-          </ol>
-          <p className="mt-6 font-mono text-[11px] uppercase tracking-widest text-ink-3">
-            Prices are indicative bands as of 2026. Confirm the package and
-            exclusions in writing before paying.
-          </p>
-        </section>
-
-        {/* ── 02 · Price bands by class ─────────────────────────────────── */}
-        <section className="mt-14">
-          <SectionHead
-            num="02"
-            title={
-              <>
-                Driving school cost <em>in Kenya · by class</em>
-              </>
-            }
-            stamp="Indicative · 2026"
-            lede="Total spend with a typical NTSA-registered school, before NTSA test fees. The last column is what you pay when theory is free here and you only buy the practical."
-          />
-          <div className="overflow-x-auto border-2 border-ink bg-surface">
-            <table className="w-full text-left text-[14.5px]">
-              <thead className="border-b-2 border-ink bg-ink text-paper">
-                <tr>
-                  <th className="px-4 py-3 font-display text-[12px] font-extrabold uppercase tracking-widest">
-                    Class
-                  </th>
-                  <th className="px-4 py-3 font-display text-[12px] font-extrabold uppercase tracking-widest">
-                    Vehicle
-                  </th>
-                  <th className="px-4 py-3 font-display text-[12px] font-extrabold uppercase tracking-widest">
-                    Theory + practical
-                  </th>
-                  <th className="px-4 py-3 font-display text-[12px] font-extrabold uppercase tracking-widest">
-                    With DriveRush
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {CLASS_PRICE_BANDS.map((r) => (
-                  <tr
-                    key={r.cls}
-                    className="border-t border-dashed border-ink text-ink-2"
-                  >
-                    <td className="px-4 py-3 font-display text-[15px] font-extrabold text-ink">
-                      Class {r.cls}
-                    </td>
-                    <td className="px-4 py-3">{r.vehicle}</td>
-                    <td className="px-4 py-3">{r.bundled}</td>
-                    <td className="px-4 py-3 font-medium text-ink">
-                      {r.split}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="mt-4 text-[14px] leading-relaxed text-ink-3">
-            Bands exclude NTSA test fees (currently KES 1,500 theory, KES 1,000
-            practical) and Smart DL card issuance.
-          </p>
-        </section>
-
-        {/* ── Final CTA ─────────────────────────────────────────────────── */}
-        <section className="mt-14">
-          <div className="grid gap-5 border-2 border-ink bg-surface p-6 shadow-stamp sm:grid-cols-[1fr_auto] sm:items-center sm:p-8">
-            <div>
-              <span className="eyebrow text-ink">Class A · B · C · D</span>
-              <p className="mt-2.5 font-display text-[clamp(22px,3.4vw,34px)] font-extrabold uppercase leading-[0.95] tracking-tight text-ink">
-                Skip the theory bill.{" "}
-                <span className="italic text-rush">Start practising.</span>
-              </p>
-              <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-ink-2">
-                Free road-sign trainers, full past papers and junction
-                scenarios. No signup to start.
-              </p>
+          {/* ── Slim hero — title + badges only so the directory sits above the fold ── */}
+          <header className="border-b-2 border-ink pb-6">
+            <span className="eyebrow flex items-center gap-2 text-ink">
+              <HugeiconsIcon
+                icon={TrafficLightFreeIcons}
+                size={14}
+                strokeWidth={2.5}
+                className="text-rush"
+              />
+              Driving schools in Kenya
+            </span>
+            <h1 className="m-0 mt-3 font-display text-[clamp(32px,6vw,64px)] font-extrabold uppercase leading-[0.9] tracking-tighter">
+              NTSA-registered schools.{" "}
+              <span className="italic text-rush">Compared.</span>
+            </h1>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <Badge variant="green">NTSA registered</Badge>
+              <Badge variant="amber">
+                {DRIVING_SCHOOLS.length} major schools
+              </Badge>
+              <Badge variant="ink">
+                Updated {SITE.lang.toUpperCase()} · 2026
+              </Badge>
             </div>
-            <div className="flex flex-wrap gap-3">
+          </header>
+
+          {/* ── 01 · The directory — first thing you see after the hero ── */}
+          <section id="schools" className="mt-8 scroll-mt-20">
+            <ol className="space-y-4">
+              {ordered.map((s, i) => (
+                <li key={s.slug}>
+                  <SchoolCard school={s} position={i + 1} />
+                </li>
+              ))}
+            </ol>
+            <p className="mt-6 font-mono text-[11px] uppercase tracking-widest text-ink-3">
+              Prices are indicative bands as of 2026. Confirm the package and
+              exclusions in writing before paying.
+            </p>
+          </section>
+
+          {/* ── Why this page exists — the pitch, after the data ── */}
+          <section className="mt-12 border-t-2 border-dashed border-ink pt-8">
+            <p className="m-0 max-w-2xl font-serif text-[clamp(16px,2vw,20px)] leading-tight text-ink-2">
+              Theory practice here is free, so you only pay a school for the
+              practical. Pass theory online before booking; you'll spend less
+              and waste fewer school hours.
+            </p>
+            <div className="mt-5">
               <Button variant="rush" size="lg" asChild>
                 <Link to="/practice">
-                  Start practising
+                  Start free theory practice
                   <HugeiconsIcon
                     icon={ArrowRight02FreeIcons}
                     size={16}
@@ -282,21 +188,105 @@ export default function DrivingSchoolsKenya() {
                   />
                 </Link>
               </Button>
-              <Button variant="ink" size="lg" asChild>
-                <Link to="/courses">
-                  <HugeiconsIcon
-                    icon={Mortarboard01FreeIcons}
-                    size={16}
-                    strokeWidth={2.25}
-                  />
-                  See the courses
-                </Link>
-              </Button>
             </div>
-          </div>
-        </section>
-      </div>
-    </main>
+          </section>
+
+          {/* ── 02 · Price bands by class ─────────────────────────────────── */}
+          <section className="mt-14">
+            <SectionHead
+              num="02"
+              title={
+                <>
+                  Driving school cost <em>in Kenya · by class</em>
+                </>
+              }
+              stamp="Indicative · 2026"
+              lede="Total spend with a typical NTSA-registered school, before NTSA test fees. The last column is what you pay when theory is free here and you only buy the practical."
+            />
+            <div className="overflow-x-auto border-2 border-ink bg-surface">
+              <table className="w-full text-left text-[14.5px]">
+                <thead className="border-b-2 border-ink bg-ink text-paper">
+                  <tr>
+                    <th className="px-4 py-3 font-display text-[12px] font-extrabold uppercase tracking-widest">
+                      Class
+                    </th>
+                    <th className="px-4 py-3 font-display text-[12px] font-extrabold uppercase tracking-widest">
+                      Vehicle
+                    </th>
+                    <th className="px-4 py-3 font-display text-[12px] font-extrabold uppercase tracking-widest">
+                      Theory + practical
+                    </th>
+                    <th className="px-4 py-3 font-display text-[12px] font-extrabold uppercase tracking-widest">
+                      With DriveRush
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {CLASS_PRICE_BANDS.map((r) => (
+                    <tr
+                      key={r.cls}
+                      className="border-t border-dashed border-ink text-ink-2"
+                    >
+                      <td className="px-4 py-3 font-display text-[15px] font-extrabold text-ink">
+                        Class {r.cls}
+                      </td>
+                      <td className="px-4 py-3">{r.vehicle}</td>
+                      <td className="px-4 py-3">{r.bundled}</td>
+                      <td className="px-4 py-3 font-medium text-ink">
+                        {r.split}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-4 text-[14px] leading-relaxed text-ink-3">
+              Bands exclude NTSA test fees (currently KES 1,500 theory, KES
+              1,000 practical) and Smart DL card issuance.
+            </p>
+          </section>
+
+          {/* ── Final CTA ─────────────────────────────────────────────────── */}
+          <section className="mt-14">
+            <div className="grid gap-5 border-2 border-ink bg-surface p-6 shadow-stamp sm:grid-cols-[1fr_auto] sm:items-center sm:p-8">
+              <div>
+                <span className="eyebrow text-ink">Class A · B · C · D</span>
+                <p className="mt-2.5 font-display text-[clamp(22px,3.4vw,34px)] font-extrabold uppercase leading-[0.95] tracking-tight text-ink">
+                  Skip the theory bill.{" "}
+                  <span className="italic text-rush">Start practising.</span>
+                </p>
+                <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-ink-2">
+                  Free road-sign trainers, full past papers and junction
+                  scenarios. No signup to start.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Button variant="rush" size="lg" asChild>
+                  <Link to="/practice">
+                    Start practising
+                    <HugeiconsIcon
+                      icon={ArrowRight02FreeIcons}
+                      size={16}
+                      strokeWidth={2.5}
+                    />
+                  </Link>
+                </Button>
+                <Button variant="ink" size="lg" asChild>
+                  <Link to="/courses">
+                    <HugeiconsIcon
+                      icon={Mortarboard01FreeIcons}
+                      size={16}
+                      strokeWidth={2.25}
+                    />
+                    See the courses
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </>
   );
 }
 

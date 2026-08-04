@@ -15,5 +15,35 @@
     { "id": "ch06", "dir": "06-tough-conditions" },
     { "id": "ch07", "dir": "07-cargo-hazards-emergencies" },
     { "id": "ch08", "dir": "08-exam-sprint" }
+  ],
+  "units": [
+    {
+      "id": "unit-foundations",
+      "title": "Foundations",
+      "theme": "kenya-green",
+      "chapterIds": ["ch01", "ch02"],
+      "checkpoint": { "questionCount": 8 }
+    },
+    {
+      "id": "unit-the-vehicle",
+      "title": "The Vehicle",
+      "theme": "plate-blue",
+      "chapterIds": ["ch03", "ch04"],
+      "checkpoint": { "questionCount": 8 }
+    },
+    {
+      "id": "unit-on-the-road",
+      "title": "On the Road",
+      "theme": "amber",
+      "chapterIds": ["ch05", "ch06"],
+      "checkpoint": { "questionCount": 8 }
+    },
+    {
+      "id": "unit-hazards-exam",
+      "title": "Hazards & Exam",
+      "theme": "rush",
+      "chapterIds": ["ch07", "ch08"],
+      "checkpoint": { "questionCount": 10 }
+    }
   ]
 }

@@ -239,6 +239,63 @@ export function applyBlockComplete(
   };
 }
 
+/**
+ * Mark every block in a lesson as complete in one transition. Used by the
+ * placement-test to unlock all lessons preceding the target after a successful
+ * skip-ahead — bypasses block-by-block ordering. XP is awarded once per block.
+ * Idempotent: lessons already complete are returned as-is.
+ */
+export function markLessonComplete(
+  cp: CourseProgress,
+  lesson: Lesson,
+  opts?: { scorePerBlock?: number },
+): CourseProgress {
+  const seeded = seedLesson(cp, lesson);
+  if (isLessonComplete(seeded, lesson)) return seeded;
+
+  const chapter = seeded.chapters[lesson.chapterId];
+  const lp = chapter.lessons[lesson.id];
+
+  let xpDelta = 0;
+  const newBlocks: Record<string, BlockProgress> = { ...lp.blocks };
+  for (const block of lesson.blocks) {
+    const bp = newBlocks[block.id];
+    if (!bp || bp.status === "complete") continue;
+    xpDelta += block.xp;
+    newBlocks[block.id] = {
+      ...bp,
+      status: "complete",
+      xpEarned: block.xp,
+      score: opts?.scorePerBlock ?? bp.score ?? null,
+    };
+  }
+
+  const now = new Date().toISOString();
+  const lastBlockId = lesson.blocks[lesson.blocks.length - 1]?.id;
+  const newLesson: LessonProgress = {
+    ...lp,
+    blocks: newBlocks,
+    xpEarned: lp.xpEarned + xpDelta,
+    status: "complete",
+    completedAt: now,
+    currentBlockId: lastBlockId ?? lp.currentBlockId,
+  };
+
+  return {
+    ...seeded,
+    totalXP: seeded.totalXP + xpDelta,
+    lastUpdated: now,
+    chapters: {
+      ...seeded.chapters,
+      [lesson.chapterId]: {
+        ...chapter,
+        xpEarned: chapter.xpEarned + xpDelta,
+        lessons: { ...chapter.lessons, [lesson.id]: newLesson },
+      },
+    },
+  };
+}
+
 /** Drop a lesson's progress (and back out its XP) so it can be replayed fresh. */
 export function resetLessonProgress(
   cp: CourseProgress,

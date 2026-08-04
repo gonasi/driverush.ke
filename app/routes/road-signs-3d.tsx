@@ -19,6 +19,7 @@ import { useLoadingFloor } from "~/lib/loading";
 import { Button } from "~/components/ui/button";
 import { FeedbackBanner } from "~/components/brand/feedback-banner";
 import { Rail } from "~/components/brand/rail";
+import { SiteNav } from "~/components/brand/site-nav";
 import { LoadingPanel } from "~/components/brand/traffic-loader";
 import { Sign3DPlayer } from "~/components/brand/sign-3d-player";
 import { Sign3DIntroDialog } from "~/components/brand/sign-3d-intro-dialog";
@@ -77,114 +78,117 @@ export default function ThreeDSigns() {
   const practiceCount = getPracticeSigns(board, categories).length;
 
   return (
-    <main className="min-h-screen text-ink">
-      <Rail />
+    <>
+      <SiteNav />
+      <main className="min-h-screen text-ink">
+        <Rail />
 
-      <div className="mx-auto w-full max-w-3xl px-5 pb-20 pt-6 sm:px-9 sm:pt-10">
-        <div className="mb-6 flex items-center justify-between gap-3">
-          <Link
-            to="/road-signs"
-            className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-ink-3 outline-none hover:text-ink focus-visible:text-ink"
-          >
-            <HugeiconsIcon
-              icon={ArrowLeft02FreeIcons}
-              size={14}
-              strokeWidth={2.5}
-            />
-            Road signs
-          </Link>
-          <span className="font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
-            Trainer № 02 · Recognition
-          </span>
-        </div>
-
-        <header className="border-b-2 border-ink pb-7">
-          <span className="eyebrow text-ink">Road-sign recognition</span>
-          <h1 className="m-0 mt-3 font-display text-[clamp(40px,7vw,72px)] font-extrabold uppercase leading-[0.9] tracking-tighter">
-            3D <span className="italic text-rush">signs</span>
-          </h1>
-          <p className="mt-5 max-w-2xl font-serif text-[clamp(17px,2.2vw,22px)] leading-tight text-ink-2">
-            One Kenyan road sign at a time, modelled in 3D on its post. Spin it
-            and read it from any angle, the way you actually see them on Nairobi
-            roads, then name it before the timer drops.
-          </p>
-        </header>
-
-        {!hasBoard ? (
-          <div className="mt-7">
-            <FeedbackBanner
-              tone="info"
-              icon={ThreeDViewFreeIcons}
-              title="In the workshop"
-              description="No 3D signs have been mapped yet. Map them in /tools/sign-3d to light this up."
-            />
-          </div>
-        ) : showLoader ? (
-          <div className="mt-10 grid gap-3">
-            <div className="font-mono text-[10px] uppercase tracking-widest text-ink-3">
-              [ Game board · loading ]
-            </div>
-            <div className="flex min-h-72 w-full items-center justify-center border-2 border-ink bg-paper-3 sm:aspect-video sm:min-h-0">
-              <LoadingPanel
-                label={`Loading the trainer${loadPct != null ? ` · ${loadPct}%` : ""}`}
-                size="lg"
-              />
-            </div>
-          </div>
-        ) : practiceCount === 0 ? (
-          <div className="mt-8 flex flex-col items-center gap-4 border-2 border-dashed border-ink bg-paper-3 px-6 py-12 text-center">
-            <span className="font-mono text-[11px] uppercase tracking-widest text-ink-3">
-              No signs match your category filter
-            </span>
-            <Button
-              variant="ink"
-              size="lg"
-              onClick={() => setSettingsOpen(true)}
+        <div className="mx-auto w-full max-w-3xl px-5 pb-20 pt-6 sm:px-9 sm:pt-10">
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <Link
+              to="/road-signs"
+              className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-ink-3 outline-none hover:text-ink focus-visible:text-ink"
             >
               <HugeiconsIcon
-                icon={Configuration01FreeIcons}
-                size={16}
+                icon={ArrowLeft02FreeIcons}
+                size={14}
                 strokeWidth={2.5}
               />
-              Open settings
-            </Button>
-          </div>
-        ) : (
-          <div className="mt-8">
-            <Sign3DPlayer />
-            <p className="mt-3 font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
-              {practiceCount} sign{practiceCount === 1 ? "" : "s"}
-              {categories.length > 0 ? ` of ${board.signs.length}` : ""} · drag
-              to spin · same audio as the recall trainer
-            </p>
-          </div>
-        )}
-
-        {hasBoard && (
-          <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-dashed border-ink pt-5">
-            <span className="font-mono text-[11px] uppercase tracking-widest text-ink-3">
-              Prefer the flat recall game?
+              Road signs
+            </Link>
+            <span className="font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
+              Trainer № 02 · Recognition
             </span>
-            <Button variant="paper" size="sm" asChild>
-              <Link to="/road-signs/pelican">
+          </div>
+
+          <header className="border-b-2 border-ink pb-7">
+            <span className="eyebrow text-ink">Road-sign recognition</span>
+            <h1 className="m-0 mt-3 font-display text-[clamp(40px,7vw,72px)] font-extrabold uppercase leading-[0.9] tracking-tighter">
+              3D <span className="italic text-rush">signs</span>
+            </h1>
+            <p className="mt-5 max-w-2xl font-serif text-[clamp(17px,2.2vw,22px)] leading-tight text-ink-2">
+              One Kenyan road sign at a time, modelled in 3D on its post. Spin
+              it and read it from any angle, the way you actually see them on
+              Nairobi roads, then name it before the timer drops.
+            </p>
+          </header>
+
+          {!hasBoard ? (
+            <div className="mt-7">
+              <FeedbackBanner
+                tone="info"
+                icon={ThreeDViewFreeIcons}
+                title="In the workshop"
+                description="No 3D signs have been mapped yet. Map them in /tools/sign-3d to light this up."
+              />
+            </div>
+          ) : showLoader ? (
+            <div className="mt-10 grid gap-3">
+              <div className="font-mono text-[10px] uppercase tracking-widest text-ink-3">
+                [ Game board · loading ]
+              </div>
+              <div className="flex min-h-72 w-full items-center justify-center border-2 border-ink bg-paper-3 sm:aspect-video sm:min-h-0">
+                <LoadingPanel
+                  label={`Loading the trainer${loadPct != null ? ` · ${loadPct}%` : ""}`}
+                  size="lg"
+                />
+              </div>
+            </div>
+          ) : practiceCount === 0 ? (
+            <div className="mt-8 flex flex-col items-center gap-4 border-2 border-dashed border-ink bg-paper-3 px-6 py-12 text-center">
+              <span className="font-mono text-[11px] uppercase tracking-widest text-ink-3">
+                No signs match your category filter
+              </span>
+              <Button
+                variant="ink"
+                size="lg"
+                onClick={() => setSettingsOpen(true)}
+              >
                 <HugeiconsIcon
-                  icon={BirdFreeIcons}
-                  size={14}
+                  icon={Configuration01FreeIcons}
+                  size={16}
                   strokeWidth={2.5}
                 />
-                Play the Pelican trainer
-              </Link>
-            </Button>
-          </div>
-        )}
-      </div>
+                Open settings
+              </Button>
+            </div>
+          ) : (
+            <div className="mt-8">
+              <Sign3DPlayer />
+              <p className="mt-3 font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
+                {practiceCount} sign{practiceCount === 1 ? "" : "s"}
+                {categories.length > 0 ? ` of ${board.signs.length}` : ""} ·
+                drag to spin · same audio as the recall trainer
+              </p>
+            </div>
+          )}
 
-      {hasBoard && (
-        <>
-          <Sign3DIntroDialog />
-          <Sign3DSettingsSheet />
-        </>
-      )}
-    </main>
+          {hasBoard && (
+            <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-dashed border-ink pt-5">
+              <span className="font-mono text-[11px] uppercase tracking-widest text-ink-3">
+                Prefer the flat recall game?
+              </span>
+              <Button variant="paper" size="sm" asChild>
+                <Link to="/road-signs/pelican">
+                  <HugeiconsIcon
+                    icon={BirdFreeIcons}
+                    size={14}
+                    strokeWidth={2.5}
+                  />
+                  Play the Pelican trainer
+                </Link>
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {hasBoard && (
+          <>
+            <Sign3DIntroDialog />
+            <Sign3DSettingsSheet />
+          </>
+        )}
+      </main>
+    </>
   );
 }

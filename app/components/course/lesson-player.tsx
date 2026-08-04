@@ -21,13 +21,19 @@ import { selectCourseProgress, useCourseStore } from "~/lib/course-store";
 import { useCourseUiStore } from "~/lib/course-ui-store";
 import { useFeedback } from "~/lib/use-feedback";
 import { preloadSfx } from "~/lib/sounds";
+import { useProgression } from "~/lib/use-progression";
+import { useStreakStore } from "~/lib/use-streak-store";
 import { cn } from "~/lib/utils";
+
+import { toast } from "sonner";
 
 import { Button } from "~/components/ui/button";
 import { CelebrationConfetti } from "~/components/brand/celebration-confetti";
 import { LoadingPanel } from "~/components/brand/traffic-loader";
 import { getBlockRenderer } from "./block-registry";
+import { LockedPanel } from "./locked-panel";
 import { SegmentedProgress } from "./segmented-progress";
+import { StreakFlame } from "./streak-flame";
 import { WhySheet } from "./why-sheet";
 
 function useMounted() {
@@ -75,16 +81,46 @@ export function LessonPlayer({ courseSlug, lesson }: LessonPlayerProps) {
   const toggleSound = useCourseUiStore((s) => s.toggleSound);
   const toggleVibration = useCourseUiStore((s) => s.toggleVibration);
 
+  const progression = useProgression(courseSlug);
+  const unlocked = progression.isLessonUnlocked(lesson.chapterId, lesson.id);
+  const recordStreak = useStreakStore((s) => s.recordLessonComplete);
+
   const { scroll } = useFeedback();
 
+  // Only seed once we know the learner can actually access the lesson —
+  // otherwise a deep-link to a locked lesson would silently mark it as
+  // started and skew the progression UI on the path.
   React.useEffect(() => {
+    if (!mounted || !unlocked) return;
     initLesson(courseSlug, lesson);
     preloadSfx();
-  }, [initLesson, courseSlug, lesson]);
+  }, [initLesson, courseSlug, lesson, mounted, unlocked]);
 
   const lp = getLessonProgress(cp, lesson);
   const complete = isLessonComplete(cp, lesson);
   const currentBlockId = lp?.currentBlockId ?? lesson.blocks[0]?.id;
+
+  // Streak + daily-XP credit fires exactly once per completion. `completedAt`
+  // is stable per attempt; a fresh replay generates a new timestamp so we re-
+  // credit then too.
+  const streakRecordedFor = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!mounted || !complete || !lp?.completedAt) return;
+    const key = `${lesson.id}::${lp.completedAt}`;
+    if (streakRecordedFor.current === key) return;
+    streakRecordedFor.current = key;
+    const result = recordStreak(lp.xpEarned);
+    if (result.freezeSpent) {
+      toast("Streak freeze used — back tomorrow.");
+    }
+  }, [
+    mounted,
+    complete,
+    lp?.completedAt,
+    lp?.xpEarned,
+    lesson.id,
+    recordStreak,
+  ]);
 
   const statusOf = (blockId: string) =>
     lp?.blocks[blockId]?.status ??
@@ -145,9 +181,23 @@ export function LessonPlayer({ courseSlug, lesson }: LessonPlayerProps) {
   }));
   const xp = lessonXpEarned(cp, lesson);
 
+  // Lock guard: once mounted (so the persisted store has hydrated) divert
+  // locked deep-links into the placement-test entry point. SSR + first paint
+  // continue to render the loading panel so we never flash the locked state
+  // to a returning learner who legitimately has access.
+  if (mounted && !unlocked) {
+    return (
+      <LockedPanel
+        courseSlug={courseSlug}
+        chapterSlug={lesson.chapterSlug}
+        lesson={lesson}
+      />
+    );
+  }
+
   return (
     <div className="flex min-h-dvh flex-col text-ink">
-      {/* sticky header: exit · progress boxes · sound / haptics */}
+      {/* sticky header: exit · progress boxes · sound / haptics · streak */}
       <header className="sticky top-0 z-40 border-b-2 border-ink bg-paper/90 backdrop-blur">
         <div className="mx-auto flex w-full max-w-3xl items-center gap-3 px-4 py-3 sm:px-9">
           <Link
@@ -164,6 +214,7 @@ export function LessonPlayer({ courseSlug, lesson }: LessonPlayerProps) {
           <div className="flex-1">
             <SegmentedProgress segments={segments} activeId={currentBlockId} />
           </div>
+          <StreakFlame />
           <HeaderToggle
             icon={VolumeHighFreeIcons}
             active={isSoundEnabled}

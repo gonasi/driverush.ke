@@ -19,6 +19,7 @@ import {
   applyBlockComplete,
   emptyCourseProgress,
   getLessonProgress,
+  markLessonComplete,
   resetLessonProgress,
   seedLesson,
   type CourseProgress,
@@ -40,6 +41,11 @@ type CourseState = {
     lesson: Lesson,
     blockId: string,
     opts?: { score?: number },
+  ) => void;
+  markLessonsAsMastered: (
+    courseSlug: string,
+    lessons: Lesson[],
+    opts?: { scorePerBlock?: number },
   ) => void;
   resetLesson: (courseSlug: string, lesson: Lesson) => void;
   resetCourse: (courseSlug: string) => void;
@@ -83,6 +89,16 @@ export const useCourseStore = create<CourseState>()(
         set((s) => ({
           byCourse: withCourse(s.byCourse, courseSlug, (c) =>
             applyBlockComplete(c, lesson, blockId, opts),
+          ),
+        })),
+
+      markLessonsAsMastered: (courseSlug, lessons, opts) =>
+        set((s) => ({
+          byCourse: withCourse(s.byCourse, courseSlug, (c) =>
+            lessons.reduce(
+              (acc, lesson) => markLessonComplete(acc, lesson, opts),
+              c,
+            ),
           ),
         })),
 

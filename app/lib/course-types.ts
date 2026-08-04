@@ -430,6 +430,33 @@ export type Chapter = {
   lessons: Lesson[];
 };
 
+/**
+ * A presentation-only grouping above chapters. Used by the learning-path UI to
+ * render themed sections + checkpoint nodes. If a course.json omits `units` the
+ * loader synthesises a single default unit holding every chapter, so legacy
+ * courses keep working untouched.
+ */
+export type UnitTheme =
+  | "kenya-green"
+  | "kenya-gold"
+  | "plate-blue"
+  | "amber"
+  | "rush"
+  | "route-cyan"
+  | "magenta"
+  | "olive";
+
+export type Unit = {
+  id: string;
+  title: string;
+  /** Voice-palette token name; the renderer maps to bg/border classes. */
+  theme: UnitTheme;
+  /** Chapter ids in this unit, in display order. Resolved to Chapter refs on the client. */
+  chapterIds: string[];
+  /** Auto-derived checkpoint config. Omit to use defaults; null to disable. */
+  checkpoint?: { questionCount?: number } | null;
+};
+
 export type Course = {
   id: string;
   slug: string;
@@ -441,6 +468,8 @@ export type Course = {
   passMark: number;
   /** Only chapters whose files exist on disk. */
   chapters: Chapter[];
+  /** Presentation grouping above chapters; always at least one unit. */
+  units: Unit[];
 };
 
 /** Per-block unlock status in the progress store. */
