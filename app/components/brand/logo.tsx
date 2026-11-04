@@ -2,25 +2,18 @@ import * as React from "react";
 
 import { cn } from "~/lib/utils";
 
-const SOURCES = {
-  main: "/images/driverush-logo-main.png", // Full lockup. White background — light surfaces only.
-  plain: "/images/driverush-logo-plain.png", // DR monogram. Transparent — safe on any colour.
-} as const;
+/** DR monogram. Transparent, so it's safe on any colour. */
+const SRC = "/images/driverush-logo-plain.png";
 
-const ALT = {
-  main: "DriveRush",
-  plain: "DriveRush",
-} as const;
-
-// Both source files are 1536×1024 = 3:2.
+/** The source file is 3:2. */
 const ASPECT = 1.5;
 
 type LogoProps = Omit<
   React.ComponentProps<"img">,
   "src" | "width" | "height" | "alt"
 > & {
-  /** "main" = full lockup with wordmark + tagline. "plain" = DR monogram only. */
-  variant?: "main" | "plain";
+  /** Only the DR monogram exists now. Kept so call sites read clearly. */
+  variant?: "plain";
   /** Height in pixels. Width auto-computed from the 3:2 aspect ratio. */
   height?: number;
   /**
@@ -48,15 +41,10 @@ type LogoProps = Omit<
   alt?: string;
 };
 
-/**
- * The official DriveRush logo. Always prefer this over CSS-drawn marks for
- * brand placements (nav, footer, marketing pages). Use `variant="plain"` for
- * tight slots and dark surfaces; `variant="main"` for the full lockup on
- * light backgrounds.
- */
+/** The DriveRush logo. Always prefer this over CSS-drawn marks. */
 function Logo({
   variant = "plain",
-  height = variant === "main" ? 80 : 36,
+  height = 36,
   knockout = false,
   themed = false,
   priority = false,
@@ -68,8 +56,8 @@ function Logo({
   const width = Math.round(height * ASPECT);
   return (
     <img
-      src={SOURCES[variant]}
-      alt={alt ?? ALT[variant]}
+      src={SRC}
+      alt={alt ?? "DriveRush"}
       width={width}
       height={height}
       loading={priority ? "eager" : "lazy"}

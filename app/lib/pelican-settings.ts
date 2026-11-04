@@ -53,8 +53,6 @@ export const DEFAULT_PELICAN_SETTINGS: PelicanUserSettings = {
   selfGrading: true,
 };
 
-/** localStorage key the old (pre-Zustand) settings hook used — for migration. */
-export const LEGACY_SETTINGS_KEY = "driverush:pelican:settings";
 
 /** Merge a (possibly partial / untrusted) object onto the defaults. */
 export function normalizeSettings(

@@ -76,6 +76,3 @@ export const TOOLS: Tool[] = [
 ];
 
 /** Look up a tool by slug. */
-export function getTool(slug: string): Tool | undefined {
-  return TOOLS.find((t) => t.slug === slug);
-}

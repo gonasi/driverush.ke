@@ -6,8 +6,5 @@
 /.react-router/
 /build/
 
-# Storybook
-/storybook-static/
-
 # Claude Code (machine-local permission grants; launch.json is shared)
 .claude/settings.local.json

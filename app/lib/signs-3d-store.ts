@@ -686,9 +686,6 @@ export const useSigns3DStore = create<Signs3DState>()(
 // ---------------------------------------------------------------------------
 // selectors / derived helpers
 // ---------------------------------------------------------------------------
-export const selectSign = (s: Signs3DState): Sign3D | undefined =>
-  s.queue[s.pos];
-
 export function getPracticeSigns(
   board: Signs3DData | null,
   categories: SignCategoryId[],
@@ -713,17 +710,4 @@ export function selectCanResume(s: Signs3DState): boolean {
   if (run.pos < 0 || run.pos >= run.queueIds.length) return false;
   const ids = new Set(s.board.signs.map((r) => r.id));
   return run.queueIds.every((id) => ids.has(id));
-}
-
-/** Display stats for the Resume CTA. Returns null when there's nothing to show. */
-export function selectResumeStats(
-  s: Signs3DState,
-): { signsDone: number; total: number; recalled: number } | null {
-  const run = s.inProgressRun;
-  if (!run) return null;
-  return {
-    signsDone: run.pos + 1,
-    total: run.queueIds.length,
-    recalled: run.runRecalled.length,
-  };
 }

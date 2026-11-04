@@ -8,9 +8,7 @@
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
     "ping-indexnow": "node scripts/ping-indexnow.mjs",
-    "build:og": "node scripts/build-og-images.mjs",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build:og": "node scripts/build-og-images.mjs"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.1.1",
@@ -42,10 +40,6 @@
   "devDependencies": {
     "@mdx-js/rollup": "^3.1.1",
     "@react-router/dev": "7.14.0",
-    "@storybook/addon-a11y": "^10.3.5",
-    "@storybook/addon-docs": "^10.3.5",
-    "@storybook/addon-themes": "^10.3.5",
-    "@storybook/react-vite": "^10.3.5",
     "@tailwindcss/vite": "^4.2.2",
     "@types/mdx": "^2.0.13",
     "@types/node": "^22",
@@ -54,7 +48,6 @@
     "remark-frontmatter": "^5.0.0",
     "remark-gfm": "^4.0.1",
     "remark-mdx-frontmatter": "^5.2.0",
-    "storybook": "^10.3.5",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
     "vite": "^8.0.3"
