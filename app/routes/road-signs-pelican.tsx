@@ -14,7 +14,7 @@ import { ogCardAlt, ogCardPath } from "~/lib/og-cards";
 import type { ImageFocusData } from "~/lib/image-focus";
 import pelicanJson from "~/data/road-signs-pelican.json";
 import { getPracticeRegions, usePelicanStore } from "~/lib/pelican-store";
-import { useLoadingFloor } from "~/lib/loading";
+import { useTrainerLink } from "~/lib/use-trainer-link";
 
 import { Button } from "~/components/ui/button";
 import { PelicanPartner } from "~/components/brand/pelican-partner";
@@ -23,7 +23,6 @@ import { SiteFooter } from "~/components/brand/site-footer";
 import { SiteNav } from "~/components/brand/site-nav";
 import { LoadingPanel } from "~/components/brand/traffic-loader";
 import { ImageFocusPlayer } from "~/components/brand/image-focus-player";
-import { PelicanIntroDialog } from "~/components/brand/pelican-intro-dialog";
 import { PelicanSettingsSheet } from "~/components/brand/pelican-settings-sheet";
 
 const board = pelicanJson as ImageFocusData;
@@ -58,28 +57,22 @@ export function meta(_: Route.MetaArgs) {
 
 export default function PelicanSigns() {
   const assetStatus = usePelicanStore((s) => s.assetStatus);
-  const assetProgress = usePelicanStore((s) => s.assetProgress);
+  const start = usePelicanStore((s) => s.start);
+  const exit = usePelicanStore((s) => s.exit);
   const categories = usePelicanStore((s) => s.settings.categories);
   const setSettingsOpen = usePelicanStore((s) => s.setSettingsOpen);
 
-  // The trainer is entirely client-side: stash the board, then preload
-  // everything it needs — the chart image, the gameplay SFX, and every
-  // per-sign voice clip — so playback is smooth from the first sign. The page
-  // below gates Start on `assetStatus` (and shows progress meanwhile).
+  // The trainer is client-side: stash the board and load the chart. Start waits
+  // for the chart alone; the page below shows it as it arrives, and saved
+  // progress stays off the first paint because `assetStatus` starts "idle".
   useEffect(() => {
     const store = usePelicanStore.getState();
     store.configure(board);
     store.preload();
   }, []);
 
-  const hasBoard = board.regions.length > 0;
-  // Hold the loader for a beat even when assets are already cached — a
-  // sub-second flash on/off reads as a glitch, not a load.
-  const showLoader = useLoadingFloor(hasBoard && assetStatus !== "ready");
-  const loadPct =
-    assetProgress > 0 && assetProgress < 1
-      ? Math.round(assetProgress * 100)
-      : null;
+  const ready = assetStatus === "ready";
+  const { link, startRun } = useTrainerLink(board.regions, { ready, start, exit });
   const practiceCount = getPracticeRegions(board, categories).length;
 
   return (
@@ -117,20 +110,22 @@ export default function PelicanSigns() {
             </p>
           </header>
 
-          {!hasBoard ? null : showLoader ? (
-            <div className="mt-10 grid gap-3">
-              <div className="font-mono text-[10px] uppercase tracking-widest text-ink-3">
-                [ Game board · loading ]
-              </div>
-              <div className="flex min-h-72 w-full items-center justify-center border-2 border-ink bg-paper-3 sm:aspect-video sm:min-h-0">
-                <LoadingPanel
-                  label={`Loading the trainer${loadPct != null ? ` · ${loadPct}%` : ""}`}
-                  size="lg"
-                />
+          {!ready ? (
+            <div className="relative mt-6 aspect-video w-full overflow-hidden border-2 border-ink bg-white">
+              {/* In the server's HTML, so the download starts straight away. */}
+              <img
+                src={board.imageSrc}
+                alt=""
+                width={1920}
+                height={1080}
+                className="block size-full object-contain opacity-30"
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <LoadingPanel label="Loading the chart" size="lg" />
               </div>
             </div>
           ) : practiceCount === 0 ? (
-            <div className="mt-8 flex flex-col items-center gap-4 border-2 border-dashed border-ink bg-paper-3 px-6 py-12 text-center">
+            <div className="mt-6 flex flex-col items-center gap-4 border-2 border-dashed border-ink bg-paper-3 px-6 py-12 text-center">
               <span className="font-mono text-[11px] uppercase tracking-widest text-ink-3">
                 No signs match your category filter
               </span>
@@ -148,40 +143,29 @@ export default function PelicanSigns() {
               </Button>
             </div>
           ) : (
-            <div className="mt-8">
-              <ImageFocusPlayer />
-              <p className="mt-3 font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
-                {practiceCount} sign{practiceCount === 1 ? "" : "s"}
-                {categories.length > 0 ? ` of ${board.regions.length}` : ""}
-              </p>
+            <div className="mt-6">
+              <ImageFocusPlayer link={link} onStart={startRun} />
             </div>
           )}
 
-          {hasBoard && (
-            <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-dashed border-ink pt-5">
-              <span className="font-mono text-[11px] uppercase tracking-widest text-ink-3">
-                Same signs, in 3D
-              </span>
-              <Button variant="paper" size="sm" asChild>
-                <Link to="/road-signs/3d">
-                  <HugeiconsIcon
-                    icon={ThreeDViewFreeIcons}
-                    size={14}
-                    strokeWidth={2.5}
-                  />
-                  Spin signs in 3D
-                </Link>
-              </Button>
-            </div>
-          )}
+          <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-dashed border-ink pt-5">
+            <span className="font-mono text-[11px] uppercase tracking-widest text-ink-3">
+              Same signs, in 3D
+            </span>
+            <Button variant="paper" size="sm" asChild>
+              <Link to="/road-signs/3d">
+                <HugeiconsIcon
+                  icon={ThreeDViewFreeIcons}
+                  size={14}
+                  strokeWidth={2.5}
+                />
+                Spin signs in 3D
+              </Link>
+            </Button>
+          </div>
         </div>
 
-        {hasBoard && (
-          <>
-            <PelicanIntroDialog />
-            <PelicanSettingsSheet />
-          </>
-        )}
+        <PelicanSettingsSheet />
       </main>
       <SiteFooter />
     </>

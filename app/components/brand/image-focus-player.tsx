@@ -5,7 +5,6 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import {
   ArrowLeft01FreeIcons,
   ArrowRight01FreeIcons,
-  AwardFreeIcons,
   Cancel01FreeIcons,
   Configuration01FreeIcons,
   PauseFreeIcons,
@@ -16,11 +15,11 @@ import {
 } from "@hugeicons/core-free-icons";
 import { useShallow } from "zustand/react/shallow";
 
-import { describeCategorySet, getSignCategory } from "~/lib/image-focus";
+import { getSignCategory } from "~/lib/image-focus";
 import { ease, transition } from "~/lib/motion";
-import { isMastered } from "~/lib/pelican-progress";
+import { isMastered, signCounts } from "~/lib/pelican-progress";
+import { runTally, type RunScope } from "~/lib/trainer-rounds";
 import {
-  getMasteredCount,
   getPracticeRegions,
   selectCanResume,
   usePelicanStore,
@@ -35,9 +34,9 @@ import {
   SheetDescription,
   SheetTitle,
 } from "~/components/ui/sheet";
-import { CelebrationConfetti } from "~/components/brand/celebration-confetti";
 import { ImageFocusStage } from "~/components/brand/image-focus-stage";
-import { ShareButton } from "~/components/brand/share-button";
+import { TrainerReadyPanel } from "~/components/brand/trainer-ready-panel";
+import { TrainerResultCard } from "~/components/brand/trainer-result-card";
 
 // --- motion -----------------------------------------------------------------
 // The answer cascades in (headline → meta → note → actions) the moment the
@@ -93,7 +92,16 @@ function RevealCountdown({ seconds }: { seconds: number }) {
  * overlay (portalled to `<body>`) that pans + zooms over the chart, dims/blurs
  * the rest, and reveals the name in a bottom sheet (with optional self-grading).
  */
-export function ImageFocusPlayer({ className }: { className?: string }) {
+export function ImageFocusPlayer({
+  className,
+  link,
+  onStart,
+}: {
+  className?: string;
+  /** A deep link to honour, if the learner arrived on one. */
+  link: RunScope | null;
+  onStart: (scope?: RunScope) => void;
+}) {
   const s = usePelicanStore(
     useShallow((st) => ({
       board: st.board,
@@ -108,6 +116,7 @@ export function ImageFocusPlayer({ className }: { className?: string }) {
       runRecalled: st.runRecalled,
       runMissed: st.runMissed,
       runMissCount: st.runMissCount,
+      runScope: st.runScope,
       canResume: selectCanResume(st),
       // Pull the run by reference — it's stable across renders (only
       // mutated when we explicitly set it) — and derive display stats
@@ -118,7 +127,6 @@ export function ImageFocusPlayer({ className }: { className?: string }) {
       // actions (stable references)
       start: st.start,
       resumeRun: st.resumeRun,
-      openIntro: st.setIntroOpen,
       pause: st.pause,
       resume: st.resume,
       next: st.next,
@@ -165,7 +173,8 @@ export function ImageFocusPlayer({ className }: { className?: string }) {
     [s.board, s.settings.categories],
   );
   const total = practiced.length;
-  const masteredCount = getMasteredCount(s.progress, practiced);
+  const poolIds = React.useMemo(() => practiced.map((r) => r.id), [practiced]);
+  const counts = signCounts(s.progress, poolIds);
 
   if (!s.board || total === 0) {
     return (
@@ -187,129 +196,43 @@ export function ImageFocusPlayer({ className }: { className?: string }) {
     s.overlayOpen && running && !s.settingsOpen && phase !== "complete";
   const showCountdown =
     effectiveRunning && phase === "focused" && settings.revealMode === "auto";
-  const orderLabel =
-    settings.order === "shuffle"
-      ? "shuffled"
-      : settings.reverse
-        ? "reverse order"
-        : "in order";
-  const configSummary = `${total} sign${total === 1 ? "" : "s"} · ${orderLabel}${settings.selfGrading ? " · self-grading" : ""}`;
   const paused = s.overlayOpen && !running && phase !== "complete";
-  const filtered = settings.categories.length > 0;
-  const studiedSet = describeCategorySet(settings.categories);
-  // This run's tally (self-grading): distinct signs recalled, taps missed,
-  // and how many were nailed without ever slipping. A run can only finish once
-  // every sign's been recalled (misses re-queue), so finishing = a win.
-  const runRecalledN = s.runRecalled.length;
-  const runMissCount = s.runMissCount;
-  const firstTry = s.runRecalled.filter(
-    (id) => !s.runMissed.includes(id),
-  ).length;
-  const flawless = runMissCount === 0;
-  const allMastered = total > 0 && masteredCount >= total;
-  const masteryPct = total > 0 ? Math.round((masteredCount / total) * 100) : 0;
+  const tally = runTally(s.queue, s.runRecalled, s.runMissed);
+  const savedRun =
+    s.canResume && s.inProgressRun
+      ? {
+          nextSign: Math.min(
+            s.inProgressRun.pos + 2,
+            s.inProgressRun.queueIds.length,
+          ),
+          total: s.inProgressRun.queueIds.length,
+        }
+      : null;
 
   // ---------- ready card (not playing) ----------
   if (!s.overlayOpen) {
     return (
-      <div className={cn("space-y-3", className)}>
-        <div className="relative">
-          <ImageFocusStage
-            imageSrc={s.board.imageSrc}
-            region={null}
-            focused={false}
-            blurIntensity={settings.blurIntensity}
-            dimIntensity={settings.dimIntensity}
-            animationDuration={s.board.settings.animationDuration}
-          />
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-ink/45 px-6 text-center backdrop-blur-[1px]">
-            {s.canResume && s.inProgressRun ? (
-              <>
-                {/* Saved run from a prior visit — primary action is Resume,
-                    "Start new" stays available below as the escape hatch. */}
-                <Button variant="rush" size="lg" onClick={() => s.resumeRun()}>
-                  <HugeiconsIcon
-                    icon={PlayFreeIcons}
-                    size={18}
-                    strokeWidth={2.5}
-                  />
-                  Resume run
-                </Button>
-                <span className="font-mono text-[11px] uppercase tracking-widest text-paper">
-                  Sign{" "}
-                  {Math.min(
-                    s.inProgressRun.pos + 2,
-                    s.inProgressRun.queueIds.length,
-                  )}{" "}
-                  of {s.inProgressRun.queueIds.length}
-                  {s.inProgressRun.runRecalled.length > 0
-                    ? ` · ${s.inProgressRun.runRecalled.length} recalled`
-                    : ""}
-                </span>
-                <Button
-                  variant="paper"
-                  size="sm"
-                  onClick={() =>
-                    settings.hasSeenIntro ? s.start() : s.openIntro(true)
-                  }
-                >
-                  Start new run
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="rush"
-                  size="lg"
-                  onClick={() =>
-                    settings.hasSeenIntro ? s.start() : s.openIntro(true)
-                  }
-                >
-                  <HugeiconsIcon
-                    icon={PlayFreeIcons}
-                    size={18}
-                    strokeWidth={2.5}
-                  />
-                  Start trainer
-                </Button>
-                <span className="font-mono text-[11px] uppercase tracking-widest text-paper">
-                  {total} sign{total === 1 ? "" : "s"}
-                </span>
-              </>
-            )}
-            {settings.selfGrading && (
-              <div className="w-full max-w-55">
-                <Progress
-                  value={masteryPct}
-                  tone="green"
-                  showTicks={false}
-                  aria-label="Signs mastered"
-                  className="h-3"
-                />
-                <span className="mt-1.5 block font-mono text-[10px] uppercase tracking-widest text-paper/80">
-                  {masteredCount} / {total} mastered
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
-            {configSummary}
-          </span>
-          <Button
-            variant="paper"
-            size="sm"
-            onClick={() => s.setSettingsOpen(true)}
-          >
-            <HugeiconsIcon
-              icon={Configuration01FreeIcons}
-              size={14}
-              strokeWidth={2.5}
-            />
-            Settings
-          </Button>
-        </div>
+      <div className={className}>
+        <ImageFocusStage
+          imageSrc={s.board.imageSrc}
+          region={null}
+          focused={false}
+          blurIntensity={settings.blurIntensity}
+          dimIntensity={settings.dimIntensity}
+          animationDuration={s.board.settings.animationDuration}
+          className="bg-white"
+        />
+        <TrainerReadyPanel
+          link={link}
+          poolSize={total}
+          chartSize={total}
+          selfGrading={settings.selfGrading}
+          counts={counts}
+          savedRun={savedRun}
+          onStart={onStart}
+          onResume={() => s.resumeRun()}
+          onSettings={() => s.setSettingsOpen(true)}
+        />
       </div>
     );
   }
@@ -369,8 +292,8 @@ export function ImageFocusPlayer({ className }: { className?: string }) {
         </Button>
         <span className="whitespace-nowrap bg-ink/70 px-2 py-0.5 font-mono text-[10px] font-bold tracking-wider tabular-nums text-paper">
           {settings.selfGrading
-            ? `${runRecalledN} / ${total}${runMissCount > 0 ? ` · ✗${runMissCount}` : ""}`
-            : `${pos + 1} / ${total}`}
+            ? `${tally.recalled} / ${tally.signsTotal}${s.runMissCount > 0 ? ` · ✗${s.runMissCount}` : ""}`
+            : `${pos + 1} / ${s.queue.length}`}
         </span>
         <Button
           variant="paper"
@@ -440,7 +363,7 @@ export function ImageFocusPlayer({ className }: { className?: string }) {
             <Button
               variant="paper"
               size="sm"
-              onClick={() => s.start()}
+              onClick={() => s.start(s.runScope)}
               aria-label="Restart"
             >
               <HugeiconsIcon
@@ -500,212 +423,31 @@ export function ImageFocusPlayer({ className }: { className?: string }) {
           plain "deck done" card for a hands-free flip-through */}
       <AnimatePresence>
         {phase === "complete" && (
-          <motion.div
-            key="complete"
-            className="absolute inset-0 z-30 flex items-center justify-center bg-ink/70 px-4 text-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            {settings.selfGrading && (
-              <CelebrationConfetti bursts={flawless || allMastered ? 4 : 2} />
-            )}
-            <motion.div
-              variants={ANSWER_CONTAINER}
-              initial="hidden"
-              animate="show"
-              className="relative w-full max-w-sm border-2 border-ink bg-surface shadow-stamp-xl"
-            >
-              <div className="flex items-center justify-between gap-3 bg-ink px-4 py-2.5 font-mono text-[10.5px] font-bold uppercase tracking-widest text-paper">
-                <span>
-                  {!settings.selfGrading
-                    ? "DR · DECK DONE"
-                    : allMastered
-                      ? "DR · SET MASTERED"
-                      : flawless
-                        ? "DR · FLAWLESS"
-                        : "DR · NICE RUN"}
-                </span>
-                <button
-                  type="button"
-                  aria-label="Close"
-                  onClick={() => s.exit()}
-                  className="-my-1 inline-flex size-6 shrink-0 items-center justify-center border-2 border-paper text-paper outline-none transition-colors duration-100 hover:bg-paper hover:text-ink focus-visible:bg-paper focus-visible:text-ink"
-                >
-                  <HugeiconsIcon
-                    icon={Cancel01FreeIcons}
-                    size={13}
-                    strokeWidth={2.75}
-                  />
-                </button>
-              </div>
-
-              <div className="flex flex-col items-center gap-3 px-6 py-7">
-                {settings.selfGrading ? (
-                  <>
-                    <motion.div
-                      variants={ANSWER_HEADLINE}
-                      className="flex size-14 items-center justify-center border-2 border-ink bg-kenya-green text-white"
-                    >
-                      <HugeiconsIcon
-                        icon={AwardFreeIcons}
-                        size={28}
-                        strokeWidth={2.25}
-                      />
-                    </motion.div>
-                    <motion.span
-                      variants={ANSWER_HEADLINE}
-                      className="font-display text-[clamp(22px,5.5vw,30px)] font-extrabold uppercase leading-[0.95] tracking-tight text-ink"
-                    >
-                      {allMastered ? (
-                        <>
-                          Set <span className="italic text-rush">nailed</span>.
-                        </>
-                      ) : flawless ? (
-                        <span className="italic text-rush">Flawless.</span>
-                      ) : (
-                        <>
-                          Run <span className="italic text-rush">complete</span>
-                          .
-                        </>
-                      )}
-                    </motion.span>
-
-                    {filtered && (
-                      <motion.div
-                        variants={ANSWER_ITEM}
-                        className="flex flex-wrap items-center justify-center gap-1.5"
-                      >
-                        {settings.categories.map((id) => {
-                          const c = getSignCategory(id);
-                          return (
-                            <span
-                              key={id}
-                              className="inline-flex items-center gap-1 border-2 border-ink bg-paper-3 px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-widest text-ink-2"
-                            >
-                              <span aria-hidden>{c.emoji}</span>
-                              {c.label}
-                            </span>
-                          );
-                        })}
-                      </motion.div>
-                    )}
-
-                    <motion.p
-                      variants={ANSWER_ITEM}
-                      className="m-0 text-[13.5px] leading-snug text-ink-2"
-                    >
-                      All {total}{" "}
-                      {filtered ? studiedSet : `sign${total === 1 ? "" : "s"}`}{" "}
-                      recalled.{" "}
-                      {flawless
-                        ? "Every one on the first try. Clean."
-                        : `First try: ${firstTry} of ${total}. ${runMissCount} second look${runMissCount === 1 ? "" : "s"}.`}
-                    </motion.p>
-
-                    <motion.div variants={ANSWER_ITEM} className="w-full">
-                      <div className="mb-1.5 flex items-center justify-between gap-2 font-mono text-[10px] uppercase tracking-widest text-ink-3">
-                        <span>
-                          {allMastered
-                            ? "🏆 Mastered: the whole set, cold"
-                            : "Mastery"}
-                        </span>
-                        <span className="tabular-nums">
-                          {masteredCount} / {total}
-                        </span>
-                      </div>
-                      <Progress
-                        value={masteryPct}
-                        tone="green"
-                        showTicks={false}
-                        aria-label="Signs mastered"
-                        className="h-3"
-                      />
-                      {allMastered && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            usePelicanStore.getState().resetProgress()
-                          }
-                          className="mt-2 inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest text-ink-3 outline-none hover:text-ink focus-visible:text-ink"
-                        >
-                          <HugeiconsIcon
-                            icon={RefreshFreeIcons}
-                            size={11}
-                            strokeWidth={2.5}
-                          />
-                          Reset mastery
-                        </button>
-                      )}
-                    </motion.div>
-
-                    <motion.div
-                      variants={ANSWER_ITEM}
-                      className="mt-1 flex flex-wrap items-center justify-center gap-2"
-                    >
-                      <Button
-                        variant="rush"
-                        size="lg"
-                        onClick={() => s.start()}
-                      >
-                        <HugeiconsIcon
-                          icon={RefreshFreeIcons}
-                          size={18}
-                          strokeWidth={2.5}
-                        />
-                        Play again
-                      </Button>
-                      <ShareButton
-                        surface="pelican_complete"
-                        payload={{ kind: "pelican", total, firstTry }}
-                      />
-                      <Button
-                        variant="paper"
-                        size="lg"
-                        onClick={() => s.exit()}
-                      >
-                        Done
-                      </Button>
-                    </motion.div>
-                  </>
-                ) : (
-                  <>
-                    <motion.span
-                      variants={ANSWER_HEADLINE}
-                      className="font-display text-[clamp(20px,5.5vw,28px)] font-extrabold uppercase leading-tight tracking-tight text-ink"
-                    >
-                      That's all {total} sign{total === 1 ? "" : "s"}.
-                    </motion.span>
-                    <motion.div
-                      variants={ANSWER_ITEM}
-                      className="mt-1 flex gap-2"
-                    >
-                      <Button
-                        variant="rush"
-                        size="lg"
-                        onClick={() => s.start()}
-                      >
-                        <HugeiconsIcon
-                          icon={RefreshFreeIcons}
-                          size={18}
-                          strokeWidth={2.5}
-                        />
-                        Play again
-                      </Button>
-                      <Button
-                        variant="paper"
-                        size="lg"
-                        onClick={() => s.exit()}
-                      >
-                        Done
-                      </Button>
-                    </motion.div>
-                  </>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
+          <TrainerResultCard
+            trainer="pelican"
+            selfGraded={settings.selfGrading}
+            scope={s.runScope.kind}
+            signsTotal={tally.signsTotal}
+            recalled={tally.recalled}
+            firstTry={tally.firstTry}
+            missed={practiced.filter((r) => s.runMissed.includes(r.id))}
+            poolTotal={total}
+            counts={counts}
+            share={{
+              surface: "pelican_complete",
+              payload: {
+                kind: "pelican",
+                total: tally.signsTotal,
+                firstTry: tally.firstTry,
+              },
+            }}
+            onDrill={() => s.start({ kind: "drill", ids: s.runMissed })}
+            onNext={() =>
+              s.start(s.runScope.kind === "chart" ? { kind: "chart" } : undefined)
+            }
+            onResetMastery={() => usePelicanStore.getState().resetProgress()}
+            onExit={() => s.exit()}
+          />
         )}
       </AnimatePresence>
 
@@ -800,7 +542,7 @@ export function ImageFocusPlayer({ className }: { className?: string }) {
                   </div>
                   <p className="font-mono text-[10px] uppercase tracking-widest text-ink-3">
                     Missed → it comes back later this run.
-                    {isMastered(s.progress, region.id) ? " · mastered ✓" : ""}
+                    {isMastered(s.progress, region.id) ? " · known ✓" : ""}
                   </p>
                 </motion.div>
               ) : (

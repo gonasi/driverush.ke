@@ -4,7 +4,7 @@
  * the playback engine (timed reveal → answer → auto-advance → next, mirroring
  * the original ImageFocusQuiz). Timers and audio live in module scope, driven by
  * store actions — so the trainer's state is decoupled from React's render cycle.
- * Client-side only (the trainer page gates on an asset preload).
+ * Client-side only.
  */
 import { create } from "zustand";
 import {
@@ -26,6 +26,7 @@ import {
 } from "./pelican-settings";
 import {
   applyGrade,
+  boxOf,
   isMastered,
   LEGACY_PROGRESS_KEY,
   type GradeResult,
@@ -34,12 +35,18 @@ import {
 import { analytics } from "./analytics";
 import { triggerAdAndAwaitClose, triggerAdFromNonReact } from "./ads/ad-engine";
 import {
+  defaultScope,
+  pickRound,
+  runTally,
+  type RunScope,
+} from "./trainer-rounds";
+import {
   playSfx,
   playVoice,
-  preloadSfx,
-  preloadVoices,
   stopAllSfx,
   stopVoice,
+  warmSfx,
+  warmVoice,
 } from "./sounds";
 
 // ---------------------------------------------------------------------------
@@ -63,6 +70,12 @@ function clearTimers() {
 const stopRegionAudio = stopVoice;
 const playRegionAudio = playVoice;
 
+/** Buffer the next few signs' voice clips, so a reveal rarely waits on the network. */
+function warmAhead(queue: FocusRegion[], pos: number, playAudio: boolean) {
+  if (!playAudio) return;
+  for (const region of queue.slice(pos, pos + 3)) warmVoice(region.audioSrc);
+}
+
 function practiceRegions(
   board: ImageFocusData | null,
   categories: SignCategoryId[],
@@ -72,14 +85,27 @@ function practiceRegions(
     ? board.regions
     : board.regions.filter((r) => categories.includes(r.category));
 }
-function buildQueue(
-  board: ImageFocusData | null,
-  s: PelicanUserSettings,
-): FocusRegion[] {
-  return orderRegions(practiceRegions(board, s.categories), {
+function ordered(signs: FocusRegion[], s: PelicanUserSettings): FocusRegion[] {
+  return orderRegions(signs, {
     shuffle: s.order === "shuffle",
     reverse: s.reverse,
   });
+}
+function buildQueue(
+  board: ImageFocusData | null,
+  s: PelicanUserSettings,
+  scope: RunScope,
+  progress: SignProgress,
+): FocusRegion[] {
+  if (scope.kind === "chart") {
+    return ordered(practiceRegions(board, s.categories), s);
+  }
+  if (scope.kind === "drill") {
+    const ids = new Set(scope.ids);
+    return ordered((board?.regions ?? []).filter((r) => ids.has(r.id)), s);
+  }
+  const pool = practiceRegions(board, scope.categories ?? s.categories);
+  return pickRound(ordered(pool, s), progress);
 }
 
 /**
@@ -182,14 +208,12 @@ type PelicanState = {
   // ---- transient ----
   board: ImageFocusData | null;
   assetStatus: AssetStatus;
-  /** 0–1 — how much of the board's audio has buffered (drives the loader %). */
-  assetProgress: number;
   overlayOpen: boolean;
   running: boolean;
   settingsOpen: boolean;
-  /** One-time "make it yours" pre-run nudge — gated on `settings.hasSeenIntro`. */
-  introOpen: boolean;
   phase: TrainerPhase;
+  /** What this run contains. Only whole-chart runs keep a resume checkpoint. */
+  runScope: RunScope;
   queue: FocusRegion[];
   pos: number;
   timeRemaining: number;
@@ -214,10 +238,7 @@ type PelicanState = {
   resetSettings: () => void;
   resetProgress: () => void;
   setSettingsOpen: (open: boolean) => void;
-  setIntroOpen: (open: boolean) => void;
-  /** Mark the intro as seen and close it; used by both CTAs in the dialog. */
-  dismissIntro: () => void;
-  start: () => void;
+  start: (scope?: RunScope) => void;
   /**
    * Restore the saved in-progress run, if any. Validates the saved
    * signatures (board + settings) against current state — if anything has
@@ -253,12 +274,11 @@ export const usePelicanStore = create<PelicanState>()(
 
       board: null,
       assetStatus: "idle",
-      assetProgress: 0,
       overlayOpen: false,
       running: false,
       settingsOpen: false,
-      introOpen: false,
       phase: "ready",
+      runScope: { kind: "round" },
       queue: [],
       pos: 0,
       timeRemaining: 0,
@@ -270,40 +290,25 @@ export const usePelicanStore = create<PelicanState>()(
       // ---- config / preload ----
       configure: (board) => set({ board }),
 
-      // Warm *everything* the trainer needs — the chart image, the gameplay
-      // SFX, and every per-sign voice clip on the board — before the page lets
-      // the user press Start, so a run never stalls fetching an asset. Call
-      // after `configure(board)`. Client-only; safe to call more than once.
+      // Start only waits for the chart, since the camera has nothing to show
+      // without it. Sounds buffer in the background and voice clips a few signs
+      // ahead of play. Call after `configure(board)`. Safe to call repeatedly.
       preload: () => {
         if (typeof window === "undefined" || get().assetStatus !== "idle")
           return;
-        const board = get().board;
-        set({ assetStatus: "loading", assetProgress: 0 });
-
-        const imgDone = new Promise<void>((resolve) => {
-          const src = board?.imageSrc;
-          if (!src) {
-            resolve();
-            return;
-          }
-          const img = new Image();
-          img.onload = () => resolve();
-          img.onerror = () => resolve();
-          img.src = src;
-          if (img.complete) resolve();
-        });
-
-        const voices = (board?.regions ?? [])
-          .map((r) => r.audioSrc)
-          .filter((s): s is string => typeof s === "string" && s.length > 0);
-        const voicesDone = preloadVoices(voices, {
-          onProgress: (done, total) =>
-            set({ assetProgress: total > 0 ? done / total : 1 }),
-        });
-
-        void Promise.all([imgDone, preloadSfx(), voicesDone]).then(() =>
-          set({ assetStatus: "ready", assetProgress: 1 }),
-        );
+        const src = get().board?.imageSrc;
+        const done = () => set({ assetStatus: "ready" });
+        if (get().settings.playAudio) warmSfx();
+        if (!src) {
+          done();
+          return;
+        }
+        set({ assetStatus: "loading" });
+        const img = new Image();
+        img.onload = done;
+        img.onerror = done;
+        img.src = src;
+        if (img.complete) done();
       },
 
       // ---- settings / progress ----
@@ -327,10 +332,16 @@ export const usePelicanStore = create<PelicanState>()(
           });
         }
         if (touchedOrder && get().overlayOpen) {
+          // A drill's signs were chosen by hand, so a new filter falls back to
+          // a round rather than silently ignoring the setting.
+          const current = get().runScope;
+          const scope: RunScope =
+            current.kind === "drill" ? { kind: "round" } : current;
           clearTimers();
           stopRegionAudio();
           set({
-            queue: buildQueue(get().board, next),
+            queue: buildQueue(get().board, next, scope, get().progress),
+            runScope: scope,
             pos: 0,
             phase: "focused",
             timeRemaining: 0,
@@ -354,25 +365,20 @@ export const usePelicanStore = create<PelicanState>()(
         }
       },
 
-      setIntroOpen: (open) => set({ introOpen: open }),
-      dismissIntro: () => {
-        set({ introOpen: false });
-        if (!get().settings.hasSeenIntro) {
-          get().setSetting({ hasSeenIntro: true });
-        }
-      },
-
       // ---- engine ----
-      start: () => {
+      start: (requested) => {
         clearTimers();
         stopAllSfx();
         stopRegionAudio();
-        const queue = buildQueue(get().board, get().settings);
+        const { board, settings, progress } = get();
+        const scope = requested ?? defaultScope(settings.selfGrading);
+        const queue = buildQueue(board, settings, scope, progress);
         if (queue.length === 0) return; // nothing to play — leave the ready card up
-        void preloadSfx();
+        
         set({
           queue,
           pos: 0,
+          runScope: scope,
           phase: "initial",
           overlayOpen: true,
           running: true,
@@ -382,14 +388,21 @@ export const usePelicanStore = create<PelicanState>()(
           runMissed: [],
           runMissCount: 0,
           runSeen: 0,
-          // Fresh Start = wipe any prior save. The first _toBetween writes
-          // a new checkpoint at the first "between" boundary.
-          inProgressRun: null,
+          // Starting the whole chart replaces any saved chart run. A round or
+          // drill leaves the save alone, so it can still be resumed afterwards.
+          ...(scope.kind === "chart" ? { inProgressRun: null } : {}),
         });
         analytics.pelicanStarted({
           signsTotal: queue.length,
-          categories: get().settings.categories,
+          categories:
+            scope.kind === "round"
+              ? (scope.categories ?? settings.categories)
+              : scope.kind === "chart"
+                ? settings.categories
+                : [],
+          scope: scope.kind,
         });
+        warmAhead(queue, 0, settings.playAudio);
         get()._armInitial();
       },
 
@@ -417,14 +430,15 @@ export const usePelicanStore = create<PelicanState>()(
         // Snap to "between" — the safe inter-sign boundary — and let
         // _armBetween advance into the next focused sign cleanly. The user
         // doesn't lose the just-graded sign because pos is the LAST graded.
+        warmAhead(queue, run.pos, state.settings.playAudio);
         set({
           queue,
           pos: run.pos,
+          runScope: { kind: "chart" },
           phase: "between",
           overlayOpen: true,
           running: true,
           settingsOpen: false,
-          introOpen: false,
           timeRemaining: 0,
           runRecalled: run.runRecalled,
           runMissed: run.runMissed,
@@ -472,11 +486,26 @@ export const usePelicanStore = create<PelicanState>()(
         if (get().phase === "focused") get()._toRevealed();
       },
       gradeAndNext: (r) => {
+        // The answer sheet stays tappable while it animates away, so a double
+        // tap must not grade the same sign twice.
+        if (get().phase !== "revealed") return;
         const { settings, queue, pos } = get();
         const region = queue[pos];
         if (!region) return;
         if (settings.playAudio) playSfx(r === "knew" ? "correct" : "wrong");
-        set((s) => ({ progress: applyGrade(s.progress, region.id, r) }));
+        const before = boxOf(get().progress, region.id);
+        const progress = applyGrade(get().progress, region.id, r);
+        set({ progress });
+        analytics.signGraded({
+          trainer: "pelican",
+          sign_code: region.code ?? region.id,
+          category: region.category,
+          result: r,
+          box_before: before,
+          box_after: boxOf(progress, region.id),
+          first_try: !get().runMissed.includes(region.id),
+          scope: get().runScope.kind,
+        });
         if (r === "knew") {
           set((s) => ({
             runRecalled: s.runRecalled.includes(region.id)
@@ -606,18 +635,26 @@ export const usePelicanStore = create<PelicanState>()(
         // every sign was ultimately recalled — that's a win, hence the fanfare.
         if (pos >= queue.length - 1) {
           if (settings.selfGrading && settings.playAudio) playSfx("complete");
-          const { runRecalled, runMissed, runMissCount } = get();
+          const { runRecalled, runMissed, runMissCount, runScope } = get();
+          const tally = runTally(queue, runRecalled, runMissed);
           analytics.pelicanCompleted({
-            signsTotal: runRecalled.length + runMissed.length,
-            knewFirstTry: runRecalled.length,
-            missCount: runMissCount,
+            signsTotal: tally.signsTotal,
+            scope: runScope.kind,
+            graded: settings.selfGrading
+              ? { knewFirstTry: tally.firstTry, missCount: runMissCount }
+              : undefined,
           });
           // Zustand store can't use React hooks — route the trigger through
           // the engine singleton instead. Silent no-op if the AdProvider
           // hasn't mounted yet (it has, by the time you can finish a run).
           triggerAdFromNonReact("chapter_complete");
-          // Run is done — no point saving a resume point.
-          set({ phase: "complete", running: false, inProgressRun: null });
+          // A finished chart run has nothing left to resume. Rounds and drills
+          // never owned the save, so they leave it be.
+          set({
+            phase: "complete",
+            running: false,
+            ...(runScope.kind === "chart" ? { inProgressRun: null } : {}),
+          });
           return;
         }
 
@@ -637,21 +674,28 @@ export const usePelicanStore = create<PelicanState>()(
           // Checkpoint the run for reload-safe resume. Saved at every
           // "between" boundary because that's the only phase where
           // snapping back is safe — no in-flight timers, no mid-countdown
-          // to recover.
-          inProgressRun: {
-            queueIds: snapshotState.queue.map((r) => r.id),
-            pos: snapshotState.pos,
-            runRecalled: snapshotState.runRecalled,
-            runMissed: snapshotState.runMissed,
-            runMissCount: snapshotState.runMissCount,
-            runSeen: nextSeen,
-            settingsSig: computeSettingsSig(snapshotState.settings),
-            boardSig: computeBoardSig(snapshotState.board),
-            savedAt: Date.now(),
-          },
+          // to recover. Rounds don't need one: anything ungraded simply gets
+          // picked again next time.
+          ...(snapshotState.runScope.kind === "chart"
+            ? {
+                inProgressRun: {
+                  queueIds: snapshotState.queue.map((r) => r.id),
+                  pos: snapshotState.pos,
+                  runRecalled: snapshotState.runRecalled,
+                  runMissed: snapshotState.runMissed,
+                  runMissCount: snapshotState.runMissCount,
+                  runSeen: nextSeen,
+                  settingsSig: computeSettingsSig(snapshotState.settings),
+                  boardSig: computeBoardSig(snapshotState.board),
+                  savedAt: Date.now(),
+                },
+              }
+            : {}),
         });
 
-        {
+        // Rounds are short: their natural break is the end, so only a long
+        // whole-chart run can be interrupted between signs.
+        if (snapshotState.runScope.kind === "chart") {
           const opened = triggerAdAndAwaitClose("gameplay_milestone", () => {
             // resume() switches on phase and calls _armBetween() — gameplay
             // picks up exactly where it left off. running=true flips back too.
@@ -675,6 +719,8 @@ export const usePelicanStore = create<PelicanState>()(
         // `_armBetween` is only armed when there's another sign queued (see
         // `_toBetween`'s else branch), so pos + 1 is always valid here.
         set((s) => ({ pos: s.pos + 1 }));
+        const { queue, pos, settings } = get();
+        warmAhead(queue, pos, settings.playAudio);
         get()._toFocused();
       },
     }),
@@ -691,7 +737,7 @@ export const usePelicanStore = create<PelicanState>()(
       }),
       // Settings/defaults churned a lot during early dev — for any saved blob
       // older than v6, drop prefs back to the current defaults but keep the
-      // mastery progress. v6 also re-shows the one-time intro modal. v7 added
+      // mastery progress. v7 added
       // the in-progress run save. v8 added a (now-removed) `nextMilestoneAt`
       // to the saved run — current code ignores that vestigial field, so v8
       // blobs are forward-compatible. Older versions get a fresh `null`.
@@ -726,12 +772,6 @@ export const usePelicanStore = create<PelicanState>()(
 // ---------------------------------------------------------------------------
 // selectors / derived helpers
 // ---------------------------------------------------------------------------
-export const selectRegion = (s: PelicanState): FocusRegion | undefined =>
-  s.queue[s.pos];
-
-export const selectFocused = (s: PelicanState): boolean =>
-  s.phase === "focused" || s.phase === "revealed";
-
 export function getPracticeRegions(
   board: ImageFocusData | null,
   categories: SignCategoryId[],
@@ -760,19 +800,4 @@ export function selectCanResume(s: PelicanState): boolean {
   if (run.pos < 0 || run.pos >= run.queueIds.length) return false;
   const ids = new Set(s.board.regions.map((r) => r.id));
   return run.queueIds.every((id) => ids.has(id));
-}
-
-/** Display stats for the Resume CTA. Returns null when there's nothing to show. */
-export function selectResumeStats(
-  s: PelicanState,
-): { signsDone: number; total: number; recalled: number } | null {
-  const run = s.inProgressRun;
-  if (!run) return null;
-  return {
-    // `pos` is the index of the just-graded sign; "done" feels more
-    // natural as a count, so use pos+1.
-    signsDone: run.pos + 1,
-    total: run.queueIds.length,
-    recalled: run.runRecalled.length,
-  };
 }

@@ -88,6 +88,41 @@ function emit(name: string, params?: Record<string, unknown>) {
   ReactGA.event(name, { ...utmParams, ...params });
 }
 
+type RunStarted = {
+  signsTotal: number;
+  categories: readonly string[];
+  scope: string;
+};
+
+function startedProps(args: RunStarted) {
+  return {
+    signs_total: args.signsTotal,
+    categories: args.categories.length ? args.categories.join(",") : "all",
+    scope: args.scope,
+  };
+}
+
+type RunCompleted = {
+  signsTotal: number;
+  scope: string;
+  /** Only known when the learner graded themselves. */
+  graded?: { knewFirstTry: number; missCount: number };
+};
+
+function completedProps(args: RunCompleted) {
+  return {
+    signs_total: args.signsTotal,
+    scope: args.scope,
+    self_graded: args.graded != null,
+    ...(args.graded
+      ? {
+          knew_first_try: args.graded.knewFirstTry,
+          miss_count: args.graded.missCount,
+        }
+      : {}),
+  };
+}
+
 /**
  * Typed event dispatcher. One method per event we care about; the keys are
  * the only names that should ever land in GA reports. If you need a new
@@ -116,43 +151,37 @@ export const analytics = {
   signCheckCompleted: (args: { correct: number; total: number }) =>
     emit("sign_check_completed", args),
 
-  /** Pelican recall run kicked off. */
-  pelicanStarted: (args: { signsTotal: number; categories: string[] }) =>
-    emit("pelican_started", {
-      signs_total: args.signsTotal,
-      categories: args.categories.length ? args.categories.join(",") : "all",
-    }),
+  // ----- sign trainers -----
 
-  /** Pelican recall run finished (every sign eventually recalled). */
-  pelicanCompleted: (args: {
-    signsTotal: number;
-    knewFirstTry: number;
-    missCount: number;
-  }) =>
-    emit("pelican_completed", {
-      signs_total: args.signsTotal,
-      knew_first_try: args.knewFirstTry,
-      miss_count: args.missCount,
-    }),
+  /** Pelican chart run kicked off. */
+  pelicanStarted: (args: RunStarted) => emit("pelican_started", startedProps(args)),
 
-  /** 3D recognition run kicked off. */
-  signs3dStarted: (args: { signsTotal: number; categories: string[] }) =>
-    emit("signs3d_started", {
-      signs_total: args.signsTotal,
-      categories: args.categories.length ? args.categories.join(",") : "all",
-    }),
+  /** Pelican chart run finished. Hands-free runs have no grades to report. */
+  pelicanCompleted: (args: RunCompleted) =>
+    emit("pelican_completed", completedProps(args)),
 
-  /** 3D recognition run finished (every sign eventually recalled). */
-  signs3dCompleted: (args: {
-    signsTotal: number;
-    knewFirstTry: number;
-    missCount: number;
-  }) =>
-    emit("signs3d_completed", {
-      signs_total: args.signsTotal,
-      knew_first_try: args.knewFirstTry,
-      miss_count: args.missCount,
-    }),
+  /** 3D signs run kicked off. */
+  signs3dStarted: (args: RunStarted) => emit("signs3d_started", startedProps(args)),
+
+  /** 3D signs run finished. Hands-free runs have no grades to report. */
+  signs3dCompleted: (args: RunCompleted) =>
+    emit("signs3d_completed", completedProps(args)),
+
+  /**
+   * One "Knew it" or "Missed it" tap. Higher volume than the rest of this file,
+   * and deliberately so: it's the only way to see which signs people actually
+   * get wrong.
+   */
+  signGraded: (args: {
+    trainer: "pelican" | "3d";
+    sign_code: string;
+    category: string;
+    result: "knew" | "missed";
+    box_before: number;
+    box_after: number;
+    first_try: boolean;
+    scope: string;
+  }) => emit("sign_graded", args),
 
   /** Outbound click to a partner or source site. */
   partnerClicked: (args: { name: string; url: string }) =>

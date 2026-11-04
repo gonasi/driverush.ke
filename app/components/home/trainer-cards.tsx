@@ -14,7 +14,10 @@ import {
 
 import pelican from "~/data/road-signs-pelican.json";
 import type { FocusRegion } from "~/lib/image-focus";
+import { signCounts } from "~/lib/pelican-progress";
 import { SIGN_GAMES, type SignGame } from "~/lib/road-signs";
+import { ROUND_SIZE, trainerHref } from "~/lib/trainer-rounds";
+import { useSignProgress } from "~/lib/use-sign-progress";
 
 import { Button } from "~/components/ui/button";
 import { ImageFocusStage } from "~/components/brand/image-focus-stage";
@@ -119,10 +122,14 @@ const PREVIEWS: Record<SignGame["slug"], () => React.JSX.Element> = {
 };
 
 export function TrainerCards() {
+  const progress = useSignProgress();
   return (
     <div className="grid grid-cols-2 gap-3 sm:gap-5">
       {SIGN_GAMES.map((game) => {
         const Preview = PREVIEWS[game.slug];
+        const saved = progress?.[game.slug] ?? {};
+        const counts = signCounts(saved, Object.keys(saved));
+        const started = counts.known + counts.learning > 0;
         return (
           <article
             key={game.slug}
@@ -135,12 +142,23 @@ export function TrainerCards() {
               <h2 className="m-0 font-display text-[clamp(16px,3.4vw,30px)] font-extrabold uppercase leading-none tracking-tight text-ink">
                 {game.title}
               </h2>
-              <p className="m-0 flex-1 text-[12.5px] leading-snug text-ink-2 sm:text-[15px]">
-                {game.blurb}
-              </p>
+              {started ? (
+                <p className="m-0 flex-1 text-[12.5px] font-semibold leading-snug text-ink sm:text-[15px]">
+                  {counts.known} known · {counts.learning} learning
+                  {counts.due > 0 && (
+                    <span className="block font-normal text-ink-2">
+                      {counts.due} sign{counts.due === 1 ? "" : "s"} due
+                    </span>
+                  )}
+                </p>
+              ) : (
+                <p className="m-0 flex-1 text-[12.5px] leading-snug text-ink-2 sm:text-[15px]">
+                  {game.blurb}
+                </p>
+              )}
               <Button variant="rush" asChild className="mt-1.5 w-full px-2">
-                <Link to={game.to}>
-                  Start 10 signs
+                <Link to={trainerHref(game.to, { go: true })}>
+                  {started ? "Continue" : `Start ${ROUND_SIZE} signs`}
                   <HugeiconsIcon
                     icon={ArrowRight02FreeIcons}
                     size={14}

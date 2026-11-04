@@ -123,9 +123,7 @@ export function Sign3DSettingsSheet() {
                       onToggle={() => toggleCat(c.id)}
                     >
                       {c.emoji} {c.label}
-                      {c.count > 0
-                        ? ` · ${mappedN}/${c.count}`
-                        : ` · ${mappedN}`}
+                      {` · ${mappedN}`}
                     </ChipToggle>
                   );
                 })}
@@ -219,7 +217,7 @@ export function Sign3DSettingsSheet() {
             </p>
             <div className="flex items-center justify-between gap-3 border-2 border-ink bg-paper-3 px-3 py-2">
               <span className="font-mono text-[10.5px] uppercase tracking-widest text-ink-2">
-                Mastered {mastered} / {signs.length}
+                Known {mastered} / {signs.length}
               </span>
               <Button
                 variant="paper"

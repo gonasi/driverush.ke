@@ -18,12 +18,16 @@ import { Rail } from "~/components/brand/rail";
 import { SectionHead } from "~/components/brand/section-head";
 import { ShareButton } from "~/components/brand/share-button";
 import { SignCard } from "~/components/brand/sign-card";
+import { SignClassList } from "~/components/brand/sign-class-list";
 import { SiteFooter } from "~/components/brand/site-footer";
 import { SiteNav } from "~/components/brand/site-nav";
 import { TrainerCards } from "~/components/home/trainer-cards";
 
 const PATH = "/road-signs";
-const TOTAL_SIGNS = SIGN_CATEGORIES.reduce((n, c) => n + c.signs.length, 0);
+/** Classes the trainers don't drill, so the text reference is all there is. */
+const REFERENCE_ONLY = SIGN_CATEGORIES.filter((c) =>
+  ["information", "signals", "markings"].includes(c.slug),
+);
 
 export function meta(_: Route.MetaArgs) {
   return [
@@ -35,9 +39,7 @@ export function meta(_: Route.MetaArgs) {
       ogImageAlt: ogCardAlt("road-signs"),
       extraKeywords: ROAD_SIGN_KEYWORDS,
     }),
-    // Breadcrumb + ItemList in a single @graph. FAQPage is intentionally
-    // omitted — see app/routes/home.tsx for context (Search Console kept
-    // flagging duplicate-FAQPage on this route too).
+    // Breadcrumb + ItemList in a single @graph.
     {
       "script:ld+json": {
         "@context": "https://schema.org",
@@ -50,8 +52,8 @@ export function meta(_: Route.MetaArgs) {
           ),
           {
             "@type": "ItemList",
-            name: "Classes of road sign in Kenya",
-            itemListElement: SIGN_CATEGORIES.map((c, i) => ({
+            name: "More Kenyan road signs and markings",
+            itemListElement: REFERENCE_ONLY.map((c, i) => ({
               "@type": "ListItem",
               position: i + 1,
               name: c.title,
@@ -197,20 +199,54 @@ export default function RoadSigns() {
             </Callout>
           </section>
 
-          {/* ── 03 · Every sign, by class — collapsed; open the one you want ─ */}
+          {/* The trainers' signs, then the classes they don't cover yet. */}
           <section className="mt-14 scroll-mt-8" id="classes">
             <SectionHead
               num="02"
               title={
                 <>
-                  Every sign, <em>by class</em>
+                  The signs, <em>by class</em>
                 </>
               }
-              stamp={`${SIGN_CATEGORIES.length} classes · ${TOTAL_SIGNS}+ signs`}
-              lede="Tap a class to open it. These are the common signs that turn up on Kenyan roads and in the NTSA test, not the full legal schedule."
+              stamp={`${SIGN_COUNT} signs`}
+              lede="Tap a class to open it, or drill just that class on the chart or in 3D."
+            />
+            <SignClassList />
+
+            {/* The chart itself: tucked away, open if wanted. */}
+            <details className="mt-4 border-2 border-ink bg-surface [&[open]>summary]:border-b-2 [&[open]>summary]:border-ink [&[open]>summary]:after:content-['−']">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 font-mono text-[10.5px] uppercase tracking-widest text-ink-3 outline-none after:font-display after:text-lg after:font-extrabold after:leading-none after:text-rush after:content-['+'] focus-visible:text-ink [&::-webkit-details-marker]:hidden">
+                The Pelican chart
+              </summary>
+              <figure className="bg-white p-3 sm:p-5">
+                <img
+                  src="/assets/road-signs/road-signs.svg"
+                  alt="Kenyan road signs chart: warning, regulatory, mandatory, information, traffic-light and road-marking signs used on Kenya's roads and in the NTSA test"
+                  width={1920}
+                  height={1080}
+                  loading="lazy"
+                  className="mx-auto block w-full"
+                />
+                <figcaption className="mt-3 border-t border-dashed border-ink pt-3 font-mono text-[10px] uppercase tracking-widest text-ink-3">
+                  The Pelican chart · the trainer zooms into one sign at a time
+                </figcaption>
+              </figure>
+            </details>
+          </section>
+
+          <section className="mt-14 scroll-mt-8" id="more">
+            <SectionHead
+              num="03"
+              title={
+                <>
+                  Also on the <em>road</em>
+                </>
+              }
+              stamp="Not in the trainers yet"
+              lede="Information signs, signals and road markings you'll meet out there. The trainers don't drill these yet."
             />
             <Accordion>
-              {SIGN_CATEGORIES.map((cat) => (
+              {REFERENCE_ONLY.map((cat) => (
                 <AccordionItem
                   key={cat.slug}
                   summary={
@@ -218,19 +254,19 @@ export default function RoadSigns() {
                       <SignChip shape={cat.shape} tone={cat.tone} />
                       <span>{cat.title}</span>
                       <span className="ml-auto font-mono text-[10px] font-normal normal-case tracking-wider opacity-70">
-                        {cat.klass} · {cat.signs.length}
+                        {cat.signs.length}
                       </span>
                     </span>
                   }
                 >
-                  <div id={cat.slug} className="font-sans scroll-mt-8">
+                  <div id={cat.slug} className="scroll-mt-20 font-sans">
                     <p className="font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
                       {cat.shapeLabel}
                     </p>
                     <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-ink-2">
                       {cat.summary}
                     </p>
-                    <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <ul className="m-0 mt-4 grid list-none gap-3 p-0 sm:grid-cols-2">
                       {cat.signs.map((sign) => (
                         <li
                           key={sign.name}
@@ -256,28 +292,7 @@ export default function RoadSigns() {
                 </AccordionItem>
               ))}
             </Accordion>
-
-            {/* The chart itself: tucked away, open if wanted. */}
-            <details className="mt-4 border-2 border-ink bg-surface [&[open]>summary]:border-b-2 [&[open]>summary]:border-ink [&[open]>summary]:after:content-['−']">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 font-mono text-[10.5px] uppercase tracking-widest text-ink-3 outline-none after:font-display after:text-lg after:font-extrabold after:leading-none after:text-rush after:content-['+'] focus-visible:text-ink [&::-webkit-details-marker]:hidden">
-                The Pelican chart
-              </summary>
-              <figure className="bg-white p-3 sm:p-5">
-                <img
-                  src="/assets/road-signs/road-signs.svg"
-                  alt="Kenyan road signs chart: warning, regulatory, mandatory, information, traffic-light and road-marking signs used on Kenya's roads and in the NTSA test"
-                  width={1920}
-                  height={1080}
-                  loading="lazy"
-                  className="mx-auto block w-full"
-                />
-                <figcaption className="mt-3 border-t border-dashed border-ink pt-3 font-mono text-[10px] uppercase tracking-widest text-ink-3">
-                  The Pelican chart · the trainer zooms into one sign at a time
-                </figcaption>
-              </figure>
-            </details>
           </section>
-
         </div>
       </main>
       <SiteFooter />

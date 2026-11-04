@@ -33,8 +33,6 @@ export type Signs3DUserSettings = {
   autoRotate: boolean;
   /** Show "knew it / missed it" taps and track mastery. */
   selfGrading: boolean;
-  /** Has the player seen the one-time "make it yours" intro modal? */
-  hasSeenIntro: boolean;
 };
 
 export const DEFAULT_SIGNS_3D_SETTINGS: Signs3DUserSettings = {
@@ -51,7 +49,6 @@ export const DEFAULT_SIGNS_3D_SETTINGS: Signs3DUserSettings = {
   // On by default → each answer waits for a "Knew it / Missed it" tap and tracks
   // mastery. While it's on, auto-advance is held off — you control the pace.
   selfGrading: true,
-  hasSeenIntro: false,
 };
 
 /** Merge a (possibly partial / untrusted) object onto the defaults. */
@@ -63,6 +60,5 @@ export function normalizeSettings(
     ...DEFAULT_SIGNS_3D_SETTINGS,
     ...raw,
     categories: Array.isArray(raw.categories) ? raw.categories : [],
-    hasSeenIntro: Boolean(raw.hasSeenIntro),
   };
 }

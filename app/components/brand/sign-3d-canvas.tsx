@@ -36,6 +36,8 @@ export type Sign3DCanvasProps = {
   autoRotate?: boolean;
   /** Allow drag-to-orbit + scroll-zoom. */
   interactive?: boolean;
+  /** Told each time a model has actually reached the scene. */
+  onModelReady?: (modelSrc: string) => void;
 };
 
 /** Load a GLB, clone it (so per-instance material tweaks don't poison the cache)
@@ -183,13 +185,17 @@ function SceneContents({
   zoom = 1,
   autoRotate = false,
   interactive = true,
+  onModelReady,
 }: Sign3DCanvasProps) {
   const groupRef = React.useRef<THREE.Group | null>(null);
   const controlsRef = React.useRef<any>(null);
   const [floorY, setFloorY] = React.useState(0);
   // Bumped when the model's geometry lands, to force FitCamera to re-frame.
   const [fitTick, setFitTick] = React.useState(0);
-  const handleReady = React.useCallback(() => setFitTick((t) => t + 1), []);
+  const handleReady = React.useCallback(() => {
+    setFitTick((t) => t + 1);
+    onModelReady?.(modelSrc);
+  }, [modelSrc, onModelReady]);
 
   const theme = useActiveTheme();
   const night = theme === "dark";

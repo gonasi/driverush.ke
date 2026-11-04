@@ -5,7 +5,6 @@ import {
   ArrowLeft02FreeIcons,
   BirdFreeIcons,
   Configuration01FreeIcons,
-  ThreeDViewFreeIcons,
 } from "@hugeicons/core-free-icons";
 
 import type { Route } from "./+types/road-signs-3d";
@@ -15,17 +14,15 @@ import { ogCardAlt, ogCardPath } from "~/lib/og-cards";
 import type { Signs3DData } from "~/lib/signs-3d";
 import signs3dJson from "~/data/road-signs-3d.json";
 import { getPracticeSigns, useSigns3DStore } from "~/lib/signs-3d-store";
-import { useLoadingFloor } from "~/lib/loading";
+import { useTrainerLink } from "~/lib/use-trainer-link";
 
 import { Button } from "~/components/ui/button";
-import { FeedbackBanner } from "~/components/brand/feedback-banner";
 import { PelicanPartner } from "~/components/brand/pelican-partner";
 import { Rail } from "~/components/brand/rail";
 import { SiteFooter } from "~/components/brand/site-footer";
 import { SiteNav } from "~/components/brand/site-nav";
 import { LoadingPanel } from "~/components/brand/traffic-loader";
 import { Sign3DPlayer } from "~/components/brand/sign-3d-player";
-import { Sign3DIntroDialog } from "~/components/brand/sign-3d-intro-dialog";
 import { Sign3DSettingsSheet } from "~/components/brand/sign-3d-settings-sheet";
 
 const board = signs3dJson as Signs3DData;
@@ -61,25 +58,21 @@ export function meta(_: Route.MetaArgs) {
 
 export default function ThreeDSigns() {
   const assetStatus = useSigns3DStore((s) => s.assetStatus);
-  const assetProgress = useSigns3DStore((s) => s.assetProgress);
+  const start = useSigns3DStore((s) => s.start);
+  const exit = useSigns3DStore((s) => s.exit);
   const categories = useSigns3DStore((s) => s.settings.categories);
   const setSettingsOpen = useSigns3DStore((s) => s.setSettingsOpen);
 
-  // The trainer is entirely client-side: stash the board, then preload the GLB
-  // models, the gameplay SFX, and every per-sign voice clip so playback is
-  // smooth from the first sign. The page below gates Start on `assetStatus`.
+  // The trainer is client-side. Nothing blocks Start, but saved progress stays
+  // off the first paint because `assetStatus` starts "idle".
   useEffect(() => {
     const store = useSigns3DStore.getState();
     store.configure(board);
     store.preload();
   }, []);
 
-  const hasBoard = board.signs.length > 0;
-  const showLoader = useLoadingFloor(hasBoard && assetStatus !== "ready");
-  const loadPct =
-    assetProgress > 0 && assetProgress < 1
-      ? Math.round(assetProgress * 100)
-      : null;
+  const ready = assetStatus === "ready";
+  const { link, startRun } = useTrainerLink(board.signs, { ready, start, exit });
   const practiceCount = getPracticeSigns(board, categories).length;
 
   return (
@@ -117,29 +110,12 @@ export default function ThreeDSigns() {
             </p>
           </header>
 
-          {!hasBoard ? (
-            <div className="mt-7">
-              <FeedbackBanner
-                tone="info"
-                icon={ThreeDViewFreeIcons}
-                title="In the workshop"
-                description="No 3D signs have been mapped yet. Map them in /tools/sign-3d to light this up."
-              />
-            </div>
-          ) : showLoader ? (
-            <div className="mt-10 grid gap-3">
-              <div className="font-mono text-[10px] uppercase tracking-widest text-ink-3">
-                [ Game board · loading ]
-              </div>
-              <div className="flex min-h-72 w-full items-center justify-center border-2 border-ink bg-paper-3 sm:aspect-video sm:min-h-0">
-                <LoadingPanel
-                  label={`Loading the trainer${loadPct != null ? ` · ${loadPct}%` : ""}`}
-                  size="lg"
-                />
-              </div>
+          {!ready ? (
+            <div className="mt-6 flex aspect-video w-full items-center justify-center border-2 border-ink bg-ink">
+              <LoadingPanel label="Loading" size="lg" onDark />
             </div>
           ) : practiceCount === 0 ? (
-            <div className="mt-8 flex flex-col items-center gap-4 border-2 border-dashed border-ink bg-paper-3 px-6 py-12 text-center">
+            <div className="mt-6 flex flex-col items-center gap-4 border-2 border-dashed border-ink bg-paper-3 px-6 py-12 text-center">
               <span className="font-mono text-[11px] uppercase tracking-widest text-ink-3">
                 No signs match your category filter
               </span>
@@ -157,18 +133,12 @@ export default function ThreeDSigns() {
               </Button>
             </div>
           ) : (
-            <div className="mt-8">
-              <Sign3DPlayer />
-              <p className="mt-3 font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
-                {practiceCount} sign{practiceCount === 1 ? "" : "s"}
-                {categories.length > 0 ? ` of ${board.signs.length}` : ""} ·
-                drag to spin
-              </p>
+            <div className="mt-6">
+              <Sign3DPlayer link={link} onStart={startRun} />
             </div>
           )}
 
-          {hasBoard && (
-            <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-dashed border-ink pt-5">
+          <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-dashed border-ink pt-5">
               <span className="font-mono text-[11px] uppercase tracking-widest text-ink-3">
                 Same signs, on the chart
               </span>
@@ -182,16 +152,10 @@ export default function ThreeDSigns() {
                   Pelican chart
                 </Link>
               </Button>
-            </div>
-          )}
+          </div>
         </div>
 
-        {hasBoard && (
-          <>
-            <Sign3DIntroDialog />
-            <Sign3DSettingsSheet />
-          </>
-        )}
+        <Sign3DSettingsSheet />
       </main>
       <SiteFooter />
     </>

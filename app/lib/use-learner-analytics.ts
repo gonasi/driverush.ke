@@ -16,37 +16,28 @@
  * pageview.
  *
  * Deliberately reads the persisted JSON rather than importing the zustand
- * stores: this runs from the root component, and importing the pelican / 3D
- * stores there would drag their (large) dependency graphs into the entry
- * chunk. The shapes below mirror the stores' `partialize` output — keep them
- * in sync if a store's persisted shape changes.
+ * stores: this runs from the root component, and importing the stores there
+ * would drag their dependency graphs into the entry chunk.
  */
 import * as React from "react";
 import { useLocation } from "react-router";
 
 import { getPostHog } from "./posthog";
-import { MASTERED_BOX, type SignProgress } from "./pelican-progress";
+import {
+  masteredCount,
+  parsePersistedProgress,
+  TRAINER_STORAGE_KEYS,
+  type SignProgress,
+} from "./pelican-progress";
 
-const PELICAN_KEY = "driverush:pelican";
-const SIGNS_3D_KEY = "driverush:signs3d";
 const FIRST_SEEN_KEY = "driverush:first-seen";
 
-/** zustand's persist envelope. */
-type Persisted<T> = { state?: T; version?: number };
-
-function readJson<T>(key: string): T | undefined {
-  if (typeof window === "undefined") return undefined;
-  try {
-    const raw = window.localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : undefined;
-  } catch {
-    return undefined;
-  }
+function readProgress(key: string): SignProgress {
+  return parsePersistedProgress(window.localStorage.getItem(key));
 }
 
-function masteredSigns(progress: SignProgress | undefined): number {
-  if (!progress) return 0;
-  return Object.values(progress).filter((s) => s.box >= MASTERED_BOX).length;
+function masteredSigns(progress: SignProgress): number {
+  return masteredCount(progress, Object.keys(progress));
 }
 
 /**
@@ -65,12 +56,8 @@ function learnerStage(
 type LearnerProfile = Record<string, string | number | boolean>;
 
 function buildProfile(): LearnerProfile {
-  const pelican =
-    readJson<Persisted<{ progress: SignProgress }>>(PELICAN_KEY)?.state
-      ?.progress;
-  const signs3d =
-    readJson<Persisted<{ progress: SignProgress }>>(SIGNS_3D_KEY)?.state
-      ?.progress;
+  const pelican = readProgress(TRAINER_STORAGE_KEYS.pelican);
+  const signs3d = readProgress(TRAINER_STORAGE_KEYS["3d"]);
 
   const pelicanMastered = masteredSigns(pelican);
   const signs3dMastered = masteredSigns(signs3d);

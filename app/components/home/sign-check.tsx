@@ -21,6 +21,7 @@ import pelican from "~/data/road-signs-pelican.json";
 import { analytics } from "~/lib/analytics";
 import { regionSpriteStyle, type FocusRegion } from "~/lib/image-focus";
 import { playSfx } from "~/lib/sounds";
+import { trainerHref } from "~/lib/trainer-rounds";
 import { cn } from "~/lib/utils";
 
 import { Button } from "~/components/ui/button";
@@ -52,13 +53,12 @@ function optionsFor(sign: FocusRegion): FocusRegion[] {
 
 type Question = { sign: FocusRegion; options: FocusRegion[] };
 
-/** Link into a trainer with just these signs queued. */
+/** Link into a trainer with just these signs queued, ready to go. */
 function drillLink(trainer: string, signs: FocusRegion[]): string {
-  if (signs.length === 0) return trainer;
-  const params = new URLSearchParams({
-    codes: signs.map((s) => s.code).join(","),
+  return trainerHref(trainer, {
+    codes: signs.flatMap((s) => (s.code ? [s.code] : [])),
+    go: true,
   });
-  return `${trainer}?${params}`;
 }
 
 export function SignCheck() {

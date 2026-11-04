@@ -31,6 +31,8 @@ function usePrefersReducedMotion(): boolean {
 
 export type Sign3DViewerProps = {
   modelSrc: string | null | undefined;
+  /** Told each time a model actually reaches the screen. */
+  onModelReady?: (modelSrc: string) => void;
   yaw?: number;
   pitch?: number;
   zoom?: number;
@@ -45,6 +47,7 @@ export type Sign3DViewerProps = {
 
 export function Sign3DViewer({
   modelSrc,
+  onModelReady,
   yaw,
   pitch,
   zoom,
@@ -75,6 +78,7 @@ export function Sign3DViewer({
               key the Canvas, to avoid recreating the WebGL context per sign. */}
           <Sign3DCanvas
             modelSrc={modelSrc}
+            onModelReady={onModelReady}
             yaw={yaw}
             pitch={pitch}
             zoom={zoom}

@@ -3,9 +3,9 @@
  * persisted per-player settings + mastery progress, transient runtime state, and
  * the playback engine (timed reveal → answer → auto-advance → next). A sibling of
  * `pelican-store.ts` with the same state machine; the differences are the data
- * shape (3D `Sign3D` models instead of image regions) and the preload (it warms
- * GLB models + voice clips rather than a chart image). Timers and audio live in
- * module scope, driven by store actions. Client-side only.
+ * shape (3D `Sign3D` models instead of image regions) and that the recall timer
+ * waits for each model to appear. Timers and audio live in module scope, driven
+ * by store actions. Client-side only.
  *
  * Mastery is tracked under its OWN localStorage key (`driverush:signs3d`),
  * independent of the Pelican recall trainer — recognition and recall are
@@ -31,6 +31,7 @@ import {
 } from "./signs-3d-settings";
 import {
   applyGrade,
+  boxOf,
   isMastered,
   type GradeResult,
   type SignProgress,
@@ -38,12 +39,18 @@ import {
 import { analytics } from "./analytics";
 import { triggerAdAndAwaitClose, triggerAdFromNonReact } from "./ads/ad-engine";
 import {
+  defaultScope,
+  pickRound,
+  runTally,
+  type RunScope,
+} from "./trainer-rounds";
+import {
   playSfx,
   playVoice,
-  preloadSfx,
-  preloadVoices,
   stopAllSfx,
   stopVoice,
+  warmSfx,
+  warmVoice,
 } from "./sounds";
 
 // ---------------------------------------------------------------------------
@@ -53,6 +60,7 @@ let phaseTimer: ReturnType<typeof setTimeout> | null = null;
 let countdownInt: ReturnType<typeof setInterval> | null = null;
 
 function clearTimers() {
+  startWhenVisible = null;
   if (phaseTimer) {
     clearTimeout(phaseTimer);
     phaseTimer = null;
@@ -74,43 +82,55 @@ function practiceSigns(
     ? board.signs
     : board.signs.filter((r) => categories.includes(r.category));
 }
-function buildQueue(
-  board: Signs3DData | null,
-  s: Signs3DUserSettings,
-): Sign3D[] {
-  return orderSigns(practiceSigns(board, s.categories), {
+function ordered(signs: Sign3D[], s: Signs3DUserSettings): Sign3D[] {
+  return orderSigns(signs, {
     shuffle: s.order === "shuffle",
     reverse: s.reverse,
   });
 }
-
-/** Warm the GLB models into the browser cache so the viewer never stalls
- *  fetching one mid-run. Plain `fetch` (no three import — keeps this module out
- *  of the heavy 3D chunk); the viewer parses from cache via drei's `useGLTF`.
- *  Capped so one slow/hung file can't wedge the loader. */
-function warmModels(
-  urls: readonly string[],
-  onOne: () => void,
-  capMs = 45000,
-): Promise<void> {
-  if (typeof window === "undefined" || urls.length === 0)
-    return Promise.resolve();
-  const all = Promise.all(
-    urls.map((u) =>
-      fetch(u, { cache: "force-cache" })
-        .then((r) => r.blob())
-        .then(
-          () => {},
-          () => {},
-        )
-        .finally(onOne),
-    ),
-  ).then(() => undefined);
-  return Promise.race([
-    all,
-    new Promise<void>((resolve) => setTimeout(resolve, capMs)),
-  ]);
+function buildQueue(
+  board: Signs3DData | null,
+  s: Signs3DUserSettings,
+  scope: RunScope,
+  progress: SignProgress,
+): Sign3D[] {
+  if (scope.kind === "chart") {
+    return ordered(practiceSigns(board, s.categories), s);
+  }
+  if (scope.kind === "drill") {
+    const ids = new Set(scope.ids);
+    return ordered((board?.signs ?? []).filter((r) => ids.has(r.id)), s);
+  }
+  const pool = practiceSigns(board, scope.categories ?? s.categories);
+  return pickRound(ordered(pool, s), progress);
 }
+
+/** Fetch a GLB into the browser cache, once. Plain `fetch` (no three import, so
+ *  this module stays out of the heavy 3D chunk); the viewer parses it from cache
+ *  via drei's `useGLTF`. */
+const warmedModels = new Set<string>();
+function warmModel(url: string) {
+  if (typeof window === "undefined" || warmedModels.has(url)) return;
+  warmedModels.add(url);
+  void fetch(url, { cache: "force-cache" }).catch(() => warmedModels.delete(url));
+}
+
+/** Buffer the next few signs, so a sign rarely has to load while you wait. */
+function warmAhead(queue: Sign3D[], pos: number, playAudio: boolean) {
+  for (const sign of queue.slice(pos, pos + 3)) {
+    warmModel(sign.modelSrc);
+    if (playAudio) warmVoice(sign.audioSrc);
+  }
+}
+
+/**
+ * The recall timer can't start until the sign is on screen, or a slow connection
+ * would burn the whole window on the loader. Module scope, like the timers: these
+ * don't drive rendering.
+ */
+const MODEL_WAIT_CAP_MS = 8000;
+let visibleModel: string | null = null;
+let startWhenVisible: { src: string; begin: () => void } | null = null;
 
 /** In-progress run snapshot — persisted so a reload resumes between signs. */
 type InProgressRun = {
@@ -170,7 +190,7 @@ export type TrainerPhase =
   | "revealed"
   | "between"
   | "complete";
-export type AssetStatus = "idle" | "loading" | "ready";
+export type AssetStatus = "idle" | "ready";
 
 type Signs3DState = {
   // ---- persisted ----
@@ -180,13 +200,12 @@ type Signs3DState = {
   // ---- transient ----
   board: Signs3DData | null;
   assetStatus: AssetStatus;
-  /** 0–1 — how much of the board's models + audio has buffered. */
-  assetProgress: number;
   overlayOpen: boolean;
   running: boolean;
   settingsOpen: boolean;
-  introOpen: boolean;
   phase: TrainerPhase;
+  /** What this run contains. Only whole-chart runs keep a resume checkpoint. */
+  runScope: RunScope;
   queue: Sign3D[];
   pos: number;
   timeRemaining: number;
@@ -198,13 +217,13 @@ type Signs3DState = {
   // ---- actions ----
   configure: (board: Signs3DData) => void;
   preload: () => void;
+  /** The viewer reports each sign as it reaches the screen. */
+  markModelVisible: (src: string) => void;
   setSetting: (p: Partial<Signs3DUserSettings>) => void;
   resetSettings: () => void;
   resetProgress: () => void;
   setSettingsOpen: (open: boolean) => void;
-  setIntroOpen: (open: boolean) => void;
-  dismissIntro: () => void;
-  start: () => void;
+  start: (scope?: RunScope) => void;
   resumeRun: () => void;
   pause: () => void;
   resume: () => void;
@@ -234,12 +253,11 @@ export const useSigns3DStore = create<Signs3DState>()(
 
       board: null,
       assetStatus: "idle",
-      assetProgress: 0,
       overlayOpen: false,
       running: false,
       settingsOpen: false,
-      introOpen: false,
       phase: "ready",
+      runScope: { kind: "round" },
       queue: [],
       pos: 0,
       timeRemaining: 0,
@@ -251,51 +269,23 @@ export const useSigns3DStore = create<Signs3DState>()(
       // ---- config / preload ----
       configure: (board) => set({ board }),
 
-      // Warm everything the trainer needs — the GLB models, the gameplay SFX,
-      // and every per-sign voice clip — before the page lets the user press
-      // Start, so a run never stalls fetching an asset. Client-only; safe to
-      // call more than once.
+      // Nothing blocks Start: models and voice clips buffer a few signs ahead of
+      // play, and the recall timer holds until each sign is visible. The route
+      // waits for this flag so saved progress stays off the first paint.
       preload: () => {
         if (typeof window === "undefined" || get().assetStatus !== "idle")
           return;
-        const board = get().board;
-        set({ assetStatus: "loading", assetProgress: 0 });
+        if (get().settings.playAudio) warmSfx();
+        set({ assetStatus: "ready" });
+      },
 
-        const models = [
-          ...new Set((board?.signs ?? []).map((r) => r.modelSrc)),
-        ];
-        const voices = [
-          ...new Set(
-            (board?.signs ?? [])
-              .map((r) => r.audioSrc)
-              .filter(
-                (s): s is string => typeof s === "string" && s.length > 0,
-              ),
-          ),
-        ];
-
-        const grand = models.length + voices.length;
-        let modelsDone = 0;
-        let voicesDone = 0;
-        const recompute = () =>
-          set({
-            assetProgress: grand > 0 ? (modelsDone + voicesDone) / grand : 1,
-          });
-
-        const modelsP = warmModels(models, () => {
-          modelsDone += 1;
-          recompute();
-        });
-        const voicesP = preloadVoices(voices, {
-          onProgress: (done) => {
-            voicesDone = done;
-            recompute();
-          },
-        });
-
-        void Promise.all([modelsP, voicesP, preloadSfx()]).then(() =>
-          set({ assetStatus: "ready", assetProgress: 1 }),
-        );
+      markModelVisible: (src) => {
+        visibleModel = src;
+        if (startWhenVisible?.src === src) {
+          const { begin } = startWhenVisible;
+          clearTimers();
+          begin();
+        }
       },
 
       // ---- settings / progress ----
@@ -314,10 +304,16 @@ export const useSigns3DStore = create<Signs3DState>()(
           });
         }
         if (touchedOrder && get().overlayOpen) {
+          // A drill's signs were chosen by hand, so a new filter falls back to
+          // a round rather than silently ignoring the setting.
+          const current = get().runScope;
+          const scope: RunScope =
+            current.kind === "drill" ? { kind: "round" } : current;
           clearTimers();
           stopSignAudio();
           set({
-            queue: buildQueue(get().board, next),
+            queue: buildQueue(get().board, next, scope, get().progress),
+            runScope: scope,
             pos: 0,
             phase: "focused",
             timeRemaining: 0,
@@ -339,25 +335,20 @@ export const useSigns3DStore = create<Signs3DState>()(
         }
       },
 
-      setIntroOpen: (open) => set({ introOpen: open }),
-      dismissIntro: () => {
-        set({ introOpen: false });
-        if (!get().settings.hasSeenIntro) {
-          get().setSetting({ hasSeenIntro: true });
-        }
-      },
-
       // ---- engine ----
-      start: () => {
+      start: (requested) => {
         clearTimers();
         stopAllSfx();
         stopSignAudio();
-        const queue = buildQueue(get().board, get().settings);
-        if (queue.length === 0) return;
-        void preloadSfx();
+        const { board, settings, progress } = get();
+        const scope = requested ?? defaultScope(settings.selfGrading);
+        const queue = buildQueue(board, settings, scope, progress);
+        if (queue.length === 0) return; // nothing to play — leave the ready card up
+        visibleModel = null;
         set({
           queue,
           pos: 0,
+          runScope: scope,
           phase: "initial",
           overlayOpen: true,
           running: true,
@@ -367,12 +358,21 @@ export const useSigns3DStore = create<Signs3DState>()(
           runMissed: [],
           runMissCount: 0,
           runSeen: 0,
-          inProgressRun: null,
+          // Starting the whole chart replaces any saved chart run. A round or
+          // drill leaves the save alone, so it can still be resumed afterwards.
+          ...(scope.kind === "chart" ? { inProgressRun: null } : {}),
         });
         analytics.signs3dStarted({
           signsTotal: queue.length,
-          categories: get().settings.categories,
+          categories:
+            scope.kind === "round"
+              ? (scope.categories ?? settings.categories)
+              : scope.kind === "chart"
+                ? settings.categories
+                : [],
+          scope: scope.kind,
         });
+        warmAhead(queue, 0, settings.playAudio);
         get()._armInitial();
       },
 
@@ -396,14 +396,16 @@ export const useSigns3DStore = create<Signs3DState>()(
         clearTimers();
         stopAllSfx();
         stopSignAudio();
+        visibleModel = null;
+        warmAhead(queue, run.pos, state.settings.playAudio);
         set({
           queue,
           pos: run.pos,
+          runScope: { kind: "chart" },
           phase: "between",
           overlayOpen: true,
           running: true,
           settingsOpen: false,
-          introOpen: false,
           timeRemaining: 0,
           runRecalled: run.runRecalled,
           runMissed: run.runMissed,
@@ -451,11 +453,26 @@ export const useSigns3DStore = create<Signs3DState>()(
         if (get().phase === "focused") get()._toRevealed();
       },
       gradeAndNext: (r) => {
+        // The answer sheet stays tappable while it animates away, so a double
+        // tap must not grade the same sign twice.
+        if (get().phase !== "revealed") return;
         const { settings, queue, pos } = get();
         const sign = queue[pos];
         if (!sign) return;
         if (settings.playAudio) playSfx(r === "knew" ? "correct" : "wrong");
-        set((s) => ({ progress: applyGrade(s.progress, sign.id, r) }));
+        const before = boxOf(get().progress, sign.id);
+        const progress = applyGrade(get().progress, sign.id, r);
+        set({ progress });
+        analytics.signGraded({
+          trainer: "3d",
+          sign_code: sign.code ?? sign.id,
+          category: sign.category,
+          result: r,
+          box_before: before,
+          box_after: boxOf(progress, sign.id),
+          first_try: !get().runMissed.includes(sign.id),
+          scope: get().runScope.kind,
+        });
         if (r === "knew") {
           set((s) => ({
             runRecalled: s.runRecalled.includes(sign.id)
@@ -483,6 +500,7 @@ export const useSigns3DStore = create<Signs3DState>()(
       },
 
       exit: () => {
+        visibleModel = null;
         clearTimers();
         stopAllSfx();
         stopSignAudio();
@@ -517,18 +535,32 @@ export const useSigns3DStore = create<Signs3DState>()(
         if (settings.revealMode === "auto") {
           const delay = sign.revealDelay ?? settings.revealDelay;
           set({ timeRemaining: delay });
-          const startedAt = Date.now();
-          countdownInt = setInterval(() => {
-            const rem = Math.max(0, delay - (Date.now() - startedAt) / 1000);
-            set({ timeRemaining: rem });
-            if (rem <= 0) {
-              if (countdownInt) {
-                clearInterval(countdownInt);
-                countdownInt = null;
+          const begin = () => {
+            const startedAt = Date.now();
+            countdownInt = setInterval(() => {
+              const rem = Math.max(0, delay - (Date.now() - startedAt) / 1000);
+              set({ timeRemaining: rem });
+              if (rem <= 0) {
+                if (countdownInt) {
+                  clearInterval(countdownInt);
+                  countdownInt = null;
+                }
+                get()._toRevealed();
               }
-              get()._toRevealed();
-            }
-          }, 100);
+            }, 100);
+          };
+          if (sign.modelSrc === visibleModel) {
+            begin();
+          } else {
+            // Still loading: hold a full bar until it appears, with a cap so a
+            // failed download can't freeze the run.
+            startWhenVisible = { src: sign.modelSrc, begin };
+            phaseTimer = setTimeout(() => {
+              startWhenVisible = null;
+              phaseTimer = null;
+              begin();
+            }, MODEL_WAIT_CAP_MS);
+          }
         }
       },
       _armRevealed: () => {
@@ -570,14 +602,21 @@ export const useSigns3DStore = create<Signs3DState>()(
         const { settings, queue, pos } = get();
         if (pos >= queue.length - 1) {
           if (settings.selfGrading && settings.playAudio) playSfx("complete");
-          const { runRecalled, runMissed, runMissCount } = get();
+          const { runRecalled, runMissed, runMissCount, runScope } = get();
+          const tally = runTally(queue, runRecalled, runMissed);
           analytics.signs3dCompleted({
-            signsTotal: runRecalled.length + runMissed.length,
-            knewFirstTry: runRecalled.length,
-            missCount: runMissCount,
+            signsTotal: tally.signsTotal,
+            scope: runScope.kind,
+            graded: settings.selfGrading
+              ? { knewFirstTry: tally.firstTry, missCount: runMissCount }
+              : undefined,
           });
           triggerAdFromNonReact("chapter_complete");
-          set({ phase: "complete", running: false, inProgressRun: null });
+          set({
+            phase: "complete",
+            running: false,
+            ...(runScope.kind === "chart" ? { inProgressRun: null } : {}),
+          });
           return;
         }
 
@@ -587,20 +626,27 @@ export const useSigns3DStore = create<Signs3DState>()(
         set({
           phase: "between",
           runSeen: nextSeen,
-          inProgressRun: {
-            queueIds: snapshotState.queue.map((r) => r.id),
-            pos: snapshotState.pos,
-            runRecalled: snapshotState.runRecalled,
-            runMissed: snapshotState.runMissed,
-            runMissCount: snapshotState.runMissCount,
-            runSeen: nextSeen,
-            settingsSig: computeSettingsSig(snapshotState.settings),
-            boardSig: computeBoardSig(snapshotState.board),
-            savedAt: Date.now(),
-          },
+          // Rounds don't need a checkpoint: anything ungraded gets picked again.
+          ...(snapshotState.runScope.kind === "chart"
+            ? {
+                inProgressRun: {
+                  queueIds: snapshotState.queue.map((r) => r.id),
+                  pos: snapshotState.pos,
+                  runRecalled: snapshotState.runRecalled,
+                  runMissed: snapshotState.runMissed,
+                  runMissCount: snapshotState.runMissCount,
+                  runSeen: nextSeen,
+                  settingsSig: computeSettingsSig(snapshotState.settings),
+                  boardSig: computeBoardSig(snapshotState.board),
+                  savedAt: Date.now(),
+                },
+              }
+            : {}),
         });
 
-        {
+        // Rounds are short: their natural break is the end, so only a long
+        // whole-chart run can be interrupted between signs.
+        if (snapshotState.runScope.kind === "chart") {
           const opened = triggerAdAndAwaitClose("gameplay_milestone", () => {
             get().resume();
           });
@@ -614,6 +660,8 @@ export const useSigns3DStore = create<Signs3DState>()(
       },
       _advance: () => {
         set((s) => ({ pos: s.pos + 1 }));
+        const { queue, pos, settings } = get();
+        warmAhead(queue, pos, settings.playAudio);
         get()._toFocused();
       },
     }),
