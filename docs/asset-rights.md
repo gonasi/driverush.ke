@@ -14,10 +14,12 @@ to date when an asset or an agreement changes. No personal contact details here.
 - **Made by:** the DriveRush team, in-house. Files: `public/assets/road-signs/road-signs.svg`, `public/assets/road-signs/models/`.
 - **Contractors:** _to fill in: anyone paid to draw or model these, and where the assignment of rights is kept_
 - Do not credit Pelican Signs as the author of this artwork.
+- **Missing:** the 3D model for M.5 (Pass to the left). `M_5.glb` was an exact copy of the M.7 bicycle, so it was deleted and M.5 is out of the 3D trainer until it's re-exported. Add it back in `app/data/road-signs-3d.json` or `/tools/sign-3d`. The chart trainer still has M.5.
 
 ## Voice clips
 - **Made with:** ElevenLabs, on a paid plan. The clips in `public/assets/road-signs/sounds/` carry ElevenLabs content tags.
 - **Receipt:** _to fill in: where the proof of the paid plan is kept_
+- **File names:** some clip names don't match their sign's code, because the chart's codes are one off from the source list. M.7 plays `M.6.mp3`, M.8 plays `M.7.mp3`, M.9 plays `M.8.mp3`, and P.16 and P.17 play each other's. `audioSrc` in the data files is the source of truth. `P.38.mp3` is unused.
 
 ## Sign notes
 - **Source:** written in DriveRush's own words on 2026-11-04, from NTSA / Highway Code material. Same instructions, no new facts.

@@ -261,11 +261,18 @@ export function computeRegionTransform(
   };
 }
 
+/** The chart is 1920×1080. Thumbnails need this to keep signs in proportion. */
+const CHART_ASPECT = 16 / 9;
+
 /**
- * CSS-sprite crop showing only this region of the chart. `pad` pulls the box in
- * on all sides: regions are drawn generously for the trainer's reveal, and at
- * thumbnail size that slack shows the printed sign code and a sliver of the
- * neighbouring sign.
+ * CSS-sprite crop showing only this region of the chart, for a square box. `pad`
+ * pulls the box in on all sides: regions are drawn generously for the trainer's
+ * reveal, and at thumbnail size that slack shows the printed sign code and a
+ * sliver of the neighbouring sign.
+ *
+ * The chart scales evenly, so a wide region like an additional panel stays in
+ * proportion, centred, with white bands covering the signs above and below it.
+ * Stretching it to fill the square makes the image so tall it doesn't render.
  */
 export function regionSpriteStyle(
   region: RegionBox,
@@ -276,10 +283,25 @@ export function regionSpriteStyle(
   const y = region.y + region.height * pad;
   const width = region.width * (1 - pad * 2);
   const height = region.height * (1 - pad * 2);
+
+  // Everything below is in units of the square box, where 1 is its full side.
+  const regionW = width * CHART_ASPECT;
+  const scale = 1 / Math.max(regionW, height);
+  const imageW = 100 * CHART_ASPECT * scale;
+  const imageH = 100 * scale;
+  const posX = ((0.5 - ((x + width / 2) / 100) * imageW) / (1 - imageW)) * 100;
+  const posY = ((0.5 - ((y + height / 2) / 100) * imageH) / (1 - imageH)) * 100;
+
+  const bandX = ((1 - regionW * scale) / 2) * 100;
+  const bandY = ((1 - height * scale) / 2) * 100;
+  const wide = bandY > bandX;
+  const bandSize = wide ? `100% ${bandY}%` : `${bandX}% 100%`;
+  const band = "linear-gradient(#fff, #fff)";
+
   return {
-    backgroundImage: `url(${imageSrc})`,
-    backgroundSize: `${(100 / width) * 100}% ${(100 / height) * 100}%`,
-    backgroundPosition: `${(x / (100 - width)) * 100}% ${(y / (100 - height)) * 100}%`,
+    backgroundImage: `${band}, ${band}, url(${imageSrc})`,
+    backgroundSize: `${bandSize}, ${bandSize}, ${imageW * 100}% ${imageH * 100}%`,
+    backgroundPosition: `0 0, ${wide ? "0 100%" : "100% 0"}, ${posX}% ${posY}%`,
     backgroundRepeat: "no-repeat",
   };
 }

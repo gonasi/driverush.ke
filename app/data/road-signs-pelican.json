@@ -554,7 +554,7 @@
     },
     {
       "id": "sign-m7",
-      "name": "Compulsory pedestrian foot path",
+      "name": "Compulsory cycle track",
       "category": "mandatory",
       "index": 41,
       "x": 50.664,
@@ -562,12 +562,12 @@
       "width": 5.912,
       "height": 10.222,
       "code": "M.7",
-      "note": "Pedestrians must walk on this path. Cyclists and motor vehicles must stay off it.",
-      "audioSrc": "/assets/road-signs/sounds/M.7.mp3"
+      "note": "Cyclists must use this track. Motor vehicles are not allowed on it, and pedestrians should stay off it too.",
+      "audioSrc": "/assets/road-signs/sounds/M.6.mp3"
     },
     {
       "id": "sign-m8",
-      "name": "Compulsory track for cattle",
+      "name": "Compulsory pedestrian foot path",
       "category": "mandatory",
       "index": 42,
       "x": 50.664,
@@ -575,12 +575,12 @@
       "width": 5.912,
       "height": 10.222,
       "code": "M.8",
-      "note": "Livestock must keep to this track. Drivers should slow down, since animals may be around.",
-      "audioSrc": "/assets/road-signs/sounds/M.8.mp3"
+      "note": "Pedestrians must walk on this path. Cyclists and motor vehicles must stay off it.",
+      "audioSrc": "/assets/road-signs/sounds/M.7.mp3"
     },
     {
       "id": "sign-m9",
-      "name": "Compulsory minimum speed (cattle area)",
+      "name": "Compulsory track for cattle",
       "category": "mandatory",
       "index": 43,
       "x": 50.664,
@@ -588,8 +588,8 @@
       "width": 5.912,
       "height": 10.222,
       "code": "M.9",
-      "note": "There's a minimum speed here. Don't go slower than the speed shown unless road conditions call for it.",
-      "audioSrc": "/assets/road-signs/sounds/M.9.mp3"
+      "note": "Livestock must keep to this track. Drivers should slow down, since animals may be around.",
+      "audioSrc": "/assets/road-signs/sounds/M.8.mp3"
     },
     {
       "id": "sign-m10",
@@ -801,7 +801,7 @@
     },
     {
       "id": "sign-p16",
-      "name": "No entry for vehicles exceeding weight shown on one axle",
+      "name": "No entry for vehicles exceeding weight shown",
       "category": "prohibitory",
       "index": 60,
       "x": 72.174,
@@ -809,12 +809,12 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.16",
-      "note": "If any one axle carries more than the weight shown, don't go on. Overloading can damage roads and bridges.",
-      "audioSrc": "/assets/road-signs/sounds/P.16.mp3"
+      "note": "If your vehicle's total weight is over the limit shown, you may not go on. You'll often see this near bridges with load limits.",
+      "audioSrc": "/assets/road-signs/sounds/P.17.mp3"
     },
     {
       "id": "sign-p17",
-      "name": "No entry for vehicles exceeding weight shown",
+      "name": "No entry for vehicles exceeding weight shown on one axle",
       "category": "prohibitory",
       "index": 61,
       "x": 72.174,
@@ -822,8 +822,8 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.17",
-      "note": "If your vehicle's total weight is over the limit shown, you may not go on. You'll often see this near bridges with load limits.",
-      "audioSrc": "/assets/road-signs/sounds/P.17.mp3"
+      "note": "If any one axle carries more than the weight shown, don't go on. Overloading can damage roads and bridges.",
+      "audioSrc": "/assets/road-signs/sounds/P.16.mp3"
     },
     {
       "id": "sign-p18",
