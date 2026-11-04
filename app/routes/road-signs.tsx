@@ -33,8 +33,8 @@ const REFERENCE_ONLY = SIGN_CATEGORIES.filter((c) =>
 export function meta(_: Route.MetaArgs) {
   return [
     ...pageMeta({
-      title: "Kenya road signs and meanings: the Pelican chart and 3D trainers",
-      description: `${SIGN_COUNT} Kenyan road signs and what they mean, from the Pelican chart: warning, priority, mandatory and prohibitory signs. Free trainers drill them until naming one is instant. No signup.`,
+      title: `Kenya road signs and meanings: ${SIGN_COUNT} signs with pictures`,
+      description: `${SIGN_COUNT} Kenyan road signs with pictures and meanings: warning, priority, mandatory and prohibitory. Free trainers to memorise them, no signup.`,
       path: PATH,
       ogImage: ogCardPath("road-signs"),
       ogImageAlt: ogCardAlt("road-signs"),

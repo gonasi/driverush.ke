@@ -33,9 +33,9 @@ const PATH = "/road-signs/3d";
 export function meta(_: Route.MetaArgs) {
   return [
     ...pageMeta({
-      title: "3D road signs: spin Kenyan signs and memorise them for the NTSA test",
+      title: "3D road signs: spin Kenyan signs for the NTSA test",
       description:
-        "Recognise Kenyan road signs in 3D from any angle, like on the road. One sign at a time, name it before the answer shows, and the ones you miss come back sooner. Free, no signup.",
+        "Recognise Kenyan road signs in 3D from any angle. Name each one before the answer shows, and the ones you miss come back sooner. Free, no signup.",
       path: PATH,
       ogImage: ogCardPath("signs3d"),
       ogImageAlt: ogCardAlt("signs3d"),
@@ -73,7 +73,11 @@ export default function ThreeDSigns() {
   }, []);
 
   const ready = assetStatus === "ready";
-  const { link, startRun } = useTrainerLink(board.signs, { ready, start, exit });
+  const { link, startRun } = useTrainerLink(board.signs, {
+    ready,
+    start,
+    exit,
+  });
   const practiceCount = getPracticeSigns(board, categories).length;
 
   return (
@@ -140,19 +144,19 @@ export default function ThreeDSigns() {
           )}
 
           <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-dashed border-ink pt-5">
-              <span className="font-mono text-[11px] uppercase tracking-widest text-ink-3">
-                Same signs, on the chart
-              </span>
-              <Button variant="paper" size="sm" asChild>
-                <Link to="/road-signs/pelican">
-                  <HugeiconsIcon
-                    icon={BirdFreeIcons}
-                    size={14}
-                    strokeWidth={2.5}
-                  />
-                  Pelican chart
-                </Link>
-              </Button>
+            <span className="font-mono text-[11px] uppercase tracking-widest text-ink-3">
+              Same signs, on the chart
+            </span>
+            <Button variant="paper" size="sm" asChild>
+              <Link to="/road-signs/pelican">
+                <HugeiconsIcon
+                  icon={BirdFreeIcons}
+                  size={14}
+                  strokeWidth={2.5}
+                />
+                Pelican chart
+              </Link>
+            </Button>
           </div>
         </div>
 

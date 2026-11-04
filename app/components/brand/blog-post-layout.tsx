@@ -12,6 +12,7 @@ import { cn } from "~/lib/utils";
 import type { BlogPost } from "~/lib/blog";
 import { Rail } from "~/components/brand/rail";
 import { ShareButton } from "~/components/brand/share-button";
+import { SiteFooter } from "~/components/brand/site-footer";
 import { SiteNav } from "~/components/brand/site-nav";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -200,6 +201,7 @@ export function BlogPostLayout({
           )}
         </div>
       </main>
+      <SiteFooter />
     </>
   );
 }

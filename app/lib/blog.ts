@@ -37,6 +37,8 @@ export type BlogFrontmatter = {
   slug: string;
   /** ISO date, YYYY-MM-DD. */
   date: string;
+  /** ISO date of the last real content change, if there has been one. */
+  updated?: string;
   readingMinutes: number;
   tone: BlogTone;
   category: BlogCategory;

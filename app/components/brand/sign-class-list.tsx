@@ -6,13 +6,9 @@
  */
 import { Link } from "react-router";
 
-import pelican from "~/data/road-signs-pelican.json";
-import {
-  regionSpriteStyle,
-  SIGN_CATEGORIES,
-  type FocusRegion,
-} from "~/lib/image-focus";
+import { regionSpriteStyle, SIGN_CATEGORIES } from "~/lib/image-focus";
 import { isDue, MASTERED_BOX, type SignProgress } from "~/lib/pelican-progress";
+import { CHART_SRC, SIGN_PAGES, signPagePath } from "~/lib/road-sign-pages";
 import { trainerHref } from "~/lib/trainer-rounds";
 import { useSignProgress } from "~/lib/use-sign-progress";
 
@@ -20,14 +16,12 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Accordion, AccordionItem } from "~/components/brand/accordion";
 
-const SIGNS = pelican.regions as FocusRegion[];
-const CHART_SRC = pelican.imageSrc as string;
 const THUMB_PAD = 0.1;
 
 /** Classes that actually have signs, in the chart's order. */
 const CLASSES = SIGN_CATEGORIES.map((category) => ({
   category,
-  signs: SIGNS.filter((s) => s.category === category.id),
+  signs: SIGN_PAGES.filter((s) => s.category === category.id),
 })).filter((c) => c.signs.length > 0);
 
 function SignStatus({ entry }: { entry: SignProgress[string] | undefined }) {
@@ -102,9 +96,12 @@ export function SignClassList() {
                   />
                   <div className="min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <span className="font-display text-[12.5px] font-extrabold uppercase leading-tight tracking-[0.02em] text-ink">
+                      <Link
+                        to={signPagePath(sign)}
+                        className="font-display text-[12.5px] font-extrabold uppercase leading-tight tracking-[0.02em] text-ink underline-offset-2 hover:text-rush hover:underline"
+                      >
                         {sign.name}
-                      </span>
+                      </Link>
                       <SignStatus entry={progress?.pelican[sign.id]} />
                     </div>
                     {sign.note && (

@@ -225,7 +225,7 @@ export const DEFAULT_IMAGE_FOCUS_SETTINGS: ImageFocusSettings = {
   playAudio: true,
 };
 
-type RegionBox = Pick<FocusRegion, "x" | "y" | "width" | "height">;
+export type RegionBox = Pick<FocusRegion, "x" | "y" | "width" | "height">;
 
 export type RegionTransform = {
   /** Scale factor to apply to the image layer. */

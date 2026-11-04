@@ -22,8 +22,8 @@ export function SiteFooter() {
   return (
     <footer className="border-t-4 border-double border-ink bg-ink py-12 text-paper">
       <Container>
-        <div className="grid gap-6 border-b border-paper/20 pb-7 md:grid-cols-[2fr_1fr_1fr]">
-          <div>
+        <div className="grid gap-6 border-b border-paper/20 pb-7 sm:grid-cols-3 md:grid-cols-[2fr_1fr_1fr_1fr]">
+          <div className="sm:col-span-3 md:col-span-1">
             <Logo variant="plain" height={64} themed="on-ink" />
             <p className="mt-4 max-w-sm font-serif text-base leading-snug opacity-80">
               Memorise Kenyan road signs for the NTSA test, on the Pelican chart
@@ -83,10 +83,20 @@ export function SiteFooter() {
             ]}
           />
           <FooterCol
-            heading="More"
+            heading="Guides"
             items={[
-              { label: "Model Town Board (soon)", href: "/model-town-board" },
+              { label: "NTSA test", href: "/ntsa-test" },
+              { label: "Model Town Board", href: "/model-town-board" },
+              { label: "Driving schools", href: "/driving-schools-kenya" },
               { label: "Blog", href: "/blogs" },
+            ]}
+          />
+          <FooterCol
+            heading="DriveRush"
+            items={[
+              { label: "About", href: "/about" },
+              { label: "How we compare", href: "/derevaprep-alternative" },
+              { label: "Privacy", href: "/privacy" },
             ]}
           />
         </div>

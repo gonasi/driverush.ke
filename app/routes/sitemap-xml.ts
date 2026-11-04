@@ -11,8 +11,13 @@
  */
 import { absUrl } from "~/lib/site";
 import { getAllPosts } from "~/lib/blog";
+import {
+  isSignConfirmed,
+  SIGN_PAGES,
+  signPagePath,
+} from "~/lib/road-sign-pages";
 
-const STATIC_LAST_MODIFIED = "2026-11-04";
+const STATIC_LAST_MODIFIED = "2026-11-05";
 
 type Entry = {
   path: string;
@@ -21,73 +26,55 @@ type Entry = {
   lastmod: string;
 };
 
-/**
- * Cornerstone blog slugs — the SEO landing hubs. Pulled from `app/blogs/` like
- * any other post (so they get the same chrome and BlogPosting LD) but listed
- * here so the sitemap can mark them higher-priority than ordinary posts.
- */
-const CORNERSTONE_SLUGS = new Set([
-  "learning-to-drive-in-kenya",
-  "driving-schools-in-kenya",
-  "ntsa-test-prep-kenya",
-]);
+/** The post that still works as a hub. These get crawled first. */
+const CORNERSTONE_SLUGS = new Set(["learning-to-drive-in-kenya"]);
+
+function page(
+  path: string,
+  priority: string,
+  changefreq: Entry["changefreq"] = "monthly",
+): Entry {
+  return { path, priority, changefreq, lastmod: STATIC_LAST_MODIFIED };
+}
 
 const STATIC_PAGES: Entry[] = [
-  {
-    path: "/",
-    changefreq: "weekly",
-    priority: "1.0",
-    lastmod: STATIC_LAST_MODIFIED,
-  },
-  {
-    path: "/road-signs",
-    changefreq: "weekly",
-    priority: "0.9",
-    lastmod: STATIC_LAST_MODIFIED,
-  },
-  {
-    path: "/road-signs/pelican",
-    changefreq: "weekly",
-    priority: "0.7",
-    lastmod: STATIC_LAST_MODIFIED,
-  },
-  {
-    path: "/road-signs/3d",
-    changefreq: "weekly",
-    priority: "0.7",
-    lastmod: STATIC_LAST_MODIFIED,
-  },
-  {
-    path: "/model-town-board",
-    changefreq: "monthly",
-    priority: "0.4",
-    lastmod: STATIC_LAST_MODIFIED,
-  },
-  {
-    path: "/blogs",
-    changefreq: "weekly",
-    priority: "0.8",
-    lastmod: STATIC_LAST_MODIFIED,
-  },
+  page("/", "1.0", "weekly"),
+  page("/road-signs", "0.9", "weekly"),
+  page("/ntsa-test", "0.9"),
+  page("/model-town-board", "0.9"),
+  page("/driving-schools-kenya", "0.9"),
+  page("/road-signs/pelican", "0.7", "weekly"),
+  page("/road-signs/3d", "0.7", "weekly"),
+  page("/blogs", "0.7", "weekly"),
+  page("/derevaprep-alternative", "0.5"),
+  page("/about", "0.4", "yearly"),
+  page("/privacy", "0.2", "yearly"),
 ];
+
+/**
+ * Only the signs confirmed against an official source. The others have pages but
+ * are marked noindex until they're checked: see `CONFIRMED_CODES`.
+ */
+function signEntries(): Entry[] {
+  return SIGN_PAGES.filter(isSignConfirmed).map((sign) =>
+    page(signPagePath(sign), "0.6"),
+  );
+}
 
 function blogEntries(): Entry[] {
   return getAllPosts().map((p) => {
     const isCornerstone = CORNERSTONE_SLUGS.has(p.slug);
     return {
       path: `/blogs/${p.slug}`,
-      // Cornerstones get crawled more often and outrank ordinary posts in the
-      // sitemap's priority ordering — they're the SEO hubs we want indexed
-      // first.
       changefreq: isCornerstone ? "weekly" : "monthly",
-      priority: isCornerstone ? "0.9" : "0.6",
-      lastmod: p.date,
+      priority: isCornerstone ? "0.8" : "0.6",
+      lastmod: p.updated ?? p.date,
     };
   });
 }
 
 export function loader() {
-  const entries = [...STATIC_PAGES, ...blogEntries()];
+  const entries = [...STATIC_PAGES, ...signEntries(), ...blogEntries()];
 
   const urls = entries
     .map(

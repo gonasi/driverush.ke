@@ -5,8 +5,8 @@ import { stagger } from "~/lib/motion";
 import { Badge } from "~/components/ui/badge";
 
 /**
- * The Model Town Board isn't ready. Say so plainly so nobody has to go looking
- * for it, and leave the signs as the thing to do today.
+ * The Model Town Board trainer isn't ready. Say so plainly, and send people to the
+ * guide so they still get an answer.
  */
 export function BoardNotice() {
   return (
@@ -26,7 +26,8 @@ export function BoardNotice() {
           Model Town Board
         </span>
         <span className="text-[14.5px] leading-snug text-ink-2">
-          We're building it now. Get your signs solid first.
+          The trainer is on its way. Until then, here's how the board works in
+          the NTSA test.
         </span>
       </Link>
     </section>

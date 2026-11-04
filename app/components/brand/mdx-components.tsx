@@ -53,6 +53,23 @@ const components = {
       )}
     />
   ),
+  table: (props: React.ComponentProps<"table">) => (
+    <div className="my-6 overflow-x-auto">
+      <table
+        {...props}
+        className="w-full min-w-[520px] border-collapse border-2 border-ink font-sans text-[14.5px] leading-snug"
+      />
+    </div>
+  ),
+  th: (props: React.ComponentProps<"th">) => (
+    <th
+      {...props}
+      className="border border-ink bg-paper-2 px-3 py-2 text-left font-display text-[11.5px] font-extrabold uppercase tracking-wide text-ink"
+    />
+  ),
+  td: (props: React.ComponentProps<"td">) => (
+    <td {...props} className="border border-ink px-3 py-2 align-top text-ink-2" />
+  ),
   h2: (props: React.ComponentProps<"h2">) => (
     <h2
       {...props}

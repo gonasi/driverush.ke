@@ -1,61 +1,51 @@
 /**
- * `/model-town-board`: an honest "coming soon". Learners search for this by
- * name, so it gets a real URL that says it isn't ready and gives them something
- * useful to do today. Page views measure the demand.
+ * `/model-town-board`: how the Model Town Board works. Learners search for it by name, so this is a
+ * real guide. The interactive trainer isn't built yet, and the page says so.
  */
 import type { Route } from "./+types/model-town-board";
 
-import { stagger } from "~/lib/motion";
-import { pageMeta } from "~/lib/site";
+import Body from "~/guides/model-town-board.mdx";
+import { breadcrumbLd, graphLd, guideLd, pageMeta } from "~/lib/site";
 
-import { Badge } from "~/components/ui/badge";
-import { Rail } from "~/components/brand/rail";
-import { SiteFooter } from "~/components/brand/site-footer";
-import { SiteNav } from "~/components/brand/site-nav";
-import { TrainerCards } from "~/components/home/trainer-cards";
+import { GuideLayout } from "~/components/brand/guide-layout";
+
+const PATH = "/model-town-board";
+const CHECKED = "2026-11-05";
+const TITLE = "Model Town Board Kenya: how it works in the NTSA test";
+const DESCRIPTION =
+  "What the Model Town Board is, the three route rules, what you're tested on in the NTSA test, the signs you need and practice questions with answers.";
 
 export function meta(_: Route.MetaArgs) {
-  return pageMeta({
-    title: "Model Town Board practice: coming soon",
-    description:
-      "DriveRush is building a Model Town Board trainer. It isn't ready yet. Until then, memorise your road signs on the Pelican chart or in 3D. Free, no signup.",
-    path: "/model-town-board",
-    extraKeywords: ["Model Town Board Kenya", "model town board practice"],
-  });
+  return [
+    ...pageMeta({ title: TITLE, description: DESCRIPTION, path: PATH }),
+    graphLd(
+      breadcrumbLd([
+        { name: "Home", url: "/" },
+        { name: "Model Town Board", url: PATH },
+      ]),
+      guideLd({
+        title: TITLE,
+        description: DESCRIPTION,
+        path: PATH,
+        checked: CHECKED,
+      }),
+    ),
+  ];
 }
 
 export default function ModelTownBoard() {
   return (
-    <>
-      <SiteNav />
-      <main className="min-h-screen text-ink">
-        <Rail />
-        <div className="mx-auto w-full max-w-4xl px-5 pb-16 pt-6 sm:px-9 sm:pt-12">
-          <header className="grid justify-items-start gap-3 sm:gap-4">
-            <Badge variant="amber" className="dr-rise">
-              Coming soon
-            </Badge>
-            <h1
-              style={stagger(1)}
-              className="dr-rise m-0 font-display text-[clamp(36px,7vw,76px)] font-extrabold uppercase leading-[0.92] tracking-tighter"
-            >
-              Model Town Board.{" "}
-              <span className="italic text-rush">Not ready yet.</span>
-            </h1>
-            <p
-              style={stagger(2)}
-              className="dr-rise m-0 max-w-2xl font-serif text-[clamp(17px,2.2vw,22px)] leading-snug text-ink-2"
-            >
-              We're building it now. Get your signs solid first: that's what you
-              can practise here today.
-            </p>
-          </header>
-          <div className="mt-7">
-            <TrainerCards firstStep={3} />
-          </div>
-        </div>
-      </main>
-      <SiteFooter />
-    </>
+    <GuideLayout
+      kicker="Guide · Model Town Board"
+      title={
+        <>
+          Model Town Board. <em>How it works.</em>
+        </>
+      }
+      lede="What the board is, the route rules to learn, what you're tested on and the signs you need."
+      checked={CHECKED}
+    >
+      <Body />
+    </GuideLayout>
   );
 }

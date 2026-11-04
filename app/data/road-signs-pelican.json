@@ -276,7 +276,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.19",
-      "note": "Look out for cyclists on the road or joining it. Leave at least 1.5 metres when you overtake one.",
+      "note": "Look out for cyclists on the road or joining it. Give them plenty of room when you overtake.",
       "audioSrc": "/assets/road-signs/sounds/W.19.mp3"
     },
     {
@@ -289,7 +289,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.20",
-      "note": "Slow down and look out for animals on the road. Stop if you need to, and wait until they've cleared.",
+      "note": "Slow down and look out for animals on the road. You must stop if the person in charge of them signals you to, and wait until they've cleared.",
       "audioSrc": "/assets/road-signs/sounds/W.20.mp3"
     },
     {
@@ -341,7 +341,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.24",
-      "note": "You don't need to do anything differently. Just be aware that aircraft may fly very low nearby, usually close to an airstrip.",
+      "note": "Aircraft may fly very low nearby, usually close to an airstrip, and the sudden noise can startle you. Keep a firm grip and stay in control.",
       "audioSrc": "/assets/road-signs/sounds/W.24.mp3"
     },
     {
@@ -562,7 +562,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "M.7",
-      "note": "Cyclists must use this track. Motor vehicles are not allowed on it, and pedestrians should stay off it too.",
+      "note": "This track is for cyclists. Motor vehicles may not use it, except for access.",
       "audioSrc": "/assets/road-signs/sounds/M.6.mp3"
     },
     {
@@ -809,7 +809,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.16",
-      "note": "If your vehicle's total weight is over the limit shown, you may not go on. You'll often see this near bridges with load limits.",
+      "note": "If your vehicle is heavier than the weight shown, you may not go on. You'll often see this near bridges with load limits.",
       "audioSrc": "/assets/road-signs/sounds/P.17.mp3"
     },
     {
@@ -1017,7 +1017,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.32",
-      "note": "You may not park here. You can stop briefly to drop off or pick up passengers, but you must not leave the vehicle unattended.",
+      "note": "You may not park here. Keep going and find somewhere legal to leave your vehicle.",
       "audioSrc": "/assets/road-signs/sounds/P.32.mp3"
     },
     {

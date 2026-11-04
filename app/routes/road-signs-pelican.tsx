@@ -35,7 +35,7 @@ export function meta(_: Route.MetaArgs) {
     ...pageMeta({
       title: "Pelican chart: Kenya road signs trainer for the NTSA test",
       description:
-        "Memorise Kenyan road signs on the Pelican chart. One sign zooms in at a time, name it before the answer shows, and the ones you miss come back sooner. Free, no signup.",
+        "Memorise Kenyan road signs on the Pelican chart. Name each sign before the answer shows, and the ones you miss come back sooner. Free, no signup.",
       path: PATH,
       ogImage: ogCardPath("pelican"),
       ogImageAlt: ogCardAlt("pelican"),
@@ -73,7 +73,11 @@ export default function PelicanSigns() {
   }, []);
 
   const ready = assetStatus === "ready";
-  const { link, startRun } = useTrainerLink(board.regions, { ready, start, exit });
+  const { link, startRun } = useTrainerLink(board.regions, {
+    ready,
+    start,
+    exit,
+  });
   const practiceCount = getPracticeRegions(board, categories).length;
 
   return (

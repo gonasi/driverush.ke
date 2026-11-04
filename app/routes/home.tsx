@@ -19,6 +19,7 @@ import { Rail } from "~/components/brand/rail";
 import { SiteFooter } from "~/components/brand/site-footer";
 import { SiteNav } from "~/components/brand/site-nav";
 import { BoardNotice } from "~/components/home/board-notice";
+import { HomeGuides } from "~/components/home/home-guides";
 import { HomeHero } from "~/components/home/home-hero";
 import { SignCheck } from "~/components/home/sign-check";
 
@@ -55,6 +56,7 @@ export default function Home() {
         <HomeHero />
         <SignCheck />
         <BoardNotice />
+        <HomeGuides />
       </main>
       <SiteFooter />
     </>

@@ -1,0 +1,10 @@
+{
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "www.driverush.ke" }],
+      "destination": "https://driverush.ke/$1",
+      "statusCode": 301
+    }
+  ]
+}

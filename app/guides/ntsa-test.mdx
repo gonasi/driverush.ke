@@ -1,0 +1,85 @@
+import { Link } from "react-router";
+import { Accordion, AccordionItem } from "~/components/brand/accordion";
+import { PracticeQuestions } from "~/components/brand/practice-questions";
+
+To get a Kenyan driving licence, you enrol at a licensed driving school, get a Provisional Driving Licence, book and pass the NTSA test, then get an interim licence and a Smart DL. NTSA's own fees for those steps add up to **KES 5,500**. Your school's fee is separate.
+
+DriveRush is not part of the NTSA and is not affiliated with it. The facts here come from the sources listed at the bottom of this page, and where we couldn't confirm something, we say so.
+
+## The steps and what each one costs
+
+| Step                           | What happens                                                                                     | NTSA fee     |
+| ------------------------------ | ------------------------------------------------------------------------------------------------ | ------------ |
+| 1. Enrol at a driving school   | NTSA requires a licensed school. You must be 18 or over.                                         | School's own |
+| 2. Provisional Driving Licence | Valid for 3 months. Show L plates that can be seen from at least 20 metres, front and rear.      | KES 650      |
+| 3. Book the test               | Once your PDL has matured for 21 days. Pay, then choose your date and test centre.               | KES 1,050    |
+| 4. Sit the test                | At your chosen centre. If you don't pass, apply for a retest.                                    | Included     |
+| 5. Interim Driving Licence     | After you pass. Print it yourself. Valid for 6 months.                                           | KES 750      |
+| 6. Smart Driving Licence       | Takes about 5 working days. You get an SMS, then collect it from a Huduma Centre or NTSA office. | KES 3,050    |
+
+You do all of this online: sign in to [eCitizen](https://ecitizen.go.ke), then open the NTSA service portal. If a guide tells you to use TIMS, it's out of date. NTSA moved its services to eCitizen in January 2024.
+
+Pay only through the portal. In September 2026, NTSA warned about fraudsters posing as driving school agents and publishing inflated fees. If someone quotes you different NTSA fees, check the table above.
+
+## What the NTSA test covers
+
+According to [Kenyans.co.ke](https://www.kenyans.co.ke/news/114795-how-pass-ntsa-driving-test-kenya-model-town-board-highway-code-explained), the test covers two main areas, and your driving school judges when you're ready and helps you book:
+
+- **The Model Town Board.** A scaled-down road network used to test lanes, roundabouts and parking. Read [how the Model Town Board works](/model-town-board).
+- **The Highway Code.** The rules for all road users, including road signs and signals, speed limits, overtaking, right of way, and using signals and mirrors.
+
+Road signs are the part you can start on today. We have [83 Kenyan road signs and their meanings](/road-signs), and two free trainers for memorising them: the <Link to="/road-signs/pelican">Pelican chart</Link> and <Link to="/road-signs/3d">3D signs</Link>.
+
+## What we couldn't confirm
+
+NTSA's service pages don't describe the format of the test, and other sources disagree. Some practice sites describe a computer-based paper of 20 questions with a pass mark of 16. Another guide describes an oral or written test with a pass mark of about 70%.
+
+We can't confirm any of those numbers, so we won't tell you to rely on them. Ask your driving school how the test runs at your centre.
+
+## Practice questions for the NTSA test
+
+We wrote these from NTSA's published rules, the Traffic Act and the Ministry of Roads road signs manual. They're practice for the facts you need, not past NTSA papers. Be wary of anyone promising you the real questions.
+
+<PracticeQuestions />
+
+For road signs, the trainers are much better practice than a list of questions: a sign zooms in, you name it before the answer shows, and the ones you miss come back sooner.
+
+## Common questions about the NTSA test
+
+<Accordion className="my-6">
+  <AccordionItem summary="How much does the NTSA test cost?" open>
+    Booking the test costs KES 1,050. All of NTSA's fees for a first licence
+    (provisional, test booking, interim and Smart DL) come to KES 5,500. Driving
+    school fees are separate.
+  </AccordionItem>
+  <AccordionItem summary="Can I take the NTSA test without going to a driving school?">
+    NTSA's Provisional Driving Licence page says the learner is required to
+    enrol at a licensed driving school. See our guide to [driving schools in
+    Kenya](/driving-schools-kenya) for how to check one and what they charge.
+  </AccordionItem>
+  <AccordionItem summary="How soon can I book the test after getting my PDL?">
+    NTSA says after your PDL has matured for 21 days. The PDL itself is valid
+    for 3 months.
+  </AccordionItem>
+  <AccordionItem summary="What happens if I fail the NTSA test?">
+    NTSA says to apply for a retest through the same portal. Its test booking
+    page doesn't list a separate retest fee, so check the amount in the portal
+    or with your school.
+  </AccordionItem>
+  <AccordionItem summary="Where can I get the Highway Code?">
+    Ask your driving school for a copy. We couldn't find it on NTSA's downloads
+    page when we checked, so be careful with copies on other sites, which may be
+    old.
+  </AccordionItem>
+  <AccordionItem summary="Is DriveRush the NTSA?">
+    No. DriveRush is an independent site for memorising road signs. It's free,
+    with no signup, and it isn't affiliated with the NTSA.
+  </AccordionItem>
+</Accordion>
+
+## Sources
+
+- NTSA: [Provisional Driving Licence](https://ntsa.go.ke/services/service/provisional-driving-licence-pdl), [Driver Test Booking](https://ntsa.go.ke/services/service/driver-test-booking), [Interim Driving Licence](https://ntsa.go.ke/services/service/interim-driving-license-idl) and [Smart Driving Licence](https://ntsa.go.ke/services/service/application-for-a-smart-driving-licence). Fees and rules as shown on 5 November 2026.
+- [Traffic Act, Cap 403](https://infotradekenya.go.ke/media/Traffic%20Act%20CAP%20403.pdf), revised 2015.
+- [Design Manual for Roads and Bridges, Part 5a: Road Signs](https://transport.go.ke/sites/default/files/2023-07/Part%205a%20-%20Road%20Signs.pdf), Ministry of Roads, draft of December 2009.
+- Kenyans.co.ke: [TIMS moving to eCitizen](https://www.kenyans.co.ke/news/95656-ntsa-announces-shut-down-tims-portal-ecitizen-platform-migration-plan) (December 2023), [the Model Town Board and Highway Code](https://www.kenyans.co.ke/news/114795-how-pass-ntsa-driving-test-kenya-model-town-board-highway-code-explained) (August 2025) and [NTSA's warning about fraudsters](https://www.kenyans.co.ke/news/126923-ntsa-warns-kenyans-against-fraudsters-posing-driving-school-agents) (September 2026).

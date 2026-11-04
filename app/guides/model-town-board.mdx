@@ -1,0 +1,109 @@
+import { Link } from "react-router";
+import { Accordion, AccordionItem } from "~/components/brand/accordion";
+
+The Model Town Board is a scaled-down road network that Kenyan driving schools use to teach road rules and traffic flow. It's also one of the two main areas of the NTSA test, alongside the Highway Code, according to a [Kenyans.co.ke guide to the test](https://www.kenyans.co.ke/news/114795-how-pass-ntsa-driving-test-kenya-model-town-board-highway-code-explained).
+
+We're building an interactive Model Town Board trainer, but it isn't ready yet. Until it is, this page explains how the board works, and you can get the signs on it solid today.
+
+## What's on the board
+
+The board packs the situations you'll meet on a real road into one small town. It helps you understand:
+
+- roundabouts
+- one-way and two-way traffic
+- pedestrian crossings
+- parking
+
+Boards aren't all identical, so ask your driving school to show you the one you'll be tested on and to practise on it with you.
+
+## The three route rules
+
+Kenyans.co.ke reports three rules from NTSA for finding your way around the board. Learn them in this order:
+
+1. **Take the shortest correct route,** avoiding the parking area.
+2. **If that isn't possible, take the longest correct route,** still avoiding the parking area.
+3. **Use the parking area only as a last resort.**
+
+"Correct" is the important word. A short route that breaks a rule, such as going the wrong way down a one-way road, isn't a correct route at all.
+
+## What you're tested on
+
+The same guide lists three things candidates are tested on:
+
+- **Lane discipline.** Choosing the correct lane for each turn before you make it.
+- **Roundabout rules.** Knowing when to give way and how to exit correctly.
+- **Parking.** Showing methods such as parallel parking.
+
+Treat the small car the way you'd treat a real one. Obey every sign on the route in order, and don't take shortcuts you wouldn't take on a real road.
+
+## The signs you need on the board
+
+You can't route around a town if you can't read its signs. These are the ones to get solid first. Each link explains the sign and lets you practise it:
+
+- <Link to="/road-signs/stop">Stop</Link>: you must stop, even with no line on
+  the road and no traffic in sight.
+- <Link to="/road-signs/give-way">Give way</Link>: traffic on the major road
+  goes first.
+- <Link to="/road-signs/no-entry">No entry</Link>: you can't go in from this
+  side, so it rules out a route.
+- <Link to="/road-signs/roundabout-ahead">Roundabout ahead</Link>: get ready to
+  give way.
+- <Link to="/road-signs/pedestrian-crossing">Pedestrian crossing</Link>: slow
+  down and be ready to stop.
+- <Link to="/road-signs/two-way-traffic-ahead">Two-way traffic ahead</Link>:
+  traffic will be coming toward you.
+- <Link to="/road-signs/parking-prohibited">Parking prohibited</Link>: you may
+  not park here.
+
+See all [83 Kenyan road signs](/road-signs), or train on the <Link to="/road-signs/pelican">Pelican chart</Link> or with <Link to="/road-signs/3d">3D signs</Link>. Both are free, with no signup.
+
+## Practice questions
+
+Test yourself on the rules above. The answers come from the route rules and test areas described on this page.
+
+<Accordion className="my-6">
+  <AccordionItem summary="There are two correct routes to where you're going. Which one do you take?">
+    The shorter one, as long as it avoids the parking area.
+  </AccordionItem>
+  <AccordionItem summary="The only short route cuts through the parking area, but a longer route avoids it. Which do you take?">
+    The longer route. You should only use the parking area as a last resort.
+  </AccordionItem>
+  <AccordionItem summary="When can you drive through the parking area?">
+    Only when no correct route avoids it.
+  </AccordionItem>
+  <AccordionItem summary="The shortest way to your destination goes against a one-way road. Can you use it?">
+    No. It breaks a rule, so it isn't a correct route, however short it is.
+  </AccordionItem>
+  <AccordionItem summary="There's a STOP sign on your route, but no traffic and no painted line. What do you do?">
+    Stop anyway, at or before the sign. The instruction applies whether or not
+    anything is coming.
+  </AccordionItem>
+</Accordion>
+
+## Common questions about the Model Town Board
+
+<Accordion className="my-6">
+  <AccordionItem summary="What is the Model Town Board?" open>
+    A scaled-down road network used to teach and test road rules. It helps
+    learners understand things like roundabouts, one-way and two-way traffic,
+    pedestrian crossings and parking before driving on real roads.
+  </AccordionItem>
+  <AccordionItem summary="Is the Model Town Board part of the NTSA test?">
+    Yes, according to Kenyans.co.ke, which describes the test as covering the
+    Model Town Board and the Highway Code. See [how the NTSA test
+    works](/ntsa-test) for the steps and fees.
+  </AccordionItem>
+  <AccordionItem summary="Who runs the Model Town Board test?">
+    Tests are administered by NTSA. We couldn't confirm the exact format at each
+    centre, so ask your driving school how it runs at yours.
+  </AccordionItem>
+  <AccordionItem summary="Can I practise the Model Town Board online on DriveRush?">
+    Not yet. We're building it. For now, your driving school is the place to
+    practise on a real board, and DriveRush helps you memorise the road signs.
+  </AccordionItem>
+</Accordion>
+
+## Sources
+
+- [How to Pass the NTSA Driving Test in Kenya: Model Town Board & Highway Code Explained](https://www.kenyans.co.ke/news/114795-how-pass-ntsa-driving-test-kenya-model-town-board-highway-code-explained), Kenyans.co.ke, 2 August 2025. We couldn't find NTSA's own published description of the board, so this is our main source.
+- [Design Manual for Roads and Bridges, Part 5a: Road Signs](https://transport.go.ke/sites/default/files/2023-07/Part%205a%20-%20Road%20Signs.pdf), Ministry of Roads, for the STOP and Give Way signs.

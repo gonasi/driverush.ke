@@ -11,11 +11,27 @@ export default [
   route("road-signs", "routes/road-signs.tsx"),
   route("road-signs/pelican", "routes/road-signs-pelican.tsx"),
   route("road-signs/3d", "routes/road-signs-3d.tsx"),
+  // One page per sign. The two trainers above take priority over the slug.
+  route("road-signs/:slug", "routes/road-sign.tsx"),
   route("model-town-board", "routes/model-town-board.tsx"),
+
+  // Permanent guides. MDX bodies live in `app/guides/`.
+  route("ntsa-test", "routes/ntsa-test.tsx"),
+  route("driving-schools-kenya", "routes/driving-schools-kenya.tsx"),
+  route("derevaprep-alternative", "routes/derevaprep-alternative.tsx"),
+  route("about", "routes/about.tsx"),
+  route("privacy", "routes/privacy.tsx"),
 
   // Blog: index + dynamic per-post route. MDX bodies live in `app/blogs/`.
   route("blogs", "routes/blogs.tsx"),
   route("blogs/:slug", "routes/blogs-post.tsx"),
+  // Became permanent guides. These outrank the `:slug` route above.
+  route("blogs/ntsa-test-prep-kenya", "routes/legacy-redirects.ts", {
+    id: "legacy-blog-ntsa",
+  }),
+  route("blogs/driving-schools-in-kenya", "routes/legacy-redirects.ts", {
+    id: "legacy-blog-schools",
+  }),
 
   // Where shared achievement links land (`/s?k=quiz&…`). Deliberately short:
   // the URL travels through WhatsApp forwards. Renders a useful page for any
@@ -25,9 +41,7 @@ export default [
   // Retired pages, permanently redirected. See the route file for the targets.
   route("courses/*", "routes/legacy-redirects.ts", { id: "legacy-courses" }),
   route("practice", "routes/legacy-redirects.ts", { id: "legacy-practice" }),
-  route("driving-schools-kenya", "routes/legacy-redirects.ts", {
-    id: "legacy-schools",
-  }),
+  route("ntsa", "routes/legacy-redirects.ts", { id: "legacy-ntsa" }),
   route("design", "routes/legacy-redirects.ts", { id: "legacy-design" }),
 
   // SEO resource route — XML sitemap at /sitemap.xml (referenced by robots.txt).

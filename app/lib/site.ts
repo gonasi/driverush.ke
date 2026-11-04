@@ -28,15 +28,15 @@ export const SITE = {
     phoneDisplay: "+254 707 981 956",
     email: "mcdalinoluoch@gmail.com",
   },
-  /** Social/brand profiles for Organization JSON-LD `sameAs`. Add real handles when live. */
-  sameAs: [
-    "https://twitter.com/driverushke",
-    "https://www.instagram.com/driverushke",
-    "https://www.facebook.com/driverushke",
-    "https://www.tiktok.com/@driverushke",
-    "https://www.youtube.com/@driverushke",
-    "https://www.linkedin.com/company/driverush",
-  ],
+  /**
+   * Social profiles for Organization JSON-LD `sameAs`. Only list profiles that
+   * really exist and are ours: search engines use these to confirm who we are,
+   * and a dead or someone else's profile undermines that.
+   */
+  sameAs: [] as string[],
+  /** Square brand mark. Search engines want this, not the wide social card. */
+  logo: "/android-chrome-512x512.png",
+  logoSize: 512,
   // Default social card, at the 1.91:1 every platform crops to. Built from the
   // app itself: see `app/lib/og-cards.ts` and `/tools/og`. Pages with a
   // better-fitting card (road signs, the trainers) override it via
@@ -44,7 +44,8 @@ export const SITE = {
   ogImage: "/og/default.png",
   ogImageWidth: 1200,
   ogImageHeight: 630,
-  ogImageAlt: "DriveRush: memorise Kenyan road signs on the Pelican chart or in 3D",
+  ogImageAlt:
+    "DriveRush: memorise Kenyan road signs on the Pelican chart or in 3D",
   themeColor: "#E11D2E", // rush red
   /** Tagline used in title templates and as the default description suffix. */
   tagline: "Kenya road signs practice for the NTSA test",
@@ -177,13 +178,13 @@ export function organizationLd() {
     url: SITE.url,
     logo: {
       "@type": "ImageObject",
-      url: absUrl(SITE.ogImage),
-      width: SITE.ogImageWidth,
-      height: SITE.ogImageHeight,
+      url: absUrl(SITE.logo),
+      width: SITE.logoSize,
+      height: SITE.logoSize,
     },
     image: absUrl(SITE.ogImage),
     description: SITE.description,
-    sameAs: SITE.sameAs,
+    ...(SITE.sameAs.length > 0 ? { sameAs: SITE.sameAs } : {}),
     telephone: SITE.contact.phone,
     email: SITE.contact.email,
     contactPoint: {
@@ -220,10 +221,8 @@ export function organizationLd() {
 }
 
 /**
- * WebSite JSON-LD with a `SearchAction` so Google can surface a sitelinks
- * search box for brand queries ("DriveRush", "drive rush kenya"). The action
- * target points at `/blogs?q=...` — adjust the path if a dedicated search
- * route gets built.
+ * WebSite JSON-LD. Tells search engines the site's name and its alternate
+ * spellings, which is what they use for the name shown on results.
  */
 export function websiteLd() {
   return {
@@ -235,13 +234,45 @@ export function websiteLd() {
     alternateName: SITE.alternateNames,
     inLanguage: SITE.lang,
     publisher: { "@id": `${SITE.url}#organization` },
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate: `${SITE.url}/blogs?q={search_term_string}`,
-      },
-      "query-input": "required name=search_term_string",
+  };
+}
+
+/** Article JSON-LD for a permanent guide. `checked` is an ISO date. */
+export function guideLd(opts: {
+  title: string;
+  description: string;
+  path: string;
+  checked: string;
+}) {
+  const organization = {
+    "@type": "Organization",
+    name: SITE.name,
+    url: SITE.url,
+  };
+  return {
+    "@type": "Article",
+    headline: opts.title,
+    description: opts.description,
+    url: absUrl(opts.path),
+    mainEntityOfPage: absUrl(opts.path),
+    datePublished: opts.checked,
+    dateModified: opts.checked,
+    inLanguage: SITE.lang,
+    image: absUrl(SITE.ogImage),
+    author: organization,
+    publisher: {
+      ...organization,
+      logo: { "@type": "ImageObject", url: absUrl(SITE.logo) },
+    },
+  };
+}
+
+/** Several JSON-LD nodes as one `script:ld+json` entry, sharing one `@context`. */
+export function graphLd(...nodes: Array<Record<string, unknown>>) {
+  return {
+    "script:ld+json": {
+      "@context": "https://schema.org",
+      "@graph": nodes.map(({ "@context": _context, ...node }) => node),
     },
   };
 }
