@@ -1,53 +1,38 @@
 /**
- * Road-sign trainers. The first thing DriveRush actually ships — two
- * memorisation mini-games: the Pelican recall trainer (flat chart) and the 3D
- * recognition trainer (spinnable GLB models). The homepage "Road signs" section
- * and the /road-signs hub list these.
+ * The two road-sign trainers, the whole product: the Pelican chart (one sign at
+ * a time zoomed out of the real chart) and 3D signs (spinnable GLB models).
  */
 import type { IconSvgElement } from "@hugeicons/react";
 import { BirdFreeIcons, ThreeDViewFreeIcons } from "@hugeicons/core-free-icons";
 
-/** Brand accent a sign-game card renders in. */
-export type SignGameAccent = "amber" | "blue";
+import pelican from "~/data/road-signs-pelican.json";
+
+/** How many signs the trainers cover. Copy states this number, never "every". */
+export const SIGN_COUNT = pelican.regions.length;
 
 export type SignGame = {
-  /** URL slug — the route is `/road-signs/${slug}`. */
-  slug: string;
-  /** Mono kicker, e.g. "Trainer № 01 · Recall". */
-  kicker: string;
+  /** URL slug: the route is `/road-signs/${slug}`. */
+  slug: "pelican" | "3d";
   title: string;
-  /** One-paragraph pitch. */
+  /** One or two sentences, short enough for a phone-width card. */
   blurb: string;
-  /** Hugeicons mark. */
   icon: IconSvgElement;
-  accent: SignGameAccent;
-  /** Short mono line by the CTA, e.g. "Free · play now". */
-  tag: string;
-  /** Where the card CTA points. */
   to: string;
 };
 
 export const SIGN_GAMES: SignGame[] = [
   {
     slug: "pelican",
-    kicker: "Trainer № 01 · Recall",
-    title: "Pelican signs",
-    blurb:
-      "Signs glide past on cards — name each one before it lands. Misses come back sooner; the ones you know drift further apart. Built on how memory actually sticks.",
+    title: "Pelican chart",
+    blurb: "We zoom into one sign at a time. Name it before the answer shows.",
     icon: BirdFreeIcons,
-    accent: "amber",
-    tag: "Free · play now",
     to: "/road-signs/pelican",
   },
   {
     slug: "3d",
-    kicker: "Trainer № 02 · Recognition",
     title: "3D signs",
-    blurb:
-      "Spin a sign in 3D and read it from any angle — the way you actually see them on Nairobi roads, half-turned and half-lit. Time pressure optional.",
+    blurb: "Spin each sign and read it from any angle, like on the road.",
     icon: ThreeDViewFreeIcons,
-    accent: "blue",
-    tag: "Free · play now",
     to: "/road-signs/3d",
   },
 ];

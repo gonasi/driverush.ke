@@ -1,12 +1,7 @@
 /**
- * Shared top navigation. Three primary destinations (Course · Practice ·
- * Signs) so the hierarchy is obvious. Schools + Blog live in the footer and
- * pick up traffic via contextual cross-links from blog posts. The primary CTA
- * sends learners straight into the homepage's live sign challenge anchor.
- *
- * Used from `home.tsx`, `blogs.tsx`, and any other surface that wants the
- * full nav. Brutalist surfaces like the lesson player intentionally don't
- * mount it.
+ * Shared top navigation. The site does one thing, so the nav is that thing: the
+ * two trainers, the full list of signs, and a marked "soon" item for the Model
+ * Town Board. Blog lives in the footer and the mobile menu.
  */
 import { Link, useLocation } from "react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -28,33 +23,64 @@ import {
   SheetTrigger,
 } from "~/components/ui/sheet";
 import { AppBar, AppBarLink } from "~/components/brand/app-bar";
+import { Logo } from "~/components/brand/logo";
 import { PoweredByGonasi } from "~/components/brand/powered-by-gonasi";
 
 export const NAV_LINKS = [
-  { label: "Course", href: "/courses" },
-  { label: "Practice", href: "/practice" },
-  { label: "Signs", href: "/road-signs" },
+  { label: "Pelican chart", href: "/road-signs/pelican" },
+  { label: "3D signs", href: "/road-signs/3d" },
+  // Exact match: the trainers live under this path and have their own items.
+  { label: "All signs", href: "/road-signs", exact: true },
 ];
+
+const BOARD_HREF = "/model-town-board";
+
+function SoonBadge() {
+  return (
+    <span className="ml-1.5 border border-ink bg-amber px-1 py-px font-mono text-[9px] font-bold uppercase leading-none tracking-wider text-amber-foreground">
+      Soon
+    </span>
+  );
+}
 
 export function SiteNav() {
   const { pathname, search } = useLocation();
   return (
     <AppBar
-      nav={NAV_LINKS.map((l) => (
-        <AppBarLink
-          key={l.href}
-          asChild
-          active={isNavLinkActive(l.href, pathname, search)}
-        >
-          <Link to={l.href}>{l.label}</Link>
-        </AppBarLink>
-      ))}
+      brand={
+        <Link to="/" aria-label="DriveRush home" className="outline-none">
+          <Logo variant="plain" height={40} themed priority />
+        </Link>
+      }
+      nav={
+        <>
+          {NAV_LINKS.map((l) => (
+            <AppBarLink
+              key={l.href}
+              asChild
+              active={
+                l.exact
+                  ? pathname === l.href
+                  : isNavLinkActive(l.href, pathname, search)
+              }
+            >
+              <Link to={l.href}>{l.label}</Link>
+            </AppBarLink>
+          ))}
+          <AppBarLink asChild active={pathname === BOARD_HREF}>
+            <Link to={BOARD_HREF}>
+              <span className="lg:hidden">Board</span>
+              <span className="hidden lg:inline">Model Town Board</span>
+              <SoonBadge />
+            </Link>
+          </AppBarLink>
+        </>
+      }
       trailing={
         <>
           <Button variant="rush" size="sm" asChild>
             <Link to="/#try-now">
-              <span className="hidden sm:inline">Try a sign</span>
-              <span className="sm:hidden">Start</span>
+              Start
               <HugeiconsIcon
                 icon={ArrowRight02FreeIcons}
                 size={14}
@@ -84,19 +110,6 @@ export function SiteNav() {
               </SheetHeader>
               <SheetBody>
                 <nav className="grid gap-3">
-                  <SheetClose asChild>
-                    <Link
-                      to="/#try-now"
-                      className="flex items-center justify-between gap-3 border-2 border-ink bg-rush px-4 py-3 font-display text-[13px] font-bold uppercase tracking-wider text-white shadow-stamp-sm"
-                    >
-                      Try a sign
-                      <HugeiconsIcon
-                        icon={ArrowRight02FreeIcons}
-                        size={14}
-                        strokeWidth={2.5}
-                      />
-                    </Link>
-                  </SheetClose>
                   {NAV_LINKS.map((l) => (
                     <SheetClose asChild key={l.href}>
                       <Link
@@ -109,10 +122,11 @@ export function SiteNav() {
                   ))}
                   <SheetClose asChild>
                     <Link
-                      to="/driving-schools-kenya"
-                      className="border-2 border-ink bg-surface px-4 py-3 font-mono text-[12px] uppercase tracking-widest text-ink-2 hover:bg-paper-3"
+                      to={BOARD_HREF}
+                      className="flex items-center justify-between gap-3 border-2 border-dashed border-ink bg-paper-3 px-4 py-3 font-display text-[13px] font-bold uppercase tracking-wider text-ink"
                     >
-                      Schools
+                      Model Town Board
+                      <SoonBadge />
                     </Link>
                   </SheetClose>
                   <SheetClose asChild>
@@ -124,18 +138,6 @@ export function SiteNav() {
                     </Link>
                   </SheetClose>
                 </nav>
-                <div className="mt-6">
-                  <Button variant="paper" size="lg" asChild className="w-full">
-                    <Link to="/practice?mode=test">
-                      Take a quick test
-                      <HugeiconsIcon
-                        icon={ArrowRight02FreeIcons}
-                        size={16}
-                        strokeWidth={2.5}
-                      />
-                    </Link>
-                  </Button>
-                </div>
                 <div className="mt-6 border-t border-dashed border-ink pt-4">
                   <PoweredByGonasi
                     variant="inline"

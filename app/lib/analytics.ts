@@ -112,6 +112,10 @@ export const analytics = {
     question_index: number;
   }) => emit("sign_challenge_answered", args),
 
+  /** Visitor finished the ten-sign check on the homepage. */
+  signCheckCompleted: (args: { correct: number; total: number }) =>
+    emit("sign_check_completed", args),
+
   /** Learner chooses a practice mode. */
   practiceModeSelected: (args: { mode: string; source: string }) =>
     emit("practice_mode_selected", args),

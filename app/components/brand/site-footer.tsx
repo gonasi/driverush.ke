@@ -1,21 +1,19 @@
 /**
- * Shared site footer. The demoted destinations (Schools, Blog) live here
- * alongside Learn / Practice columns, the contact details, and a thin partner
- * credit row (NTSA + Pelican Signs). One source of truth so home, blog, and
- * any other primary route share the same chrome.
+ * Shared site footer: the trainers, the contact details, and the Pelican Signs
+ * partnership with the NTSA credited as the source. One source of truth so every
+ * primary route shares the same chrome.
  */
 import { Link } from "react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Call02FreeIcons, Mail01FreeIcons } from "@hugeicons/core-free-icons";
 
 import { analytics } from "~/lib/analytics";
-import { PARTNERS } from "~/lib/partners";
+import { SIGN_SOURCE } from "~/lib/partners";
 import { SITE } from "~/lib/site";
 
 import { Logo } from "~/components/brand/logo";
+import { PelicanPartner } from "~/components/brand/pelican-partner";
 import { PoweredByGonasi } from "~/components/brand/powered-by-gonasi";
-
-const LIVE_COURSE_SLUG = "ntsa-drive-kenya";
 
 const Container = ({ children }: { children: React.ReactNode }) => (
   <div className="mx-auto w-full max-w-6xl px-5 sm:px-9">{children}</div>
@@ -25,11 +23,12 @@ export function SiteFooter() {
   return (
     <footer className="border-t-4 border-double border-ink bg-ink py-12 text-paper">
       <Container>
-        <div className="grid gap-6 border-b border-paper/20 pb-7 md:grid-cols-[2fr_1fr_1fr_1fr]">
+        <div className="grid gap-6 border-b border-paper/20 pb-7 md:grid-cols-[2fr_1fr_1fr]">
           <div>
             <Logo variant="plain" height={64} themed="on-ink" />
             <p className="mt-4 max-w-sm font-serif text-base leading-snug opacity-80">
-              Full driving courses and NTSA practice, built for Kenyan roads.
+              Memorise Kenyan road signs for the NTSA test, on the Pelican chart
+              or in 3D.
             </p>
 
             <h3 className="m-0 mb-3 mt-6 font-display text-xs font-extrabold uppercase tracking-widest">
@@ -77,52 +76,41 @@ export function SiteFooter() {
             </ul>
           </div>
           <FooterCol
-            heading="Learn"
+            heading="Train"
             items={[
-              { label: "Class B course", href: `/courses/${LIVE_COURSE_SLUG}` },
-              { label: "Road signs", href: "/road-signs" },
-              { label: "Pelican trainer", href: "/road-signs/pelican" },
+              { label: "Pelican chart", href: "/road-signs/pelican" },
               { label: "3D signs", href: "/road-signs/3d" },
-            ]}
-          />
-          <FooterCol
-            heading="Practice"
-            items={[
-              { label: "Quick practice", href: "/practice?mode=quick" },
-              { label: "Mock test", href: "/practice?mode=test" },
-              { label: "Sign quiz", href: "/practice?mode=signs" },
-              { label: "Scenarios", href: "/practice?mode=challenge" },
+              { label: "All signs", href: "/road-signs" },
             ]}
           />
           <FooterCol
             heading="More"
             items={[
-              { label: "Driving schools", href: "/driving-schools-kenya" },
+              { label: "Model Town Board (soon)", href: "/model-town-board" },
               { label: "Blog", href: "/blogs" },
             ]}
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-paper/20 py-5 font-mono text-[10.5px] uppercase tracking-widest opacity-70">
-          <span>Sourced from</span>
-          {PARTNERS.map((p) =>
-            p.href ? (
-              <a
-                key={p.name}
-                href={p.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() =>
-                  analytics.partnerClicked({ name: p.name, url: p.href! })
-                }
-                className="hover:opacity-100 hover:underline"
-              >
-                {p.name}
-              </a>
-            ) : (
-              <span key={p.name}>{p.name}</span>
-            ),
-          )}
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-paper/20 py-5">
+          <PelicanPartner size="sm" onInk />
+          <span className="font-mono text-[10.5px] uppercase tracking-widest opacity-70">
+            Based on the{" "}
+            <a
+              href={SIGN_SOURCE.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() =>
+                analytics.partnerClicked({
+                  name: SIGN_SOURCE.name,
+                  url: SIGN_SOURCE.href,
+                })
+              }
+              className="underline-offset-2 hover:underline"
+            >
+              {SIGN_SOURCE.name}
+            </a>
+          </span>
         </div>
 
         <div className="flex flex-col items-start gap-5 pt-6 sm:flex-row sm:items-center sm:justify-between">

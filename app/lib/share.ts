@@ -97,7 +97,7 @@ export function buildShareLink(payload: SharePayload): ShareLink {
         kind,
         url: `${BASE}/s?${params}`,
         title: `I recalled ${total} Kenyan ${what}, ${firstTry} on the first try`,
-        text: "Free NTSA sign practice on DriveRush. See how many you get cold.",
+        text: "Free road-sign practice on DriveRush. See how many you get cold.",
       };
     }
     case "lesson": {
@@ -211,9 +211,9 @@ const FALLBACK: ResolvedShare = {
   kind: "unknown",
   headline: "Someone sent you DriveRush",
   detail:
-    "We couldn't read what they shared, links get clipped by chat apps all the time. Nothing is lost: everything below is free and needs no signup.",
-  ctaHref: "/practice?mode=quick",
-  ctaLabel: "Start practising",
+    "Memorise Kenyan road signs for the NTSA test, on the Pelican chart or in 3D. Free, no signup.",
+  ctaHref: "/#try-now",
+  ctaLabel: "Start training",
 };
 
 function int(raw: string | null, max: number): number | null {
@@ -275,7 +275,7 @@ export function resolveShare(
         valid: true,
         kind,
         headline: `They recalled ${total} Kenyan road signs ${how}`,
-        detail: `${firstTry} of ${total} on the first try. Every sign on the NTSA chart, drilled until it sticks.`,
+        detail: `${firstTry} of ${total} on the first try. Train on the Pelican chart or in 3D, free and no signup.`,
         ctaHref: kind === "pelican" ? "/road-signs/pelican" : "/road-signs/3d",
         ctaLabel: "Try the sign trainer",
       };
@@ -307,7 +307,7 @@ export function shareLandingMeta(resolved: ResolvedShare) {
   return {
     title: resolved.valid
       ? `${resolved.headline} · DriveRush`
-      : "DriveRush: free NTSA practice for Kenyan roads",
+      : "DriveRush: memorise Kenyan road signs for free",
     description: resolved.detail,
   };
 }

@@ -19,7 +19,9 @@ import { useLoadingFloor } from "~/lib/loading";
 
 import { Button } from "~/components/ui/button";
 import { FeedbackBanner } from "~/components/brand/feedback-banner";
+import { PelicanPartner } from "~/components/brand/pelican-partner";
 import { Rail } from "~/components/brand/rail";
+import { SiteFooter } from "~/components/brand/site-footer";
 import { SiteNav } from "~/components/brand/site-nav";
 import { LoadingPanel } from "~/components/brand/traffic-loader";
 import { Sign3DPlayer } from "~/components/brand/sign-3d-player";
@@ -33,9 +35,9 @@ const PATH = "/road-signs/3d";
 export function meta(_: Route.MetaArgs) {
   return [
     ...pageMeta({
-      title: "Kenya road signs in 3D — spin, read, recall for the NTSA test",
+      title: "3D road signs: spin Kenyan signs and memorise them for the NTSA test",
       description:
-        "Recognise Kenyan road signs in 3D from any angle, the way you actually see them on the road — half-turned and half-lit. One sign at a time, name it before the timer drops, the ones you miss come back sooner. Free, no signup.",
+        "Recognise Kenyan road signs in 3D from any angle, like on the road. One sign at a time, name it before the answer shows, and the ones you miss come back sooner. Free, no signup.",
       path: PATH,
       ogImage: ogCardPath("signs3d"),
       ogImageAlt: ogCardAlt("signs3d"),
@@ -97,22 +99,21 @@ export default function ThreeDSigns() {
                 size={14}
                 strokeWidth={2.5}
               />
-              Road signs
+              All signs
             </Link>
             <span className="font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
-              Trainer № 02 · Recognition
+              Trainer № 02
             </span>
           </div>
 
           <header className="border-b-2 border-ink pb-7">
-            <span className="eyebrow text-ink">Road-sign recognition</span>
+            <PelicanPartner size="sm" />
             <h1 className="m-0 mt-3 font-display text-[clamp(40px,7vw,72px)] font-extrabold uppercase leading-[0.9] tracking-tighter">
               3D <span className="italic text-rush">signs</span>
             </h1>
-            <p className="mt-5 max-w-2xl font-serif text-[clamp(17px,2.2vw,22px)] leading-tight text-ink-2">
-              One Kenyan road sign at a time, modelled in 3D on its post. Spin
-              it and read it from any angle, the way you actually see them on
-              Nairobi roads, then name it before the timer drops.
+            <p className="mt-4 max-w-2xl font-serif text-[clamp(16px,2.2vw,22px)] leading-tight text-ink-2">
+              One sign at a time, modelled on its post. Spin it and read it from
+              any angle, like on the road, then name it before the answer shows.
             </p>
           </header>
 
@@ -161,7 +162,7 @@ export default function ThreeDSigns() {
               <p className="mt-3 font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
                 {practiceCount} sign{practiceCount === 1 ? "" : "s"}
                 {categories.length > 0 ? ` of ${board.signs.length}` : ""} ·
-                drag to spin · same audio as the recall trainer
+                drag to spin
               </p>
             </div>
           )}
@@ -169,7 +170,7 @@ export default function ThreeDSigns() {
           {hasBoard && (
             <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-dashed border-ink pt-5">
               <span className="font-mono text-[11px] uppercase tracking-widest text-ink-3">
-                Prefer the flat recall game?
+                Same signs, on the chart
               </span>
               <Button variant="paper" size="sm" asChild>
                 <Link to="/road-signs/pelican">
@@ -178,7 +179,7 @@ export default function ThreeDSigns() {
                     size={14}
                     strokeWidth={2.5}
                   />
-                  Play the Pelican trainer
+                  Pelican chart
                 </Link>
               </Button>
             </div>
@@ -192,6 +193,7 @@ export default function ThreeDSigns() {
           </>
         )}
       </main>
+      <SiteFooter />
     </>
   );
 }

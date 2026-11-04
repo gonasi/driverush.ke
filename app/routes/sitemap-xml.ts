@@ -12,7 +12,7 @@
 import { absUrl } from "~/lib/site";
 import { getAllPosts } from "~/lib/blog";
 
-const STATIC_LAST_MODIFIED = "2026-05-15";
+const STATIC_LAST_MODIFIED = "2026-11-04";
 
 type Entry = {
   path: string;
@@ -54,6 +54,12 @@ const STATIC_PAGES: Entry[] = [
   {
     path: "/road-signs/3d",
     changefreq: "weekly",
+    priority: "0.7",
+    lastmod: STATIC_LAST_MODIFIED,
+  },
+  {
+    path: "/model-town-board",
+    changefreq: "monthly",
     priority: "0.4",
     lastmod: STATIC_LAST_MODIFIED,
   },

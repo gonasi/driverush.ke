@@ -30,6 +30,7 @@ import type { Route } from "./+types/share-landing";
 import { analytics } from "~/lib/analytics";
 import { getCourse } from "~/lib/course";
 import { OG_CARDS, OG_HEIGHT, OG_WIDTH, ogCardPath } from "~/lib/og-cards";
+import { SIGN_GAMES } from "~/lib/road-signs";
 import { resolveShare, SHARE_OG_CARD, shareLandingMeta } from "~/lib/share";
 import { absUrl, SITE } from "~/lib/site";
 
@@ -115,7 +116,7 @@ export default function ShareLanding({ loaderData }: Route.ComponentProps) {
           )}
           <div>
             <p className="m-0 font-mono text-[11px] uppercase tracking-widest text-ink-3">
-              {resolved.valid ? "Shared with you" : "Link trouble"}
+              {resolved.valid ? "Shared with you" : "Sent to you"}
             </p>
             <h1 className="m-0 mt-2 font-display text-[clamp(26px,5vw,42px)] font-extrabold uppercase leading-[0.95] tracking-tight text-ink">
               {resolved.headline}
@@ -145,9 +146,9 @@ export default function ShareLanding({ loaderData }: Route.ComponentProps) {
             A broken payload should still leave someone with somewhere to go. */}
         <section className="mt-10">
           <h2 className="m-0 mb-4 text-center font-mono text-[11px] uppercase tracking-widest text-ink-3">
-            Everything here is free
+            Free, no signup
           </h2>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             {ENTRY_POINTS.map((e) => (
               <Link
                 key={e.href}
@@ -170,20 +171,8 @@ export default function ShareLanding({ loaderData }: Route.ComponentProps) {
   );
 }
 
-const ENTRY_POINTS = [
-  {
-    href: "/practice?mode=test",
-    title: "Mock test",
-    blurb: "Ten questions, eight minutes, the shape of the real paper.",
-  },
-  {
-    href: "/road-signs",
-    title: "Road signs",
-    blurb: "The full NTSA chart, plus two games that drill it into memory.",
-  },
-  {
-    href: "/courses",
-    title: "Class B course",
-    blurb: "Short lessons from first principles to road ready.",
-  },
-];
+const ENTRY_POINTS = SIGN_GAMES.map((game) => ({
+  href: game.to,
+  title: game.title,
+  blurb: game.blurb,
+}));

@@ -453,7 +453,29 @@ function RoadSignsCard() {
   );
 }
 
-const RENDERERS: Record<OgCardId, () => React.JSX.Element> = {
+/**
+ * Not a social card: the still shown on the homepage's 3D trainer card, so a cold
+ * visit gets a real render without downloading three.js. Captured by the same
+ * script, then compressed into `public/assets/road-signs/3d-poster.jpg`.
+ */
+function Poster3D() {
+  return (
+    <div style={{ width: OG_WIDTH, height: OG_HEIGHT }} className="bg-paper-3">
+      <Sign3DViewer
+        modelSrc="/assets/road-signs/models/R_1.glb"
+        yaw={-32}
+        pitch={-4}
+        zoom={0.92}
+        autoRotate={false}
+        interactive={false}
+        className="size-full"
+      />
+    </div>
+  );
+}
+
+const RENDERERS: Record<OgCardId | "poster-3d", () => React.JSX.Element> = {
+  "poster-3d": Poster3D,
   default: DefaultCard,
   quiz: QuizCard,
   pelican: PelicanCard,
@@ -464,7 +486,7 @@ const RENDERERS: Record<OgCardId, () => React.JSX.Element> = {
 
 export default function OgStudio() {
   const [params] = useSearchParams();
-  const requested = params.get("card") as OgCardId | null;
+  const requested = params.get("card") as keyof typeof RENDERERS | null;
 
   // Single-card mode: nothing but the card at its exact pixel size, pinned to
   // the top-left so a 1200×630 viewport screenshot is the card and only the

@@ -11,6 +11,7 @@
  * Coordinates are normalised percentages (0–100) of the image box, so the same
  * region works for SVG, JPEG or PNG regardless of intrinsic pixel size.
  */
+import type { CSSProperties } from "react";
 
 /** The one road-sign sheet every trainer board zooms into. Lives in `public/`. */
 export const ROAD_SIGNS_IMAGE_SRC = "/assets/road-signs/road-signs.svg";
@@ -257,6 +258,29 @@ export function computeRegionTransform(
     translateX,
     translateY,
     transform: `translate(${translateX}%, ${translateY}%) scale(${scale})`,
+  };
+}
+
+/**
+ * CSS-sprite crop showing only this region of the chart. `pad` pulls the box in
+ * on all sides: regions are drawn generously for the trainer's reveal, and at
+ * thumbnail size that slack shows the printed sign code and a sliver of the
+ * neighbouring sign.
+ */
+export function regionSpriteStyle(
+  region: RegionBox,
+  imageSrc: string,
+  pad = 0,
+): CSSProperties {
+  const x = region.x + region.width * pad;
+  const y = region.y + region.height * pad;
+  const width = region.width * (1 - pad * 2);
+  const height = region.height * (1 - pad * 2);
+  return {
+    backgroundImage: `url(${imageSrc})`,
+    backgroundSize: `${(100 / width) * 100}% ${(100 / height) * 100}%`,
+    backgroundPosition: `${(x / (100 - width)) * 100}% ${(y / (100 - height)) * 100}%`,
+    backgroundRepeat: "no-repeat",
   };
 }
 

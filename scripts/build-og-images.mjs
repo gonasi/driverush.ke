@@ -50,6 +50,10 @@ const CARDS = [
   { id: "signs3d", settleMs: 20000, minBytes: 50_000 },
   { id: "lesson", settleMs: 2500, minBytes: 20_000 },
   { id: "road-signs", settleMs: 3500, minBytes: 20_000 },
+  // The homepage's 3D still rather than a social card. Compress it afterwards:
+  //   sips -s format jpeg -s formatOptions 72 -Z 640 public/og/poster-3d.png \
+  //     --out public/assets/road-signs/3d-poster.jpg && rm public/og/poster-3d.png
+  { id: "poster-3d", settleMs: 20000, minBytes: 15_000 },
 ];
 
 /** How many times to re-shoot a card that comes back under its floor. */

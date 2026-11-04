@@ -9,20 +9,6 @@ category: "Driving in Kenya"
 tags: [driving school, NTSA, Kenya, cost, Class B]
 lede: A driving school in Kenya needs to certify your practical hours. It does not need to teach you theory. Splitting the two saves money — and rarely hurts your pass rate.
 kicker: "Cornerstone · Driving schools"
-canonical: /driving-schools-kenya
-faq:
-  - q: "What are the best driving schools in Kenya?"
-    a: "The major NTSA-registered schools are AA Kenya, Petanns, Glory Driving School, Better Brakes, Sunset and Eagle. They're well-known, accredited and present in most counties. Quality and price vary widely between branches — always ask to see the NTSA certificate before paying."
-  - q: "Are online driving schools legal in Kenya?"
-    a: "Online theory study is legal and effective for the NTSA test. The practical test, however, must be signed off by an NTSA-registered physical school. DriveRush handles your online theory free; book practical hours wherever you like once you're test-ready."
-  - q: "How much does driving school cost in Kenya?"
-    a: "Class B packages typically run KES 8,000–20,000 depending on the school, region and whether the school is bundling theory with practical. Theory-only is usually KES 3,000–5,000. DriveRush's online theory is free, so you pay only for practical hours."
-  - q: "How long does driving school take in Kenya?"
-    a: "Most Class B courses run 4–8 weeks at 2–3 sessions a week, plus the NTSA test wait. Theory typically takes 2–3 weeks of self-study; practical needs 15–25 instructor hours."
-  - q: "Do I need to attend a physical driving school to get a Kenyan licence?"
-    a: "For the practical test, yes — an NTSA-registered school must certify your driving hours. For theory, no. You can self-study online (with DriveRush, free), then pay a school only for the practical component. This typically saves KES 4,000–7,000."
-  - q: "Can I learn theory online and practical in person?"
-    a: "Yes, and it's the cheapest path. Use DriveRush's free road-sign trainer, past papers and scenarios for theory at your own pace, then book only the practical hours with an NTSA-registered driving school once you're ready."
 ---
 
 import { Link } from "react-router";
@@ -45,12 +31,12 @@ A driving school in Kenya is mandatory for one reason: the NTSA needs a register
 
 The schools that bundle "theory + practical" lean hard on the bundle because their margins are in the theory hours. A classroom can hold 30 students; a yard car can hold one student per hour.
 
-**Online theory · DriveRush**
+**Road signs online · DriveRush**
 
-- Free — no signup
-- Drill signs and past papers daily
-- Same NTSA test shape
-- Pay M-Pesa for the deep bank
+- Free, no signup
+- Train on the Pelican chart or in 3D
+- A few minutes a day, on your phone
+- Misses come back sooner
 
 **In-person driving school**
 
@@ -84,7 +70,7 @@ Good schools answer all six clearly. Skip the ones that don't.
 
 Prices vary by school, county and class. These are the bands you should see. Push back on quotes that sit far above the upper bound without a clear reason.
 
-- **Class B theory only:** KES 0–5,000. Free with DriveRush; KES 3–5k if bought from a school. Don't overpay for theory.
+- **Class B theory only:** KES 0–5,000. Free if you self-study; KES 3–5k if bought from a school. Don't overpay for theory.
 - **Class B practical:** KES 6,000–15,000. Where the real money goes. 15–25 instructor hours plus dual-control car use. Push for more wheel-time, not a fancier brochure.
 - **Class B full package:** KES 8,000–20,000. Theory + practical + booked NTSA test. Verify what's included in writing.
 - **NTSA + Smart DL fees:** KES 3,000–4,000. Paid separately on TIMS. Theory test, practical test, Smart DL card. Same for every school.
@@ -136,7 +122,7 @@ There are hundreds of independent schools too. Many are excellent and cheaper th
   <AccordionItem summary="Are online driving schools legal in Kenya?">
     Online theory study is legal and effective for the NTSA test. The practical
     test, however, must be signed off by an NTSA-registered physical school.
-    DriveRush handles your online theory free; book practical hours wherever you
+    DriveRush drills your road signs free; book practical hours wherever you
     like once you're test-ready.
   </AccordionItem>
   <AccordionItem summary="How much does driving school cost in Kenya?">
@@ -151,23 +137,23 @@ There are hundreds of independent schools too. Many are excellent and cheaper th
   </AccordionItem>
   <AccordionItem summary="Do I need to attend a physical driving school to get a Kenyan licence?">
     For the practical test, yes — an NTSA-registered school must certify your
-    driving hours. For theory, no. You can self-study online with DriveRush
-    free, then pay a school only for the practical component. This typically
+    driving hours. For theory, no. You can self-study online, then pay a school
+    only for the practical component. This typically
     saves KES 4,000–7,000.
   </AccordionItem>
   <AccordionItem summary="Can I learn theory online and practical in person?">
-    Yes, and it's the cheapest path. Use DriveRush's free road-sign trainer,
-    past papers and scenarios for theory at your own pace, then book only the
-    practical hours with an NTSA-registered driving school once you're ready.
+    Yes, and it's the cheapest path. Study theory at your own pace, drill the
+    road signs on DriveRush's free trainers, then book only the practical hours
+    with an NTSA-registered driving school once you're ready.
   </AccordionItem>
 </Accordion>
 
 <div className="my-8 flex flex-wrap gap-3">
   <Button variant="rush" size="lg" asChild>
-    <Link to="/road-signs">Drill theory free</Link>
+    <Link to="/road-signs/pelican">Train on the Pelican chart</Link>
   </Button>
   <Button variant="paper" size="lg" asChild>
-    <Link to="/practice?mode=test">Quick NTSA test</Link>
+    <Link to="/road-signs/3d">Spin signs in 3D</Link>
   </Button>
   <Button variant="ink" size="lg" asChild>
     <Link to="/blogs/learning-to-drive-in-kenya">Full path</Link>

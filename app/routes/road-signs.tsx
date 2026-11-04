@@ -1,18 +1,8 @@
-import { Link } from "react-router";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  ArrowLeft02FreeIcons,
-  ArrowRight02FreeIcons,
-  Mortarboard01FreeIcons,
-  ThreeDViewFreeIcons,
-  TrafficLightFreeIcons,
-} from "@hugeicons/core-free-icons";
-
 import type { Route } from "./+types/road-signs";
 
 import { absUrl, breadcrumbLd, pageMeta, ROAD_SIGN_KEYWORDS } from "~/lib/site";
 import { ogCardAlt, ogCardPath } from "~/lib/og-cards";
-import { SIGN_GAMES } from "~/lib/road-signs";
+import { SIGN_COUNT } from "~/lib/road-signs";
 import {
   SIGN_CATEGORIES,
   type SignShape,
@@ -21,15 +11,16 @@ import {
 import { cn } from "~/lib/utils";
 
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
 import { Accordion, AccordionItem } from "~/components/brand/accordion";
 import { Callout } from "~/components/brand/callout";
+import { PelicanPartner } from "~/components/brand/pelican-partner";
 import { Rail } from "~/components/brand/rail";
-import { ShareButton } from "~/components/brand/share-button";
-import { SiteNav } from "~/components/brand/site-nav";
 import { SectionHead } from "~/components/brand/section-head";
+import { ShareButton } from "~/components/brand/share-button";
 import { SignCard } from "~/components/brand/sign-card";
-import { SignGameCard } from "~/components/brand/sign-game-card";
+import { SiteFooter } from "~/components/brand/site-footer";
+import { SiteNav } from "~/components/brand/site-nav";
+import { TrainerCards } from "~/components/home/trainer-cards";
 
 const PATH = "/road-signs";
 const TOTAL_SIGNS = SIGN_CATEGORIES.reduce((n, c) => n + c.signs.length, 0);
@@ -37,10 +28,8 @@ const TOTAL_SIGNS = SIGN_CATEGORIES.reduce((n, c) => n + c.signs.length, 0);
 export function meta(_: Route.MetaArgs) {
   return [
     ...pageMeta({
-      title:
-        "Kenya road signs and meanings — full NTSA chart with recall games",
-      description:
-        "Every Kenyan road sign with its meaning: warning, regulatory, mandatory, information, traffic-light signals and road markings, as the NTSA Highway Code lays them out. Free recall games drill them until naming one is instant.",
+      title: "Kenya road signs and meanings: the Pelican chart and 3D trainers",
+      description: `${SIGN_COUNT} Kenyan road signs and what they mean, from the Pelican chart: warning, priority, mandatory and prohibitory signs. Free trainers drill them until naming one is instant. No signup.`,
       path: PATH,
       ogImage: ogCardPath("road-signs"),
       ogImageAlt: ogCardAlt("road-signs"),
@@ -136,128 +125,40 @@ export default function RoadSigns() {
         <Rail />
 
         <div className="mx-auto w-full max-w-4xl px-5 pb-24 pt-6 sm:px-9 sm:pt-10">
-          <div className="mb-6 flex items-center justify-between gap-3">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-ink-3 outline-none hover:text-ink focus-visible:text-ink"
-            >
-              <HugeiconsIcon
-                icon={ArrowLeft02FreeIcons}
-                size={14}
-                strokeWidth={2.5}
-              />
-              Back
-            </Link>
-            <span className="font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
-              Road signs · Kenya / NTSA
-            </span>
-          </div>
-
-          {/* ── Hero — clear pitch, badges, then straight to the games ────── */}
-          <header className="border-b-2 border-ink pb-8">
-            <span className="eyebrow flex items-center gap-2 text-ink">
-              <HugeiconsIcon
-                icon={TrafficLightFreeIcons}
-                size={14}
-                strokeWidth={2.5}
-                className="text-rush"
-              />
-              DriveRush · Kenyan road signs
-            </span>
-            <h1 className="m-0 mt-3 font-display text-[clamp(38px,7vw,80px)] font-extrabold uppercase leading-[0.9] tracking-tighter">
+          {/* Hero: what this page is, then straight to the trainers. */}
+          <header className="grid gap-3 sm:gap-4">
+            <PelicanPartner />
+            <h1 className="m-0 font-display text-[clamp(36px,7vw,76px)] font-extrabold uppercase leading-[0.9] tracking-tighter">
               Kenya road signs.{" "}
-              <span className="italic text-rush">Learn the lot.</span>
+              <span className="italic text-rush">All {SIGN_COUNT}.</span>
             </h1>
-            <p className="mt-5 max-w-2xl font-serif text-[clamp(17px,2.2vw,24px)] leading-tight text-ink-2">
-              Two quick games that drill the Kenyan road signs until naming one
-              is instant. The full reference is below, the way the NTSA Highway
-              Code lays it out.
+            <p className="m-0 max-w-2xl font-serif text-[clamp(16px,2.2vw,22px)] leading-snug text-ink-2">
+              The signs on the Pelican chart and what each one means. Pick a
+              trainer to drill them. Free, no signup.
             </p>
+          </header>
 
-            <div className="mt-5 flex flex-wrap items-center gap-2">
-              <Badge variant="green">NTSA Highway Code</Badge>
-              <Badge variant="amber">
-                {SIGN_CATEGORIES.length} sign classes
-              </Badge>
-              <Badge variant="ink">Free · no signup</Badge>
-            </div>
-
-            <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2.5">
-              <Button variant="rush" size="lg" asChild>
-                <Link to="/road-signs/pelican">
-                  Play the recall trainer
-                  <HugeiconsIcon
-                    icon={ArrowRight02FreeIcons}
-                    size={16}
-                    strokeWidth={2.5}
-                  />
-                </Link>
-              </Button>
-              <Button variant="paper" size="lg" asChild>
-                <Link to="/road-signs/3d">
-                  <HugeiconsIcon
-                    icon={ThreeDViewFreeIcons}
-                    size={16}
-                    strokeWidth={2.5}
-                  />
-                  Spin signs in 3D
-                </Link>
-              </Button>
-              <Button variant="paper" size="lg" asChild>
-                <Link to="/practice?mode=signs">Classic road-sign quiz</Link>
-              </Button>
-              {/* The chart is the most forwarded thing on the site: a learner
-                  sends it to the next person in the queue at NTSA. */}
+          <section className="mt-6" aria-label="Road-sign trainers">
+            <TrainerCards />
+            {/* The chart is the most forwarded thing on the site: a learner
+                sends it to the next person in the queue at NTSA. */}
+            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2.5">
               <ShareButton
                 surface="road_signs_hero"
                 label="Send to a friend"
                 payload={{
                   kind: "page",
                   path: "/road-signs",
-                  title: "Every Kenyan road sign, with what it actually means",
-                  text: "The full NTSA chart plus two games that drill it into memory. Free, no signup.",
+                  title: `${SIGN_COUNT} Kenyan road signs, with what each one means`,
+                  text: "The Pelican chart, plus 3D signs you can spin. Free, no signup.",
                 }}
               />
               <a
                 href="#reference"
                 className="font-mono text-[11px] uppercase tracking-widest text-ink-3 underline-offset-4 outline-none hover:text-ink hover:underline focus-visible:text-ink"
               >
-                ↓ Browse every sign
+                ↓ Browse the signs
               </a>
-            </div>
-          </header>
-
-          {/* ── 01 · The trainers — the thing, right here ─────────────────── */}
-          <section className="mt-12" aria-label="Road-sign trainers">
-            <SectionHead
-              num="01"
-              title={
-                <>
-                  Drill them <em>first</em>
-                </>
-              }
-              stamp={`${SIGN_GAMES.length} trainers · free`}
-              lede="Reading the list once is not learning it. These two mini-games make you recall each sign instead; misses come back sooner, the ones you've got drift away. About five minutes a day."
-            />
-            <div className="grid gap-5 sm:grid-cols-2">
-              {SIGN_GAMES.map((g) => (
-                <SignGameCard key={g.slug} game={g} />
-              ))}
-            </div>
-            <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-dashed border-ink pt-4">
-              <span className="font-mono text-[11px] uppercase tracking-widest text-ink-3">
-                Prefer the classic?
-              </span>
-              <Button variant="paper" size="sm" asChild>
-                <Link to="/practice?mode=signs">
-                  Road-sign quiz
-                  <HugeiconsIcon
-                    icon={ArrowRight02FreeIcons}
-                    size={14}
-                    strokeWidth={2.5}
-                  />
-                </Link>
-              </Button>
             </div>
           </section>
 
@@ -267,7 +168,7 @@ export default function RoadSigns() {
           {/* ── 02 · How the signs work — the shape & colour legend ───────── */}
           <section className="scroll-mt-8">
             <SectionHead
-              num="02"
+              num="01"
               title={
                 <>
                   How the signs <em>work</em>
@@ -299,7 +200,7 @@ export default function RoadSigns() {
           {/* ── 03 · Every sign, by class — collapsed; open the one you want ─ */}
           <section className="mt-14 scroll-mt-8" id="classes">
             <SectionHead
-              num="03"
+              num="02"
               title={
                 <>
                   Every sign, <em>by class</em>
@@ -356,10 +257,10 @@ export default function RoadSigns() {
               ))}
             </Accordion>
 
-            {/* The sign chart the trainers draw from — tucked away, open if wanted. */}
+            {/* The chart itself: tucked away, open if wanted. */}
             <details className="mt-4 border-2 border-ink bg-surface [&[open]>summary]:border-b-2 [&[open]>summary]:border-ink [&[open]>summary]:after:content-['−']">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 font-mono text-[10.5px] uppercase tracking-widest text-ink-3 outline-none after:font-display after:text-lg after:font-extrabold after:leading-none after:text-rush after:content-['+'] focus-visible:text-ink [&::-webkit-details-marker]:hidden">
-                The full sign chart
+                The Pelican chart
               </summary>
               <figure className="bg-white p-3 sm:p-5">
                 <img
@@ -371,54 +272,15 @@ export default function RoadSigns() {
                   className="mx-auto block w-full"
                 />
                 <figcaption className="mt-3 border-t border-dashed border-ink pt-3 font-mono text-[10px] uppercase tracking-widest text-ink-3">
-                  The DriveRush sign chart · the trainers zoom one sign at a
-                  time out of this
+                  The Pelican chart · the trainer zooms into one sign at a time
                 </figcaption>
               </figure>
             </details>
           </section>
 
-          {/* ── Closing CTA — the bigger picture ──────────────────────────── */}
-          <section className="mt-14">
-            <div className="grid gap-5 border-2 border-ink bg-surface p-6 shadow-stamp sm:grid-cols-[1fr_auto] sm:items-center sm:p-8">
-              <div>
-                <span className="eyebrow text-ink">Class A · B · C · D</span>
-                <p className="mt-2.5 font-display text-[clamp(22px,3.4vw,34px)] font-extrabold uppercase leading-[0.95] tracking-tight text-ink">
-                  Sitting the{" "}
-                  <span className="italic text-rush">NTSA test?</span>
-                </p>
-                <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-ink-2">
-                  Signs are one slice. Practice covers junctions, hazards and
-                  the rules too, and the course teaches the lot in order. Free
-                  to start.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <Button variant="rush" size="lg" asChild>
-                  <Link to="/practice">
-                    Start practising
-                    <HugeiconsIcon
-                      icon={ArrowRight02FreeIcons}
-                      size={16}
-                      strokeWidth={2.5}
-                    />
-                  </Link>
-                </Button>
-                <Button variant="ink" size="lg" asChild>
-                  <Link to="/courses">
-                    <HugeiconsIcon
-                      icon={Mortarboard01FreeIcons}
-                      size={16}
-                      strokeWidth={2.25}
-                    />
-                    See the courses
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </section>
         </div>
       </main>
+      <SiteFooter />
     </>
   );
 }

@@ -242,14 +242,11 @@ export default function BlogsIndex() {
                     size={18}
                     strokeWidth={2.25}
                   />
-                  Train with Pelican
+                  Train on the Pelican chart
                 </Link>
               </Button>
               <Button variant="paper" size="lg" asChild>
-                <Link to="/road-signs/3d">3D sign recognition</Link>
-              </Button>
-              <Button variant="paper" size="lg" asChild>
-                <Link to="/practice?mode=test">Quick NTSA test</Link>
+                <Link to="/road-signs/3d">Spin signs in 3D</Link>
               </Button>
             </div>
           </section>

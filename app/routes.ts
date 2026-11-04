@@ -20,6 +20,7 @@ export default [
   route("road-signs", "routes/road-signs.tsx"),
   route("road-signs/pelican", "routes/road-signs-pelican.tsx"),
   route("road-signs/3d", "routes/road-signs-3d.tsx"),
+  route("model-town-board", "routes/model-town-board.tsx"),
   route("practice", "routes/practice.tsx"),
   route("design", "routes/design.tsx"),
 

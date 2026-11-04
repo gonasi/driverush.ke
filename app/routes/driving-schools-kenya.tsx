@@ -13,7 +13,6 @@ import type { Route } from "./+types/driving-schools-kenya";
 import {
   absUrl,
   breadcrumbLd,
-  DRIVING_SCHOOL_KEYWORDS,
   pageMeta,
   SITE,
 } from "~/lib/site";
@@ -40,7 +39,6 @@ export function meta(_: Route.MetaArgs) {
       description:
         "Compare the major NTSA-registered driving schools in Kenya: AA Kenya, Petanns, Glory, Better Brakes, Sunset and Eagle. Price bands, branches by county, licence classes, and how to split theory online so you only pay a school for the practical.",
       path: PATH,
-      extraKeywords: DRIVING_SCHOOL_KEYWORDS,
     }),
     // Breadcrumb + directory ItemList in a single @graph. Schools embed as
     // Organization items inside the list, each with an `@id` and `areaServed`

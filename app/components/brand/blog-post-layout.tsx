@@ -23,47 +23,8 @@ type BlogPostLayoutProps = {
   children: React.ReactNode;
 };
 
-/**
- * Pick the most relevant "try this now" target for a post based on its
- * frontmatter category. Falls back to /practice if nothing matches.
- */
-function tryItNowFor(post: BlogPost): {
-  href: string;
-  label: string;
-  copy: string;
-} {
-  const cat = (post.category ?? "").toLowerCase();
-  const tags = post.tags.map((t) => t.toLowerCase());
-  if (cat.includes("sign") || tags.some((t) => t.includes("sign"))) {
-    return {
-      href: "/road-signs/pelican",
-      label: "Train the signs",
-      copy: "Sit the Pelican sign trainer for 5 minutes.",
-    };
-  }
-  if (cat.includes("school") || tags.some((t) => t.includes("school"))) {
-    return {
-      href: "/driving-schools-kenya",
-      label: "Compare schools",
-      copy: "See the NTSA-registered schools side by side.",
-    };
-  }
-  if (cat.includes("course") || tags.some((t) => t.includes("course"))) {
-    return {
-      href: "/courses/ntsa-drive-kenya",
-      label: "Start the Class B course",
-      copy: "Lessons that build on each other, free.",
-    };
-  }
-  return {
-    href: "/practice?mode=test",
-    label: "Try the mock test",
-    copy: "10 questions, 8 minutes, NTSA shape.",
-  };
-}
-
-function TryItNowPanel({ post }: { post: BlogPost }) {
-  const target = tryItNowFor(post);
+/** Keeps the trainers one click away, even for readers who never reach the end. */
+function TryItNowPanel() {
   return (
     <aside className="mt-6 flex flex-wrap items-center justify-between gap-3 border-2 border-ink bg-paper-2 px-4 py-3 sm:px-5">
       <div>
@@ -71,12 +32,12 @@ function TryItNowPanel({ post }: { post: BlogPost }) {
           Try it now
         </p>
         <p className="m-0 mt-0.5 text-[14px] leading-snug text-ink">
-          {target.copy}
+          Memorise your road signs, 10 at a time.
         </p>
       </div>
       <Button variant="rush" size="sm" asChild>
-        <Link to={target.href}>
-          {target.label}
+        <Link to="/#try-now">
+          Start training
           <HugeiconsIcon
             icon={ArrowRight02FreeIcons}
             size={14}
@@ -177,17 +138,14 @@ export function BlogPostLayout({
             </div>
           </header>
 
-          {/* Try-it-now panel — keep the live product one click away even for
-            readers who never scroll to the article tail. The CTA target is
-            picked from the post category so it stays relevant. */}
-          <TryItNowPanel post={post} />
+          <TryItNowPanel />
 
           <article className="pt-8 pb-12">{children}</article>
 
           {/* CTA tail — keep nudging readers toward the live product. */}
           <section className="border-t-2 border-ink bg-paper-2 px-5 py-8 sm:px-7">
             <p className="m-0 mb-4 font-mono text-[11px] uppercase tracking-widest text-ink-3">
-              Skip the theory. Practise the signs.
+              Stop reading. Practise the signs.
             </p>
             <h2 className="m-0 mb-5 font-display text-2xl font-extrabold uppercase leading-[0.98] tracking-tight text-ink sm:text-3xl">
               The fastest way to remember Kenyan road signs is{" "}
@@ -204,7 +162,7 @@ export function BlogPostLayout({
                     size={18}
                     strokeWidth={2.25}
                   />
-                  Train with Pelican
+                  Train on the Pelican chart
                 </Link>
               </Button>
               <Button variant="paper" size="lg" asChild>
@@ -216,19 +174,6 @@ export function BlogPostLayout({
                   />
                   Spin signs in 3D
                 </Link>
-              </Button>
-              <Button variant="paper" size="lg" asChild>
-                <Link to="/practice?mode=test">
-                  Try a quick NTSA test
-                  <HugeiconsIcon
-                    icon={ArrowRight02FreeIcons}
-                    size={16}
-                    strokeWidth={2.5}
-                  />
-                </Link>
-              </Button>
-              <Button variant="paper" size="lg" asChild>
-                <Link to="/courses">Browse the full courses</Link>
               </Button>
             </div>
           </section>

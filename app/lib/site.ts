@@ -38,18 +38,18 @@ export const SITE = {
     "https://www.linkedin.com/company/driverush",
   ],
   // Default social card, at the 1.91:1 every platform crops to. Built from the
-  // app itself — see `app/lib/og-cards.ts` and `/tools/og`. Pages with a
-  // better-fitting card (road signs, the course, the trainers) override it via
+  // app itself: see `app/lib/og-cards.ts` and `/tools/og`. Pages with a
+  // better-fitting card (road signs, the trainers) override it via
   // `pageMeta({ ogImage })`.
   ogImage: "/og/default.png",
   ogImageWidth: 1200,
   ogImageHeight: 630,
-  ogImageAlt: "DriveRush: NTSA prep and road-sign practice for Kenyan roads",
+  ogImageAlt: "DriveRush: memorise Kenyan road signs on the Pelican chart or in 3D",
   themeColor: "#E11D2E", // rush red
   /** Tagline used in title templates and as the default description suffix. */
-  tagline: "Learn to drive in Kenya — NTSA prep & road signs",
+  tagline: "Kenya road signs practice for the NTSA test",
   description:
-    "DriveRush is the online driving school for Kenya. Learn to drive with NTSA-aligned road signs, past papers, junction scenarios and full Class A, B, C, D courses. Free to start, M-Pesa when ready.",
+    "DriveRush helps you memorise Kenyan road signs for the NTSA test. Train on the Pelican chart or spin the signs in 3D. Free, no signup.",
   keywords: [
     // Brand — surface us on direct queries
     "DriveRush",
@@ -57,49 +57,23 @@ export const SITE = {
     "DriveRush.ke",
     "Drive Rush",
     "drive rush kenya",
-    // NTSA family
-    "NTSA",
-    "NTSA Kenya",
-    "NTSA exam",
-    "NTSA prep",
-    "NTSA test",
-    "NTSA road signs",
-    "NTSA test questions and answers",
-    "NTSA past papers",
-    "NTSA TIMS",
-    "NTSA driving licence",
     // Road signs
     "road signs Kenya",
     "Kenyan road signs",
     "Kenya road signs and meanings",
     "traffic signs Kenya",
+    "traffic signs practice Kenya",
     "highway code Kenya",
-    // Learning to drive
-    "learn to drive Kenya",
-    "learning to drive in Kenya",
-    "how to drive in Kenya",
-    "online driving school Kenya",
-    "online driving lessons Kenya",
-    "driving lessons Kenya",
-    "driving classes Kenya",
-    "driving school Kenya",
-    "driving schools in Kenya",
-    "best driving school Kenya",
-    "Nairobi driving school",
-    "Nairobi driving lessons",
-    // Licensing
+    "Pelican road signs",
+    "Pelican signs chart",
+    "3D road signs",
+    // NTSA family
+    "NTSA",
+    "NTSA road signs",
+    "NTSA test",
+    "NTSA test road signs",
+    "NTSA exam",
     "driving test Kenya",
-    "driving licence Kenya",
-    "driving license Kenya",
-    "Kenya driving licence",
-    "Smart DL Kenya",
-    "provisional driving licence Kenya",
-    "Class A driving Kenya",
-    "Class B driving Kenya",
-    "Class C driving Kenya",
-    "Class D driving Kenya",
-    // Payment / locale
-    "M-Pesa driving school",
     "Kenya driving app",
   ],
 } as const;
@@ -142,29 +116,6 @@ export const ROAD_SIGN_KEYWORDS = [
   "memorise road signs",
 ] as const;
 
-/**
- * Driving-schools section keywords — appended to {@link SITE.keywords} on the
- * `/driving-schools-kenya` landing page so the school-specific terms lead.
- */
-export const DRIVING_SCHOOL_KEYWORDS = [
-  "driving schools in Kenya",
-  "best driving schools in Kenya",
-  "driving school Kenya",
-  "driving school Nairobi",
-  "NTSA registered driving schools",
-  "AA Kenya driving school",
-  "Petanns driving school",
-  "Glory driving school",
-  "Sunset driving school",
-  "Eagle driving school",
-  "Better Brakes driving school",
-  "driving school fees Kenya",
-  "driving school cost Kenya",
-  "driving school near me Kenya",
-  "Class B driving school Kenya",
-  "Class D PSV driving school",
-] as const;
-
 /** Build an absolute URL for a route or asset. */
 export function absUrl(path: string): string {
   if (path.startsWith("http")) return path;
@@ -200,14 +151,14 @@ export function breadcrumbLd(crumbs: Crumb[]) {
 
 /**
  * Build a brand-consistent page title. We lead with the page-specific phrase
- * (the keyword the user typed in) and end with `· DriveRush — Kenya`. Brand
+ * (the keyword the user typed in) and end with `· DriveRush Kenya`. Brand
  * suffix lets sitelinks and SERP titles recognise the entity even when the
  * lead phrase is generic ("Learn to drive online", "Driving schools in Kenya").
  */
 export function pageTitle(lead: string): string {
   // Don't double-stamp if the caller already included the brand.
   if (/driverush/i.test(lead)) return lead;
-  return `${lead} · ${SITE.name} — Kenya`;
+  return `${lead} · ${SITE.name} Kenya`;
 }
 
 /**
@@ -251,11 +202,9 @@ export function organizationLd() {
     areaServed: { "@type": "Country", name: "Kenya" },
     inLanguage: ["en", "sw"],
     knowsAbout: [
-      "NTSA driving licence Kenya",
       "Kenyan road signs",
       "Highway code Kenya",
-      "Driving lessons online",
-      "Driving school in Kenya",
+      "NTSA road signs test",
     ],
     // Surfaces Gonasi as the parent company so search engines connect the
     // DriveRush brand entity to its operator. Visible "powered by Gonasi"
