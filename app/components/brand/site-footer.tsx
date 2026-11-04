@@ -7,7 +7,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Call02FreeIcons, Mail01FreeIcons } from "@hugeicons/core-free-icons";
 
 import { analytics } from "~/lib/analytics";
-import { SIGN_SOURCE } from "~/lib/sign-credits";
+import { SIGN_BRAND, SIGN_SOURCE } from "~/lib/sign-credits";
 import { SITE } from "~/lib/site";
 
 import { Logo } from "~/components/brand/logo";
@@ -92,7 +92,10 @@ export function SiteFooter() {
         </div>
 
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-paper/20 py-5">
-          <SignCredit onInk />
+          <SignCredit size="sm" onInk />
+          <span className="font-mono text-[10.5px] uppercase tracking-widest opacity-70">
+            {SIGN_BRAND.name} name and logo used with permission
+          </span>
           <span className="font-mono text-[10.5px] uppercase tracking-widest opacity-70">
             Based on the{" "}
             <a
@@ -111,7 +114,7 @@ export function SiteFooter() {
             </a>
           </span>
           <span className="font-mono text-[10.5px] uppercase tracking-widest opacity-70">
-            Not affiliated with Pelican Signs or the NTSA
+            Not affiliated with the NTSA
           </span>
         </div>
 

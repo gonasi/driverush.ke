@@ -152,7 +152,7 @@ function DefaultCard() {
             </em>
           </h1>
           <p className="mt-5 font-serif text-[24px] leading-snug text-ink-2">
-            On the real Pelican chart, or spun in 3D.
+            On the Pelican chart, or spun in 3D.
           </p>
         </div>
         <div className="grid shrink-0 grid-cols-2 gap-3">
@@ -207,7 +207,7 @@ function PelicanCard() {
             </em>
           </h1>
           <p className="mt-4 font-serif text-[23px] leading-snug text-paper/75">
-            The real chart from Pelican Signs, one sign at a time.
+            The Pelican chart, one sign at a time.
           </p>
         </div>
       </div>

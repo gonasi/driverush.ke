@@ -1,5 +1,5 @@
 /**
- * Homepage hero. What the site does in one line, the sign credit, and both
+ * Homepage hero. The Pelican credit, what the site does in one line, and both
  * trainers, all above the fold on a phone. `#try-now` is what the nav's Start
  * button scrolls to.
  */
@@ -29,7 +29,7 @@ export function HomeHero() {
           style={stagger(2)}
           className="dr-rise m-0 max-w-2xl font-serif text-[clamp(16px,2.2vw,20px)] leading-snug text-ink-2"
         >
-          Train on the real Pelican chart or spin the signs in 3D. Free, no
+          Train on the Pelican chart or spin the signs in 3D. Free, no
           signup.
         </p>
       </header>

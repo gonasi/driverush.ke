@@ -35,7 +35,7 @@ export function meta(_: Route.MetaArgs) {
     ...pageMeta({
       title: "Pelican chart: Kenya road signs trainer for the NTSA test",
       description:
-        "Memorise Kenyan road signs on the real Pelican chart. One sign zooms in at a time, name it before the answer shows, and the ones you miss come back sooner. Free, no signup.",
+        "Memorise Kenyan road signs on the Pelican chart. One sign zooms in at a time, name it before the answer shows, and the ones you miss come back sooner. Free, no signup.",
       path: PATH,
       ogImage: ogCardPath("pelican"),
       ogImageAlt: ogCardAlt("pelican"),
@@ -101,7 +101,7 @@ export default function PelicanSigns() {
           </div>
 
           <header className="dr-rise border-b-2 border-ink pb-7">
-            <SignCredit />
+            <SignCredit size="sm" />
             <h1 className="m-0 mt-3 font-display text-[clamp(40px,7vw,72px)] font-extrabold uppercase leading-[0.9] tracking-tighter">
               Pelican <span className="italic text-rush">chart</span>
             </h1>

@@ -1,6 +1,6 @@
 /**
  * The two road-sign trainers, the whole product: the Pelican chart (one sign at
- * a time zoomed out of the real chart) and 3D signs (spinnable GLB models).
+ * a time zoomed out of the chart) and 3D signs (spinnable GLB models).
  */
 import type { IconSvgElement } from "@hugeicons/react";
 import { BirdFreeIcons, ThreeDViewFreeIcons } from "@hugeicons/core-free-icons";

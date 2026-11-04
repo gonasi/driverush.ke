@@ -29,7 +29,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.1",
-      "note": "Slow down and steer gently to the left. Keep left of the road centre. Watch for oncoming vehicles cutting the corner.",
+      "note": "Ease off and steer gently left. Stay left of the centre of the road, and expect oncoming vehicles to cut the corner.",
       "audioSrc": "/assets/road-signs/sounds/W.1.mp3"
     },
     {
@@ -42,7 +42,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.2",
-      "note": "Slow down and steer gently to the right. Stay in your lane. Watch for oncoming vehicles and pedestrians around the bend.",
+      "note": "Ease off and steer gently right. Hold your lane, and look out for oncoming vehicles and pedestrians on the bend.",
       "audioSrc": "/assets/road-signs/sounds/W.2.mp3"
     },
     {
@@ -55,7 +55,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.3",
-      "note": "Reduce speed before entering the bends. Do not overtake. Stay well within your lane through each curve.",
+      "note": "Slow down before the first bend, stay well inside your lane through each curve, and don't overtake.",
       "audioSrc": "/assets/road-signs/sounds/W.3.mp3"
     },
     {
@@ -68,7 +68,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.4",
-      "note": "Reduce speed before entering the bends. Do not overtake. Stay well within your lane through each curve.",
+      "note": "Slow down before the first bend, stay well inside your lane through each curve, and don't overtake.",
       "audioSrc": "/assets/road-signs/sounds/W.4.mp3"
     },
     {
@@ -81,7 +81,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.5",
-      "note": "Engage a lower gear before descending. Avoid riding the brakes continuously. Maintain control and keep distance from the vehicle ahead.",
+      "note": "Shift to a lower gear before you start down. Don't keep your foot on the brake the whole way, stay in control, and leave room to the vehicle in front.",
       "audioSrc": "/assets/road-signs/sounds/W.5.mp3"
     },
     {
@@ -94,7 +94,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.6",
-      "note": "Engage a lower gear to maintain power. Be prepared for slow-moving vehicles ahead. Do not overtake on the climb unless you have a clear view.",
+      "note": "Shift to a lower gear to keep your power up, and expect slow vehicles ahead. Only overtake on the climb if you can see clearly.",
       "audioSrc": "/assets/road-signs/sounds/W.6.mp3"
     },
     {
@@ -107,7 +107,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.7",
-      "note": "Reduce speed. Be prepared to give way to oncoming traffic. Do not attempt to overtake where the road is narrow.",
+      "note": "Slow down and be ready to give way to oncoming traffic. Don't try to overtake where the road gets narrow.",
       "audioSrc": "/assets/road-signs/sounds/W.7.mp3"
     },
     {
@@ -120,7 +120,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.8",
-      "note": "The road narrows on the right side. Keep left and slow down. Give way to oncoming traffic if necessary.",
+      "note": "The right side of the road closes in. Slow down, keep left, and give way to oncoming traffic if you need to.",
       "audioSrc": "/assets/road-signs/sounds/W.8.mp3"
     },
     {
@@ -133,7 +133,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.9",
-      "note": "The road narrows on the left side. Keep right and reduce speed. Watch for pedestrians or obstacles on the left.",
+      "note": "The left side of the road closes in. Slow down, keep right, and look out for pedestrians or obstacles on the left.",
       "audioSrc": "/assets/road-signs/sounds/W.9.mp3"
     },
     {
@@ -146,7 +146,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.10",
-      "note": "Slow down significantly. Do not park near the edge. Watch for the road ending abruptly near a bank or water edge.",
+      "note": "Slow right down and don't park close to the edge. The road may end suddenly at a bank or the water.",
       "audioSrc": "/assets/road-signs/sounds/W.10.mp3"
     },
     {
@@ -159,7 +159,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.11",
-      "note": "Reduce speed to avoid loss of control. Hold the steering wheel firmly. Motorcyclists should be especially cautious.",
+      "note": "Slow down so you stay in control, and grip the steering wheel firmly. Motorcyclists need extra care here.",
       "audioSrc": "/assets/road-signs/sounds/W.11.mp3"
     },
     {
@@ -172,7 +172,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.12",
-      "note": "Slow down well before the bump. Crossing at speed can damage the vehicle and cause loss of control.",
+      "note": "Slow down well before you reach the bump. Hitting it fast can damage your vehicle and make you lose control.",
       "audioSrc": "/assets/road-signs/sounds/W.12.mp3"
     },
     {
@@ -185,7 +185,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.13(a)",
-      "note": "Reduce speed. The vehicle may bottom out or become airborne if taken too fast. Watch for water pooling in the dip.",
+      "note": "Slow down. Taken too fast, your vehicle can hit the ground or leave it altogether. Water may also collect in the dip.",
       "audioSrc": "/assets/road-signs/sounds/W.13(a).mp3"
     },
     {
@@ -198,7 +198,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.13(b)",
-      "note": "Slow down and assess water depth before crossing. Do not cross if water is fast-flowing or above safe level.",
+      "note": "Slow down and check how deep the water is before you cross. Stay out if it's running fast or too deep to be safe.",
       "audioSrc": "/assets/road-signs/sounds/W.13(b).mp3"
     },
     {
@@ -211,7 +211,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.14",
-      "note": "Reduce speed immediately. Avoid sudden braking, accelerating or sharp steering. Increase following distance.",
+      "note": "Slow down straight away. No sudden braking, accelerating or sharp steering, and leave a bigger gap to the vehicle ahead.",
       "audioSrc": "/assets/road-signs/sounds/W.14.mp3"
     },
     {
@@ -224,7 +224,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.15",
-      "note": "Reduce speed. Loose gravel can cause skidding. Increase following distance to avoid stone-throw damage.",
+      "note": "Slow down, because loose gravel can make you skid. Leave a bigger gap so stones thrown up don't cause damage.",
       "audioSrc": "/assets/road-signs/sounds/W.15.mp3"
     },
     {
@@ -237,7 +237,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.16",
-      "note": "Drive with caution. Watch for rocks on or near the road. Do not stop or park under rocky slopes.",
+      "note": "Drive carefully and look out for rocks on or beside the road. Don't stop or park below rocky slopes.",
       "audioSrc": "/assets/road-signs/sounds/W.16.mp3"
     },
     {
@@ -250,7 +250,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.17",
-      "note": "Slow down and be prepared to stop. Give way to pedestrians already on or approaching the crossing.",
+      "note": "Slow down and get ready to stop. Give way to anyone on the crossing or about to step onto it.",
       "audioSrc": "/assets/road-signs/sounds/W.17.mp3"
     },
     {
@@ -263,7 +263,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.18",
-      "note": "Reduce speed significantly. Be especially alert. Children may cross unexpectedly, so prepare to stop at any moment.",
+      "note": "Slow right down and stay extra alert. Children can step out without warning, so be ready to stop at any moment.",
       "audioSrc": "/assets/road-signs/sounds/W.18.mp3"
     },
     {
@@ -276,7 +276,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.19",
-      "note": "Watch for cyclists on or joining the road. Give at least 1.5 metres clearance when overtaking.",
+      "note": "Look out for cyclists on the road or joining it. Leave at least 1.5 metres when you overtake one.",
       "audioSrc": "/assets/road-signs/sounds/W.19.mp3"
     },
     {
@@ -289,7 +289,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.20",
-      "note": "Slow down and watch for animals on the road. Stop if necessary and wait for them to clear.",
+      "note": "Slow down and look out for animals on the road. Stop if you need to, and wait until they've cleared.",
       "audioSrc": "/assets/road-signs/sounds/W.20.mp3"
     },
     {
@@ -302,7 +302,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.21",
-      "note": "Reduce speed and scan road edges for animals. Do not hoot aggressively, as it may cause animals to panic into your path.",
+      "note": "Slow down and check the road edges for animals. Aggressive hooting can panic them into your path, so avoid it.",
       "audioSrc": "/assets/road-signs/sounds/W.21.mp3"
     },
     {
@@ -315,7 +315,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.22",
-      "note": "Slow down and follow temporary signs or flagmen. Expect lane changes, uneven surfaces, and workers near the road.",
+      "note": "Slow down and follow the temporary signs or flagmen. Expect changed lanes, rough surfaces and people working close to the road.",
       "audioSrc": "/assets/road-signs/sounds/W.22.mp3"
     },
     {
@@ -328,7 +328,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.23",
-      "note": "Prepare to stop. Reduce speed and be ready to obey the traffic light. Do not speed up to beat the lights.",
+      "note": "Slow down, and get ready to stop and obey the lights. Don't speed up to beat them.",
       "audioSrc": "/assets/road-signs/sounds/W.23.mp3"
     },
     {
@@ -341,7 +341,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.24",
-      "note": "No driving action required. Be aware of aircraft at very low altitude nearby (usually near airstrips).",
+      "note": "You don't need to do anything differently. Just be aware that aircraft may fly very low nearby, usually close to an airstrip.",
       "audioSrc": "/assets/road-signs/sounds/W.24.mp3"
     },
     {
@@ -354,7 +354,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.25",
-      "note": "You are entering a two-way road. Keep left and watch for oncoming vehicles. Do not straddle the centre line.",
+      "note": "You're moving onto a road with traffic both ways. Keep left, look out for oncoming vehicles, and stay on your side of the centre line.",
       "audioSrc": "/assets/road-signs/sounds/W.25.mp3"
     },
     {
@@ -367,7 +367,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.26",
-      "note": "An unspecified danger is ahead. Reduce speed, be alert, and proceed with caution.",
+      "note": "There's a danger ahead that the sign doesn't name. Slow down, stay alert and go carefully.",
       "audioSrc": "/assets/road-signs/sounds/W.26.mp3"
     },
     {
@@ -380,7 +380,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.27",
-      "note": "A junction is approaching. Check mirrors, reduce speed, and watch for vehicles entering from side roads.",
+      "note": "There's a junction coming up. Check your mirrors, slow down, and look out for vehicles coming in from side roads.",
       "audioSrc": "/assets/road-signs/sounds/W.27.mp3"
     },
     {
@@ -393,7 +393,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.28(a)",
-      "note": "Prepare to stop or give way at the approaching junction. Act according to whichever sign is present.",
+      "note": "Get ready to stop or give way at the junction ahead. Do what the sign there tells you.",
       "audioSrc": "/assets/road-signs/sounds/W.28(a).mp3"
     },
     {
@@ -406,7 +406,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.28(b)",
-      "note": "A road joins from the right. Watch for merging vehicles. Be prepared to adjust speed or position.",
+      "note": "Another road joins from the right. Look out for vehicles merging, and be ready to change your speed or position.",
       "audioSrc": "/assets/road-signs/sounds/W.28(b).mp3"
     },
     {
@@ -419,7 +419,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.29",
-      "note": "Vehicles may be joining from an acceleration lane on the right. Maintain steady speed to allow safe merging.",
+      "note": "Vehicles may join from an acceleration lane on the right. Hold a steady speed so they can merge safely.",
       "audioSrc": "/assets/road-signs/sounds/W.29.mp3"
     },
     {
@@ -432,7 +432,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.30",
-      "note": "Reduce speed. Give way to traffic already circulating in the roundabout. Indicate before exiting.",
+      "note": "Slow down and give way to traffic already on the roundabout. Signal before you leave it.",
       "audioSrc": "/assets/road-signs/sounds/W.30.mp3"
     },
     {
@@ -445,7 +445,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.31",
-      "note": "Stop when barriers are down or lights flash. Do not cross until barriers are fully raised and it is safe.",
+      "note": "Stop when the barriers are down or the lights are flashing. Wait until the barriers are fully up and it's safe before you cross.",
       "audioSrc": "/assets/road-signs/sounds/W.31.mp3"
     },
     {
@@ -458,7 +458,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "W.32",
-      "note": "Slow down, look both ways, and listen for trains before crossing. Never race a train to the crossing.",
+      "note": "Slow down, look both ways and listen for trains before you cross. Never try to beat a train to the crossing.",
       "audioSrc": "/assets/road-signs/sounds/W.32.mp3"
     },
     {
@@ -471,7 +471,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "R.1",
-      "note": "You MUST come to a complete stop at the stop line. Look both ways and proceed only when the road is completely clear. Slowing down is NOT enough; you must fully stop.",
+      "note": "You MUST stop completely at the stop line. Slowing down is NOT enough. Look both ways, and only move off when the road is fully clear.",
       "audioSrc": "/assets/road-signs/sounds/R.1.mp3"
     },
     {
@@ -484,7 +484,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "R.2",
-      "note": "Slow down and yield to traffic on the major road. You do not have to stop if the road is clear, but must always give priority to others.",
+      "note": "Slow down and let traffic on the major road go first. If the road is clear you don't have to stop, but you must always give others priority.",
       "audioSrc": "/assets/road-signs/sounds/R.2.mp3"
     },
     {
@@ -497,7 +497,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "M.1",
-      "note": "You must travel in the direction indicated by the arrow. No other direction is permitted at this point.",
+      "note": "You must go the way the arrow points. No other direction is allowed here.",
       "audioSrc": "/assets/road-signs/sounds/M.1.mp3"
     },
     {
@@ -510,7 +510,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "M.2",
-      "note": "All vehicles must go straight ahead. Turning left or right is not permitted here.",
+      "note": "All vehicles must go straight on. You may not turn left or right here.",
       "audioSrc": "/assets/road-signs/sounds/M.2.mp3"
     },
     {
@@ -523,7 +523,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "M.3",
-      "note": "All vehicles must turn right. Straight ahead or left turns are not allowed at this junction.",
+      "note": "All vehicles must turn right at this junction. Going straight on or turning left is not allowed.",
       "audioSrc": "/assets/road-signs/sounds/M.3.mp3"
     },
     {
@@ -536,7 +536,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "M.4",
-      "note": "Vehicles may only go straight or turn right. Left turns are prohibited at this junction.",
+      "note": "You may only go straight on or turn right at this junction. Turning left is not allowed.",
       "audioSrc": "/assets/road-signs/sounds/M.4.mp3"
     },
     {
@@ -549,7 +549,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "M.5",
-      "note": "You must pass the obstacle or island on your left side. Do not go to the right of this sign or island.",
+      "note": "Go past the obstacle or island on your left side. Never go to the right of this sign or island.",
       "audioSrc": "/assets/road-signs/sounds/M.5.mp3"
     },
     {
@@ -562,7 +562,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "M.7",
-      "note": "Pedestrians must use this path. Cyclists and motor vehicles are not allowed on the pedestrian path.",
+      "note": "Pedestrians must walk on this path. Cyclists and motor vehicles must stay off it.",
       "audioSrc": "/assets/road-signs/sounds/M.7.mp3"
     },
     {
@@ -575,7 +575,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "M.8",
-      "note": "Livestock must use the designated track. Drivers should slow down, as animals may be present in this area.",
+      "note": "Livestock must keep to this track. Drivers should slow down, since animals may be around.",
       "audioSrc": "/assets/road-signs/sounds/M.8.mp3"
     },
     {
@@ -588,7 +588,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "M.9",
-      "note": "A minimum speed applies. Do not drive below the indicated speed unless road conditions demand it.",
+      "note": "There's a minimum speed here. Don't go slower than the speed shown unless road conditions call for it.",
       "audioSrc": "/assets/road-signs/sounds/M.9.mp3"
     },
     {
@@ -601,7 +601,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "M.10",
-      "note": "You must drive at least the speed shown. Driving below this speed is prohibited (common on highways and expressways).",
+      "note": "You must drive at the speed shown or faster. Going slower is not allowed. You'll mostly see this on highways and expressways.",
       "audioSrc": "/assets/road-signs/sounds/M.10.mp3"
     },
     {
@@ -614,7 +614,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "M.11",
-      "note": "The minimum speed requirement ends here. Normal speed limits apply from this point.",
+      "note": "The minimum speed ends here. Normal speed limits apply from now on.",
       "audioSrc": "/assets/road-signs/sounds/M.11.mp3"
     },
     {
@@ -627,7 +627,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.1",
-      "note": "Entry is completely prohibited. Do not enter this road or area. Often used for one-way streets or restricted zones.",
+      "note": "You may not enter this road or area at all. You'll often see this at one-way streets and restricted zones.",
       "audioSrc": "/assets/road-signs/sounds/P.1.mp3"
     },
     {
@@ -640,7 +640,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.2",
-      "note": "The road is closed to all traffic. Turn around and find an alternative route. Do not bypass barriers.",
+      "note": "This road is closed to all traffic. Turn around and find another way, and don't go around the barriers.",
       "audioSrc": "/assets/road-signs/sounds/P.2.mp3"
     },
     {
@@ -653,7 +653,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.3",
-      "note": "No vehicle of any type is allowed beyond this point, motorised or non-motorised.",
+      "note": "No vehicle of any kind may go past here, with or without a motor.",
       "audioSrc": "/assets/road-signs/sounds/P.3.mp3"
     },
     {
@@ -666,7 +666,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.4",
-      "note": "Motor cycles are not allowed beyond this point. Motorcyclists must seek an alternative route.",
+      "note": "Motor cycles may not go past here. Riders must find another route.",
       "audioSrc": "/assets/road-signs/sounds/P.4.mp3"
     },
     {
@@ -679,7 +679,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.5",
-      "note": "Bicycles are prohibited beyond this point. Cyclists must dismount and seek an alternative route.",
+      "note": "Bicycles may not go past here. Cyclists must get off and find another route.",
       "audioSrc": "/assets/road-signs/sounds/P.5.mp3"
     },
     {
@@ -692,7 +692,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.7",
-      "note": "Pedestrians are not allowed in this area or on this road. Use an alternative pedestrian route or crossing.",
+      "note": "Pedestrians may not use this road or area. Find another route or crossing on foot.",
       "audioSrc": "/assets/road-signs/sounds/P.7.mp3"
     },
     {
@@ -705,7 +705,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.8",
-      "note": "Carts, wagons, or any animal-pulled vehicles are not permitted. Find an alternative route.",
+      "note": "Carts, wagons and other vehicles pulled by animals are not allowed. Find another route.",
       "audioSrc": "/assets/road-signs/sounds/P.8.mp3"
     },
     {
@@ -718,7 +718,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.9",
-      "note": "Hand-pushed carts, trolleys, or barrows are not allowed beyond this point.",
+      "note": "Hand-pushed carts, trolleys and barrows may not go past here.",
       "audioSrc": "/assets/road-signs/sounds/P.9.mp3"
     },
     {
@@ -731,7 +731,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.10",
-      "note": "Agricultural vehicles such as tractors are prohibited. Use designated agricultural routes.",
+      "note": "Farm vehicles such as tractors are not allowed. Use the routes set aside for them.",
       "audioSrc": "/assets/road-signs/sounds/P.10.mp3"
     },
     {
@@ -744,7 +744,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.11",
-      "note": "Trucks, lorries, and heavy goods vehicles are not permitted. Use alternative designated routes.",
+      "note": "Trucks, lorries and other heavy goods vehicles are not allowed. Use the routes set aside for them.",
       "audioSrc": "/assets/road-signs/sounds/P.11.mp3"
     },
     {
@@ -757,7 +757,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.12",
-      "note": "All motorised vehicles are prohibited. Only non-motorised transport may be allowed.",
+      "note": "No motorised vehicles are allowed. Non-motorised transport may be permitted.",
       "audioSrc": "/assets/road-signs/sounds/P.12.mp3"
     },
     {
@@ -770,7 +770,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.13",
-      "note": "Neither motorised nor animal-drawn vehicles are permitted. Restricted to pedestrians or emergency access only.",
+      "note": "Vehicles with motors and vehicles pulled by animals are both banned. Access is for pedestrians or emergencies only.",
       "audioSrc": "/assets/road-signs/sounds/P.13.mp3"
     },
     {
@@ -783,7 +783,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.14",
-      "note": "If your vehicle is wider than the measurement shown, you cannot proceed. Seek an alternative route.",
+      "note": "If your vehicle is wider than the width shown, you can't go on. Find another route.",
       "audioSrc": "/assets/road-signs/sounds/P.14.mp3"
     },
     {
@@ -796,7 +796,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.15",
-      "note": "If your vehicle exceeds the height shown, do not proceed. There is a risk of hitting an overhead structure such as a bridge.",
+      "note": "If your vehicle is taller than the height shown, don't go on. You could hit something overhead, such as a bridge.",
       "audioSrc": "/assets/road-signs/sounds/P.15.mp3"
     },
     {
@@ -809,7 +809,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.16",
-      "note": "If any single axle exceeds the weight shown, do not proceed. Overloading can damage road surfaces and bridges.",
+      "note": "If any one axle carries more than the weight shown, don't go on. Overloading can damage roads and bridges.",
       "audioSrc": "/assets/road-signs/sounds/P.16.mp3"
     },
     {
@@ -822,7 +822,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.17",
-      "note": "If your vehicle's total weight exceeds the limit shown, you may not proceed. Common near bridges with load restrictions.",
+      "note": "If your vehicle's total weight is over the limit shown, you may not go on. You'll often see this near bridges with load limits.",
       "audioSrc": "/assets/road-signs/sounds/P.17.mp3"
     },
     {
@@ -835,7 +835,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.18",
-      "note": "If your vehicle (including trailer) exceeds the length shown, you cannot proceed. Find a route for long vehicles.",
+      "note": "If your vehicle, including any trailer, is longer than the length shown, you can't go on. Find a route that takes long vehicles.",
       "audioSrc": "/assets/road-signs/sounds/P.18.mp3"
     },
     {
@@ -848,7 +848,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.19",
-      "note": "You must maintain at least the distance shown between your vehicle and the one ahead. Common in tunnels and on bridges.",
+      "note": "Keep at least the distance shown between you and the vehicle in front. You'll often see this in tunnels and on bridges.",
       "audioSrc": "/assets/road-signs/sounds/P.19.mp3"
     },
     {
@@ -861,7 +861,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.20",
-      "note": "Turning left at this junction is prohibited. You must go straight or turn right as permitted.",
+      "note": "You may not turn left at this junction. Go straight on or turn right, where that's allowed.",
       "audioSrc": "/assets/road-signs/sounds/P.20.mp3"
     },
     {
@@ -874,7 +874,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.21",
-      "note": "Turning right at this junction is prohibited. You must go straight or turn left as permitted.",
+      "note": "You may not turn right at this junction. Go straight on or turn left, where that's allowed.",
       "audioSrc": "/assets/road-signs/sounds/P.21.mp3"
     },
     {
@@ -887,7 +887,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.22",
-      "note": "Making a U-turn is prohibited at this location. Find a safe and legal place further ahead to turn around.",
+      "note": "You may not make a U-turn here. Turn around further on, somewhere safe and legal.",
       "audioSrc": "/assets/road-signs/sounds/P.22.mp3"
     },
     {
@@ -900,7 +900,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.23",
-      "note": "You may not overtake cars or other four-wheeled vehicles here. Typically placed where visibility or road width makes it dangerous.",
+      "note": "You may not overtake cars or other four-wheeled vehicles here, usually because poor visibility or a narrow road makes it dangerous.",
       "audioSrc": "/assets/road-signs/sounds/P.23.mp3"
     },
     {
@@ -913,7 +913,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.24",
-      "note": "You may not overtake trucks or lorries in this section. Remain behind goods vehicles until the prohibition ends.",
+      "note": "You may not overtake trucks or lorries on this stretch. Stay behind goods vehicles until the ban ends.",
       "audioSrc": "/assets/road-signs/sounds/P.24.mp3"
     },
     {
@@ -926,7 +926,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.25",
-      "note": "Do not exceed the speed shown (in km/h). Maintain this speed or below until you see an end-of-limit sign.",
+      "note": "Stay at or below the speed shown, in km/h, until you reach an end-of-limit sign.",
       "audioSrc": "/assets/road-signs/sounds/P.25.mp3"
     },
     {
@@ -939,7 +939,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.26",
-      "note": "Do not use your horn or any audible warning device in this zone. Common near hospitals, schools, or residential areas.",
+      "note": "Don't use your horn or any other audible warning here. You'll often see this near hospitals, schools and homes.",
       "audioSrc": "/assets/road-signs/sounds/P.26.mp3"
     },
     {
@@ -952,7 +952,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.27a",
-      "note": "You must stop at the control point (checkpoint, toll gate, border post). Await clearance before proceeding.",
+      "note": "You must stop at this control point, such as a checkpoint, toll gate or border post, and wait to be cleared before moving on.",
       "audioSrc": "/assets/road-signs/sounds/P.27a.mp3"
     },
     {
@@ -965,7 +965,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.27b",
-      "note": "You must stop when children are crossing. Used near school entrances with a crossing patrol or crossing zone.",
+      "note": "You must stop when children are crossing. You'll see this by school entrances with a crossing patrol or crossing zone.",
       "audioSrc": "/assets/road-signs/sounds/P.27b.mp3"
     },
     {
@@ -978,7 +978,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.28",
-      "note": "Oncoming vehicles have priority on this narrow section. Wait until the road is clear before proceeding through.",
+      "note": "Oncoming vehicles go first on this narrow stretch. Wait until the road is clear before you go through.",
       "audioSrc": "/assets/road-signs/sounds/P.28.mp3"
     },
     {
@@ -991,7 +991,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.29",
-      "note": "All previous prohibitions imposed on moving vehicles are cancelled from this point. Normal rules apply.",
+      "note": "Every earlier ban on moving vehicles ends here. Normal rules apply.",
       "audioSrc": "/assets/road-signs/sounds/P.29.mp3"
     },
     {
@@ -1004,7 +1004,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.30",
-      "note": "The speed limit in force is now lifted. Normal speed limits for the road type apply, unless another sign indicates otherwise.",
+      "note": "The speed limit that applied here has ended. Normal limits for this type of road apply, unless another sign says otherwise.",
       "audioSrc": "/assets/road-signs/sounds/P.30.mp3"
     },
     {
@@ -1017,7 +1017,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.32",
-      "note": "You may not park here. You may stop briefly to drop off or pick up passengers but must not leave the vehicle unattended.",
+      "note": "You may not park here. You can stop briefly to drop off or pick up passengers, but you must not leave the vehicle unattended.",
       "audioSrc": "/assets/road-signs/sounds/P.32.mp3"
     },
     {
@@ -1030,7 +1030,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.33",
-      "note": "Neither parking nor momentarily stopping is allowed here. Keep moving and find a legal stopping place elsewhere.",
+      "note": "You may not park or even stop for a moment here. Keep going and find somewhere legal to stop.",
       "audioSrc": "/assets/road-signs/sounds/P.33.mp3"
     },
     {
@@ -1043,7 +1043,7 @@
       "width": 5.912,
       "height": 10.222,
       "code": "P.39",
-      "note": "Stopping is completely prohibited throughout the marked zone. Do not stop for any reason, including dropping passengers.",
+      "note": "You may not stop anywhere in the marked zone, for any reason, including to drop off passengers.",
       "audioSrc": "/assets/road-signs/sounds/P.39.mp3"
     },
     {
@@ -1056,7 +1056,7 @@
       "width": 5.912,
       "height": 1.821,
       "code": "A.1",
-      "note": "Supplementary sign placed below a main sign to clarify direction (e.g. an arrow pointing left or right). Follow the direction indicated.",
+      "note": "A small panel under a main sign that makes the direction clear, such as an arrow left or right. Go the way it shows.",
       "audioSrc": "/assets/road-signs/sounds/A.1.mp3"
     },
     {
@@ -1069,7 +1069,7 @@
       "width": 5.912,
       "height": 1.821,
       "code": "A.2",
-      "note": "Supplementary sign indicating the specific distance ahead at which the restriction or hazard applies.",
+      "note": "A small panel showing exactly how far ahead the restriction or hazard applies.",
       "audioSrc": "/assets/road-signs/sounds/A.2.mp3"
     },
     {
@@ -1082,7 +1082,7 @@
       "width": 5.912,
       "height": 1.821,
       "code": "A.3",
-      "note": "Supplementary sign providing extra detail about the main sign above, such as time of day or category of vehicle affected.",
+      "note": "A small panel adding detail to the main sign above it, such as the time of day or the type of vehicle affected.",
       "audioSrc": "/assets/road-signs/sounds/A.3.mp3"
     },
     {
@@ -1095,7 +1095,7 @@
       "width": 5.912,
       "height": 1.821,
       "code": "A.1b",
-      "note": "Shows the length of road over which a restriction or hazard applies (e.g. '15m' means the restriction applies for the next 15 metres).",
+      "note": "Shows how long a stretch of road the restriction or hazard covers. For example, '15m' means the next 15 metres.",
       "audioSrc": "/assets/road-signs/sounds/A.1b.mp3"
     }
   ]

@@ -101,6 +101,9 @@ async function capture(chrome, card, attempt = 1) {
       "--headless=new",
       "--enable-unsafe-swiftshader",
       "--hide-scrollbars",
+      // Cards are designed in the light theme. Without this they follow whatever
+      // the machine is set to, and a dark-mode capture inverts every card.
+      "--blink-settings=preferredColorScheme=1",
       // Without these the shot can land before WebGL has composited, which
       // shows up as an empty white tile on the 3D card.
       "--run-all-compositor-stages-before-draw",

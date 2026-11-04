@@ -101,7 +101,7 @@ export default function ThreeDSigns() {
           </div>
 
           <header className="dr-rise border-b-2 border-ink pb-7">
-            <SignCredit />
+            <SignCredit size="sm" />
             <h1 className="m-0 mt-3 font-display text-[clamp(40px,7vw,72px)] font-extrabold uppercase leading-[0.9] tracking-tighter">
               3D <span className="italic text-rush">signs</span>
             </h1>
