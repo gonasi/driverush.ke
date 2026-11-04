@@ -30,7 +30,6 @@ export type BlogCategory =
   | "Skills";
 
 /** A single FAQ pair, surfaced as visible content + FAQPage JSON-LD. */
-export type BlogFaq = { q: string; a: string };
 
 export type BlogFrontmatter = {
   title: string;
@@ -47,20 +46,6 @@ export type BlogFrontmatter = {
   lede: string;
   /** Optional kicker, e.g. "Issue № 03 · Licensing". */
   kicker?: string;
-  /**
-   * Optional FAQ block. When present, the post route emits `FAQPage` JSON-LD
-   * referencing these pairs. The post body must render the same questions and
-   * answers visibly (Google requires schema and DOM content to match) — keep
-   * an `<Accordion>` of `<AccordionItem>`s near the bottom of the MDX.
-   */
-  faq?: BlogFaq[];
-  /**
-   * Optional canonical override — a site-relative path (e.g. `/driving-schools-kenya`)
-   * that should outrank this post in search. When set, the post emits
-   * `<link rel="canonical">` pointing there and skips the BlogPosting JSON-LD,
-   * so Google consolidates ranking signals onto the landing page.
-   */
-  canonical?: string;
 };
 
 export type BlogPost = BlogFrontmatter & {

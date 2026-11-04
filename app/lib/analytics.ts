@@ -96,10 +96,10 @@ function emit(name: string, params?: Record<string, unknown>) {
  */
 export const analytics = {
   // ----- top of funnel -----
-  // The homepage sign challenge is the first thing a cold visitor can do.
-  // Started → answered → (practice | course) is the activation funnel.
+  // The homepage sign check. Started → answered → completed → trainer is one
+  // activation funnel; going straight to a trainer is the other.
 
-  /** Visitor tapped "Start the challenge" on the homepage sign game. */
+  /** A sign question appeared in the homepage check. */
   signChallengeStarted: (args: { sign_id: string; category: string }) =>
     emit("sign_challenge_started", args),
 
@@ -115,51 +115,6 @@ export const analytics = {
   /** Visitor finished the ten-sign check on the homepage. */
   signCheckCompleted: (args: { correct: number; total: number }) =>
     emit("sign_check_completed", args),
-
-  /** Learner chooses a practice mode. */
-  practiceModeSelected: (args: { mode: string; source: string }) =>
-    emit("practice_mode_selected", args),
-
-  /** User opened a practice quiz session. */
-  quizStarted: (mode: string, total: number) =>
-    emit("quiz_started", { mode, total }),
-
-  /**
-   * A single practice answer. Higher volume than the rest of this file, and
-   * deliberately so — it's the only way to see *which* questions the country
-   * gets wrong, which drives content fixes.
-   */
-  quizQuestionAnswered: (args: {
-    mode: string;
-    question_id: string;
-    question_index: number;
-    total: number;
-    correct: boolean;
-  }) => emit("quiz_question_answered", args),
-
-  /** Learner left a quiz before the result screen. Churn signal per mode. */
-  quizAbandoned: (args: {
-    mode: string;
-    total: number;
-    answered: number;
-    correct: number;
-  }) => emit("quiz_abandoned", args),
-
-  /** User reached the result screen of a practice quiz. */
-  quizCompleted: (args: {
-    mode: string;
-    total: number;
-    correct: number;
-    scorePct: number;
-    passed: boolean;
-  }) =>
-    emit("quiz_completed", {
-      mode: args.mode,
-      total: args.total,
-      correct: args.correct,
-      score_pct: args.scorePct,
-      passed: args.passed,
-    }),
 
   /** Pelican recall run kicked off. */
   pelicanStarted: (args: { signsTotal: number; categories: string[] }) =>
@@ -199,15 +154,12 @@ export const analytics = {
       miss_count: args.missCount,
     }),
 
-  /** Outbound click to a partner driving school — primary monetisation signal. */
+  /** Outbound click to a partner or source site. */
   partnerClicked: (args: { name: string; url: string }) =>
     emit("partner_clicked", {
       partner_name: args.name,
       partner_url: args.url,
     }),
-
-  /** User tapped "Save progress" on the post-quiz card — signup intent proxy. */
-  saveProgressClicked: () => emit("save_progress_clicked"),
 
   /**
    * Learner tapped a contact channel in the footer. Small numbers by design;
@@ -232,93 +184,6 @@ export const analytics = {
   /** Someone opened a shared link. `valid: false` means the payload was junk. */
   shareLandingViewed: (args: { kind: string; valid: boolean }) =>
     emit("share_landing_viewed", args),
-
-  // ----- habit loop -----
-  // Streak + daily goal are the retention mechanics; these two events are what
-  // make "learners who hit a 3-day streak retain N× better" answerable.
-
-  /** Daily streak ticked up (first lesson completed on a new day). */
-  streakExtended: (args: {
-    days: number;
-    longest: number;
-    /** True when a banked freeze covered a skipped day. */
-    freeze_spent: boolean;
-  }) => emit("streak_extended", args),
-
-  /** Learner crossed their daily XP goal. Fires once per day. */
-  dailyGoalMet: (args: { goal: number; xp_earned: number; streak: number }) =>
-    emit("daily_goal_met", args),
-
-  /**
-   * Learner opened a lesson they can actually access. Pairs with
-   * `lesson_completed` for the per-lesson drop-off funnel — without it we can
-   * only see finishes, not abandons.
-   */
-  lessonStarted: (args: {
-    course_slug: string;
-    lesson_id: string;
-    chapter_id: string;
-    blocks_total: number;
-    /** `fresh` on a first open, `resume` when progress already existed. */
-    entry: "fresh" | "resume" | "review";
-  }) => emit("lesson_started", args),
-
-  /** Learner tapped a locked node on the path. Friction / paywall signal. */
-  lessonLockedTapped: (args: {
-    course_slug: string;
-    lesson_id: string;
-    unit_index: number;
-    lesson_index: number;
-  }) => emit("lesson_locked_tapped", args),
-
-  /** Learner advances from a course lesson block. */
-  lessonBlockCompleted: (args: {
-    course_slug: string;
-    lesson_id: string;
-    block_id: string;
-    block_type: string;
-    score?: number;
-  }) => emit("lesson_block_completed", args),
-
-  /** Learner completes the final block of a course lesson. */
-  lessonCompleted: (args: {
-    course_slug: string;
-    lesson_id: string;
-    blocks_total: number;
-    xp_earned: number;
-  }) => emit("lesson_completed", args),
-
-  /** Learner restarts a completed course lesson. */
-  lessonReplayed: (args: { course_slug: string; lesson_id: string }) =>
-    emit("lesson_replayed", args),
-
-  /** Learner opens a placement test for a locked lesson. */
-  placementTestStarted: (args: {
-    course_slug: string;
-    target_lesson_id: string;
-  }) => emit("placement_test_started", args),
-
-  /** Learner reaches a placement-test verdict. */
-  placementTestCompleted: (args: {
-    course_slug: string;
-    target_lesson_id: string;
-    total: number;
-    correct: number;
-    passed: boolean;
-  }) => emit("placement_test_completed", args),
-
-  /** Learner retries a failed placement test. */
-  placementTestRetaken: (args: {
-    course_slug: string;
-    target_lesson_id: string;
-  }) => emit("placement_test_retaken", args),
-
-  /** Learner applies a passing placement-test result. */
-  placementTestPassed: (args: {
-    course_slug: string;
-    target_lesson_id: string;
-    lessons_unlocked: number;
-  }) => emit("placement_test_passed", args),
 
   // ----- ad orchestration -----
   // Every decision the ad engine makes flows through here, including blocks.

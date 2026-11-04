@@ -11,8 +11,7 @@
  *   on its exact route _and_ on any descendant route, so `/blogs` lights up
  *   on `/blogs/:slug`, `/road-signs` on `/road-signs/pelican`, etc.
  * - Hrefs with a query string require an exact path + query match, so the
- *   "Quick test" item (`/practice?mode=test`) doesn't compete with the plain
- *   "Practice" item (`/practice`) when the user is on the unmoded page.
+ *   item doesn't compete with an unfiltered item for the same path.
  * - The home href (`/`) only matches the exact root path so it doesn't claim
  *   every nested route.
  */

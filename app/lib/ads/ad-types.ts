@@ -9,21 +9,14 @@
 
 /** Things the app can announce. Not every event has a slot — see EVENT_SLOT_MAP. */
 export type AdTriggerEvent =
-  | "app_open"
-  | "lesson_start"
-  | "lesson_complete"
   | "chapter_complete"
   | "gameplay_milestone"
-  | "route_change"
-  | "idle_resume";
+  | "route_change";
 
 export type UserAdTier = "free" | "premium";
 
 /** Logical ad placements. Real provider slot IDs map from these in constants. */
-export type AdSlotId =
-  | "lesson_complete"
-  | "chapter_complete"
-  | "gameplay_milestone";
+export type AdSlotId = "interstitial" | "chapter_complete" | "gameplay_milestone";
 
 /** Discriminated reasons so analytics can pinpoint which guard fired. */
 export type AdBlockReason =

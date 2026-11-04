@@ -109,8 +109,8 @@ export default function App() {
   const location = useLocation();
   useUtmCapture();
   usePageviews();
-  // Keeps PostHog person properties (streak, lessons done, accuracy) in step
-  // with the local progress stores. PostHog itself is initialised in
+  // Keeps PostHog person properties (signs mastered) in step with the local
+  // progress stores. PostHog itself is initialised in
   // `entry.client.tsx`, before hydration.
   useLearnerAnalytics();
   return (
@@ -148,7 +148,7 @@ export default function App() {
  * `session_budget_not_met` and do nothing; the call that lands after the
  * 5-min budget hits actually opens the modal. This is the "next action
  * fires the ad" mechanism for routes outside the game-specific trigger
- * sites (quiz completion / pelican `_toBetween`).
+ * sites (the trainers' `_toBetween`).
  */
 function AmbientAdTrigger() {
   const location = useLocation();

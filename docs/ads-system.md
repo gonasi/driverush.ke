@@ -67,7 +67,6 @@ What counts as **active time**:
 What counts as a **natural break**:
 
 - Any SPA navigation (`route_change` — fires app-wide)
-- Quiz completion in `/practice` (`lesson_complete`)
 - Between two signs in the pelican trainer (`gameplay_milestone`)
 - End of a pelican run (`chapter_complete`)
 
@@ -87,7 +86,6 @@ Other rules:
 ┌────────────────────────────────────────────────────────────────┐
 │ Trigger sites (call triggerAd(...) at natural break points)    │
 │  • app/root.tsx           → "route_change" on every nav         │
-│  • quiz-flow.tsx          → "lesson_complete" on result screen │
 │  • pelican-store.ts       → "gameplay_milestone" at _toBetween │
 │                           → "chapter_complete" at run end      │
 └──────────────────────────┬─────────────────────────────────────┘
@@ -140,7 +138,6 @@ Other rules:
 | `app/components/brand/ad-renderer.tsx`      | Provider-agnostic surface that calls `provider.renderInto(...)`.                                                                                |
 | `app/components/brand/ad-renderer.css`      | Renderer-internal styles (ad surface frame).                                                                                                    |
 | `app/root.tsx`                              | Mounts `<AdProvider>` + `<RouteAdGate>` + `<AmbientAdTrigger>` + `<AdModal>`.                                                                   |
-| `app/components/brand/quiz-flow.tsx`        | Calls `triggerAd("lesson_complete")` after `analytics.quizCompleted`.                                                                           |
 | `app/lib/pelican-store.ts`                  | Calls `triggerAdAndAwaitClose("gameplay_milestone", resume)` at `_toBetween` and `triggerAdFromNonReact("chapter_complete")` at run completion. |
 | `app/routes/layouts/tools-layout.tsx`       | Exports `handle: AdRouteHandle = { ads: { interruptible: false } }` for `/tools/*`.                                                             |
 | `app/lib/analytics.ts`                      | `analytics.adShown / adClosed / adFailed / adSkipped / adBlockedByRules`.                                                                       |
@@ -288,18 +285,6 @@ function AmbientAdTrigger() {
 
 Fires on every SPA navigation. Most calls are blocked silently with `session_budget_not_met` — this is by design and not a bug. The one that lands after the 5-min budget hits opens the modal.
 
-### `lesson_complete` — `app/components/brand/quiz-flow.tsx`
-
-Inside `handleNext`, after `analytics.quizCompleted(...)`:
-
-```tsx
-analytics.quizCompleted({ ... })
-triggerAd("lesson_complete")
-setDone(true)
-```
-
-Order is deliberate: analytics fires first so a provider failure can't suppress the GA event.
-
 ### `gameplay_milestone` — `app/lib/pelican-store.ts`
 
 Inside `_toBetween` (after each sign cycle ends, not at run completion):
@@ -329,7 +314,7 @@ Fire-and-forget — there's no in-game state to pause/resume; the run is over.
 
 ### Why have multiple trigger sites if the budget is the gate?
 
-Because users spend time in different shapes. A user grinding `/practice` quizzes hits `lesson_complete` regularly. A user reading blogs hits `route_change` only on nav. A user deep in a pelican run hits `gameplay_milestone` between every sign. We want the natural-break event to be there whenever the budget happens to hit, regardless of which surface the user is on.
+Because users spend time in different shapes. A user reading blogs hits `route_change` only on nav. A user deep in a pelican run hits `gameplay_milestone` between every sign. We want the natural-break event to be there whenever the budget happens to hit, regardless of which surface the user is on.
 
 ---
 
@@ -600,7 +585,7 @@ That's it. The engine handles gating, the modal handles display, the renderer ha
 
 ### Splitting a slot for AdSense reporting
 
-If you want, say, `route_change` to use a different ad unit than `lesson_complete` in the AdSense dashboard:
+If you want, say, `route_change` to use a different ad unit than `chapter_complete` in the AdSense dashboard:
 
 1. Add a new slot ID to `AdSlotId` in `ad-types.ts` (e.g., `"ambient"`).
 2. Add an entry to `AD_SLOTS` in `ad-constants.ts` with the AdSense slot ID.
@@ -670,7 +655,7 @@ Inline banner ads scattered through pages would defeat the centralised orchestra
 
 - **AdSense slot IDs are placeholders.** Until populated in `AD_SLOTS`, the system runs Mock-only. Filling them in (post-AdSense approval) flips the factory to live, no code change required.
 - **No SSR-aware gating.** The server doesn't know whether a user is "due for an ad." We could pass a cookie reflection of the budget to enable server-rendered ad units, but our current architecture is fully client-side and that's fine for now.
-- **No per-event slot reporting in AdSense.** Currently `route_change` and `lesson_complete` share a slot. If product wants distinct CTR / fill data per event, see "Splitting a slot for AdSense reporting" above.
+- **No per-event slot reporting in AdSense.** Currently all the slots share one ad unit. If product wants distinct CTR / fill data per event, see "Splitting a slot for AdSense reporting" above.
 - **`gameplay_milestone` fires every sign cycle when in pelican.** This is intentional (the engine decides via the budget), but the analytics noise from `ad_blocked_by_rules` events is high during long runs. Filter your dashboards accordingly.
 - **No A/B testing hooks.** The system has the seam for it (`evaluate()` is pure and takes a `ctx` arg), but no experiment integration exists yet.
 - **Cross-device sync is impossible without auth.** A user on phone + laptop accumulates two separate budgets. Acceptable until subscriptions ship — at that point, the same auth that gates premium can sync the budget if we want.

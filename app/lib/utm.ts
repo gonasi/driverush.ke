@@ -42,7 +42,6 @@ export const UTM_CAMPAIGNS = [
   "free_practice",
   "ntsa_prep",
   "partner_share",
-  "premium_upsell",
   "social_organic",
 ] as const;
 

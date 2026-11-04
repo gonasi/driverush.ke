@@ -9,7 +9,7 @@
  *     that path is the default, not the exception (see `resolveShare`).
  *  2. **Say something in the preview.** The loader resolves the payload on the
  *     server so `meta()` can put the actual claim into the `og:` tags. A
- *     WhatsApp forward shows "They scored 9/10…", not a generic site card.
+ *     WhatsApp forward shows "They recalled 10 signs…", not a generic site card.
  *  3. **Convert.** One primary button, aimed at the exact thing the sharer
  *     did, with no signup in the way.
  *
@@ -28,7 +28,6 @@ import {
 import type { Route } from "./+types/share-landing";
 
 import { analytics } from "~/lib/analytics";
-import { getCourse } from "~/lib/course";
 import { OG_CARDS, OG_HEIGHT, OG_WIDTH, ogCardPath } from "~/lib/og-cards";
 import { SIGN_GAMES } from "~/lib/road-signs";
 import { resolveShare, SHARE_OG_CARD, shareLandingMeta } from "~/lib/share";
@@ -38,20 +37,9 @@ import { Button } from "~/components/ui/button";
 import { SiteFooter } from "~/components/brand/site-footer";
 import { SiteNav } from "~/components/brand/site-nav";
 
-/** Lesson titles are looked up in our own manifest, never taken from the URL. */
-function lookupLessonTitle(courseSlug: string, lessonId: string) {
-  const course = getCourse(courseSlug);
-  if (!course) return null;
-  for (const chapter of course.chapters) {
-    const lesson = chapter.lessons.find((l) => l.id === lessonId);
-    if (lesson) return lesson.title;
-  }
-  return null;
-}
-
 export function loader({ request }: Route.LoaderArgs) {
   const params = new URL(request.url).searchParams;
-  return { resolved: resolveShare(params, lookupLessonTitle) };
+  return { resolved: resolveShare(params) };
 }
 
 export function meta({ data }: Route.MetaArgs) {

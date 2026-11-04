@@ -110,7 +110,7 @@ export class AdEngine {
       // Already showing — don't stack. Quiet skip; the trigger site won fair
       // and square but the user is mid-impression.
       analytics.adSkipped({
-        slot: this.state.currentSlot ?? "lesson_complete",
+        slot: this.state.currentSlot ?? "interstitial",
       });
       return;
     }

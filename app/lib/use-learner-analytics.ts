@@ -1,13 +1,11 @@
 /**
- * Learner profile sync — turns the localStorage progress this app already
- * keeps into PostHog person properties.
+ * Learner profile sync: turns the localStorage progress this app already keeps
+ * into PostHog person properties.
  *
- * There are no accounts, so without this every learner is a shapeless
- * anonymous id and questions like "do people who reach a 3-day streak come
- * back?" or "how do course finishers practice differently?" can't be asked.
- * These properties make them segmentable instead: build cohorts on
- * `current_streak`, break trends down by `learner_stage`, run retention
- * against `lessons_completed`.
+ * There are no accounts, so without this every learner is a shapeless anonymous
+ * id and questions like "do people who know 20 signs come back?" can't be asked.
+ * These properties make them segmentable instead: break trends down by
+ * `learner_stage`, build cohorts on `signs_mastered_pelican`.
  *
  * Cost control: the project runs `person_profiles: 'identified_only'`, and
  * `setPersonProperties` is what creates a profile. We therefore hold off until
@@ -28,13 +26,9 @@ import { useLocation } from "react-router";
 
 import { getPostHog } from "./posthog";
 import { MASTERED_BOX, type SignProgress } from "./pelican-progress";
-import type { CourseProgress } from "./course-progress";
 
-const COURSE_KEY = "driverush:ntsa-progress";
-const STREAK_KEY = "driverush:ntsa-streak";
 const PELICAN_KEY = "driverush:pelican";
 const SIGNS_3D_KEY = "driverush:signs3d";
-const PRACTICE_KEY = "dr-progress-v1";
 const FIRST_SEEN_KEY = "driverush:first-seen";
 
 /** zustand's persist envelope. */
@@ -59,90 +53,32 @@ function masteredSigns(progress: SignProgress | undefined): number {
  * Coarse lifecycle bucket. Low cardinality on purpose — it's registered as a
  * super property, so it lands on every event and shows up as a breakdown.
  */
-function learnerStage(p: {
-  lessonsCompleted: number;
-  practiceAnswered: number;
-  signsMastered: number;
-  currentStreak: number;
-}): "visitor" | "sampler" | "practising" | "learning" | "committed" {
-  if (p.currentStreak >= 3 || p.lessonsCompleted >= 5) return "committed";
-  if (p.lessonsCompleted >= 1) return "learning";
-  if (p.practiceAnswered >= 10 || p.signsMastered >= 5) return "practising";
-  if (p.practiceAnswered > 0 || p.signsMastered > 0) return "sampler";
+function learnerStage(
+  signsMastered: number,
+): "visitor" | "sampler" | "practising" | "committed" {
+  if (signsMastered >= 40) return "committed";
+  if (signsMastered >= 5) return "practising";
+  if (signsMastered > 0) return "sampler";
   return "visitor";
 }
 
 type LearnerProfile = Record<string, string | number | boolean>;
 
 function buildProfile(): LearnerProfile {
-  const course =
-    readJson<Persisted<{ byCourse: Record<string, CourseProgress> }>>(
-      COURSE_KEY,
-    )?.state?.byCourse;
-  const streak = readJson<
-    Persisted<{
-      currentStreak: number;
-      longestStreak: number;
-      dailyGoal: number;
-      dailyXpEarned: number;
-      freezesAvailable: number;
-    }>
-  >(STREAK_KEY)?.state;
   const pelican =
     readJson<Persisted<{ progress: SignProgress }>>(PELICAN_KEY)?.state
       ?.progress;
   const signs3d =
     readJson<Persisted<{ progress: SignProgress }>>(SIGNS_3D_KEY)?.state
       ?.progress;
-  const practice = readJson<{
-    totalAnswered: number;
-    totalCorrect: number;
-    streak: number;
-  }>(PRACTICE_KEY);
-
-  let lessonsCompleted = 0;
-  let lessonsStarted = 0;
-  let courseXp = 0;
-  const coursesStarted = course ? Object.keys(course).length : 0;
-  for (const cp of Object.values(course ?? {})) {
-    courseXp += cp.totalXP ?? 0;
-    for (const chapter of Object.values(cp.chapters ?? {})) {
-      for (const lesson of Object.values(chapter.lessons ?? {})) {
-        lessonsStarted += 1;
-        if (lesson.status === "complete") lessonsCompleted += 1;
-      }
-    }
-  }
 
   const pelicanMastered = masteredSigns(pelican);
   const signs3dMastered = masteredSigns(signs3d);
-  const practiceAnswered = practice?.totalAnswered ?? 0;
-  const practiceCorrect = practice?.totalCorrect ?? 0;
 
   return {
-    lessons_completed: lessonsCompleted,
-    lessons_started: lessonsStarted,
-    courses_started: coursesStarted,
-    course_xp: courseXp,
-    practice_answered: practiceAnswered,
-    practice_correct: practiceCorrect,
-    practice_accuracy:
-      practiceAnswered === 0
-        ? 0
-        : Math.round((practiceCorrect / practiceAnswered) * 100),
     signs_mastered_pelican: pelicanMastered,
     signs_mastered_3d: signs3dMastered,
-    current_streak: streak?.currentStreak ?? 0,
-    longest_streak: streak?.longestStreak ?? 0,
-    daily_goal: streak?.dailyGoal ?? 0,
-    daily_xp_earned: streak?.dailyXpEarned ?? 0,
-    streak_freezes: streak?.freezesAvailable ?? 0,
-    learner_stage: learnerStage({
-      lessonsCompleted,
-      practiceAnswered,
-      signsMastered: pelicanMastered + signs3dMastered,
-      currentStreak: streak?.currentStreak ?? 0,
-    }),
+    learner_stage: learnerStage(pelicanMastered + signs3dMastered),
   };
 }
 
@@ -161,7 +97,7 @@ function firstSeenAt(): string {
 
 /**
  * Push the learner profile to PostHog on mount, on every route change, and
- * when the tab regains focus (a lesson finished in another tab counts).
+ * when the tab regains focus (a run finished in another tab counts).
  * Writes only when something actually changed, so it costs one `$set` at most
  * per navigation.
  */

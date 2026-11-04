@@ -3,7 +3,7 @@
  *
  * A resource route: it has a `loader` and no component, so React Router returns
  * the `Response` as-is. List the public, indexable pages here — leave out the
- * internal `/tools` and `/design` routes, which `robots.txt` also disallows.
+ * internal `/tools` routes, which `robots.txt` also disallows.
  *
  * Static pages share `STATIC_LAST_MODIFIED`; bump it when those pages get a
  * meaningful content update. Blog posts use their own frontmatter `date` so
@@ -61,26 +61,6 @@ const STATIC_PAGES: Entry[] = [
     path: "/model-town-board",
     changefreq: "monthly",
     priority: "0.4",
-    lastmod: STATIC_LAST_MODIFIED,
-  },
-  {
-    path: "/courses",
-    changefreq: "weekly",
-    priority: "0.8",
-    lastmod: STATIC_LAST_MODIFIED,
-  },
-  {
-    // Cornerstone landing for the "driving schools in Kenya" cluster. Higher
-    // priority than blog posts so Google indexes it first.
-    path: "/driving-schools-kenya",
-    changefreq: "weekly",
-    priority: "0.9",
-    lastmod: STATIC_LAST_MODIFIED,
-  },
-  {
-    path: "/practice",
-    changefreq: "weekly",
-    priority: "0.8",
     lastmod: STATIC_LAST_MODIFIED,
   },
   {

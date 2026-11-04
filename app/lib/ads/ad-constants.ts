@@ -21,7 +21,7 @@ export const AD_CLIENT = "ca-pub-9749836423673560";
  * and swap individual entries below — engine code doesn't change.
  */
 export const AD_SLOTS: Record<AdSlotId, string> = {
-  lesson_complete: "5315769413",
+  interstitial: "5315769413",
   chapter_complete: "5315769413",
   gameplay_milestone: "5315769413",
 };

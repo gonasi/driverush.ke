@@ -48,11 +48,6 @@ export function meta({ data, params }: Route.MetaArgs) {
   }
   const { post } = data;
   const ownUrl = absUrl(`/blogs/${post.slug}`);
-  // When a post canonicalises to a landing page, the canonical href points
-  // there and the BlogPosting / FAQPage schema are dropped — Google should
-  // consolidate ranking signals onto the landing page, not split them.
-  const canonicalUrl = post.canonical ? absUrl(post.canonical) : ownUrl;
-  const isCanonicalised = post.canonical != null;
   const ogImage = absUrl(SITE.ogImage);
   // Brand suffix on the SERP title only — the OG/Twitter title keeps the
   // editorial wording clean (post titles often already contain "Kenya" or
@@ -66,10 +61,10 @@ export function meta({ data, params }: Route.MetaArgs) {
       name: "keywords",
       content: keywords(...post.tags, ...BLOG_KEYWORDS),
     },
-    { tagName: "link", rel: "canonical", href: canonicalUrl },
+    { tagName: "link", rel: "canonical", href: ownUrl },
     { property: "og:title", content: post.title },
     { property: "og:description", content: post.description },
-    { property: "og:url", content: canonicalUrl },
+    { property: "og:url", content: ownUrl },
     { property: "og:type", content: "article" },
     { property: "og:image", content: ogImage },
     { property: "article:published_time", content: post.date },
@@ -86,41 +81,34 @@ export function meta({ data, params }: Route.MetaArgs) {
         { name: post.title, url: `/blogs/${post.slug}` },
       ]),
     },
-    // Skip BlogPosting JSON-LD on canonicalised posts so the landing page is
-    // the sole structured-data home for the topic. FAQPage is no longer
-    // emitted anywhere (see app/routes/home.tsx for context).
-    ...(isCanonicalised
-      ? []
-      : [
-          {
-            "script:ld+json": {
-              "@context": "https://schema.org",
-              "@type": "BlogPosting",
-              headline: post.title,
-              description: post.description,
-              datePublished: post.date,
-              dateModified: post.date,
-              url: ownUrl,
-              inLanguage: SITE.lang,
-              mainEntityOfPage: { "@type": "WebPage", "@id": ownUrl },
-              author: {
-                "@type": "Organization",
-                name: SITE.name,
-                url: SITE.url,
-              },
-              publisher: {
-                "@type": "Organization",
-                name: SITE.name,
-                url: SITE.url,
-                logo: { "@type": "ImageObject", url: ogImage },
-              },
-              image: [ogImage],
-              keywords: [...post.tags, ...BLOG_KEYWORDS].join(", "),
-              articleSection: post.category,
-              wordCount: post.readingMinutes * 220,
-            },
-          },
-        ]),
+    {
+      "script:ld+json": {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        headline: post.title,
+        description: post.description,
+        datePublished: post.date,
+        dateModified: post.date,
+        url: ownUrl,
+        inLanguage: SITE.lang,
+        mainEntityOfPage: { "@type": "WebPage", "@id": ownUrl },
+        author: {
+          "@type": "Organization",
+          name: SITE.name,
+          url: SITE.url,
+        },
+        publisher: {
+          "@type": "Organization",
+          name: SITE.name,
+          url: SITE.url,
+          logo: { "@type": "ImageObject", url: ogImage },
+        },
+        image: [ogImage],
+        keywords: [...post.tags, ...BLOG_KEYWORDS].join(", "),
+        articleSection: post.category,
+        wordCount: post.readingMinutes * 220,
+      },
+    },
   ];
 }
 

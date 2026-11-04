@@ -4,7 +4,7 @@
  *
  * These are real PNGs in `public/og/`, not runtime-generated images. They're
  * captured from `/tools/og`, a route that renders each card with the app's own
- * fonts, colours and artwork (actual sprite crops off the NTSA sign sheet,
+ * fonts, colours and artwork (actual sprite crops off the Pelican chart,
  * actual GLB models in the 3D card), then screenshotted by
  * `scripts/build-og-images.mjs`. So the previews look like the product without
  * any image service to run, pay for, or wake up on a cold start.
@@ -23,10 +23,8 @@ export const OG_HEIGHT = 630;
 
 export type OgCardId =
   | "default"
-  | "quiz"
   | "pelican"
   | "signs3d"
-  | "lesson"
   | "road-signs";
 
 export type OgCard = {
@@ -41,17 +39,12 @@ export const OG_CARDS: OgCard[] = [
   {
     id: "default",
     blurb: "Site-wide fallback for any page without its own card.",
-    alt: "DriveRush: free NTSA practice and Kenyan road signs",
-  },
-  {
-    id: "quiz",
-    blurb: "Shared practice scores and mock-test challenges.",
-    alt: "An NTSA practice question with four answer options",
+    alt: "DriveRush: memorise Kenyan road signs on the Pelican chart or in 3D",
   },
   {
     id: "pelican",
-    blurb: "Shared Pelican recall runs.",
-    alt: "Kenyan warning road signs shown close up",
+    blurb: "Shared Pelican chart runs.",
+    alt: "Kenyan road signs from the Pelican chart, shown close up",
   },
   {
     id: "signs3d",
@@ -59,14 +52,9 @@ export const OG_CARDS: OgCard[] = [
     alt: "Kenyan road signs modelled in 3D on their posts",
   },
   {
-    id: "lesson",
-    blurb: "Shared lesson completions and the course overview.",
-    alt: "The DriveRush Class B course path",
-  },
-  {
     id: "road-signs",
     blurb: "The road-sign chart page and anything sign-reference shaped.",
-    alt: "A grid of Kenyan road signs from the NTSA chart",
+    alt: "A grid of Kenyan road signs from the Pelican chart",
   },
 ];
 
@@ -80,4 +68,4 @@ export function ogCardAlt(id: OgCardId): string {
   return OG_CARDS.find((c) => c.id === id)?.alt ?? SITE_CARD_ALT;
 }
 
-const SITE_CARD_ALT = "DriveRush: free NTSA practice for Kenyan roads";
+const SITE_CARD_ALT = "DriveRush: memorise Kenyan road signs";

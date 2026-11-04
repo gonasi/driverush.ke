@@ -3,7 +3,7 @@
  * Capture the social cards from `/tools/og` into `public/og/*.png`.
  *
  * The cards are authored as real app components (same fonts, same colours,
- * real sprite crops off the NTSA sign sheet, real GLB models in the 3D card),
+ * real sprite crops off the Pelican chart, real GLB models in the 3D card),
  * so this script just points headless Chrome at each one and takes a picture.
  * No image service, no runtime rendering, no cold starts: the PNGs ship as
  * static files and only change when we redesign a card.
@@ -44,11 +44,9 @@ const HEIGHT = 630;
  */
 const CARDS = [
   { id: "default", settleMs: 2500, minBytes: 20_000 },
-  { id: "quiz", settleMs: 2500, minBytes: 20_000 },
   { id: "pelican", settleMs: 3500, minBytes: 20_000 },
   // WebGL through SwiftShader plus three GLB loads: this one needs room.
   { id: "signs3d", settleMs: 20000, minBytes: 50_000 },
-  { id: "lesson", settleMs: 2500, minBytes: 20_000 },
   { id: "road-signs", settleMs: 3500, minBytes: 20_000 },
   // The homepage's 3D still rather than a social card. Compress it afterwards:
   //   sips -s format jpeg -s formatOptions 72 -Z 640 public/og/poster-3d.png \

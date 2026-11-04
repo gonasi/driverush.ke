@@ -22,6 +22,7 @@ import { useSearchParams } from "react-router";
 import type { Route } from "./+types/og";
 
 import pelican from "~/data/road-signs-pelican.json";
+import { regionSpriteStyle } from "~/lib/image-focus";
 import { OG_CARDS, OG_HEIGHT, OG_WIDTH, type OgCardId } from "~/lib/og-cards";
 import { cn } from "~/lib/utils";
 
@@ -53,34 +54,11 @@ function region(code: string): Region | undefined {
 }
 
 /**
- * The trainer's regions are drawn generously so the blur reveal has room. At
- * poster size that slack shows: the printed sign code and a sliver of the
- * neighbouring sign creep into frame. Pull the box in on all sides before
- * cropping.
+ * The same sprite maths the trainers use, pulled in a little so the printed sign
+ * code and neighbouring sign stay out of frame at poster size.
  */
-function inset(r: Region, pad = 0.11): Region {
-  return {
-    ...r,
-    x: r.x + r.width * pad,
-    y: r.y + r.height * pad,
-    width: r.width * (1 - pad * 2),
-    height: r.height * (1 - pad * 2),
-  };
-}
-
-/**
- * The same sprite maths the trainers use: show only this region of the sheet,
- * scaled up. This is what makes the cards feel like the real signs rather than
- * clip art.
- */
-function crop(raw: Region, pad?: number): React.CSSProperties {
-  const r = inset(raw, pad);
-  return {
-    backgroundImage: `url(${SHEET})`,
-    backgroundSize: `${(100 / r.width) * 100}% ${(100 / r.height) * 100}%`,
-    backgroundPosition: `${(r.x / (100 - r.width)) * 100}% ${(r.y / (100 - r.height)) * 100}%`,
-    backgroundRepeat: "no-repeat",
-  };
+function crop(r: Region, pad = 0.11): React.CSSProperties {
+  return regionSpriteStyle(r, SHEET, pad);
 }
 
 /**
@@ -168,13 +146,13 @@ function DefaultCard() {
       <div className="flex w-full items-center justify-between gap-10">
         <div className="max-w-[620px]">
           <h1 className="m-0 font-display text-[64px] font-extrabold uppercase leading-[0.9] tracking-tight">
-            Learn to drive in{" "}
+            Memorise Kenya's{" "}
             <em className="font-serif font-normal normal-case italic text-rush">
-              Kenya
+              road signs
             </em>
           </h1>
           <p className="mt-5 font-serif text-[24px] leading-snug text-ink-2">
-            NTSA practice, every road sign, and a full Class B course.
+            On the real Pelican chart, or spun in 3D.
           </p>
         </div>
         <div className="grid shrink-0 grid-cols-2 gap-3">
@@ -186,53 +164,6 @@ function DefaultCard() {
             />
           ))}
         </div>
-      </div>
-    </Card>
-  );
-}
-
-function QuizCard() {
-  const choices = [
-    { key: "A", text: "30 km/h" },
-    { key: "B", text: "50 km/h", correct: true },
-    { key: "C", text: "80 km/h" },
-    { key: "D", text: "110 km/h" },
-  ];
-  return (
-    <Card
-      id="quiz"
-      header={
-        <>
-          <Wordmark />
-          <Stamp>NTSA practice</Stamp>
-        </>
-      }
-    >
-      <div className="grid w-full grid-cols-[1.15fr_1fr] items-center gap-12">
-        <div>
-          <p className="m-0 font-mono text-[16px] uppercase tracking-widest text-ink-3">
-            Question 04 / 10
-          </p>
-          <h1 className="m-0 mt-4 font-display text-[52px] font-extrabold uppercase leading-[0.95] tracking-tight">
-            What is the speed limit in a built-up area?
-          </h1>
-        </div>
-        <ul className="m-0 grid list-none gap-3 p-0">
-          {choices.map((c) => (
-            <li
-              key={c.key}
-              className={cn(
-                "flex items-center gap-3 border-2 border-ink px-5 py-4 font-display text-[25px] font-extrabold uppercase tracking-tight",
-                c.correct
-                  ? "bg-kenya-green text-kenya-green-foreground shadow-stamp"
-                  : "bg-surface text-ink",
-              )}
-            >
-              <span className="font-mono text-[16px]">{c.key}</span>
-              {c.text}
-            </li>
-          ))}
-        </ul>
       </div>
     </Card>
   );
@@ -252,7 +183,7 @@ function PelicanCard() {
       header={
         <>
           <Wordmark tone="paper" />
-          <Stamp>{REGIONS.length} signs</Stamp>
+          <Stamp>Pelican chart · {REGIONS.length} signs</Stamp>
         </>
       }
     >
@@ -272,11 +203,11 @@ function PelicanCard() {
           <h1 className="m-0 font-display text-[58px] font-extrabold uppercase leading-[0.9] tracking-tight text-paper">
             Name it before the{" "}
             <em className="font-serif font-normal normal-case italic text-rush">
-              blur clears
+              answer shows
             </em>
           </h1>
           <p className="mt-4 font-serif text-[23px] leading-snug text-paper/75">
-            Every NTSA sign, drilled from memory until it sticks.
+            The real chart from Pelican Signs, one sign at a time.
           </p>
         </div>
       </div>
@@ -298,16 +229,16 @@ function Signs3DCard() {
       header={
         <>
           <Wordmark />
-          <Stamp>3D recognition</Stamp>
+          <Stamp>3D signs</Stamp>
         </>
       }
     >
       <div className="flex w-full items-center gap-10">
         <div className="max-w-[372px] shrink-0">
           <h1 className="m-0 font-display text-[42px] font-extrabold uppercase leading-[0.92] tracking-tight">
-            Spin every Kenyan{" "}
+            Spin Kenyan{" "}
             <em className="font-serif font-normal normal-case italic text-rush">
-              road sign
+              road signs
             </em>
           </h1>
           <p className="mt-4 font-serif text-[22px] leading-snug text-ink-2">
@@ -344,57 +275,6 @@ function Signs3DCard() {
   );
 }
 
-function LessonCard() {
-  const nodes = [
-    { n: "01", state: "done" },
-    { n: "02", state: "done" },
-    { n: "03", state: "now" },
-    { n: "04", state: "locked" },
-  ];
-  return (
-    <Card
-      id="lesson"
-      header={
-        <>
-          <Wordmark />
-          <Stamp>Class B · Free</Stamp>
-        </>
-      }
-    >
-      <div className="grid w-full grid-cols-[1.1fr_auto] items-center gap-12">
-        <div>
-          <h1 className="m-0 font-display text-[56px] font-extrabold uppercase leading-[0.9] tracking-tight">
-            The whole highway code, one{" "}
-            <em className="font-serif font-normal normal-case italic text-rush">
-              lesson at a time
-            </em>
-          </h1>
-          <p className="mt-5 font-serif text-[23px] leading-snug text-ink-2">
-            48 lessons, built for Kenyan roads. Start without an account.
-          </p>
-        </div>
-        <div className="flex flex-col gap-3">
-          {nodes.map((node) => (
-            <span
-              key={node.n}
-              className={cn(
-                "flex size-[96px] items-center justify-center border-2 border-ink font-display text-[34px] font-extrabold tabular-nums",
-                node.state === "done" &&
-                  "bg-kenya-green text-kenya-green-foreground shadow-stamp",
-                node.state === "now" &&
-                  "bg-amber text-amber-foreground shadow-stamp",
-                node.state === "locked" && "bg-paper-3 text-ink-3",
-              )}
-            >
-              {node.n}
-            </span>
-          ))}
-        </div>
-      </div>
-    </Card>
-  );
-}
-
 function RoadSignsCard() {
   // Hand-picked across all four classes. Taking the first N regions gives
   // fourteen red triangles, which reads as one sign repeated.
@@ -423,20 +303,20 @@ function RoadSignsCard() {
       header={
         <>
           <Wordmark />
-          <Stamp>NTSA highway code</Stamp>
+          <Stamp>Pelican chart</Stamp>
         </>
       }
     >
       <div className="flex w-full items-center gap-10">
         <div className="max-w-[430px]">
           <h1 className="m-0 font-display text-[52px] font-extrabold uppercase leading-[0.9] tracking-tight">
-            Every Kenyan road sign, and what it{" "}
+            {REGIONS.length} Kenyan road signs, and what they{" "}
             <em className="font-serif font-normal normal-case italic text-rush">
-              actually means
+              actually mean
             </em>
           </h1>
           <p className="mt-4 font-serif text-[21px] leading-snug text-ink-2">
-            The full chart, plus two games that drill it in.
+            The Pelican chart, plus two trainers that drill it in.
           </p>
         </div>
         <div className="grid grid-cols-5 gap-2.5">
@@ -477,10 +357,8 @@ function Poster3D() {
 const RENDERERS: Record<OgCardId | "poster-3d", () => React.JSX.Element> = {
   "poster-3d": Poster3D,
   default: DefaultCard,
-  quiz: QuizCard,
   pelican: PelicanCard,
   signs3d: Signs3DCard,
-  lesson: LessonCard,
   "road-signs": RoadSignsCard,
 };
 

@@ -63,44 +63,22 @@ else is a bug — the file _is_ the taxonomy.
 
 ### Top of funnel
 
-| Event                     | Fires when                                | Key properties                                     |
-| ------------------------- | ----------------------------------------- | -------------------------------------------------- |
-| `sign_challenge_started`  | Homepage hero sign game starts a question | `sign_id`, `category`                              |
-| `sign_challenge_answered` | Visitor picks an option in the hero game  | `correct`, `question_index`, `sign_id`, `category` |
-
-### Practice
-
-| Event                    | Fires when                                       | Key properties                             |
-| ------------------------ | ------------------------------------------------ | ------------------------------------------ |
-| `practice_mode_selected` | Learner picks a mode                             | `mode`, `source`                           |
-| `quiz_started`           | A quiz mounts with a non-empty bank              | `mode`, `total`                            |
-| `quiz_question_answered` | Each answer                                      | `question_id`, `correct`, `question_index` |
-| `quiz_completed`         | Result screen reached                            | `score_pct`, `passed`, `correct`, `total`  |
-| `quiz_abandoned`         | Quiz unmounts after ≥1 answer, before the result | `answered`, `correct`, `total`             |
-| `save_progress_clicked`  | "Save progress" tapped — signup-intent proxy     | —                                          |
-
-### Course
-
-| Event                                                            | Fires when                         | Key properties                                      |
-| ---------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------- |
-| `lesson_started`                                                 | An unlocked lesson opens           | `entry` (`fresh`/`resume`/`review`), `blocks_total` |
-| `lesson_block_completed`                                         | Each block advance                 | `block_type`, `score`                               |
-| `lesson_completed`                                               | Final block of a lesson            | `blocks_total`, `xp_earned`                         |
-| `lesson_replayed`                                                | Learner restarts a finished lesson | `lesson_id`                                         |
-| `lesson_locked_tapped`                                           | Learner taps a locked path node    | `unit_index`, `lesson_index`                        |
-| `placement_test_started` / `_completed` / `_retaken` / `_passed` | Placement-test flow                | `target_lesson_id`, `passed`, `lessons_unlocked`    |
-
-### Habit loop
-
-| Event             | Fires when                           | Key properties                    |
-| ----------------- | ------------------------------------ | --------------------------------- |
-| `streak_extended` | Daily streak ticks up                | `days`, `longest`, `freeze_spent` |
-| `daily_goal_met`  | Daily XP goal crossed (once per day) | `goal`, `xp_earned`, `streak`     |
+| Event                     | Fires when                                  | Key properties                                     |
+| ------------------------- | ------------------------------------------- | -------------------------------------------------- |
+| `sign_challenge_started`  | Homepage sign check shows a question        | `sign_id`, `category`                              |
+| `sign_challenge_answered` | Visitor picks an option in the sign check   | `correct`, `question_index`, `sign_id`, `category` |
+| `sign_check_completed`    | Visitor reaches the sign check's score card | `correct`, `total`                                 |
 
 ### Sign trainers
 
-`pelican_started` / `pelican_completed` / `signs3d_started` / `signs3d_completed`
-— each with `signs_total`, `knew_first_try`, `miss_count`.
+| Event                                     | Fires when                     | Key properties                                                                                  |
+| ----------------------------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------- |
+| `pelican_started` / `signs3d_started`     | A run starts                   | `signs_total`, `categories`, `scope` (`round`/`chart`/`drill`)                                   |
+| `pelican_completed` / `signs3d_completed` | A run finishes                 | `scope`, `self_graded`, `signs_total`; when self-graded also `knew_first_try`, `miss_count`     |
+| `sign_graded`                             | "Knew it" or "Missed it" tapped | `trainer`, `sign_code`, `category`, `result`, `box_before`, `box_after`, `first_try`, `scope`   |
+
+`sign_graded` by `sign_code` where `result = missed` is the "which signs does Kenya
+get wrong" report.
 
 ### Monetisation and contact
 
@@ -117,21 +95,18 @@ The project runs `person_profiles: 'identified_only'` and there is no
 call — which `use-learner-analytics.ts` deliberately withholds until
 `learner_stage` moves past `visitor`. Drive-by SEO traffic therefore stays
 anonymous (materially cheaper per event, and the person list stays meaningful);
-anyone who answers a sign, practises, or opens a lesson gets a profile.
+anyone who gets a sign into mastery gets a profile.
 
 On mount, route change and tab focus, once past `visitor`, it writes:
 
-`lessons_started`, `lessons_completed`, `courses_started`, `course_xp`,
-`practice_answered`, `practice_correct`, `practice_accuracy`,
-`signs_mastered_pelican`, `signs_mastered_3d`, `current_streak`,
-`longest_streak`, `daily_goal`, `daily_xp_earned`, `streak_freezes`,
-`learner_stage`, and `first_seen_at` (set once).
+`signs_mastered_pelican`, `signs_mastered_3d`, `learner_stage`, and
+`first_seen_at` (set once).
 
 `learner_stage` is also a **super property**, registered for _everyone_
 including anonymous visitors (super properties don't create a profile), so any
 trend or funnel can be broken down by it without a join:
 
-`visitor` → `sampler` → `practising` → `learning` → `committed`
+`visitor` → `sampler` → `practising` → `committed`
 
 The properties are read from the same localStorage the app already uses. If a
 store's persisted shape changes, update the readers in that file.
@@ -141,29 +116,25 @@ store's persisted shape changes, update the readers in that file.
 Nothing below exists yet — these are the dashboards to create once the MCP
 connector is authorised (or by hand in the UI).
 
-**Activation funnel** (the core question: does the hero game convert?)
-`$pageview` (`/`) → `sign_challenge_started` → `sign_challenge_answered` →
-`quiz_started` OR `lesson_started`. Break down by `utm_source` and device.
+**Activation funnel** (the core question: does a visitor start memorising?)
+`$pageview` (`/`) → `pelican_started` OR `signs3d_started` → `pelican_completed`
+OR `signs3d_completed`. Break down by `utm_source` and device.
 
-**Course completion funnel**
-`lesson_started` → `lesson_block_completed` → `lesson_completed`, broken down by
-`lesson_id`. The lessons with the worst started→completed ratio are the ones to
-rewrite.
+**Which signs are hardest**
+`sign_graded` where `result = missed`, broken down by `sign_code`.
 
-**Practice quality**
-`quiz_question_answered` where `correct = false`, broken down by `question_id`.
-That is the "which questions does Kenya get wrong" report — feeds both content
-fixes and the course syllabus.
+**Chart versus 3D**
+Compare `pelican_started` and `signs3d_started` volumes, and retention on each.
 
 **Retention**
-PostHog retention on `lesson_started` (or `quiz_started`), split by cohort on
-`current_streak ≥ 3` and on `learner_stage`. The habit mechanics only earn
-their complexity if these curves separate.
+PostHog retention on `pelican_started` OR `signs3d_started`, split by
+`learner_stage`.
+
+**Model Town Board demand**
+`$pageview` on `/model-town-board`.
 
 **Friction**
 
-- `lesson_locked_tapped` by `lesson_index` — are the unlock rules blocking people?
-- `quiz_abandoned` by `mode` and `answered` — where quizzes lose people mid-run.
 - `$rageclick` and `$dead_click` trends by URL.
 
 **Reach and money**
@@ -171,8 +142,8 @@ their complexity if these curves separate.
 `ad_blocked_by_rules` by `reason` (why ads didn't show).
 
 **Error tracking**
-Watch the `$exception` issue list; the ones on `/courses/*` matter most because
-they interrupt a paid-attention flow.
+Watch the `$exception` issue list; the ones on `/road-signs/*` matter most because
+they interrupt a run.
 
 ## Adding an event
 

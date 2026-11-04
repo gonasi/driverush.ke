@@ -8,26 +8,12 @@ import {
 
 export default [
   index("routes/home.tsx"),
-  route("courses", "routes/courses.tsx"),
-  // Interactive course engine — overview + the lesson player. Content lives in
-  // `app/courses/<courseSlug>/...`; the manifest is built in `app/lib/course.ts`.
-  route("courses/:courseSlug", "routes/course-overview.tsx"),
-  route(
-    "courses/:courseSlug/:chapterSlug/:lessonSlug",
-    "routes/course-lesson.tsx",
-  ),
-  route("driving-schools-kenya", "routes/driving-schools-kenya.tsx"),
   route("road-signs", "routes/road-signs.tsx"),
   route("road-signs/pelican", "routes/road-signs-pelican.tsx"),
   route("road-signs/3d", "routes/road-signs-3d.tsx"),
   route("model-town-board", "routes/model-town-board.tsx"),
-  route("practice", "routes/practice.tsx"),
-  route("design", "routes/design.tsx"),
 
-  // Blog — index + dynamic per-post route. MDX bodies live in `app/blogs/`.
-  // Cornerstone SEO posts (learning-to-drive-in-kenya, driving-schools-in-kenya,
-  // ntsa-test-prep-kenya) live here too — they get the same chrome and ship
-  // FAQPage JSON-LD via per-post frontmatter.
+  // Blog: index + dynamic per-post route. MDX bodies live in `app/blogs/`.
   route("blogs", "routes/blogs.tsx"),
   route("blogs/:slug", "routes/blogs-post.tsx"),
 
@@ -35,6 +21,14 @@ export default [
   // the URL travels through WhatsApp forwards. Renders a useful page for any
   // payload, including one that's broken or missing, and never 404s.
   route("s", "routes/share-landing.tsx"),
+
+  // Retired pages, permanently redirected. See the route file for the targets.
+  route("courses/*", "routes/legacy-redirects.ts", { id: "legacy-courses" }),
+  route("practice", "routes/legacy-redirects.ts", { id: "legacy-practice" }),
+  route("driving-schools-kenya", "routes/legacy-redirects.ts", {
+    id: "legacy-schools",
+  }),
+  route("design", "routes/legacy-redirects.ts", { id: "legacy-design" }),
 
   // SEO resource route — XML sitemap at /sitemap.xml (referenced by robots.txt).
   route("sitemap.xml", "routes/sitemap-xml.ts"),

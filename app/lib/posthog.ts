@@ -20,11 +20,10 @@ const TOKEN = import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN;
 const HOST = import.meta.env.VITE_PUBLIC_POSTHOG_HOST;
 
 /**
- * Routes that exist for us, not for learners: the internal authoring tools and
- * the design-system page. Their traffic would otherwise inflate every
- * top-of-funnel number we look at.
+ * Routes that exist for us, not for learners: the internal authoring tools.
+ * Their traffic would otherwise inflate every top-of-funnel number we look at.
  */
-const INTERNAL_PATH_RE = /^\/(tools|design)(\/|$)/;
+const INTERNAL_PATH_RE = /^\/tools(\/|$)/;
 
 /**
  * Stamped on every event so localhost and preview traffic can be excluded in

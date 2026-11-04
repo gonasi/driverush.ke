@@ -27,13 +27,9 @@ export const AD_RULES = {
  * reporting per surface becomes valuable, split it out — engine doesn't care.
  */
 export const EVENT_SLOT_MAP: Record<AdTriggerEvent, AdSlotId | null> = {
-  app_open: null,
-  lesson_start: null,
-  lesson_complete: "lesson_complete",
   chapter_complete: "chapter_complete",
   gameplay_milestone: "gameplay_milestone",
-  route_change: "lesson_complete",
-  idle_resume: null,
+  route_change: "interstitial",
 };
 
 export type EvaluateContext = {

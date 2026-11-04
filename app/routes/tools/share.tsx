@@ -142,7 +142,7 @@ export default function ShareBuilder() {
               type="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://driverush.ke/practice"
+              placeholder="https://driverush.ke/road-signs"
               autoComplete="off"
             />
           </Field>
