@@ -18,7 +18,7 @@ import { getPracticeSigns, useSigns3DStore } from "~/lib/signs-3d-store";
 import { useTrainerLink } from "~/lib/use-trainer-link";
 
 import { Button } from "~/components/ui/button";
-import { PelicanPartner } from "~/components/brand/pelican-partner";
+import { SignCredit } from "~/components/brand/sign-credit";
 import { Rail } from "~/components/brand/rail";
 import { SiteFooter } from "~/components/brand/site-footer";
 import { SiteNav } from "~/components/brand/site-nav";
@@ -101,7 +101,7 @@ export default function ThreeDSigns() {
           </div>
 
           <header className="dr-rise border-b-2 border-ink pb-7">
-            <PelicanPartner size="sm" />
+            <SignCredit />
             <h1 className="m-0 mt-3 font-display text-[clamp(40px,7vw,72px)] font-extrabold uppercase leading-[0.9] tracking-tighter">
               3D <span className="italic text-rush">signs</span>
             </h1>

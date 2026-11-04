@@ -84,7 +84,7 @@ get wrong" report.
 
 | Event                                                                         | Fires when                                                    |
 | ----------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `partner_clicked`                                                             | Outbound click to a partner (name + url)                      |
+| `partner_clicked`                                                             | Outbound click to a credited source (name + url)              |
 | `contact_clicked`                                                             | Footer phone/email tapped (`channel`, `location`)             |
 | `ad_shown` / `ad_closed` / `ad_failed` / `ad_skipped` / `ad_blocked_by_rules` | Every decision the ad engine makes — see `docs/ads-system.md` |
 

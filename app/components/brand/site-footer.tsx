@@ -1,18 +1,17 @@
 /**
- * Shared site footer: the trainers, the contact details, and the Pelican Signs
- * partnership with the NTSA credited as the source. One source of truth so every
- * primary route shares the same chrome.
+ * Shared site footer: the trainers, the contact details, and who the signs are
+ * credited to. One source of truth so every primary route shares the same chrome.
  */
 import { Link } from "react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Call02FreeIcons, Mail01FreeIcons } from "@hugeicons/core-free-icons";
 
 import { analytics } from "~/lib/analytics";
-import { SIGN_SOURCE } from "~/lib/partners";
+import { SIGN_SOURCE } from "~/lib/sign-credits";
 import { SITE } from "~/lib/site";
 
 import { Logo } from "~/components/brand/logo";
-import { PelicanPartner } from "~/components/brand/pelican-partner";
+import { SignCredit } from "~/components/brand/sign-credit";
 import { PoweredByGonasi } from "~/components/brand/powered-by-gonasi";
 
 const Container = ({ children }: { children: React.ReactNode }) => (
@@ -93,7 +92,7 @@ export function SiteFooter() {
         </div>
 
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-paper/20 py-5">
-          <PelicanPartner size="sm" onInk />
+          <SignCredit onInk />
           <span className="font-mono text-[10.5px] uppercase tracking-widest opacity-70">
             Based on the{" "}
             <a
@@ -110,6 +109,9 @@ export function SiteFooter() {
             >
               {SIGN_SOURCE.name}
             </a>
+          </span>
+          <span className="font-mono text-[10.5px] uppercase tracking-widest opacity-70">
+            Not affiliated with Pelican Signs or the NTSA
           </span>
         </div>
 

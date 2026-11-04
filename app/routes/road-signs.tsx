@@ -14,7 +14,7 @@ import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Accordion, AccordionItem } from "~/components/brand/accordion";
 import { Callout } from "~/components/brand/callout";
-import { PelicanPartner } from "~/components/brand/pelican-partner";
+import { SignCredit } from "~/components/brand/sign-credit";
 import { Rail } from "~/components/brand/rail";
 import { SectionHead } from "~/components/brand/section-head";
 import { ShareButton } from "~/components/brand/share-button";
@@ -130,7 +130,7 @@ export default function RoadSigns() {
         <div className="mx-auto w-full max-w-4xl px-5 pb-24 pt-6 sm:px-9 sm:pt-10">
           {/* Hero: what this page is, then straight to the trainers. */}
           <header className="grid gap-3 sm:gap-4">
-            <PelicanPartner className="dr-rise" />
+            <SignCredit className="dr-rise" />
             <h1
               style={stagger(1)}
               className="dr-rise m-0 font-display text-[clamp(36px,7vw,76px)] font-extrabold uppercase leading-[0.9] tracking-tighter"

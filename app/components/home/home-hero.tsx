@@ -1,12 +1,12 @@
 /**
- * Homepage hero. The partnership, what the site does in one line, and both
+ * Homepage hero. What the site does in one line, the sign credit, and both
  * trainers, all above the fold on a phone. `#try-now` is what the nav's Start
  * button scrolls to.
  */
 import { stagger } from "~/lib/motion";
 import { SIGN_COUNT } from "~/lib/road-signs";
 
-import { PelicanPartner } from "~/components/brand/pelican-partner";
+import { SignCredit } from "~/components/brand/sign-credit";
 
 import { TrainerCards } from "./trainer-cards";
 
@@ -17,7 +17,7 @@ export function HomeHero() {
       className="mx-auto w-full max-w-4xl scroll-mt-20 px-5 pb-10 pt-5 sm:px-9"
     >
       <header className="grid gap-3">
-        <PelicanPartner className="dr-rise" />
+        <SignCredit className="dr-rise" />
         <h1
           style={stagger(1)}
           className="dr-rise m-0 font-display text-[clamp(26px,7.6vw,60px)] font-extrabold uppercase leading-[0.92] tracking-tighter text-ink"

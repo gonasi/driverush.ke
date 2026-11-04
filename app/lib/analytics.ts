@@ -183,7 +183,7 @@ export const analytics = {
     scope: string;
   }) => emit("sign_graded", args),
 
-  /** Outbound click to a partner or source site. */
+  /** Outbound click to a credited source site. */
   partnerClicked: (args: { name: string; url: string }) =>
     emit("partner_clicked", {
       partner_name: args.name,
