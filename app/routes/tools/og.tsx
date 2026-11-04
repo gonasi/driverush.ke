@@ -255,9 +255,8 @@ function Signs3DCard() {
               <Sign3DViewer
                 modelSrc={`/assets/road-signs/models/${m}.glb`}
                 // Degrees. Turning the outer two shows these are real models
-                // on posts rather than flat art. -20, not more: past that the
-                // gloss catches a reflection strip and washes this still out.
-                yaw={i === 1 ? 0 : i === 0 ? -20 : 26}
+                // on posts rather than flat art.
+                yaw={i === 1 ? 0 : i === 0 ? -26 : 26}
                 pitch={-3}
                 // `zoom` scales camera distance, so below 1 moves closer. The
                 // default framing leaves too much air for a 210px tile.
