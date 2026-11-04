@@ -138,7 +138,7 @@ export function TrainerCards() {
             <div className="border-b-2 border-ink">
               <Preview />
             </div>
-            <div className="flex flex-1 flex-col gap-1.5 p-3 sm:gap-2.5 sm:p-5">
+            <div className="flex flex-1 flex-col gap-1.5 p-3 sm:gap-2 sm:p-4">
               <h2 className="m-0 font-display text-[clamp(16px,3.4vw,30px)] font-extrabold uppercase leading-none tracking-tight text-ink">
                 {game.title}
               </h2>

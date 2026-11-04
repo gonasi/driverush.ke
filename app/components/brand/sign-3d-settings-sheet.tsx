@@ -212,7 +212,7 @@ export function Sign3DSettingsSheet() {
               <strong>Missed it</strong>. Missed signs come back later in the
               run, so a run only ends once you've recalled every sign. Recall a
               sign cleanly a couple of times and it counts as{" "}
-              <strong>mastered</strong>. Tracked separately from the Pelican
+              <strong>known</strong>. Tracked separately from the Pelican
               trainer, on this device only.
             </p>
             <div className="flex items-center justify-between gap-3 border-2 border-ink bg-paper-3 px-3 py-2">
@@ -224,7 +224,7 @@ export function Sign3DSettingsSheet() {
                 size="sm"
                 onClick={() => {
                   if (
-                    window.confirm("Reset your mastery meter for every sign?")
+                    window.confirm("Reset your progress on all signs?")
                   )
                     resetProgress();
                 }}

@@ -120,7 +120,7 @@ export function TrainerResultCard({
   const headline = !selfGraded
     ? `That's all ${signsTotal} signs.`
     : allKnown
-      ? "Every sign known."
+      ? `All ${poolTotal} known.`
       : flawless
         ? "Flawless."
         : `${firstTry} of ${signsTotal} first try.`;
@@ -255,7 +255,11 @@ export function TrainerResultCard({
             </Button>
             <div className="flex gap-2 [&>*]:flex-1">
               {selfGraded && (
-                <ShareButton surface={share.surface} payload={share.payload} />
+                <ShareButton
+                  surface={share.surface}
+                  payload={share.payload}
+                  size="default"
+                />
               )}
               <Button variant="paper" onClick={onExit}>
                 Done

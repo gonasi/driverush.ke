@@ -29,7 +29,7 @@ export default function ModelTownBoard() {
       <SiteNav />
       <main className="min-h-screen text-ink">
         <Rail />
-        <div className="mx-auto w-full max-w-5xl px-5 pb-16 pt-6 sm:px-9 sm:pt-12">
+        <div className="mx-auto w-full max-w-4xl px-5 pb-16 pt-6 sm:px-9 sm:pt-12">
           <header className="grid justify-items-start gap-3 sm:gap-4">
             <Badge variant="amber">Coming soon</Badge>
             <h1 className="m-0 font-display text-[clamp(36px,7vw,76px)] font-extrabold uppercase leading-[0.92] tracking-tighter">

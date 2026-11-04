@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useIsPresent } from "framer-motion";
 import { useSearchParams } from "react-router";
 
 import { getAdEngineSingleton } from "./ads/ad-engine";
@@ -25,6 +26,10 @@ export function useTrainerLink(
   );
   const go = params.get("go") === "1";
   const { ready, start, exit } = store;
+  // The page transition keeps the outgoing wrapper alive while it animates out,
+  // and it renders the new route too. That copy is about to unmount, and its
+  // cleanup pauses the run, so only the copy that's staying may start one.
+  const staying = useIsPresent();
 
   const startRun = React.useCallback(
     (scope?: RunScope) => {
@@ -48,12 +53,15 @@ export function useTrainerLink(
   }, [exit]);
 
   React.useEffect(() => {
-    if (!go || !ready) return;
+    if (!go || !ready || !staying) return;
     // An ad can open on arrival. Leave the ready card up rather than running the
     // timer behind it.
     if (getAdEngineSingleton()?.getSnapshot().isOpen) return;
-    startRun(link ?? undefined);
-  }, [go, ready, link, startRun]);
+    // A tick later, so the player's mount effects have settled. Its cleanup
+    // pauses the run, and React re-runs effects on mount in development.
+    const id = window.setTimeout(() => startRun(link ?? undefined), 0);
+    return () => window.clearTimeout(id);
+  }, [go, ready, staying, link, startRun]);
 
   return { link, startRun };
 }

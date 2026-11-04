@@ -10,7 +10,7 @@ export function BoardNotice() {
   return (
     <section
       aria-label="Model Town Board"
-      className="mx-auto w-full max-w-5xl px-5 pb-12 sm:px-9"
+      className="mx-auto w-full max-w-4xl px-5 pb-12 sm:px-9"
     >
       <Link
         to="/model-town-board"

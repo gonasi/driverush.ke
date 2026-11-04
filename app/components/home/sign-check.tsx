@@ -123,7 +123,7 @@ export function SignCheck() {
     <section
       id="sign-check"
       aria-label="Road-sign check"
-      className="mx-auto w-full max-w-5xl scroll-mt-20 px-5 pb-10 sm:px-9"
+      className="mx-auto w-full max-w-4xl scroll-mt-20 px-5 pb-10 sm:px-9"
     >
       {finished && deck ? (
         <Result total={deck.length} missed={missed} onAgain={start} />

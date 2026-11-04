@@ -211,7 +211,7 @@ export function PelicanSettingsSheet() {
               <strong>Missed it</strong>. Missed signs come back later in the
               run, so a run only ends once you've recalled every sign. Recall a
               sign cleanly a couple of times and it counts as{" "}
-              <strong>mastered</strong>: a meter that builds across runs (a miss
+              <strong>known</strong>: a meter that builds across runs (a miss
               only nudges it down a notch). Saved on this device only.
             </p>
             <div className="flex items-center justify-between gap-3 border-2 border-ink bg-paper-3 px-3 py-2">
@@ -223,7 +223,7 @@ export function PelicanSettingsSheet() {
                 size="sm"
                 onClick={() => {
                   if (
-                    window.confirm("Reset your mastery meter for every sign?")
+                    window.confirm("Reset your progress on all signs?")
                   )
                     resetProgress();
                 }}
