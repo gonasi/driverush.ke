@@ -5,9 +5,11 @@
  * never in the main bundle. Keep all heavy 3D imports in here.
  *
  * The GLBs are full roadside signs (panel on a ~5-unit post), so the camera
- * frames the panel close with a sliver of post showing below. Materials are flat
- * PBR; we add an in-engine `Lightformer` environment (no external HDRI fetch) for
- * a reflective road-sign sheen, plus a soft contact shadow to ground it.
+ * frames the panel close with a sliver of post showing below. Their materials are
+ * flat colours, so the sign look is built here: faces become retroreflective
+ * sheeting (see `sheetingMaterial`), lit by an in-engine `Lightformer` environment
+ * (no external HDRI fetch) whose strips sweep across the gloss as the sign turns,
+ * plus a soft contact shadow to ground it.
  */
 import * as React from "react";
 import { Canvas, useThree, type ThreeElements } from "@react-three/fiber";
@@ -40,48 +42,152 @@ export type Sign3DCanvasProps = {
   onModelReady?: (modelSrc: string) => void;
 };
 
-/** Load a GLB, clone it (so per-instance material tweaks don't poison the cache)
- *  and give the surfaces a touch more reflectivity for the sign sheen. */
+/** Real road-sign colours, close to RAL 3020 Traffic Red and RAL 5017 Traffic Blue.
+ *  The GLBs ship a brick orange (#c24825) and a washed-out periwinkle (#607cf3,
+ *  #6284e4), so they're corrected at load rather than re-exporting 83 models. */
+const SIGN_RED = new THREE.Color("#c1121c");
+const SIGN_BLUE = new THREE.Color("#00559a");
+function trueSignColor(c: THREE.Color): THREE.Color {
+  if (c.r > 0.45 && c.g < 0.1 && c.b < 0.05) return SIGN_RED;
+  if (c.b > 0.6 && c.r < 0.2 && c.g < 0.3) return SIGN_BLUE;
+  return c;
+}
+
+/** The little Pelican sticker on the post is printed vinyl, not sheeting. */
+const isSticker = (name: string) => /Pelican|Dark_Blue|pasted__/.test(name);
+
+/** How hard the sheeting throws light back: a hint by day, the whole show at night. */
+const RETRO_GAIN = { day: 0.16, night: 1.4 };
+
+/** Front of the face on sign-on-post models. The post's radius stops just short
+ *  of it, so the post doesn't glow along with the sheeting. */
+const POST_FRONT_Z = 0.102;
+
+/**
+ * The part of the sheeting no stock material does: returning light to its source.
+ * The camera is the headlight, so brightness follows how squarely the face looks
+ * back at it, a broad glow and then a flash as the sign comes head-on. Up close the
+ * sheeting shows its honeycomb of sealed cells, each catching the light a little
+ * differently, so they twinkle as the sign turns. Cells fade out once they get too
+ * small to draw cleanly. Multiplying by the base colour keeps black legend black,
+ * as printed ink doesn't retroreflect.
+ */
+const SHEETING_GLSL = `
+  float signFacing = saturate(dot(normal, normalize(vViewPosition)));
+  float signRetro = 0.85 * pow(signFacing, 1.5) + 0.5 * pow(signFacing, 48.0);
+
+  vec2 signGrid = vSignXY / 0.024;
+  const vec2 signHex = vec2(1.0, 1.7320508);
+  vec2 signA = mod(signGrid, signHex) - signHex * 0.5;
+  vec2 signB = mod(signGrid - signHex * 0.5, signHex) - signHex * 0.5;
+  vec2 signLocal = dot(signA, signA) < dot(signB, signB) ? signA : signB;
+  float signSeed = fract(sin(dot(signGrid - signLocal, vec2(127.1, 311.7))) * 43758.5453);
+  float signAngle = signSeed * 6.2832;
+  float signTwinkle = 0.5 + 0.5 * sin(signAngle * 3.0 + dot(normal.xy, vec2(cos(signAngle), sin(signAngle))) * 22.0);
+  float signEdge = 0.5 - max(abs(signLocal.x), dot(abs(signLocal), normalize(signHex)));
+  float signCell = mix(0.5, 1.0, smoothstep(0.0, 0.07, signEdge)) * (0.8 + 0.5 * signTwinkle);
+  float signDetail = 1.0 - smoothstep(0.4, 0.8, fwidth(signGrid.x) + fwidth(signGrid.y));
+
+  totalEmissiveRadiance += diffuseColor.rgb * uRetroGain * signRetro
+    * mix(1.0, signCell, signDetail) * vSheeting;
+`;
+
+/**
+ * Retroreflective sheeting: a satin colour layer under a glossy acrylic overlay
+ * (the clearcoat carries the crisp reflections), plus {@link SHEETING_GLSL}.
+ */
+function sheetingMaterial(
+  src: THREE.MeshStandardMaterial,
+  retroGain: { value: number },
+  faceMinZ: number,
+): THREE.MeshPhysicalMaterial {
+  const mat = new THREE.MeshPhysicalMaterial({
+    name: src.name,
+    side: src.side,
+    color: trueSignColor(src.color),
+    metalness: 0,
+    roughness: 0.5,
+    specularIntensity: 0.35,
+    clearcoat: 1,
+    clearcoatRoughness: 0.14,
+  });
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uRetroGain = retroGain;
+    shader.uniforms.uFaceMinZ = { value: faceMinZ };
+    shader.vertexShader =
+      "uniform float uFaceMinZ;\nvarying float vSheeting;\nvarying vec2 vSignXY;\n" +
+      shader.vertexShader.replace(
+        "#include <begin_vertex>",
+        `#include <begin_vertex>
+        // Sign faces all look down +Z, so this leaves out the back, edges and post.
+        vSheeting = step(0.3, normal.z) * step(uFaceMinZ, position.z);
+        vSignXY = position.xy;`,
+      );
+    shader.fragmentShader =
+      "uniform float uRetroGain;\nvarying float vSheeting;\nvarying vec2 vSignXY;\n" +
+      shader.fragmentShader.replace(
+        "#include <emissivemap_fragment>",
+        `#include <emissivemap_fragment>\n${SHEETING_GLSL}`,
+      );
+  };
+  mat.customProgramCacheKey = () => "road-sign-sheeting";
+  return mat;
+}
+
+/** Load a GLB, clone it (so per-instance material changes don't poison the cache)
+ *  and dress its faces in retroreflective sheeting. */
 function SignModel({
   modelSrc,
   groupRef,
+  night,
   yaw = 0,
   pitch = 0,
   onReady,
 }: {
   modelSrc: string;
   groupRef: React.RefObject<THREE.Group | null>;
+  night: boolean;
   yaw?: number;
   pitch?: number;
   onReady?: () => void;
 }) {
   const { scene } = useGLTF(modelSrc);
+  const invalidate = useThree((s) => s.invalidate);
+
+  // One uniform shared by the sign's materials, so a theme flip needs no rebuild.
+  const [retroGain] = React.useState(() => ({
+    value: night ? RETRO_GAIN.night : RETRO_GAIN.day,
+  }));
+  React.useEffect(() => {
+    retroGain.value = night ? RETRO_GAIN.night : RETRO_GAIN.day;
+    invalidate();
+  }, [night, retroGain, invalidate]);
 
   const model = React.useMemo(() => {
     const root = scene.clone(true);
+    // A handful of models are bare panels with no post to leave out.
+    const hasPost =
+      new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3()).y > 3;
+    const faceMinZ = hasPost ? POST_FRONT_Z : -Infinity;
     root.traverse((o) => {
       const mesh = o as THREE.Mesh;
       if (!mesh.isMesh) return;
       mesh.castShadow = true;
       mesh.receiveShadow = true;
-      // Retroreflective road-sign look: pick up the environment, stay matte
-      // enough to read the colour, never mirror-shiny. Clone first so the tweak
-      // doesn't poison the GLB cache shared across sign instances.
-      const tweak = (m: THREE.Material): THREE.Material => {
-        const mat = m.clone() as THREE.MeshStandardMaterial;
-        if ("envMapIntensity" in mat) mat.envMapIntensity = 1.15;
-        if ("roughness" in mat)
-          mat.roughness = Math.min(mat.roughness ?? 0.5, 0.42);
-        if ("metalness" in mat)
-          mat.metalness = Math.max(mat.metalness ?? 0, 0.04);
-        return mat;
-      };
+      const dress = (m: THREE.Material): THREE.Material =>
+        isSticker(m.name)
+          ? m.clone()
+          : sheetingMaterial(
+              m as THREE.MeshStandardMaterial,
+              retroGain,
+              faceMinZ,
+            );
       mesh.material = Array.isArray(mesh.material)
-        ? mesh.material.map(tweak)
-        : tweak(mesh.material);
+        ? mesh.material.map(dress)
+        : dress(mesh.material);
     });
     return root;
-  }, [scene]);
+  }, [scene, retroGain]);
 
   // The GLB resolves a commit (or more) after the camera rig mounts, so by then
   // FitCamera has already run against an empty group. Once the geometry is in
@@ -178,6 +284,20 @@ function FitCamera({
   return null;
 }
 
+/** Softboxes ringed around the sign: azimuth in degrees (0 = straight out of the
+ *  face). The resting camera's reflection lands near -23 and a strip there would
+ *  wash the red pink and grey out the legend, so that gap stays open: the sign
+ *  rests in its true colour with a highlight at the edge, and the strips only cross
+ *  the face as it turns. Uneven spacing keeps the sweep from feeling mechanical. */
+const REFLECTION_STRIPS = [
+  { azimuth: -76, width: 2.2, power: 3 },
+  { azimuth: -44, width: 1, power: 5 },
+  { azimuth: 6, width: 0.7, power: 4 },
+  { azimuth: 52, width: 1.6, power: 4 },
+  { azimuth: 150, width: 2, power: 3 },
+  { azimuth: -140, width: 1.2, power: 3 },
+];
+
 function SceneContents({
   modelSrc,
   yaw = 0,
@@ -212,20 +332,13 @@ function SceneContents({
 
       {night ? (
         <>
-          {/* Moonlit ambience — cool and low. */}
-          <ambientLight intensity={0.25} color="#2b3a5e" />
+          {/* Moonlit ambience: cool and low. The sheeting supplies the brightness. */}
           <hemisphereLight
-            intensity={0.4}
-            color="#1b2747"
+            intensity={0.5}
+            color="#2b3a5e"
             groundColor="#05070d"
           />
-          {/* Warm streetlight / headlight key, raking the face. */}
-          <directionalLight
-            position={[1.4, 3.2, 7]}
-            intensity={1.6}
-            color="#ffce92"
-          />
-          {/* Cool moon fill from above for separation. */}
+          {/* Cool moon rim from above for separation. */}
           <directionalLight
             position={[-4, 8, 1]}
             intensity={0.5}
@@ -234,55 +347,53 @@ function SceneContents({
         </>
       ) : (
         <>
-          {/* Daylight — bright and neutral-warm. */}
-          <ambientLight intensity={0.7} />
+          {/* Diffuse daylight. No flat ambient: it washes out the red and leaves
+              no headroom for the reflections to read on white. */}
           <hemisphereLight
-            intensity={0.55}
-            color="#cfe2ff"
-            groundColor="#b9a884"
+            intensity={0.85}
+            color="#e8f1ff"
+            groundColor="#bdb29a"
           />
           {/* Sun key, raking the face. */}
           <directionalLight
             position={[1.5, 4, 8]}
-            intensity={2}
-            color="#fff4e0"
-          />
-          {/* Soft sky fill. */}
-          <directionalLight
-            position={[-6, 5, -2]}
-            intensity={0.5}
-            color="#cdddee"
+            intensity={1.15}
+            color="#fff6e8"
           />
         </>
       )}
 
-      {/* In-engine studio env — reflections without fetching a remote HDRI.
-          Subdued + cool at night, bright by day. */}
+      {/* What the gloss reflects: a dim sky so the colour stays saturated, then
+          narrow bright strips around the sign that sweep across it as it turns.
+          In-engine, so no remote HDRI fetch. */}
       <Environment resolution={256}>
+        <color attach="background" args={[night ? "#04060c" : "#39424d"]} />
         <Lightformer
-          intensity={night ? 1.2 : 2.2}
-          position={[0, 4, 5]}
-          scale={[8, 8, 1]}
-          color={night ? "#ffd9a3" : "#fff7ec"}
+          intensity={night ? 0.12 : 0.9}
+          position={[0, 9, 0]}
+          scale={[24, 24, 1]}
+          color={night ? "#27345c" : "#dcebff"}
         />
-        <Lightformer
-          intensity={night ? 0.45 : 1.1}
-          position={[-5, 2, 2]}
-          scale={[5, 5, 1]}
-          color={night ? "#7e93c8" : "#dfe8ff"}
-        />
-        <Lightformer
-          intensity={night ? 0.35 : 0.9}
-          position={[5, 1, -2]}
-          scale={[5, 5, 1]}
-          color={night ? "#3f4d70" : "#ffffff"}
-        />
+        {REFLECTION_STRIPS.map(({ azimuth, width, power }) => (
+          <Lightformer
+            key={azimuth}
+            position={[
+              Math.sin(azimuth * DEG) * 10,
+              -1,
+              Math.cos(azimuth * DEG) * 10,
+            ]}
+            scale={[width, 10, 1]}
+            intensity={power * (night ? 0.3 : 1)}
+            color={night ? "#d5ddf5" : "#ffffff"}
+          />
+        ))}
       </Environment>
 
       <React.Suspense fallback={null}>
         <SignModel
           modelSrc={modelSrc}
           groupRef={groupRef}
+          night={night}
           yaw={yaw}
           pitch={pitch}
           onReady={handleReady}
@@ -331,7 +442,14 @@ export default function Sign3DCanvas(props: Sign3DCanvasProps) {
       shadows={false}
       dpr={[1, 2]}
       frameloop={props.autoRotate ? "always" : "demand"}
-      gl={{ antialias: true, alpha: true, preserveDrawingBuffer: false }}
+      // Khronos neutral, not fiber's default ACES: ACES drags saturated reds to
+      // orange, and this one is built to keep base colours true.
+      gl={{
+        antialias: true,
+        alpha: true,
+        preserveDrawingBuffer: false,
+        toneMapping: THREE.NeutralToneMapping,
+      }}
       camera={{ fov: 35, position: [0, 1, 8], near: 0.1, far: 100 }}
     >
       <SceneContents {...props} />
