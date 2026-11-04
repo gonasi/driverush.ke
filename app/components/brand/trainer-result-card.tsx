@@ -3,6 +3,7 @@
  * you missed, one tap to drill them, and a link to try the same signs in the
  * other trainer. That last one is the moat at work: chart and 3D feed each other.
  */
+import type * as React from "react";
 import { motion, type Variants } from "framer-motion";
 import { Link } from "react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -51,18 +52,21 @@ function MissedThumbnails({ signs }: { signs: readonly MissedSign[] }) {
   const more = signs.length - shown.length;
   return (
     <ul className="m-0 flex list-none flex-wrap justify-center gap-1.5 p-0">
-      {shown.map((sign) => {
+      {shown.map((sign, index) => {
         const region = sign.code ? CHART_BY_CODE.get(sign.code) : undefined;
         return (
           <li
             key={sign.id}
             title={sign.name}
             aria-label={sign.name}
-            className="size-12 border-2 border-ink bg-white"
+            className="dr-pop size-12 border-2 border-ink bg-white"
             style={
-              region
-                ? regionSpriteStyle(region, CHART_SRC, THUMB_PAD)
-                : undefined
+              {
+                "--i": index + 4,
+                ...(region
+                  ? regionSpriteStyle(region, CHART_SRC, THUMB_PAD)
+                  : {}),
+              } as React.CSSProperties
             }
           />
         );
@@ -135,9 +139,8 @@ export function TrainerResultCard({
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
     >
-      {selfGraded && (
-        <CelebrationConfetti bursts={flawless || allKnown ? 4 : 2} />
-      )}
+      {/* Saved for a flawless round, so it still means something. */}
+      {selfGraded && (flawless || allKnown) && <CelebrationConfetti bursts={2} />}
       <motion.div
         variants={CARD}
         initial="hidden"
@@ -188,7 +191,7 @@ export function TrainerResultCard({
           )}
 
           {selfGraded && (
-            <motion.div variants={ITEM} className="w-full">
+            <motion.div variants={ITEM} className="dr-fill-in w-full">
               <div className="mb-1.5 flex items-center justify-between gap-2 font-mono text-[10px] uppercase tracking-widest text-ink-3">
                 <span>
                   {counts.known} known · {counts.learning} learning

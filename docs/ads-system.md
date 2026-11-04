@@ -6,6 +6,8 @@
 
 ---
 
+> **Ads are currently off.** `AD_RULES.enabled` in `app/lib/ads/ad-rules.ts` is `false`, so the AdSense script never loads. Set it to `true` to bring them back.
+
 ## Table of contents
 
 1. [TL;DR](#tldr)

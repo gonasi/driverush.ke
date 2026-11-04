@@ -1,6 +1,7 @@
 import type { Route } from "./+types/road-signs";
 
 import { absUrl, breadcrumbLd, pageMeta, ROAD_SIGN_KEYWORDS } from "~/lib/site";
+import { stagger } from "~/lib/motion";
 import { ogCardAlt, ogCardPath } from "~/lib/og-cards";
 import { SIGN_COUNT } from "~/lib/road-signs";
 import {
@@ -129,19 +130,25 @@ export default function RoadSigns() {
         <div className="mx-auto w-full max-w-4xl px-5 pb-24 pt-6 sm:px-9 sm:pt-10">
           {/* Hero: what this page is, then straight to the trainers. */}
           <header className="grid gap-3 sm:gap-4">
-            <PelicanPartner />
-            <h1 className="m-0 font-display text-[clamp(36px,7vw,76px)] font-extrabold uppercase leading-[0.9] tracking-tighter">
+            <PelicanPartner className="dr-rise" />
+            <h1
+              style={stagger(1)}
+              className="dr-rise m-0 font-display text-[clamp(36px,7vw,76px)] font-extrabold uppercase leading-[0.9] tracking-tighter"
+            >
               Kenya road signs.{" "}
               <span className="italic text-rush">All {SIGN_COUNT}.</span>
             </h1>
-            <p className="m-0 max-w-2xl font-serif text-[clamp(16px,2.2vw,22px)] leading-snug text-ink-2">
+            <p
+              style={stagger(2)}
+              className="dr-rise m-0 max-w-2xl font-serif text-[clamp(16px,2.2vw,22px)] leading-snug text-ink-2"
+            >
               The signs on the Pelican chart and what each one means. Pick a
               trainer to drill them. Free, no signup.
             </p>
           </header>
 
           <section className="mt-6" aria-label="Road-sign trainers">
-            <TrainerCards />
+            <TrainerCards firstStep={3} />
             {/* The chart is the most forwarded thing on the site: a learner
                 sends it to the next person in the queue at NTSA. */}
             <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2.5">
@@ -168,7 +175,7 @@ export default function RoadSigns() {
           <Rail className="my-14" id="reference" />
 
           {/* ── 02 · How the signs work — the shape & colour legend ───────── */}
-          <section className="scroll-mt-8">
+          <section className="dr-reveal scroll-mt-8">
             <SectionHead
               num="01"
               title={
@@ -200,7 +207,7 @@ export default function RoadSigns() {
           </section>
 
           {/* The trainers' signs, then the classes they don't cover yet. */}
-          <section className="mt-14 scroll-mt-8" id="classes">
+          <section className="dr-reveal mt-14 scroll-mt-8" id="classes">
             <SectionHead
               num="02"
               title={
@@ -234,7 +241,7 @@ export default function RoadSigns() {
             </details>
           </section>
 
-          <section className="mt-14 scroll-mt-8" id="more">
+          <section className="dr-reveal mt-14 scroll-mt-8" id="more">
             <SectionHead
               num="03"
               title={

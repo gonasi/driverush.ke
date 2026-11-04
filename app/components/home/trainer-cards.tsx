@@ -14,6 +14,7 @@ import {
 
 import pelican from "~/data/road-signs-pelican.json";
 import type { FocusRegion } from "~/lib/image-focus";
+import { stagger } from "~/lib/motion";
 import { signCounts } from "~/lib/pelican-progress";
 import { SIGN_GAMES, type SignGame } from "~/lib/road-signs";
 import { ROUND_SIZE, trainerHref } from "~/lib/trainer-rounds";
@@ -31,36 +32,51 @@ const PREVIEW_SIGNS = ["R.1", "W.30", "P.1", "M.1"]
   .map((code) => REGIONS.find((r) => r.code === code))
   .filter((r): r is FocusRegion => Boolean(r));
 
-const PREVIEW_HOLD_MS = 2600;
+const PREVIEW_START_MS = 1200;
+const PREVIEW_HOLD_MS = 3200;
 const POSTER_SRC = "/assets/road-signs/3d-poster.jpg";
 const POSTER_MODEL = "/assets/road-signs/models/R_1.glb";
 
 function ChartPreview() {
   // -1 is the whole chart: what the server renders, and the first paint.
   const [index, setIndex] = React.useState(-1);
+  const ref = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
-    const reduced = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    if (reduced) {
+    const el = ref.current;
+    if (!el) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setIndex(0);
       return;
     }
-    const first = window.setTimeout(() => setIndex(0), 700);
-    const cycle = window.setInterval(() => {
-      if (!document.hidden) {
-        setIndex((i) => (i + 1) % PREVIEW_SIGNS.length);
-      }
-    }, PREVIEW_HOLD_MS);
+    const first = window.setTimeout(() => {
+      setIndex((i) => (i < 0 ? 0 : i));
+    }, PREVIEW_START_MS);
+    // Only pans while it's on screen and the tab is open.
+    let cycle: number | undefined;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        window.clearInterval(cycle);
+        cycle = undefined;
+        if (!entry.isIntersecting) return;
+        cycle = window.setInterval(() => {
+          if (document.hidden) return;
+          setIndex((i) => (i + 1) % PREVIEW_SIGNS.length);
+        }, PREVIEW_HOLD_MS);
+      },
+      { threshold: 0.2 },
+    );
+    observer.observe(el);
     return () => {
       window.clearTimeout(first);
       window.clearInterval(cycle);
+      observer.disconnect();
     };
   }, []);
 
   return (
     <div
+      ref={ref}
       role="img"
       aria-label="The Pelican road-sign chart, zooming in on one sign at a time"
     >
@@ -70,7 +86,7 @@ function ChartPreview() {
         focused={index >= 0}
         blurIntensity={0}
         dimIntensity={0}
-        animationDuration={900}
+        animationDuration={1100}
         className="border-0 bg-white"
       />
     </div>
@@ -106,7 +122,7 @@ function SpinPreview() {
         alt=""
         width={640}
         height={336}
-        className="block size-full object-cover"
+        className="dr-sway block size-full object-cover"
       />
       <span className="absolute bottom-1.5 right-1.5 inline-flex items-center gap-1 border-2 border-ink bg-surface px-1.5 py-0.5 font-mono text-[9.5px] uppercase tracking-widest text-ink shadow-stamp-xs transition-colors group-hover:bg-amber group-hover:text-amber-foreground sm:text-[10.5px]">
         <HugeiconsIcon icon={ThreeDViewFreeIcons} size={12} strokeWidth={2.5} />
@@ -121,11 +137,11 @@ const PREVIEWS: Record<SignGame["slug"], () => React.JSX.Element> = {
   "3d": SpinPreview,
 };
 
-export function TrainerCards() {
+export function TrainerCards({ firstStep = 0 }: { firstStep?: number }) {
   const progress = useSignProgress();
   return (
     <div className="grid grid-cols-2 gap-3 sm:gap-5">
-      {SIGN_GAMES.map((game) => {
+      {SIGN_GAMES.map((game, index) => {
         const Preview = PREVIEWS[game.slug];
         const saved = progress?.[game.slug] ?? {};
         const counts = signCounts(saved, Object.keys(saved));
@@ -133,7 +149,8 @@ export function TrainerCards() {
         return (
           <article
             key={game.slug}
-            className="flex min-w-0 flex-col border-2 border-ink bg-surface shadow-stamp"
+            style={stagger(firstStep + index)}
+            className="dr-rise dr-lift flex min-w-0 flex-col border-2 border-ink bg-surface shadow-stamp"
           >
             <div className="border-b-2 border-ink">
               <Preview />
@@ -163,7 +180,7 @@ export function TrainerCards() {
                     icon={ArrowRight02FreeIcons}
                     size={14}
                     strokeWidth={2.5}
-                    className="hidden sm:inline"
+                    className="dr-arrow hidden sm:inline"
                   />
                 </Link>
               </Button>

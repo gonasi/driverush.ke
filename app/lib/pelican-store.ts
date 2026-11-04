@@ -41,6 +41,8 @@ import {
   type RunScope,
 } from "./trainer-rounds";
 import {
+  BUZZ,
+  buzz,
   playSfx,
   playVoice,
   stopAllSfx,
@@ -53,16 +55,11 @@ import {
 // module-scope engine bits (one trainer instance — fine to keep these here)
 // ---------------------------------------------------------------------------
 let phaseTimer: ReturnType<typeof setTimeout> | null = null;
-let countdownInt: ReturnType<typeof setInterval> | null = null;
 
 function clearTimers() {
   if (phaseTimer) {
     clearTimeout(phaseTimer);
     phaseTimer = null;
-  }
-  if (countdownInt) {
-    clearInterval(countdownInt);
-    countdownInt = null;
   }
 }
 // The per-sign voice clip is owned by `sounds.ts` (cached + preloadable);
@@ -216,7 +213,6 @@ type PelicanState = {
   runScope: RunScope;
   queue: FocusRegion[];
   pos: number;
-  timeRemaining: number;
   // ---- this run (transient, self-grading) ----
   /** Distinct region ids graded "Knew it" so far this run. */
   runRecalled: string[];
@@ -281,7 +277,6 @@ export const usePelicanStore = create<PelicanState>()(
       runScope: { kind: "round" },
       queue: [],
       pos: 0,
-      timeRemaining: 0,
       runRecalled: [],
       runMissed: [],
       runMissCount: 0,
@@ -344,7 +339,6 @@ export const usePelicanStore = create<PelicanState>()(
             runScope: scope,
             pos: 0,
             phase: "focused",
-            timeRemaining: 0,
           });
           // settings are only changed while the sheet is open ⇒ paused; close
           // re-arms via resume(). If somehow open & not via the sheet, arm now.
@@ -383,7 +377,6 @@ export const usePelicanStore = create<PelicanState>()(
           overlayOpen: true,
           running: true,
           settingsOpen: false,
-          timeRemaining: 0,
           runRecalled: [],
           runMissed: [],
           runMissCount: 0,
@@ -439,7 +432,6 @@ export const usePelicanStore = create<PelicanState>()(
           overlayOpen: true,
           running: true,
           settingsOpen: false,
-          timeRemaining: 0,
           runRecalled: run.runRecalled,
           runMissed: run.runMissed,
           runMissCount: run.runMissCount,
@@ -493,6 +485,7 @@ export const usePelicanStore = create<PelicanState>()(
         const region = queue[pos];
         if (!region) return;
         if (settings.playAudio) playSfx(r === "knew" ? "correct" : "wrong");
+        buzz(r === "knew" ? BUZZ.tap : BUZZ.miss);
         const before = boxOf(get().progress, region.id);
         const progress = applyGrade(get().progress, region.id, r);
         set({ progress });
@@ -550,7 +543,6 @@ export const usePelicanStore = create<PelicanState>()(
           phase: "ready",
           queue: [],
           pos: 0,
-          timeRemaining: 0,
           runRecalled: [],
           runMissed: [],
           runMissCount: 0,
@@ -573,20 +565,10 @@ export const usePelicanStore = create<PelicanState>()(
           return;
         }
         if (settings.revealMode === "auto") {
+          // One timer, not a tick: the bar on screen is a CSS animation of the
+          // same length, so nothing re-renders while you're trying to remember.
           const delay = region.revealDelay ?? settings.revealDelay;
-          set({ timeRemaining: delay });
-          const startedAt = Date.now();
-          countdownInt = setInterval(() => {
-            const rem = Math.max(0, delay - (Date.now() - startedAt) / 1000);
-            set({ timeRemaining: rem });
-            if (rem <= 0) {
-              if (countdownInt) {
-                clearInterval(countdownInt);
-                countdownInt = null;
-              }
-              get()._toRevealed();
-            }
-          }, 100);
+          phaseTimer = setTimeout(() => get()._toRevealed(), delay * 1000);
         }
         // manual mode: wait for revealNow()
       },

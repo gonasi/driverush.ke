@@ -1,0 +1,236 @@
+/*
+ * Shared motion. Everything here animates transform and opacity only, so it runs
+ * on the compositor and stays smooth on a cheap phone. No JS, no layout.
+ *
+ * Entrances use `backwards` fill rather than `both`: once finished, the element
+ * goes back to having no transform at all, which keeps `position: fixed` and
+ * stacking contexts inside it behaving normally.
+ */
+
+@keyframes dr-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+}
+
+@keyframes dr-page {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+}
+
+@keyframes dr-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes dr-settle {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes dr-shake {
+  20% {
+    transform: translate3d(-5px, 0, 0);
+  }
+  45% {
+    transform: translate3d(4px, 0, 0);
+  }
+  70% {
+    transform: translate3d(-2px, 0, 0);
+  }
+}
+
+@keyframes dr-confirm {
+  40% {
+    transform: scale(1.025);
+  }
+}
+
+@keyframes dr-grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes dr-drain {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* A flat poster rocking gently reads as a real object, for no GPU work to speak of. */
+@keyframes dr-sway {
+  0%,
+  100% {
+    transform: perspective(700px) rotateY(-9deg) scale(1.12);
+  }
+  50% {
+    transform: perspective(700px) rotateY(9deg) scale(1.12);
+  }
+}
+
+/* Staggered entrance. Set `--i` (style={{ "--i": n }}) for the step. */
+.dr-rise {
+  animation: dr-rise 480ms var(--ease-out-quart) backwards;
+  animation-delay: calc(var(--i, 0) * 55ms);
+}
+
+/* Client-side page change. Quick, because the point is the next page. */
+.dr-page {
+  animation: dr-page 220ms var(--ease-out-quart) backwards;
+}
+
+.dr-pop {
+  animation: dr-pop 340ms var(--ease-snap) backwards;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+/* Fades in once the camera has landed. */
+.dr-settle {
+  animation: dr-settle 260ms ease-out backwards;
+}
+
+.dr-shake {
+  animation: dr-shake 360ms ease-in-out;
+}
+
+.dr-confirm {
+  animation: dr-confirm 300ms var(--ease-snap);
+}
+
+/* Progress bars fill up on arrival rather than just being there. */
+.dr-fill-in [data-slot="progress-indicator"] {
+  transform-origin: left;
+  animation: dr-grow-x 900ms var(--ease-out-quart) 180ms backwards;
+}
+
+/* The recall timer. Pure CSS, so nothing re-renders while it runs. */
+.dr-drain {
+  transform-origin: left;
+  animation: dr-drain linear forwards;
+}
+
+.dr-sway {
+  animation: dr-sway 7s ease-in-out infinite;
+}
+
+/* The flag bar under the top rail draws itself in on load. */
+.dr-flag::after {
+  transform-origin: left;
+  animation: dr-grow-x 1100ms var(--ease-out-quart) backwards;
+}
+
+/* Cards lift on real hover only, so a tap never leaves one stuck in the air. */
+.dr-lift {
+  transition:
+    transform 180ms var(--ease-out-quart),
+    box-shadow 180ms var(--ease-out-quart);
+}
+
+/* Arrows lean into the direction you're going. */
+.dr-arrow {
+  transition: transform 180ms var(--ease-out-quart);
+}
+
+@media (hover: hover) {
+  .dr-lift:hover {
+    transform: translate3d(-2px, -2px, 0);
+    box-shadow: var(--shadow-stamp-lg);
+  }
+
+  a:hover > .dr-arrow,
+  button:hover > .dr-arrow {
+    transform: translate3d(3px, 0, 0);
+  }
+}
+
+/* Sections ease in as they scroll into view. Compositor-driven, no observers. */
+@supports (animation-timeline: view()) {
+  .dr-reveal {
+    animation: dr-rise linear backwards;
+    animation-timeline: view();
+    animation-range: entry 0 entry 140px;
+  }
+}
+
+/* Accordions open smoothly where the browser can, and instantly where it can't. */
+@supports (interpolate-size: allow-keywords) {
+  .dr-accordion details {
+    interpolate-size: allow-keywords;
+  }
+
+  .dr-accordion details::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition:
+      block-size 240ms var(--ease-out-quart),
+      content-visibility 240ms allow-discrete;
+  }
+
+  .dr-accordion details[open]::details-content {
+    block-size: auto;
+  }
+}
+
+/* Long lists skip rendering whatever isn't on screen. */
+.dr-skip-offscreen {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 120px;
+}
+
+/* Touch: no grey flash, and no 300 ms wait for a double-tap zoom. */
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a,
+button,
+summary,
+label,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dr-rise,
+  .dr-page,
+  .dr-pop,
+  .dr-settle,
+  .dr-shake,
+  .dr-confirm,
+  .dr-sway,
+  .dr-reveal,
+  .dr-flag::after,
+  .dr-fill-in [data-slot="progress-indicator"] {
+    animation: none;
+  }
+
+  .dr-lift,
+  .dr-arrow,
+  .dr-accordion details::details-content {
+    transition: none;
+  }
+
+  [data-camera] {
+    transition-duration: 1ms !important;
+  }
+}

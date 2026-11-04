@@ -86,7 +86,7 @@ export function TrainerReadyPanel({
         )
       )}
 
-      <div className="flex items-end justify-between gap-3 pt-1">
+      <div className="dr-fill-in flex items-end justify-between gap-3 pt-1">
         <div className="min-w-0 flex-1">
           {selfGrading && (
             <>

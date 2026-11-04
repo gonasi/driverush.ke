@@ -9,6 +9,7 @@ import {
 
 import type { Route } from "./+types/road-signs-pelican";
 
+import { stagger } from "~/lib/motion";
 import { breadcrumbLd, pageMeta, ROAD_SIGN_KEYWORDS } from "~/lib/site";
 import { ogCardAlt, ogCardPath } from "~/lib/og-cards";
 import type { ImageFocusData } from "~/lib/image-focus";
@@ -99,7 +100,7 @@ export default function PelicanSigns() {
             </span>
           </div>
 
-          <header className="border-b-2 border-ink pb-7">
+          <header className="dr-rise border-b-2 border-ink pb-7">
             <PelicanPartner size="sm" />
             <h1 className="m-0 mt-3 font-display text-[clamp(40px,7vw,72px)] font-extrabold uppercase leading-[0.9] tracking-tighter">
               Pelican <span className="italic text-rush">chart</span>
@@ -143,7 +144,7 @@ export default function PelicanSigns() {
               </Button>
             </div>
           ) : (
-            <div className="mt-6">
+            <div className="dr-rise mt-6" style={stagger(1)}>
               <ImageFocusPlayer link={link} onStart={startRun} />
             </div>
           )}

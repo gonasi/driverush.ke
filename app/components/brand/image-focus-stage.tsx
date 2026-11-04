@@ -55,6 +55,8 @@ function targetFill(vpW: number) {
   const t = Math.max(0, Math.min(1, (vpW - 600) / (1024 - 600)));
   return TARGET_PHONE + (TARGET_WIDE - TARGET_PHONE) * t;
 }
+/** Eases out of one sign and settles into the next, like a camera on a rail. */
+const CAMERA_EASE = "cubic-bezier(0.76, 0, 0.24, 1)";
 const MAX_SCALE = 14;
 const PORTRAIT_LIFT = 10; // % of the viewport — sit the sign a little above centre
 
@@ -79,6 +81,17 @@ function CameraStage({
       : null,
   );
   const [imgAspect, setImgAspect] = React.useState(16 / 9);
+
+  // Blurring live video of a moving camera is what makes phones stutter, so the
+  // dim and blur only arrive once the camera has landed on the sign.
+  const [landed, setLanded] = React.useState(false);
+  const regionId = region?.id;
+  React.useEffect(() => {
+    setLanded(false);
+    if (!focused || !regionId) return;
+    const id = window.setTimeout(() => setLanded(true), animationDuration);
+    return () => window.clearTimeout(id);
+  }, [focused, regionId, animationDuration]);
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
@@ -152,13 +165,11 @@ function CameraStage({
   }
 
   const dim = (dimIntensity * 0.6).toFixed(2);
-  const move = `top ${animationDuration}ms ease-in-out, left ${animationDuration}ms ease-in-out, width ${animationDuration}ms ease-in-out, height ${animationDuration}ms ease-in-out`;
   const veil = (extra: React.CSSProperties): React.CSSProperties => ({
     position: "absolute",
     backgroundColor: `rgba(0,0,0,${dim})`,
     backdropFilter: `blur(${blurIntensity}px)`,
     WebkitBackdropFilter: `blur(${blurIntensity}px)`,
-    transition: move,
     pointerEvents: "none",
     ...extra,
   });
@@ -169,12 +180,13 @@ function CameraStage({
     >
       <div className="absolute inset-0 flex items-center justify-center">
         <div
+          data-camera
           style={{
             width: imgW,
             height: imgH,
             transform: `translate(${tx}%, ${ty}%) scale(${scale})`,
             transformOrigin: "center center",
-            transition: `transform ${animationDuration}ms ease-in-out`,
+            transition: `transform ${animationDuration}ms ${CAMERA_EASE}`,
           }}
         >
           <img
@@ -192,8 +204,8 @@ function CameraStage({
       </div>
 
       {/* dim + blur everything except the focused sign */}
-      {rect && (
-        <>
+      {rect && landed && (
+        <div className="dr-settle absolute inset-0 pointer-events-none">
           <div
             style={veil({
               left: 0,
@@ -233,10 +245,9 @@ function CameraStage({
               top: rect.top,
               width: rect.width,
               height: rect.height,
-              transition: move,
             }}
           />
-        </>
+        </div>
       )}
     </div>
   );
@@ -258,6 +269,8 @@ function ClassicStage({
   className,
 }: ImageFocusStageProps) {
   const active = focused && !!region;
+  // No blur and no dim means no overlays: each one would be a costly layer.
+  const veiled = active && (blurIntensity > 0 || dimIntensity > 0);
   const transform = active
     ? computeRegionTransform(region, { fill: 90, maxScale: 12 })
     : IDENTITY_REGION_TRANSFORM;
@@ -282,8 +295,9 @@ function ClassicStage({
         style={{
           transform: transform.transform,
           transformOrigin: "center center",
-          transition: `transform ${animationDuration}ms ease-in-out`,
+          transition: `transform ${animationDuration}ms ${CAMERA_EASE}`,
         }}
+        data-camera
       >
         <div className="relative max-h-full max-w-full">
           <img
@@ -292,7 +306,7 @@ function ClassicStage({
             draggable={false}
             className="block max-h-full w-auto max-w-full select-none object-contain"
           />
-          {active && region && (
+          {veiled && region && (
             <>
               <div
                 className="pointer-events-none absolute inset-x-0"

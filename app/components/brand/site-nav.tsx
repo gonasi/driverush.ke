@@ -85,6 +85,7 @@ export function SiteNav() {
                 icon={ArrowRight02FreeIcons}
                 size={14}
                 strokeWidth={2.5}
+                className="dr-arrow"
               />
             </Link>
           </Button>

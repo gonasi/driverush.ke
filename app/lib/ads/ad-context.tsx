@@ -4,6 +4,7 @@ import { useMatches } from "react-router";
 import { activeSession } from "./active-session";
 import { AdEngine, registerAdEngineSingleton } from "./ad-engine";
 import { currentUserTier } from "./ad-constants";
+import { AD_RULES } from "./ad-rules";
 import { createAdProvider } from "./providers/adsense-provider";
 import type { AdRouteHandle, AdState, AdTriggerEvent } from "./ad-types";
 
@@ -36,6 +37,9 @@ export function AdProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     engine.setUserTier(currentUserTier);
     registerAdEngineSingleton(engine);
+    if (!AD_RULES.enabled) {
+      return () => registerAdEngineSingleton(null);
+    }
     void engine.bootstrap();
     // Kick off the active-session heartbeat. Idempotent + SSR-safe — it
     // attaches activity / visibility / storage listeners and starts the

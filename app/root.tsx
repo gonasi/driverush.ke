@@ -8,14 +8,13 @@ import {
   useLocation,
 } from "react-router";
 import * as React from "react";
-import { AnimatePresence, motion } from "framer-motion";
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import "./motion.css";
 import { Toaster } from "~/components/ui/sonner";
 import { NavigationProgressBar } from "~/components/brand/navigation-progress-bar";
 import { THEME_INIT_SCRIPT, useThemeSync } from "~/lib/theme";
-import { variants } from "~/lib/motion";
 import { SITE, absUrl } from "~/lib/site";
 import { getPostHog, initAnalytics, usePageviews } from "~/lib/analytics";
 import { useLearnerAnalytics } from "~/lib/use-learner-analytics";
@@ -32,7 +31,7 @@ export const links: Route.LinksFunction = () => [
   },
   {
     rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400;1,700&display=swap",
+    href: "https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Montserrat:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap",
   },
   // Favicons. Explicit links so browsers and crawlers pick the right size
   // instead of guessing from /favicon.ico alone.
@@ -107,6 +106,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const location = useLocation();
+  const firstPath = React.useRef(location.pathname);
+  const navigated = React.useRef(false);
+  if (location.pathname !== firstPath.current) navigated.current = true;
   useUtmCapture();
   usePageviews();
   // Keeps PostHog person properties (signs mastered) in step with the local
@@ -122,21 +124,14 @@ export default function App() {
     <AdProvider>
       <RouteAdGate />
       <AmbientAdTrigger />
-      {/* mode="wait" → outgoing route fully exits before the next enters, so
-          there's no overlap to fight with the page's stamped layout.
-          initial={false} → SSR's first paint isn't animated; subsequent
-          client navigations get the snap fade/slide. */}
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={location.pathname}
-          variants={variants.page}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-        >
-          <Outlet />
-        </motion.div>
-      </AnimatePresence>
+      {/* Keyed so each new page gets a fresh entrance. There's no exit, so a tap
+          never waits on the old page, and the first load isn't animated. */}
+      <div
+        key={location.pathname}
+        className={navigated.current ? "dr-page" : undefined}
+      >
+        <Outlet />
+      </div>
       <AdModal />
     </AdProvider>
   );

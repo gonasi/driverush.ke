@@ -20,7 +20,8 @@ import {
 import pelican from "~/data/road-signs-pelican.json";
 import { analytics } from "~/lib/analytics";
 import { regionSpriteStyle, type FocusRegion } from "~/lib/image-focus";
-import { playSfx } from "~/lib/sounds";
+import { stagger } from "~/lib/motion";
+import { BUZZ, buzz, playSfx } from "~/lib/sounds";
 import { trainerHref } from "~/lib/trainer-rounds";
 import { cn } from "~/lib/utils";
 
@@ -30,7 +31,6 @@ const ALL_SIGNS = pelican.regions as FocusRegion[];
 const CHART_SRC = pelican.imageSrc as string;
 const ROUND_SIZE = 10;
 const OPTION_COUNT = 4;
-const WRONG_VIBRATION = [100, 50, 100];
 
 /** Trims the printed sign code off the crop, so it can't give the answer away. */
 const CROP_PAD = 0.1;
@@ -92,10 +92,8 @@ export function SignCheck() {
     setChosen(option.id);
     const isCorrect = option.id === question.sign.id;
     playSfx(isCorrect ? "correct" : "wrong");
-    if (!isCorrect) {
-      setMissed((m) => [...m, question.sign]);
-      navigator.vibrate?.(WRONG_VIBRATION);
-    }
+    buzz(isCorrect ? BUZZ.tap : BUZZ.miss);
+    if (!isCorrect) setMissed((m) => [...m, question.sign]);
     analytics.signChallengeAnswered({
       sign_id: question.sign.id,
       category: question.sign.category ?? "other",
@@ -123,39 +121,41 @@ export function SignCheck() {
     <section
       id="sign-check"
       aria-label="Road-sign check"
-      className="mx-auto w-full max-w-4xl scroll-mt-20 px-5 pb-10 sm:px-9"
+      className="dr-reveal mx-auto w-full max-w-4xl scroll-mt-20 px-5 pb-10 sm:px-9"
     >
-      {finished && deck ? (
-        <Result total={deck.length} missed={missed} onAgain={start} />
-      ) : question && deck ? (
-        <Playing
-          question={question}
-          position={position}
-          total={deck.length}
-          chosen={chosen}
-          onPick={pick}
-          onNext={next}
-        />
-      ) : (
-        <div className="flex flex-wrap items-center justify-between gap-4 border-2 border-ink bg-surface p-5 shadow-stamp sm:p-7">
-          <div>
-            <p className="m-0 font-mono text-[11px] uppercase tracking-widest text-ink-3">
-              Quick check
-            </p>
-            <h2 className="m-0 mt-1.5 font-display text-[clamp(20px,3.2vw,30px)] font-extrabold uppercase leading-none tracking-tight text-ink">
-              {ROUND_SIZE} signs. How many can you name?
-            </h2>
+      <div className="dr-rise" style={stagger(5)}>
+        {finished && deck ? (
+          <Result total={deck.length} missed={missed} onAgain={start} />
+        ) : question && deck ? (
+          <Playing
+            question={question}
+            position={position}
+            total={deck.length}
+            chosen={chosen}
+            onPick={pick}
+            onNext={next}
+          />
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-4 border-2 border-ink bg-surface p-5 shadow-stamp sm:p-7">
+            <div>
+              <p className="m-0 font-mono text-[11px] uppercase tracking-widest text-ink-3">
+                Quick check
+              </p>
+              <h2 className="m-0 mt-1.5 font-display text-[clamp(20px,3.2vw,30px)] font-extrabold uppercase leading-none tracking-tight text-ink">
+                {ROUND_SIZE} signs. How many can you name?
+              </h2>
+            </div>
+            <Button variant="ink" onClick={start}>
+              <HugeiconsIcon
+                icon={PlayCircleFreeIcons}
+                size={16}
+                strokeWidth={2.5}
+              />
+              Test yourself
+            </Button>
           </div>
-          <Button variant="ink" onClick={start}>
-            <HugeiconsIcon
-              icon={PlayCircleFreeIcons}
-              size={16}
-              strokeWidth={2.5}
-            />
-            Test yourself
-          </Button>
-        </div>
-      )}
+        )}
+      </div>
     </section>
   );
 }
@@ -180,7 +180,8 @@ function Playing({
   return (
     <div className="grid items-start gap-5 border-2 border-ink bg-surface p-5 shadow-stamp sm:grid-cols-[220px_1fr] sm:gap-6 sm:p-7">
       <div
-        className="mx-auto aspect-square w-40 border-2 border-ink bg-white sm:w-full"
+        key={question.sign.id}
+        className="dr-pop mx-auto aspect-square w-40 border-2 border-ink bg-white sm:w-full"
         style={regionSpriteStyle(question.sign, CHART_SRC, CROP_PAD)}
         role="img"
         aria-label="Kenyan road sign"
@@ -206,7 +207,11 @@ function Playing({
                     answered &&
                       isAnswer &&
                       "bg-kenya-green text-kenya-green-foreground",
-                    answered && !isAnswer && isPicked && "bg-rush text-white",
+                    answered && isAnswer && isPicked && "dr-confirm",
+                    answered &&
+                      !isAnswer &&
+                      isPicked &&
+                      "dr-shake bg-rush text-white",
                     answered &&
                       !isAnswer &&
                       !isPicked &&
@@ -262,7 +267,7 @@ function Result({
 }) {
   const score = total - missed.length;
   return (
-    <div className="grid gap-4 border-2 border-ink bg-surface p-5 shadow-stamp sm:p-7">
+    <div className="dr-pop grid gap-4 border-2 border-ink bg-surface p-5 shadow-stamp sm:p-7">
       <div>
         <p className="m-0 font-mono text-[11px] uppercase tracking-widest text-ink-3">
           Your score
@@ -279,13 +284,16 @@ function Result({
             now, while they're fresh.
           </p>
           <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
-            {missed.map((sign) => (
+            {missed.map((sign, index) => (
               <li
                 key={sign.id}
                 title={sign.name}
                 aria-label={sign.name}
-                className="size-14 border-2 border-ink bg-white sm:size-16"
-                style={regionSpriteStyle(sign, CHART_SRC, CROP_PAD)}
+                className="dr-pop size-14 border-2 border-ink bg-white sm:size-16"
+                style={{
+                  ...regionSpriteStyle(sign, CHART_SRC, CROP_PAD),
+                  ...stagger(index + 2),
+                }}
               />
             ))}
           </ul>

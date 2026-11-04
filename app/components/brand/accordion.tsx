@@ -7,7 +7,7 @@ function Accordion({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="accordion"
-      className={cn("border-2 border-ink bg-surface", className)}
+      className={cn("dr-accordion border-2 border-ink bg-surface", className)}
       {...props}
     />
   );

@@ -1,7 +1,7 @@
 import { analytics } from "~/lib/analytics";
 
 import { activeSession } from "./active-session";
-import { evaluate } from "./ad-rules";
+import { AD_RULES, evaluate } from "./ad-rules";
 import type {
   AdProvider,
   AdProviderStatus,
@@ -106,6 +106,8 @@ export class AdEngine {
    * Synchronous so call sites can fire-and-forget right after their analytics.
    */
   trigger(event: AdTriggerEvent): void {
+    // Switched off: stay silent rather than logging a block on every sign.
+    if (!AD_RULES.enabled) return;
     if (this.state.isOpen) {
       // Already showing — don't stack. Quiet skip; the trigger site won fair
       // and square but the user is mid-impression.

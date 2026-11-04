@@ -115,3 +115,11 @@ export function warmSfx(): void {
 export function warmVoice(src: string | null | undefined): void {
   if (src) getVoice(src);
 }
+
+// ---- haptics ------------------------------------------------------------------
+/** A small buzz on devices that can. Android only in practice; a no-op elsewhere. */
+export function buzz(pattern: number | number[]): void {
+  if (typeof navigator !== "undefined") navigator.vibrate?.(pattern);
+}
+
+export const BUZZ = { tap: 8, miss: [16, 40, 16] };

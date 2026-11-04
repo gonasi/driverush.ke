@@ -42,7 +42,7 @@ export function CelebrationConfetti({
       mode="boom"
       className={className}
       colors={CONFETTI_COLORS}
-      particleCount={170}
+      particleCount={90}
       x={0.5}
       y={0.32}
       deg={270}

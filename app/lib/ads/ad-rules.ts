@@ -16,7 +16,9 @@ import type {
  */
 
 export const AD_RULES = {
-  enabled: true,
+  // Off for now. This is the one switch: while it's false the AdSense script never
+  // loads, the session timer never starts and triggers do nothing.
+  enabled: false,
 } as const;
 
 /**

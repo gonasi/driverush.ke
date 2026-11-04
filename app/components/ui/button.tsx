@@ -10,9 +10,9 @@ const buttonVariants = cva(
     // <button> or [role=button] gets the lane-change tactile feel without JS.
     "group/button inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap select-none",
     "border-2 border-ink font-display font-extrabold uppercase tracking-wider",
-    "bg-clip-padding outline-none transition-[transform,box-shadow] duration-75 ease-snap",
+    "bg-clip-padding outline-none transition-[transform,box-shadow] duration-100 ease-snap",
     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rush",
-    "active:translate-x-[3px] active:translate-y-[3px]",
+    "hover:-translate-x-px hover:-translate-y-px active:translate-x-[3px] active:translate-y-[3px]",
     "disabled:pointer-events-none disabled:cursor-default disabled:opacity-50",
     "[&_svg]:pointer-events-none [&_svg]:shrink-0",
   ].join(" "),
@@ -31,9 +31,9 @@ const buttonVariants = cva(
         paper: "bg-surface text-ink shadow-stamp active:shadow-stamp-sm",
         // No border, no shadow — for in-text cancel / skip
         ghost:
-          "border-transparent bg-transparent text-ink hover:bg-paper-3 active:translate-x-0 active:translate-y-0",
+          "border-transparent bg-transparent text-ink hover:translate-x-0 hover:translate-y-0 hover:bg-paper-3 active:translate-x-0 active:translate-y-0",
         // Inline link styling
-        link: "border-transparent bg-transparent text-rush underline-offset-4 hover:underline normal-case tracking-normal active:translate-x-0 active:translate-y-0",
+        link: "border-transparent bg-transparent text-rush underline-offset-4 hover:translate-x-0 hover:translate-y-0 hover:underline normal-case tracking-normal active:translate-x-0 active:translate-y-0",
       },
       size: {
         sm: "h-8 px-3.5 text-[11px] shadow-stamp-sm active:shadow-stamp-xs",

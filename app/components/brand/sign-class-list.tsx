@@ -50,7 +50,11 @@ export function SignClassList() {
           open={index === 0}
           summary={
             <span className="flex flex-1 items-center gap-2.5">
-              <span aria-hidden>{category.emoji}</span>
+              <span
+                aria-hidden
+                className="size-7 shrink-0 border-2 border-ink bg-white"
+                style={regionSpriteStyle(signs[0], CHART_SRC, THUMB_PAD)}
+              />
               <span>{category.label}</span>
               <span className="ml-auto font-mono text-[10px] font-normal normal-case tracking-wider opacity-70">
                 {signs.length} signs
@@ -88,7 +92,7 @@ export function SignClassList() {
               {signs.map((sign) => (
                 <li
                   key={sign.id}
-                  className="grid grid-cols-[64px_1fr] items-start gap-3 border-2 border-ink bg-paper-3 p-3"
+                  className="dr-skip-offscreen grid grid-cols-[64px_1fr] items-start gap-3 border-2 border-ink bg-paper-3 p-3"
                 >
                   <div
                     role="img"

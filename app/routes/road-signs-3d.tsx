@@ -9,6 +9,7 @@ import {
 
 import type { Route } from "./+types/road-signs-3d";
 
+import { stagger } from "~/lib/motion";
 import { breadcrumbLd, pageMeta, ROAD_SIGN_KEYWORDS } from "~/lib/site";
 import { ogCardAlt, ogCardPath } from "~/lib/og-cards";
 import type { Signs3DData } from "~/lib/signs-3d";
@@ -99,7 +100,7 @@ export default function ThreeDSigns() {
             </span>
           </div>
 
-          <header className="border-b-2 border-ink pb-7">
+          <header className="dr-rise border-b-2 border-ink pb-7">
             <PelicanPartner size="sm" />
             <h1 className="m-0 mt-3 font-display text-[clamp(40px,7vw,72px)] font-extrabold uppercase leading-[0.9] tracking-tighter">
               3D <span className="italic text-rush">signs</span>
@@ -133,7 +134,7 @@ export default function ThreeDSigns() {
               </Button>
             </div>
           ) : (
-            <div className="mt-6">
+            <div className="dr-rise mt-6" style={stagger(1)}>
               <Sign3DPlayer link={link} onStart={startRun} />
             </div>
           )}

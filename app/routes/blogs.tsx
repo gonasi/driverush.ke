@@ -1,6 +1,5 @@
 import * as React from "react";
 import { Link } from "react-router";
-import { motion } from "framer-motion";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   ArrowRight02FreeIcons,
@@ -11,7 +10,6 @@ import type { Route } from "./+types/blogs";
 
 import { absUrl, breadcrumbLd, keywords, SITE } from "~/lib/site";
 import { BLOG_KEYWORDS, getAllPosts } from "~/lib/blog";
-import { variants } from "~/lib/motion";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -97,7 +95,6 @@ export function meta(_: Route.MetaArgs) {
   ];
 }
 
-const VIEWPORT = { once: true, margin: "-60px" } as const;
 
 const Container = ({ children }: { children: React.ReactNode }) => (
   <div className="mx-auto w-full max-w-6xl px-5 sm:px-9">{children}</div>
@@ -206,23 +203,13 @@ export default function BlogsIndex() {
               </span>
             </div>
 
-            <motion.div
-              className="grid gap-5 sm:grid-cols-2 sm:auto-rows-fr lg:grid-cols-3"
-              initial="hidden"
-              whileInView="visible"
-              viewport={VIEWPORT}
-              variants={variants.staggerList}
-            >
+            <div className="grid gap-5 sm:grid-cols-2 sm:auto-rows-fr lg:grid-cols-3">
               {rest.map((p) => (
-                <motion.div
-                  key={p.slug}
-                  variants={variants.fadeUp}
-                  className="h-full"
-                >
+                <div key={p.slug} className="dr-reveal h-full">
                   <BlogCard post={p} />
-                </motion.div>
+                </div>
               ))}
-            </motion.div>
+            </div>
           </section>
 
           {/* Outbound CTA strip — keep the live product within one click. */}

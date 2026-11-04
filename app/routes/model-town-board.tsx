@@ -5,6 +5,7 @@
  */
 import type { Route } from "./+types/model-town-board";
 
+import { stagger } from "~/lib/motion";
 import { pageMeta } from "~/lib/site";
 
 import { Badge } from "~/components/ui/badge";
@@ -31,18 +32,26 @@ export default function ModelTownBoard() {
         <Rail />
         <div className="mx-auto w-full max-w-4xl px-5 pb-16 pt-6 sm:px-9 sm:pt-12">
           <header className="grid justify-items-start gap-3 sm:gap-4">
-            <Badge variant="amber">Coming soon</Badge>
-            <h1 className="m-0 font-display text-[clamp(36px,7vw,76px)] font-extrabold uppercase leading-[0.92] tracking-tighter">
+            <Badge variant="amber" className="dr-rise">
+              Coming soon
+            </Badge>
+            <h1
+              style={stagger(1)}
+              className="dr-rise m-0 font-display text-[clamp(36px,7vw,76px)] font-extrabold uppercase leading-[0.92] tracking-tighter"
+            >
               Model Town Board.{" "}
               <span className="italic text-rush">Not ready yet.</span>
             </h1>
-            <p className="m-0 max-w-2xl font-serif text-[clamp(17px,2.2vw,22px)] leading-snug text-ink-2">
+            <p
+              style={stagger(2)}
+              className="dr-rise m-0 max-w-2xl font-serif text-[clamp(17px,2.2vw,22px)] leading-snug text-ink-2"
+            >
               We're building it now. Get your signs solid first: that's what you
               can practise here today.
             </p>
           </header>
           <div className="mt-7">
-            <TrainerCards />
+            <TrainerCards firstStep={3} />
           </div>
         </div>
       </main>

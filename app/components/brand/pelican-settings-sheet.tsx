@@ -121,7 +121,7 @@ export function PelicanSettingsSheet() {
                       active={isCatActive(c.id)}
                       onToggle={() => toggleCat(c.id)}
                     >
-                      {c.emoji} {c.label}
+                      {c.label}
                       {` · ${mappedN}`}
                     </ChipToggle>
                   );

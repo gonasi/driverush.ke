@@ -35,6 +35,7 @@ import {
   SheetTitle,
 } from "~/components/ui/sheet";
 import { ImageFocusStage } from "~/components/brand/image-focus-stage";
+import { RevealCountdown } from "~/components/brand/reveal-countdown";
 import { TrainerReadyPanel } from "~/components/brand/trainer-ready-panel";
 import { TrainerResultCard } from "~/components/brand/trainer-result-card";
 
@@ -58,32 +59,6 @@ const ANSWER_ITEM = {
   hidden: { opacity: 0, y: 12 },
   show: { opacity: 1, y: 0, transition: { duration: 0.34, ease: ease.snap } },
 } satisfies Variants;
-
-/**
- * The reveal timer — our Tach `<Progress>` bar pinned above the navbar, draining
- * as the recall window closes. It subscribes to the store's `timeRemaining`
- * itself (so only this tiny node re-renders on each ~100 ms tick) and the
- * indicator runs a short linear `width` transition so the drain reads as
- * continuous. The player only mounts it while the timer's actually running (it
- * unmounts on pause / settings / reveal and remounts fresh on resume), so it
- * always starts full and lands empty as the answer appears.
- */
-function RevealCountdown({ seconds }: { seconds: number }) {
-  const timeRemaining = usePelicanStore((st) => st.timeRemaining);
-  const pct = Math.max(
-    0,
-    Math.min(100, Math.round((timeRemaining / Math.max(0.001, seconds)) * 100)),
-  );
-  return (
-    <Progress
-      value={pct}
-      showTicks
-      aria-label="Time left to recall this sign"
-      indicatorClassName="duration-200 ease-linear"
-      className="pointer-events-none absolute inset-x-0 top-0 z-30 h-3"
-    />
-  );
-}
 
 /**
  * The Pelican road-sign recall trainer — a presentational shell over the Zustand
@@ -480,7 +455,7 @@ export function ImageFocusPlayer({
                 className="flex flex-wrap items-center gap-x-2 gap-y-0.5 font-mono text-[10px] uppercase tracking-widest text-ink-3"
               >
                 <span className="text-ink-2">
-                  {cat?.emoji} {cat?.label}
+                  {cat?.label}
                 </span>
                 {region.code && <span>· {region.code}</span>}
               </motion.div>

@@ -1,5 +1,7 @@
 import { Link } from "react-router";
 
+import { stagger } from "~/lib/motion";
+
 import { Badge } from "~/components/ui/badge";
 
 /**
@@ -10,11 +12,12 @@ export function BoardNotice() {
   return (
     <section
       aria-label="Model Town Board"
-      className="mx-auto w-full max-w-4xl px-5 pb-12 sm:px-9"
+      className="dr-reveal mx-auto w-full max-w-4xl px-5 pb-12 sm:px-9"
     >
       <Link
         to="/model-town-board"
-        className="grid gap-2 border-2 border-dashed border-ink bg-paper-3 p-5 outline-none transition-colors hover:bg-surface focus-visible:bg-surface sm:p-7"
+        style={stagger(6)}
+        className="dr-rise grid gap-2 border-2 border-dashed border-ink bg-paper-3 p-5 outline-none transition-colors duration-200 hover:bg-surface focus-visible:bg-surface sm:p-7"
       >
         <span>
           <Badge variant="amber">Coming soon</Badge>

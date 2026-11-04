@@ -45,6 +45,8 @@ import {
   type RunScope,
 } from "./trainer-rounds";
 import {
+  BUZZ,
+  buzz,
   playSfx,
   playVoice,
   stopAllSfx,
@@ -57,17 +59,12 @@ import {
 // module-scope engine bits (one trainer instance — fine to keep these here)
 // ---------------------------------------------------------------------------
 let phaseTimer: ReturnType<typeof setTimeout> | null = null;
-let countdownInt: ReturnType<typeof setInterval> | null = null;
 
 function clearTimers() {
   startWhenVisible = null;
   if (phaseTimer) {
     clearTimeout(phaseTimer);
     phaseTimer = null;
-  }
-  if (countdownInt) {
-    clearInterval(countdownInt);
-    countdownInt = null;
   }
 }
 const stopSignAudio = stopVoice;
@@ -208,7 +205,8 @@ type Signs3DState = {
   runScope: RunScope;
   queue: Sign3D[];
   pos: number;
-  timeRemaining: number;
+  /** False while the recall timer waits for the 3D sign to appear. */
+  countdownLive: boolean;
   // ---- this run (transient, self-grading) ----
   runRecalled: string[];
   runMissed: string[];
@@ -260,7 +258,7 @@ export const useSigns3DStore = create<Signs3DState>()(
       runScope: { kind: "round" },
       queue: [],
       pos: 0,
-      timeRemaining: 0,
+      countdownLive: false,
       runRecalled: [],
       runMissed: [],
       runMissCount: 0,
@@ -316,7 +314,6 @@ export const useSigns3DStore = create<Signs3DState>()(
             runScope: scope,
             pos: 0,
             phase: "focused",
-            timeRemaining: 0,
           });
           if (!get().settingsOpen && get().running) get()._armFocused();
         }
@@ -353,7 +350,6 @@ export const useSigns3DStore = create<Signs3DState>()(
           overlayOpen: true,
           running: true,
           settingsOpen: false,
-          timeRemaining: 0,
           runRecalled: [],
           runMissed: [],
           runMissCount: 0,
@@ -406,7 +402,6 @@ export const useSigns3DStore = create<Signs3DState>()(
           overlayOpen: true,
           running: true,
           settingsOpen: false,
-          timeRemaining: 0,
           runRecalled: run.runRecalled,
           runMissed: run.runMissed,
           runMissCount: run.runMissCount,
@@ -460,6 +455,7 @@ export const useSigns3DStore = create<Signs3DState>()(
         const sign = queue[pos];
         if (!sign) return;
         if (settings.playAudio) playSfx(r === "knew" ? "correct" : "wrong");
+        buzz(r === "knew" ? BUZZ.tap : BUZZ.miss);
         const before = boxOf(get().progress, sign.id);
         const progress = applyGrade(get().progress, sign.id, r);
         set({ progress });
@@ -510,7 +506,6 @@ export const useSigns3DStore = create<Signs3DState>()(
           phase: "ready",
           queue: [],
           pos: 0,
-          timeRemaining: 0,
           runRecalled: [],
           runMissed: [],
           runMissCount: 0,
@@ -533,31 +528,22 @@ export const useSigns3DStore = create<Signs3DState>()(
           return;
         }
         if (settings.revealMode === "auto") {
+          // One timer, not a tick: the bar on screen is a CSS animation of the
+          // same length, so nothing re-renders while you're trying to remember.
           const delay = sign.revealDelay ?? settings.revealDelay;
-          set({ timeRemaining: delay });
           const begin = () => {
-            const startedAt = Date.now();
-            countdownInt = setInterval(() => {
-              const rem = Math.max(0, delay - (Date.now() - startedAt) / 1000);
-              set({ timeRemaining: rem });
-              if (rem <= 0) {
-                if (countdownInt) {
-                  clearInterval(countdownInt);
-                  countdownInt = null;
-                }
-                get()._toRevealed();
-              }
-            }, 100);
+            set({ countdownLive: true });
+            phaseTimer = setTimeout(() => get()._toRevealed(), delay * 1000);
           };
           if (sign.modelSrc === visibleModel) {
             begin();
           } else {
             // Still loading: hold a full bar until it appears, with a cap so a
             // failed download can't freeze the run.
+            set({ countdownLive: false });
             startWhenVisible = { src: sign.modelSrc, begin };
             phaseTimer = setTimeout(() => {
               startWhenVisible = null;
-              phaseTimer = null;
               begin();
             }, MODEL_WAIT_CAP_MS);
           }
