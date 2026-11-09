@@ -23,6 +23,7 @@ import type { Route } from "./+types/og";
 
 import pelican from "~/data/road-signs-pelican.json";
 import { regionSpriteStyle } from "~/lib/image-focus";
+import { signCrop } from "~/lib/sign-crops";
 import { OG_CARDS, OG_HEIGHT, OG_WIDTH, type OgCardId } from "~/lib/og-cards";
 import { cn } from "~/lib/utils";
 
@@ -54,11 +55,11 @@ function region(code: string): Region | undefined {
 }
 
 /**
- * The same sprite maths the trainers use. Regions are measured to each sign's
- * edges with a small margin, so the code label and neighbours stay out of frame.
+ * The same sprite maths the trainers use, on the sign's tight crop so the code
+ * key and neighbouring signs stay out of frame.
  */
 function crop(r: Region, pad = 0): React.CSSProperties {
-  return regionSpriteStyle(r, SHEET, pad);
+  return regionSpriteStyle(signCrop(r), SHEET, pad);
 }
 
 /**

@@ -15,6 +15,7 @@ import {
 
 import pelican from "~/data/road-signs-pelican.json";
 import { regionSpriteStyle, type FocusRegion } from "~/lib/image-focus";
+import { signCrop } from "~/lib/sign-crops";
 import { ease } from "~/lib/motion";
 import type { SignCounts } from "~/lib/pelican-progress";
 import type { SharePayload } from "~/lib/share";
@@ -65,7 +66,7 @@ function MissedThumbnails({ signs }: { signs: readonly MissedSign[] }) {
               {
                 "--i": index + 4,
                 ...(region
-                  ? regionSpriteStyle(region, CHART_SRC, THUMB_PAD)
+                  ? regionSpriteStyle(signCrop(region), CHART_SRC, THUMB_PAD)
                   : {}),
               } as React.CSSProperties
             }

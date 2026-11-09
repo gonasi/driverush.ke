@@ -20,6 +20,7 @@ import {
 import pelican from "~/data/road-signs-pelican.json";
 import { analytics } from "~/lib/analytics";
 import { regionSpriteStyle, type FocusRegion } from "~/lib/image-focus";
+import { signCrop } from "~/lib/sign-crops";
 import { stagger } from "~/lib/motion";
 import { BUZZ, buzz, playSfx } from "~/lib/sounds";
 import { trainerHref } from "~/lib/trainer-rounds";
@@ -32,7 +33,7 @@ const CHART_SRC = pelican.imageSrc as string;
 const ROUND_SIZE = 10;
 const OPTION_COUNT = 4;
 
-/** Regions are measured to the sign's edges (code label excluded), so no trim. */
+/** Crops are the sign's own edges (code key excluded), so no trim. */
 const CROP_PAD = 0;
 
 function shuffled<T>(items: readonly T[]): T[] {
@@ -181,7 +182,7 @@ function Playing({
       <div
         key={question.sign.id}
         className="dr-pop mx-auto aspect-square w-40 border-2 border-ink bg-white sm:w-full"
-        style={regionSpriteStyle(question.sign, CHART_SRC, CROP_PAD)}
+        style={regionSpriteStyle(signCrop(question.sign), CHART_SRC, CROP_PAD)}
         role="img"
         aria-label="Kenyan road sign"
       />
@@ -288,7 +289,7 @@ function Result({
                 aria-label={sign.name}
                 className="dr-pop size-14 border-2 border-ink bg-white sm:size-16"
                 style={{
-                  ...regionSpriteStyle(sign, CHART_SRC, CROP_PAD),
+                  ...regionSpriteStyle(signCrop(sign), CHART_SRC, CROP_PAD),
                   ...stagger(index + 2),
                 }}
               />

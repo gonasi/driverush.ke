@@ -3,20 +3,19 @@
  * chart's data, so a sign added to `road-signs-pelican.json` gets a page and a
  * sitemap entry by itself, as long as it has a line in `SIGN_DETAILS`.
  */
-import crops from "~/data/road-sign-crops.json";
 import { SIGN_DETAILS } from "~/data/road-sign-details";
 import { SIGN_GUIDES, type SignGuide } from "~/data/road-sign-guides";
 import pelican from "~/data/road-signs-pelican.json";
 import signs3d from "~/data/road-signs-3d.json";
 import type { FocusRegion, RegionBox, SignCategoryId } from "~/lib/image-focus";
+import { signCrop } from "~/lib/sign-crops";
 
 export type SignPage = FocusRegion & {
   slug: string;
   detail: string;
   /**
-   * The sign's exact edges on the chart, measured from the SVG geometry. The
-   * trainers' regions are the same boxes plus a 5px margin. Both need
-   * re-measuring if the chart is redrawn.
+   * The sign's artwork alone, without its code key. The region itself covers the
+   * whole sign card, key included, for the trainer's camera. See `signCrop`.
    */
   crop: RegionBox;
 };
@@ -36,7 +35,7 @@ export const SIGN_PAGES: SignPage[] = (pelican.regions as FocusRegion[]).map(
     ...region,
     slug: signSlug(region.name ?? ""),
     detail: SIGN_DETAILS[region.code ?? ""] ?? "",
-    crop: (crops as Record<string, RegionBox>)[region.code ?? ""] ?? region,
+    crop: signCrop(region),
   }),
 );
 

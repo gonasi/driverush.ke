@@ -47,7 +47,7 @@ export function SignClassList() {
               <span
                 aria-hidden
                 className="size-7 shrink-0 border-2 border-ink bg-white"
-                style={regionSpriteStyle(signs[0], CHART_SRC, THUMB_PAD)}
+                style={regionSpriteStyle(signs[0].crop, CHART_SRC, THUMB_PAD)}
               />
               <span>{category.label}</span>
               <span className="ml-auto font-mono text-[10px] font-normal normal-case tracking-wider opacity-70">
@@ -92,7 +92,7 @@ export function SignClassList() {
                     role="img"
                     aria-label={`Road sign: ${sign.name}`}
                     className="size-16 border-2 border-ink bg-white"
-                    style={regionSpriteStyle(sign, CHART_SRC, THUMB_PAD)}
+                    style={regionSpriteStyle(sign.crop, CHART_SRC, THUMB_PAD)}
                   />
                   <div className="min-w-0">
                     <div className="flex items-start justify-between gap-2">
