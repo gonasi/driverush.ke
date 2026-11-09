@@ -1,8 +1,8 @@
 /**
  * DriveRush home. One job: get someone memorising road signs. The hero shows
  * both trainers without scrolling, a ten-sign check sits under them for anyone
- * who wants to test themselves first, and a notice says the Model Town Board is
- * on its way.
+ * who wants to test themselves first, a notice says the Model Town Board is on
+ * its way, and a short section explains why the method works.
  */
 import type { Route } from "./+types/home";
 
@@ -21,6 +21,7 @@ import { SiteNav } from "~/components/brand/site-nav";
 import { BoardNotice } from "~/components/home/board-notice";
 import { HomeGuides } from "~/components/home/home-guides";
 import { HomeHero } from "~/components/home/home-hero";
+import { HomeMethod } from "~/components/home/home-method";
 import { SignCheck } from "~/components/home/sign-check";
 
 export function meta(_: Route.MetaArgs) {
@@ -56,6 +57,7 @@ export default function Home() {
         <HomeHero />
         <SignCheck />
         <BoardNotice />
+        <HomeMethod />
         <HomeGuides />
       </main>
       <SiteFooter />
