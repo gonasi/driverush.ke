@@ -25,10 +25,12 @@ import { SiteNav } from "~/components/brand/site-nav";
 import { LoadingPanel } from "~/components/brand/traffic-loader";
 import { Sign3DPlayer } from "~/components/brand/sign-3d-player";
 import { Sign3DSettingsSheet } from "~/components/brand/sign-3d-settings-sheet";
+import { TrainerGuide } from "~/components/brand/trainer-guide";
 
 const board = signs3dJson as Signs3DData;
 
 const PATH = "/road-signs/3d";
+const CODES_3D = new Set(board.signs.map((s) => s.code ?? ""));
 
 export function meta(_: Route.MetaArgs) {
   return [
@@ -92,10 +94,7 @@ export default function ThreeDSigns() {
               to="/road-signs"
               className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-ink-3 outline-none hover:text-ink focus-visible:text-ink"
             >
-              <Icon
-                icon={ArrowLeftIcon}
-                size={14}
-              />
+              <Icon icon={ArrowLeftIcon} size={14} />
               All signs
             </Link>
             <span className="font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
@@ -128,10 +127,7 @@ export default function ThreeDSigns() {
                 size="lg"
                 onClick={() => setSettingsOpen(true)}
               >
-                <Icon
-                  icon={SettingsIcon}
-                  size={16}
-                />
+                <Icon icon={SettingsIcon} size={16} />
                 Open settings
               </Button>
             </div>
@@ -147,14 +143,52 @@ export default function ThreeDSigns() {
             </span>
             <Button variant="paper" size="sm" asChild>
               <Link to="/road-signs/pelican">
-                <Icon
-                  icon={PelicanIcon}
-                  size={14}
-                />
+                <Icon icon={PelicanIcon} size={14} />
                 Pelican chart
               </Link>
             </Button>
           </div>
+
+          <TrainerGuide
+            name="3D signs"
+            codes={CODES_3D}
+            steps={[
+              {
+                title: "Choose your signs",
+                body: `Drill all ${board.signs.length} signs, or open the settings and pick one class at a time. Keep them in order or shuffle them for each run.`,
+              },
+              {
+                title: "One sign, on its post",
+                body: "Each sign is modelled in 3D on its own post. The camera rests off to one side and looks up at it, the way you see a sign from the driver's seat.",
+              },
+              {
+                title: "Spin it and name it",
+                body: "Drag to turn the sign and read it from any angle. Name it before the answer shows, either after a short timer or when you tap.",
+              },
+              {
+                title: "Mark whether you knew it",
+                body: "Tap Knew it or Missed it. Missed signs come back later in the run, so you finish only when you've recalled each one.",
+              },
+              {
+                title: "Build a separate known meter",
+                body: "Spotting a sign on a post is a different skill from naming it on a chart, so the 3D trainer keeps its own progress. It's saved on this device, with no account needed.",
+              },
+            ]}
+            why={{
+              title: "Why practise the signs in 3D",
+              body: [
+                "On the road you rarely see a sign square on and close up. You see it at an angle, from a distance, against the sky or trees, sometimes half hidden behind a matatu. A flat picture in a book doesn't prepare you for that.",
+                "Turning a sign trains you to read it in the order that works when you're driving: the shape first, then the colour, then the symbol. By the time you can make out the symbol, you should already know what kind of sign it is and be easing off if you need to.",
+              ],
+            }}
+            tips={[
+              "Spin each sign until it's nearly edge on. If you can still tell what it is from the outline and colour, you've learned it properly.",
+              "Turn on auto-spin in the settings if you'd rather watch than drag.",
+              "Use the chart to learn the names, then come here to check you can spot them in a more real setting.",
+              "Mark yourself strictly. A sign you only got after a long look counts as missed.",
+              "Open the page for any sign you keep missing. Each one explains the look-alikes that trip people up.",
+            ]}
+          />
         </div>
 
         <Sign3DSettingsSheet />

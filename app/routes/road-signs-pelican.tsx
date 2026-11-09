@@ -25,10 +25,13 @@ import { SiteNav } from "~/components/brand/site-nav";
 import { LoadingPanel } from "~/components/brand/traffic-loader";
 import { ImageFocusPlayer } from "~/components/brand/image-focus-player";
 import { PelicanSettingsSheet } from "~/components/brand/pelican-settings-sheet";
+import { TrainerGuide } from "~/components/brand/trainer-guide";
+import { SIGN_COUNT } from "~/lib/road-signs";
 
 const board = pelicanJson as ImageFocusData;
 
 const PATH = "/road-signs/pelican";
+const PELICAN_CODES = new Set(board.regions.map((r) => r.code ?? ""));
 
 export function meta(_: Route.MetaArgs) {
   return [
@@ -92,10 +95,7 @@ export default function PelicanSigns() {
               to="/road-signs"
               className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-ink-3 outline-none hover:text-ink focus-visible:text-ink"
             >
-              <Icon
-                icon={ArrowLeftIcon}
-                size={14}
-              />
+              <Icon icon={ArrowLeftIcon} size={14} />
               All signs
             </Link>
             <span className="font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
@@ -138,10 +138,7 @@ export default function PelicanSigns() {
                 size="lg"
                 onClick={() => setSettingsOpen(true)}
               >
-                <Icon
-                  icon={SettingsIcon}
-                  size={16}
-                />
+                <Icon icon={SettingsIcon} size={16} />
                 Open settings
               </Button>
             </div>
@@ -157,14 +154,52 @@ export default function PelicanSigns() {
             </span>
             <Button variant="paper" size="sm" asChild>
               <Link to="/road-signs/3d">
-                <Icon
-                  icon={Sign3DIcon}
-                  size={14}
-                />
+                <Icon icon={Sign3DIcon} size={14} />
                 Spin signs in 3D
               </Link>
             </Button>
           </div>
+
+          <TrainerGuide
+            name="the Pelican chart"
+            codes={PELICAN_CODES}
+            steps={[
+              {
+                title: "Pick what to practise",
+                body: `Practise all ${SIGN_COUNT} signs, or open the settings and choose one class at a time, such as warning or prohibitory signs. You can keep them in chart order or shuffle them for each run.`,
+              },
+              {
+                title: "We zoom into one sign",
+                body: "The camera moves across the chart and stops on a single sign. The rest of the chart dims and blurs, so your eyes stay on the sign in front of you.",
+              },
+              {
+                title: "Name it before the answer shows",
+                body: "Say the name out loud or in your head. The answer appears after a short timer, or when you tap if you prefer to go at your own pace. It shows the sign's name, its code and what to do when you meet it.",
+              },
+              {
+                title: "Mark whether you knew it",
+                body: "Tap Knew it or Missed it. Signs you miss come back later in the same run, so a run only ends once you've recalled every sign in it.",
+              },
+              {
+                title: "Watch the known meter build",
+                body: "Recall a sign cleanly a couple of times and it counts as known. A miss only nudges it down a notch. Your progress is saved on this device, with no account needed.",
+              },
+            ]}
+            why={{
+              title: "Why learn the signs on a chart",
+              body: [
+                "Seeing the signs laid out together shows you the system behind them. Triangles warn you, red rings forbid, blue circles give orders, and the two priority signs have shapes all of their own. Once you see the pattern, a sign you've never studied still tells you what kind of message it carries.",
+                "A chart also gives your memory a map. You remember where a sign sat and what was next to it, which helps when two signs look alike. Naming each one before you see the answer is harder than reading a list, and that effort is what makes it stick.",
+              ],
+            }}
+            tips={[
+              "Short runs most days beat one long session the night before your test.",
+              "Learn one class at a time, then switch to shuffle so the order can't give the answer away.",
+              "Be strict when you mark yourself. If you hesitated or only got half the name, tap Missed it.",
+              "When a sign keeps beating you, open its page from the list below. Each one explains the signs it's often confused with.",
+              "Once the chart feels easy, try the same signs in 3D, where you see them from an angle like on the road.",
+            ]}
+          />
         </div>
 
         <PelicanSettingsSheet />
