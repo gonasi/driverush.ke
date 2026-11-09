@@ -1,5 +1,6 @@
 import {
   isRouteErrorResponse,
+  Link,
   Links,
   Meta,
   Outlet,
@@ -13,7 +14,9 @@ import type { Route } from "./+types/root";
 import "./app.css";
 import "./motion.css";
 import { Toaster } from "~/components/ui/sonner";
+import { Button } from "~/components/ui/button";
 import { NavigationProgressBar } from "~/components/brand/navigation-progress-bar";
+import { RoadClosedScene, ScenePlate } from "~/components/brand/art/scenes";
 import { THEME_INIT_SCRIPT, useThemeSync } from "~/lib/theme";
 import { SITE, absUrl } from "~/lib/site";
 import { getPostHog, initAnalytics, usePageviews } from "~/lib/analytics";
@@ -176,10 +179,10 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
+    message = error.status === 404 ? "Road closed." : "Something broke.";
     details =
       error.status === 404
-        ? "The requested page could not be found."
+        ? "There is no page at this address. The signs are still open."
         : error.statusText || details;
   } else if (import.meta.env.DEV && error && error instanceof Error) {
     details = error.message;
@@ -187,11 +190,21 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <main className="pt-16 p-4 container mx-auto">
-      <h1>{message}</h1>
-      <p>{details}</p>
+    <main className="mx-auto grid w-full max-w-xl gap-6 px-5 pb-16 pt-12 text-ink">
+      <ScenePlate>
+        <RoadClosedScene title="A road barrier with a number plate reading KDR 404" />
+      </ScenePlate>
+      <div className="grid gap-3">
+        <h1 className="m-0 font-display text-[clamp(30px,7vw,48px)] font-extrabold uppercase leading-[0.95] tracking-tighter">
+          {message}
+        </h1>
+        <p className="m-0 font-serif text-lg leading-snug text-ink-2">{details}</p>
+        <Button variant="rush" size="lg" asChild className="mt-2 w-fit">
+          <Link to="/road-signs">Go to the road signs</Link>
+        </Button>
+      </div>
       {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
+        <pre className="w-full overflow-x-auto border-2 border-ink bg-paper-3 p-4 text-xs">
           <code>{stack}</code>
         </pre>
       )}

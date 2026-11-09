@@ -7,6 +7,7 @@ import Body from "~/guides/about.mdx";
 import { breadcrumbLd, graphLd, guideLd, pageMeta } from "~/lib/site";
 
 import { GuideLayout } from "~/components/brand/guide-layout";
+import { OpenRoadScene } from "~/components/brand/art/scenes";
 
 const PATH = "/about";
 const CHECKED = "2026-11-05";
@@ -35,6 +36,7 @@ export function meta(_: Route.MetaArgs) {
 export default function About() {
   return (
     <GuideLayout
+      art={<OpenRoadScene />}
       kicker="About"
       title={
         <>

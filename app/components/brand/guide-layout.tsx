@@ -12,6 +12,7 @@ import { Rail } from "~/components/brand/rail";
 import { SiteFooter } from "~/components/brand/site-footer";
 import { SiteNav } from "~/components/brand/site-nav";
 import { InlineAd } from "~/components/brand/inline-ad";
+import { ScenePlate } from "~/components/brand/art/scenes";
 
 /** "2026-11-05" reads as "5 November 2026", without a timezone shifting the day. */
 function formatChecked(date: string) {
@@ -31,6 +32,7 @@ export function GuideLayout({
   dateLabel = "Checked",
   showTrainers = true,
   showAd = true,
+  art,
   children,
 }: {
   kicker: string;
@@ -42,6 +44,8 @@ export function GuideLayout({
   showTrainers?: boolean;
   /** In-content ad after the body. Off for pages like privacy and about. */
   showAd?: boolean;
+  /** A scene from `art/scenes`, beside the lede on tablet and up. */
+  art?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -60,9 +64,13 @@ export function GuideLayout({
             <h1 className="m-0 mt-4 font-display text-[clamp(34px,6.4vw,64px)] font-extrabold uppercase leading-[0.94] tracking-tighter [&_em]:font-serif [&_em]:font-normal [&_em]:normal-case [&_em]:italic [&_em]:text-rush">
               {title}
             </h1>
-            <p className="m-0 mt-4 font-serif text-[clamp(17px,2.2vw,21px)] leading-snug text-ink-2">
-              {lede}
-            </p>
+            <div className="mt-4 sm:grid sm:grid-cols-[1fr_minmax(0,240px)] sm:items-end sm:gap-6">
+              <p className="m-0 font-serif text-[clamp(17px,2.2vw,21px)] leading-snug text-ink-2">
+                {lede}
+              </p>
+              {/* Phones skip the art so the trainers stay near the top. */}
+              {art && <ScenePlate className="hidden sm:block">{art}</ScenePlate>}
+            </div>
           </header>
 
           {showTrainers && (

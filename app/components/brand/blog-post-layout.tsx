@@ -1,12 +1,12 @@
 import * as React from "react";
 import { Link } from "react-router";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { Icon } from "~/components/brand/icon";
 import {
-  ArrowLeft02FreeIcons,
-  ArrowRight02FreeIcons,
-  ThreeDViewFreeIcons,
-  TrafficLightFreeIcons,
-} from "@hugeicons/core-free-icons";
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  Sign3DIcon,
+  PelicanIcon,
+} from "~/components/brand/icons";
 
 import { cn } from "~/lib/utils";
 import type { BlogPost } from "~/lib/blog";
@@ -40,10 +40,9 @@ function TryItNowPanel() {
       <Button variant="rush" size="sm" asChild>
         <Link to="/#try-now">
           Start training
-          <HugeiconsIcon
-            icon={ArrowRight02FreeIcons}
+          <Icon
+            icon={ArrowRightIcon}
             size={14}
-            strokeWidth={2.5}
           />
         </Link>
       </Button>
@@ -74,10 +73,9 @@ export function BlogPostLayout({
               to="/blogs"
               className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-ink-3 outline-none hover:text-ink focus-visible:text-ink"
             >
-              <HugeiconsIcon
-                icon={ArrowLeft02FreeIcons}
+              <Icon
+                icon={ArrowLeftIcon}
                 size={14}
-                strokeWidth={2.5}
               />
               All posts
             </Link>
@@ -160,20 +158,15 @@ export function BlogPostLayout({
             <div className="flex flex-wrap gap-3">
               <Button variant="rush" size="lg" asChild>
                 <Link to="/road-signs/pelican">
-                  <HugeiconsIcon
-                    icon={TrafficLightFreeIcons}
-                    size={18}
-                    strokeWidth={2.25}
-                  />
+                  <Icon icon={PelicanIcon} size={18} />
                   Train on the Pelican chart
                 </Link>
               </Button>
               <Button variant="paper" size="lg" asChild>
                 <Link to="/road-signs/3d">
-                  <HugeiconsIcon
-                    icon={ThreeDViewFreeIcons}
+                  <Icon
+                    icon={Sign3DIcon}
                     size={18}
-                    strokeWidth={2.25}
                   />
                   Spin signs in 3D
                 </Link>
