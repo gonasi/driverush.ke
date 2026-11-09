@@ -43,6 +43,11 @@ export function ImageFocusStage(props: ImageFocusStageProps) {
 // wide desktop. The dim/blur is done with four overlays in *screen* space (so
 // `backdrop-filter`'s blur radius isn't multiplied by the layer's scale); they
 // transition in sync with the camera. A CSS `transition` is the camera move.
+//
+// Once the camera lands, a second untransformed <img> laid out at the zoomed
+// size replaces it pixel for pixel. iOS WebKit can't rasterize a layer scaled
+// up to 14x in full: it keeps the middle tiles sharp and the rest blurry. Laid
+// out at full size, the SVG paints as vectors and only the visible part paints.
 // ---------------------------------------------------------------------------
 
 // % of the viewport's limiting dimension the sign should fill. Tight on a phone
@@ -66,6 +71,29 @@ function containBox(aspect: number, w: number, h: number) {
     : { imgW: w, imgH: w / aspect }; // fit to width
 }
 
+/**
+ * Where the camera's `translate(tx%, ty%) scale(scale)` leaves the image, as a
+ * plain px box in the viewport. Translate % is of the unscaled box and scale
+ * pivots on its centre, which sits at the viewport centre.
+ */
+function landedImageBox(
+  vp: { w: number; h: number },
+  imgW: number,
+  imgH: number,
+  scale: number,
+  tx: number,
+  ty: number,
+) {
+  const width = imgW * scale;
+  const height = imgH * scale;
+  return {
+    left: (vp.w - width) / 2 + (tx / 100) * imgW,
+    top: (vp.h - height) / 2 + (ty / 100) * imgH,
+    width,
+    height,
+  };
+}
+
 function CameraStage({
   imageSrc,
   region,
@@ -83,15 +111,26 @@ function CameraStage({
   const [imgAspect, setImgAspect] = React.useState(16 / 9);
 
   // Blurring live video of a moving camera is what makes phones stutter, so the
-  // dim and blur only arrive once the camera has landed on the sign.
+  // dim and blur only arrive once the camera has landed on the sign. "Landed"
+  // is the camera's own `transitionend`, so the sharp copy never appears ahead
+  // of a move that started late on a busy phone; the timer is only a fallback
+  // for when the transform didn't change and no transition ran.
   const [landed, setLanded] = React.useState(false);
   const regionId = region?.id;
+  const aimed = !!(focused && regionId);
   React.useEffect(() => {
     setLanded(false);
-    if (!focused || !regionId) return;
-    const id = window.setTimeout(() => setLanded(true), animationDuration);
+    if (!aimed) return;
+    const id = window.setTimeout(
+      () => setLanded(true),
+      animationDuration + 400,
+    );
     return () => window.clearTimeout(id);
-  }, [focused, regionId, animationDuration]);
+  }, [aimed, regionId, animationDuration]);
+  const onCameraTransitionEnd = (e: React.TransitionEvent<HTMLDivElement>) => {
+    if (aimed && e.target === e.currentTarget && e.propertyName === "transform")
+      setLanded(true);
+  };
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
@@ -181,6 +220,7 @@ function CameraStage({
       <div className="absolute inset-0 flex items-center justify-center">
         <div
           data-camera
+          onTransitionEnd={onCameraTransitionEnd}
           style={{
             width: imgW,
             height: imgH,
@@ -202,6 +242,18 @@ function CameraStage({
           />
         </div>
       </div>
+
+      {/* sharp copy for the landed camera (see the note above CameraStage) */}
+      {rect && landed && (
+        <img
+          src={imageSrc}
+          alt=""
+          draggable={false}
+          decoding="async"
+          className="pointer-events-none absolute block max-w-none select-none"
+          style={landedImageBox(vp, imgW, imgH, scale, tx, ty)}
+        />
+      )}
 
       {/* dim + blur everything except the focused sign */}
       {rect && landed && (
