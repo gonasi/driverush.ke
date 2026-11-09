@@ -17,6 +17,7 @@ import { SiteNav } from "~/components/brand/site-nav";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { BlogCard, formatDate } from "~/components/brand/blog-card";
+import { InlineAd } from "~/components/brand/inline-ad";
 
 type BlogPostLayoutProps = {
   post: BlogPost;
@@ -142,6 +143,7 @@ export function BlogPostLayout({
           <TryItNowPanel />
 
           <article className="pt-8 pb-12">{children}</article>
+          <InlineAd className="mt-0" />
 
           {/* CTA tail — keep nudging readers toward the live product. */}
           <section className="border-t-2 border-ink bg-paper-2 px-5 py-8 sm:px-7">

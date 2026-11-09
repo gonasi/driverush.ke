@@ -1,5 +1,6 @@
 import * as React from "react";
-import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import { Icon } from "~/components/brand/icon";
+import type { IconDef } from "~/components/brand/icons";
 
 import { cn } from "~/lib/utils";
 
@@ -33,7 +34,7 @@ export function SettingSection({
 }: {
   title: React.ReactNode;
   description?: React.ReactNode;
-  icon?: IconSvgElement;
+  icon?: IconDef;
   /** Right-aligned control in the header (e.g. a master toggle). */
   action?: React.ReactNode;
   disabled?: boolean;
@@ -48,7 +49,7 @@ export function SettingSection({
       <header className="flex items-start justify-between gap-3 border-b-2 border-ink bg-paper-3 px-3.5 py-2.5">
         <div className="min-w-0">
           <h3 className="flex items-center gap-2 font-display text-[12px] font-extrabold uppercase tracking-wider text-ink">
-            {icon && <HugeiconsIcon icon={icon} size={14} strokeWidth={2.25} />}
+            {icon && <Icon icon={icon} size={14} />}
             {title}
           </h3>
           {description && (
@@ -82,7 +83,7 @@ export function ToggleRow({
 }: {
   label: React.ReactNode;
   description?: React.ReactNode;
-  icon?: IconSvgElement;
+  icon?: IconDef;
   checked: boolean;
   onCheckedChange: (b: boolean) => void;
   disabled?: boolean;
@@ -97,7 +98,7 @@ export function ToggleRow({
       <span className="flex min-w-0 items-start gap-2.5">
         {icon && (
           <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center border-2 border-ink bg-paper-3 text-ink">
-            <HugeiconsIcon icon={icon} size={14} strokeWidth={2.25} />
+            <Icon icon={icon} size={14} />
           </span>
         )}
         <span className="min-w-0">

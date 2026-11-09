@@ -13,15 +13,16 @@
  */
 import * as React from "react";
 import { toast } from "sonner";
-import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import { Icon } from "~/components/brand/icon";
+import type { IconDef } from "~/components/brand/icons";
 import {
-  Copy01FreeIcons,
-  FacebookFreeIcons,
-  NewTwitterFreeIcons,
-  Share08FreeIcons,
-  TelegramFreeIcons,
-  WhatsappFreeIcons,
-} from "@hugeicons/core-free-icons";
+  CopyIcon,
+  FacebookIcon,
+  XIcon,
+  ShareIcon,
+  TelegramIcon,
+  WhatsappIcon,
+} from "~/components/brand/icons";
 
 import { analytics } from "~/lib/analytics";
 import {
@@ -42,11 +43,11 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 
-const TARGET_ICONS: Record<string, IconSvgElement> = {
-  whatsapp: WhatsappFreeIcons,
-  twitter: NewTwitterFreeIcons,
-  facebook: FacebookFreeIcons,
-  telegram: TelegramFreeIcons,
+const TARGET_ICONS: Record<string, IconDef> = {
+  whatsapp: WhatsappIcon,
+  twitter: XIcon,
+  facebook: FacebookIcon,
+  telegram: TelegramIcon,
 };
 
 export type ShareButtonProps = {
@@ -117,7 +118,7 @@ export function ShareButton({
         onClick={handleClick}
         className={className}
       >
-        <HugeiconsIcon icon={Share08FreeIcons} size={16} strokeWidth={2.5} />
+        <Icon icon={ShareIcon} size={16} />
         {label}
       </Button>
 
@@ -152,10 +153,9 @@ export function ShareButton({
                     "focus-visible:bg-paper-3 active:translate-x-[3px] active:translate-y-[3px] active:shadow-none",
                   )}
                 >
-                  <HugeiconsIcon
+                  <Icon
                     icon={TARGET_ICONS[t.id]}
                     size={18}
-                    strokeWidth={2}
                   />
                   {t.label}
                 </a>
@@ -167,10 +167,9 @@ export function ShareButton({
               onClick={copyLink}
               className="mt-2.5 w-full"
             >
-              <HugeiconsIcon
-                icon={Copy01FreeIcons}
+              <Icon
+                icon={CopyIcon}
                 size={16}
-                strokeWidth={2.5}
               />
               Copy link
             </Button>

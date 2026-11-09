@@ -1,7 +1,9 @@
 import * as React from "react";
 import { Link } from "react-router";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowRight02FreeIcons } from "@hugeicons/core-free-icons";
+import { Icon } from "~/components/brand/icon";
+import {
+  ArrowRightIcon,
+} from "~/components/brand/icons";
 
 import { cn } from "~/lib/utils";
 import type { BlogPost } from "~/lib/blog";
@@ -70,10 +72,9 @@ function BlogCard({ post, compact, className, ...props }: BlogCardProps) {
         <span>{post.readingMinutes} min read</span>
         <span className="inline-flex items-center gap-1.5 text-rush group-hover:gap-2 transition-[gap]">
           Read
-          <HugeiconsIcon
-            icon={ArrowRight02FreeIcons}
+          <Icon
+            icon={ArrowRightIcon}
             size={12}
-            strokeWidth={2.5}
           />
         </span>
       </div>

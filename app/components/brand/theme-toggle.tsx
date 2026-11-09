@@ -1,5 +1,8 @@
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Moon02FreeIcons, Sun03FreeIcons } from "@hugeicons/core-free-icons";
+import { Icon } from "~/components/brand/icon";
+import {
+  MoonIcon,
+  SunIcon,
+} from "~/components/brand/icons";
 
 import { cn } from "~/lib/utils";
 import { toggleTheme } from "~/lib/theme";
@@ -25,16 +28,14 @@ function ThemeToggle({ className }: { className?: string }) {
       onClick={() => toggleTheme()}
       className={cn("w-8 px-0", className)}
     >
-      <HugeiconsIcon
-        icon={Sun03FreeIcons}
+      <Icon
+        icon={SunIcon}
         size={16}
-        strokeWidth={2.25}
         className="dark:hidden"
       />
-      <HugeiconsIcon
-        icon={Moon02FreeIcons}
+      <Icon
+        icon={MoonIcon}
         size={16}
-        strokeWidth={2.25}
         className="hidden dark:block"
       />
     </Button>

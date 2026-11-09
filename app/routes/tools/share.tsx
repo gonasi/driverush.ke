@@ -1,12 +1,12 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { Icon } from "~/components/brand/icon";
 import {
-  ArrowUpRight01FreeIcons,
-  Copy01FreeIcons,
-  Link04FreeIcons,
-  RefreshFreeIcons,
-} from "@hugeicons/core-free-icons";
+  ArrowOutIcon,
+  CopyIcon,
+  LinkIcon,
+  RefreshIcon,
+} from "~/components/brand/icons";
 
 import type { Route } from "./+types/share";
 
@@ -224,10 +224,9 @@ export default function ShareBuilder() {
 
           <div className="flex flex-wrap gap-2 pt-1">
             <Button variant="paper" size="sm" onClick={handleReset}>
-              <HugeiconsIcon
-                icon={RefreshFreeIcons}
+              <Icon
+                icon={RefreshIcon}
                 size={14}
-                strokeWidth={2.5}
               />
               Reset
             </Button>
@@ -237,7 +236,7 @@ export default function ShareBuilder() {
         {/* Preview */}
         <section className="grid gap-4 self-start border-2 border-ink bg-surface p-6 shadow-stamp lg:sticky lg:top-6">
           <div className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
-            <HugeiconsIcon icon={Link04FreeIcons} size={13} strokeWidth={2.5} />
+            <Icon icon={LinkIcon} size={13} />
             Tagged link
           </div>
           <div className="break-all border-2 border-dashed border-ink bg-paper-3 p-4 font-mono text-[12.5px] leading-relaxed text-ink">
@@ -250,10 +249,9 @@ export default function ShareBuilder() {
               onClick={handleCopy}
               disabled={!ready}
             >
-              <HugeiconsIcon
-                icon={Copy01FreeIcons}
+              <Icon
+                icon={CopyIcon}
                 size={16}
-                strokeWidth={2.5}
               />
               Copy link
             </Button>
@@ -264,10 +262,9 @@ export default function ShareBuilder() {
                 rel="noreferrer noopener"
               >
                 Open
-                <HugeiconsIcon
-                  icon={ArrowUpRight01FreeIcons}
+                <Icon
+                  icon={ArrowOutIcon}
                   size={16}
-                  strokeWidth={2.5}
                 />
               </a>
             </Button>

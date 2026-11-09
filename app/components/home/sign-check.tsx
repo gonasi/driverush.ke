@@ -9,13 +9,13 @@
  */
 import * as React from "react";
 import { Link } from "react-router";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { Icon } from "~/components/brand/icon";
 import {
-  ArrowRight02FreeIcons,
-  CheckmarkCircle02FreeIcons,
-  PlayCircleFreeIcons,
-  RefreshFreeIcons,
-} from "@hugeicons/core-free-icons";
+  ArrowRightIcon,
+  DoneIcon,
+  PlayRoundIcon,
+  RefreshIcon,
+} from "~/components/brand/icons";
 
 import pelican from "~/data/road-signs-pelican.json";
 import { analytics } from "~/lib/analytics";
@@ -146,10 +146,9 @@ export function SignCheck() {
               </h2>
             </div>
             <Button variant="ink" onClick={start}>
-              <HugeiconsIcon
-                icon={PlayCircleFreeIcons}
+              <Icon
+                icon={PlayRoundIcon}
                 size={16}
-                strokeWidth={2.5}
               />
               Test yourself
             </Button>
@@ -229,10 +228,9 @@ function Playing({
             <p className="m-0 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest">
               {correct ? (
                 <>
-                  <HugeiconsIcon
-                    icon={CheckmarkCircle02FreeIcons}
+                  <Icon
+                    icon={DoneIcon}
                     size={14}
-                    strokeWidth={2.5}
                     className="text-kenya-green"
                   />
                   <span className="text-kenya-green">Correct</span>
@@ -243,10 +241,9 @@ function Playing({
             </p>
             <Button variant="ink" size="sm" onClick={onNext}>
               {position + 1 >= total ? "See your score" : "Next sign"}
-              <HugeiconsIcon
-                icon={ArrowRight02FreeIcons}
+              <Icon
+                icon={ArrowRightIcon}
                 size={14}
-                strokeWidth={2.5}
               />
             </Button>
           </div>
@@ -308,10 +305,9 @@ function Result({
         <Button variant="rush" asChild>
           <Link to={drillLink("/road-signs/pelican", missed)}>
             Train on the chart
-            <HugeiconsIcon
-              icon={ArrowRight02FreeIcons}
+            <Icon
+              icon={ArrowRightIcon}
               size={14}
-              strokeWidth={2.5}
             />
           </Link>
         </Button>
@@ -319,7 +315,7 @@ function Result({
           <Link to={drillLink("/road-signs/3d", missed)}>Train in 3D</Link>
         </Button>
         <Button variant="paper" onClick={onAgain}>
-          <HugeiconsIcon icon={RefreshFreeIcons} size={14} strokeWidth={2.5} />
+          <Icon icon={RefreshIcon} size={14} />
           Try 10 more
         </Button>
       </div>

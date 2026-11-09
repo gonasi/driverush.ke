@@ -1,16 +1,16 @@
 import * as React from "react";
 import { useFetcher } from "react-router";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { Icon } from "~/components/brand/icon";
 import { toast } from "sonner";
 import {
-  ArrowDown01FreeIcons,
-  ArrowUp01FreeIcons,
-  Copy01FreeIcons,
-  Delete02FreeIcons,
-  Download01FreeIcons,
-  FloppyDiskFreeIcons,
-  PlusSignFreeIcons,
-} from "@hugeicons/core-free-icons";
+  ChevronDownIcon,
+  ChevronUpIcon,
+  CopyIcon,
+  DeleteIcon,
+  DownloadIcon,
+  SaveIcon,
+  PlusIcon,
+} from "~/components/brand/icons";
 
 import type { Route } from "./+types/sign-3d";
 
@@ -217,22 +217,20 @@ export default function Sign3DTool({ loaderData }: Route.ComponentProps) {
           disabled={!canSave || !dirty || saving}
           onClick={saveToProject}
         >
-          <HugeiconsIcon
-            icon={FloppyDiskFreeIcons}
+          <Icon
+            icon={SaveIcon}
             size={14}
-            strokeWidth={2.5}
           />
           {saving ? "Saving…" : "Save to project"}
         </Button>
         <Button variant="paper" size="sm" onClick={copyJson}>
-          <HugeiconsIcon icon={Copy01FreeIcons} size={14} strokeWidth={2.5} />
+          <Icon icon={CopyIcon} size={14} />
           {copied ? "Copied!" : "Copy JSON"}
         </Button>
         <Button variant="paper" size="sm" onClick={downloadJson}>
-          <HugeiconsIcon
-            icon={Download01FreeIcons}
+          <Icon
+            icon={DownloadIcon}
             size={14}
-            strokeWidth={2.5}
           />
           Download
         </Button>
@@ -283,10 +281,9 @@ export default function Sign3DTool({ loaderData }: Route.ComponentProps) {
                     onClick={() => moveSign(s.id, -1)}
                     className="text-ink-3 outline-none hover:text-ink disabled:opacity-30"
                   >
-                    <HugeiconsIcon
-                      icon={ArrowUp01FreeIcons}
+                    <Icon
+                      icon={ChevronUpIcon}
                       size={14}
-                      strokeWidth={2.5}
                     />
                   </button>
                   <button
@@ -296,10 +293,9 @@ export default function Sign3DTool({ loaderData }: Route.ComponentProps) {
                     onClick={() => moveSign(s.id, 1)}
                     className="text-ink-3 outline-none hover:text-ink disabled:opacity-30"
                   >
-                    <HugeiconsIcon
-                      icon={ArrowDown01FreeIcons}
+                    <Icon
+                      icon={ChevronDownIcon}
                       size={14}
-                      strokeWidth={2.5}
                     />
                   </button>
                 </li>
@@ -326,10 +322,9 @@ export default function Sign3DTool({ loaderData }: Route.ComponentProps) {
                       size="sm"
                       onClick={() => addUnmapped(m)}
                     >
-                      <HugeiconsIcon
-                        icon={PlusSignFreeIcons}
+                      <Icon
+                        icon={PlusIcon}
                         size={13}
-                        strokeWidth={2.5}
                       />
                       Add
                     </Button>
@@ -395,10 +390,9 @@ export default function Sign3DTool({ loaderData }: Route.ComponentProps) {
                   size="sm"
                   onClick={() => removeSign(selected.id)}
                 >
-                  <HugeiconsIcon
-                    icon={Delete02FreeIcons}
+                  <Icon
+                    icon={DeleteIcon}
                     size={14}
-                    strokeWidth={2.5}
                   />
                   Remove from board
                 </Button>

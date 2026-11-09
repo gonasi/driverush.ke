@@ -1,11 +1,12 @@
 import * as React from "react";
-import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
-import { AlertCircleFreeIcons } from "@hugeicons/core-free-icons";
+import { Icon } from "~/components/brand/icon";
+import { InfoIcon, type IconDef } from "~/components/brand/icons";
+import { SignIcon } from "~/components/brand/art/sign-glyphs";
 
 import { cn } from "~/lib/utils";
 
 type CalloutProps = React.ComponentProps<"div"> & {
-  icon?: IconSvgElement;
+  icon?: IconDef;
   iconLabel?: string;
 };
 
@@ -19,7 +20,7 @@ type CalloutProps = React.ComponentProps<"div"> & {
  */
 function Callout({
   className,
-  icon = AlertCircleFreeIcons,
+  icon = InfoIcon,
   iconLabel,
   children,
   ...props
@@ -37,7 +38,11 @@ function Callout({
         aria-label={iconLabel}
         className="flex size-14 items-center justify-center border-2 border-ink-900 bg-ink-900 text-cream"
       >
-        <HugeiconsIcon icon={icon} size={26} strokeWidth={2.5} />
+        {icon.sign ? (
+          <SignIcon name={icon.sign} size={34} />
+        ) : (
+          <Icon icon={icon} size={26} />
+        )}
       </span>
       <div className="font-serif text-lg leading-snug text-cream-foreground">
         {children}

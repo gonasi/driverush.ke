@@ -1,16 +1,14 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
+import { Icon } from "~/components/brand/icon";
+import type { IconDef } from "~/components/brand/icons";
 import {
-  HugeiconsIcon,
-  type HugeiconsProps,
-  type IconSvgElement,
-} from "@hugeicons/react";
-import {
-  InformationCircleFreeIcons,
-  AlertCircleFreeIcons,
-  Cancel01FreeIcons,
-  Tick02FreeIcons,
-} from "@hugeicons/core-free-icons";
+  DoneIcon,
+  InfoIcon,
+  StopIcon,
+  WarningIcon,
+} from "~/components/brand/icons";
+import { SignIcon } from "~/components/brand/art/sign-glyphs";
 
 import { cn } from "~/lib/utils";
 
@@ -48,22 +46,23 @@ const iconBoxVariants = cva(
 
 const defaultIcon: Record<
   NonNullable<VariantProps<typeof alertVariants>["variant"]>,
-  IconSvgElement
+  IconDef
 > = {
-  info: InformationCircleFreeIcons,
-  warn: AlertCircleFreeIcons,
-  error: Cancel01FreeIcons,
-  ok: Tick02FreeIcons,
-  neutral: InformationCircleFreeIcons,
+  info: InfoIcon,
+  warn: WarningIcon,
+  error: StopIcon,
+  ok: DoneIcon,
+  neutral: InfoIcon,
 };
 
 type AlertProps = React.ComponentProps<"div"> &
   VariantProps<typeof alertVariants> & {
-    icon?: HugeiconsProps["icon"];
+    icon?: IconDef;
   };
 
 function Alert({ className, variant, icon, children, ...props }: AlertProps) {
   const v = variant ?? "neutral";
+  const def = icon ?? defaultIcon[v];
   return (
     <div
       role="alert"
@@ -72,13 +71,16 @@ function Alert({ className, variant, icon, children, ...props }: AlertProps) {
       className={cn(alertVariants({ variant }), className)}
       {...props}
     >
-      <span className={cn(iconBoxVariants({ variant }))} aria-hidden>
-        <HugeiconsIcon
-          icon={icon ?? defaultIcon[v]}
-          size={20}
-          strokeWidth={2.5}
-        />
-      </span>
+      {def.sign ? (
+        // Status marks are tiny real signs; the sign is its own frame.
+        <span className="flex size-11 items-center justify-center" aria-hidden>
+          <SignIcon name={def.sign} size={38} />
+        </span>
+      ) : (
+        <span className={cn(iconBoxVariants({ variant }))} aria-hidden>
+          <Icon icon={def} size={20} />
+        </span>
+      )}
       {children}
     </div>
   );

@@ -1,7 +1,9 @@
 import * as React from "react";
 import { Dialog as DialogPrimitive } from "radix-ui";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Cancel01FreeIcons } from "@hugeicons/core-free-icons";
+import { Icon } from "~/components/brand/icon";
+import {
+  CloseIcon,
+} from "~/components/brand/icons";
 
 import { cn } from "~/lib/utils";
 
@@ -96,10 +98,9 @@ function DialogTitleBar({
             "focus-visible:bg-paper focus-visible:text-ink",
           )}
         >
-          <HugeiconsIcon
-            icon={Cancel01FreeIcons}
+          <Icon
+            icon={CloseIcon}
             size={13}
-            strokeWidth={2.75}
           />
         </DialogPrimitive.Close>
       )}

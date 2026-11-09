@@ -2,8 +2,11 @@
  * The two road-sign trainers, the whole product: the Pelican chart (one sign at
  * a time zoomed out of the chart) and 3D signs (spinnable GLB models).
  */
-import type { IconSvgElement } from "@hugeicons/react";
-import { BirdFreeIcons, ThreeDViewFreeIcons } from "@hugeicons/core-free-icons";
+import type { IconDef } from "~/components/brand/icons";
+import {
+  PelicanIcon,
+  Sign3DIcon,
+} from "~/components/brand/icons";
 
 import pelican from "~/data/road-signs-pelican.json";
 
@@ -16,7 +19,7 @@ export type SignGame = {
   title: string;
   /** One or two sentences, short enough for a phone-width card. */
   blurb: string;
-  icon: IconSvgElement;
+  icon: IconDef;
   to: string;
 };
 
@@ -25,14 +28,14 @@ export const SIGN_GAMES: SignGame[] = [
     slug: "pelican",
     title: "Pelican chart",
     blurb: "We zoom into one sign at a time. Name it before the answer shows.",
-    icon: BirdFreeIcons,
+    icon: PelicanIcon,
     to: "/road-signs/pelican",
   },
   {
     slug: "3d",
     title: "3D signs",
     blurb: "Spin each sign and read it from any angle, like on the road.",
-    icon: ThreeDViewFreeIcons,
+    icon: Sign3DIcon,
     to: "/road-signs/3d",
   },
 ];

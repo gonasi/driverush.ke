@@ -4,11 +4,11 @@
  * Town Board. Blog lives in the footer and the mobile menu.
  */
 import { Link, useLocation } from "react-router";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { Icon } from "~/components/brand/icon";
 import {
-  ArrowRight02FreeIcons,
-  Menu01FreeIcons,
-} from "@hugeicons/core-free-icons";
+  ArrowRightIcon,
+  MenuIcon,
+} from "~/components/brand/icons";
 
 import { isNavLinkActive } from "~/lib/nav";
 
@@ -81,10 +81,9 @@ export function SiteNav() {
           <Button variant="rush" size="sm" asChild>
             <Link to="/#try-now">
               Start
-              <HugeiconsIcon
-                icon={ArrowRight02FreeIcons}
+              <Icon
+                icon={ArrowRightIcon}
                 size={14}
-                strokeWidth={2.5}
                 className="dr-arrow"
               />
             </Link>
@@ -98,10 +97,9 @@ export function SiteNav() {
                 aria-label="Open menu"
                 className="md:hidden"
               >
-                <HugeiconsIcon
-                  icon={Menu01FreeIcons}
+                <Icon
+                  icon={MenuIcon}
                   size={16}
-                  strokeWidth={2.5}
                 />
               </Button>
             </SheetTrigger>

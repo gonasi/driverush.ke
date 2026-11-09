@@ -26,6 +26,7 @@ import { SignCredit } from "~/components/brand/sign-credit";
 import { SignImage } from "~/components/brand/sign-image";
 import { SiteFooter } from "~/components/brand/site-footer";
 import { SiteNav } from "~/components/brand/site-nav";
+import { InlineAd } from "~/components/brand/inline-ad";
 
 const DESCRIPTION_LIMIT = 155;
 
@@ -168,6 +169,8 @@ export default function RoadSign({ loaderData }: Route.ComponentProps) {
               <p className="m-0">{guide.rule}</p>
             </div>
           </section>
+
+          <InlineAd />
 
           <section className="mt-10">
             <h2 className="m-0 mb-4 border-b-2 border-ink pb-3 font-display text-xl font-extrabold uppercase tracking-tight">

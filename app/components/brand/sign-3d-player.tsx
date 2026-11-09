@@ -1,19 +1,19 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { Icon } from "~/components/brand/icon";
 import {
-  ArrowLeft01FreeIcons,
-  ArrowRight01FreeIcons,
-  Cancel01FreeIcons,
-  Configuration01FreeIcons,
-  Drag01FreeIcons,
-  PauseFreeIcons,
-  PlayFreeIcons,
-  RefreshFreeIcons,
-  Tick02FreeIcons,
-  VolumeHighFreeIcons,
-} from "@hugeicons/core-free-icons";
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CloseIcon,
+  SettingsIcon,
+  DragIcon,
+  PauseIcon,
+  PlayIcon,
+  RefreshIcon,
+  CheckIcon,
+  SoundIcon,
+} from "~/components/brand/icons";
 import { useShallow } from "zustand/react/shallow";
 
 import { getSignCategory } from "~/lib/signs-3d";
@@ -250,7 +250,7 @@ export function Sign3DPlayer({
           aria-label="Exit trainer"
           className="pointer-events-auto"
         >
-          <HugeiconsIcon icon={Cancel01FreeIcons} size={14} strokeWidth={2.5} />
+          <Icon icon={CloseIcon} size={14} />
           Exit
         </Button>
         <span className="whitespace-nowrap bg-ink/70 px-2 py-0.5 font-mono text-[10px] font-bold tracking-wider tabular-nums text-paper">
@@ -265,10 +265,9 @@ export function Sign3DPlayer({
           aria-label="Settings"
           className="pointer-events-auto"
         >
-          <HugeiconsIcon
-            icon={Configuration01FreeIcons}
+          <Icon
+            icon={SettingsIcon}
             size={14}
-            strokeWidth={2.5}
           />
         </Button>
       </motion.div>
@@ -292,7 +291,7 @@ export function Sign3DPlayer({
             </Button>
           )}
           <span className="inline-flex items-center gap-1.5 bg-ink/60 px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest text-paper/80">
-            <HugeiconsIcon icon={Drag01FreeIcons} size={13} strokeWidth={2.5} />
+            <Icon icon={DragIcon} size={13} />
             Drag to look around
           </span>
         </motion.div>
@@ -316,10 +315,9 @@ export function Sign3DPlayer({
               disabled={pos === 0}
               aria-label="Previous sign"
             >
-              <HugeiconsIcon
-                icon={ArrowLeft01FreeIcons}
+              <Icon
+                icon={ChevronLeftIcon}
                 size={14}
-                strokeWidth={2.5}
               />
             </Button>
             <Button
@@ -327,10 +325,9 @@ export function Sign3DPlayer({
               size="sm"
               onClick={() => (running ? s.pause() : s.resume())}
             >
-              <HugeiconsIcon
-                icon={running ? PauseFreeIcons : PlayFreeIcons}
+              <Icon
+                icon={running ? PauseIcon : PlayIcon}
                 size={14}
-                strokeWidth={2.5}
               />
               {running ? "Pause" : "Resume"}
             </Button>
@@ -340,10 +337,9 @@ export function Sign3DPlayer({
               onClick={() => s.start(s.runScope)}
               aria-label="Restart"
             >
-              <HugeiconsIcon
-                icon={RefreshFreeIcons}
+              <Icon
+                icon={RefreshIcon}
                 size={14}
-                strokeWidth={2.5}
               />
             </Button>
             <Button
@@ -353,10 +349,9 @@ export function Sign3DPlayer({
               aria-label="Skip / next sign"
             >
               Skip
-              <HugeiconsIcon
-                icon={ArrowRight01FreeIcons}
+              <Icon
+                icon={ChevronRightIcon}
                 size={14}
-                strokeWidth={2.5}
               />
             </Button>
           </motion.div>
@@ -380,10 +375,9 @@ export function Sign3DPlayer({
               transition={{ ...transition.enter, delay: 0.04 }}
             >
               <Button variant="paper" size="lg" onClick={() => s.resume()}>
-                <HugeiconsIcon
-                  icon={PlayFreeIcons}
+                <Icon
+                  icon={PlayIcon}
                   size={18}
-                  strokeWidth={2.5}
                 />
                 Resume
               </Button>
@@ -474,10 +468,9 @@ export function Sign3DPlayer({
                     size="sm"
                     onClick={() => s.replaySignAudio()}
                   >
-                    <HugeiconsIcon
-                      icon={VolumeHighFreeIcons}
+                    <Icon
+                      icon={SoundIcon}
                       size={14}
-                      strokeWidth={2.5}
                     />
                     Replay sound
                   </Button>
@@ -492,10 +485,9 @@ export function Sign3DPlayer({
                       className="flex-1"
                       onClick={() => s.gradeAndNext("knew")}
                     >
-                      <HugeiconsIcon
-                        icon={Tick02FreeIcons}
+                      <Icon
+                        icon={CheckIcon}
                         size={14}
-                        strokeWidth={2.75}
                       />
                       Knew it
                     </Button>
@@ -504,10 +496,9 @@ export function Sign3DPlayer({
                       className="flex-1"
                       onClick={() => s.gradeAndNext("missed")}
                     >
-                      <HugeiconsIcon
-                        icon={Cancel01FreeIcons}
+                      <Icon
+                        icon={CloseIcon}
                         size={14}
-                        strokeWidth={2.75}
                       />
                       Missed it
                     </Button>
@@ -520,10 +511,9 @@ export function Sign3DPlayer({
               ) : (
                 <motion.div variants={ANSWER_ITEM} className="flex gap-2 pt-1">
                   <Button variant="paper" onClick={() => s.prev()}>
-                    <HugeiconsIcon
-                      icon={ArrowLeft01FreeIcons}
+                    <Icon
+                      icon={ChevronLeftIcon}
                       size={14}
-                      strokeWidth={2.5}
                     />
                     Prev
                   </Button>
@@ -533,10 +523,9 @@ export function Sign3DPlayer({
                     onClick={() => s.next()}
                   >
                     Next
-                    <HugeiconsIcon
-                      icon={ArrowRight01FreeIcons}
+                    <Icon
+                      icon={ChevronRightIcon}
                       size={14}
-                      strokeWidth={2.5}
                     />
                   </Button>
                 </motion.div>

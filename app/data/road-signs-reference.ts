@@ -13,15 +13,15 @@
  * Keep the wording plain and local; this file is also what the FAQ and the
  * structured data on the page are built from.
  */
-import type { IconSvgElement } from "@hugeicons/react";
+import type { IconDef } from "~/components/brand/icons";
 import {
-  Alert02FreeIcons,
-  CircleArrowRight02FreeIcons,
-  UnavailableFreeIcons,
-  RoadLocation01FreeIcons,
-  TrafficLightFreeIcons,
-  RoadFreeIcons,
-} from "@hugeicons/core-free-icons";
+  WarningIcon,
+  GoIcon,
+  NoIcon,
+  PinIcon,
+  TrafficLightIcon,
+  RoadIcon,
+} from "~/components/brand/icons";
 
 /** Sign-frame shape, drives the clip-path on the category badge. */
 export type SignShape = "triangle" | "circle" | "octagon" | "rectangle";
@@ -53,7 +53,7 @@ export type SignCategory = {
   shapeShort: string;
   shape: SignShape;
   tone: SignTone;
-  icon: IconSvgElement;
+  icon: IconDef;
   /** A sentence or two on what the whole class is for and how to read it. */
   summary: string;
   signs: RoadSign[];
@@ -69,7 +69,7 @@ export const SIGN_CATEGORIES: SignCategory[] = [
     shapeShort: "Red triangle",
     shape: "triangle",
     tone: "amber",
-    icon: Alert02FreeIcons,
+    icon: WarningIcon,
     summary:
       "Warning signs, Class B in the Highway Code, give you advance notice of a hazard or a change in the road ahead: a bend, a junction, a school, animals, road works. They never tell you to do anything, they tell you to be ready. If it is a red-bordered triangle, slow down and look.",
     signs: [
@@ -178,7 +178,7 @@ export const SIGN_CATEGORIES: SignCategory[] = [
     shapeShort: "Red-ring circle",
     shape: "circle",
     tone: "rush",
-    icon: UnavailableFreeIcons,
+    icon: NoIcon,
     summary:
       "Prohibitory and restrictive signs are the half of Class A that tells you what you must not do, or sets a limit you must keep: no entry, no overtaking, no parking, a speed or weight limit. They are red-ringed circles, with two famous exceptions. STOP is a red octagon and GIVE WAY a red downward triangle, shaped so you can read them even when faded or seen from behind.",
     signs: [
@@ -256,7 +256,7 @@ export const SIGN_CATEGORIES: SignCategory[] = [
     shapeShort: "Blue circle",
     shape: "circle",
     tone: "blue",
-    icon: CircleArrowRight02FreeIcons,
+    icon: GoIcon,
     summary:
       "Mandatory signs are the other half of Class A, the positive instruction. A blue circle means you must do what the symbol shows: keep left, turn here, go straight on, use this lane. Blue means do, the red ring meant do not. They turn up most at roundabouts, dual carriageways and one-way systems.",
     signs: [
@@ -320,7 +320,7 @@ export const SIGN_CATEGORIES: SignCategory[] = [
     shapeShort: "Blue & green rectangle",
     shape: "rectangle",
     tone: "green",
-    icon: RoadLocation01FreeIcons,
+    icon: PinIcon,
     summary:
       "These are the rectangular signs that help you rather than command you: where you are, where a road goes, where the hospital, parking or matatu stage is, which way a one-way street runs. Blue panels point to facilities and local routes. Green and white-on-black panels carry place names, distances and major-road directions.",
     signs: [
@@ -389,7 +389,7 @@ export const SIGN_CATEGORIES: SignCategory[] = [
     shapeShort: "Red · amber · green",
     shape: "rectangle",
     tone: "ink",
-    icon: TrafficLightFreeIcons,
+    icon: TrafficLightIcon,
     summary:
       "Traffic lights are their own class in the Traffic Act, Class C. The sequence in Kenya runs red, then red-and-amber, then green, then amber, then red. A green light is permission to go only if the way is clear, it never forces you across a blocked junction, and a green arrow lets you go only in that direction.",
     signs: [
@@ -439,7 +439,7 @@ export const SIGN_CATEGORIES: SignCategory[] = [
     shapeShort: "White & yellow lines",
     shape: "rectangle",
     tone: "ink",
-    icon: RoadFreeIcons,
+    icon: RoadIcon,
     summary:
       "Road markings are Class D, and they carry as much authority as a metal sign, sometimes more. White lines organise the lanes and tell you when you may cross. Yellow lines and kerb marks tell you where you may stop or wait. The shorter the gaps in a line, the harder it is warning you.",
     signs: [

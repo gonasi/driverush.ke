@@ -21,6 +21,7 @@ import { useLearnerAnalytics } from "~/lib/use-learner-analytics";
 import { useUtmCapture } from "~/lib/utm";
 import { AdProvider, RouteAdGate, useAdEngine } from "~/lib/ads/ad-context";
 import { AdModal } from "~/components/brand/ad-modal";
+import { AD_CLIENT, ADSENSE_LIVE, ADSENSE_SRC } from "~/lib/ads/ad-constants";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -80,6 +81,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
   // main nav (see <AppBar>) — it used to float over every page, which got in
   // the way of the games on mobile.
   useThemeSync();
+  const { pathname } = useLocation();
+  // AdSense wants its code in the server-rendered <head> so the site review
+  // crawler sees it. It also powers Auto ads. Never on the internal tools.
+  const loadAdsense =
+    ADSENSE_LIVE && import.meta.env.PROD && !pathname.startsWith("/tools");
   return (
     // The theme init script writes `style="color-scheme: …"` on <html> before
     // React hydrates (so light/dark settles without a flash). That edit comes
@@ -90,8 +96,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         {/* Settle light/dark before first paint — no flash. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <meta name="google-adsense-account" content={AD_CLIENT} />
         <Meta />
         <Links />
+        {loadAdsense && (
+          <script async src={ADSENSE_SRC} crossOrigin="anonymous" />
+        )}
       </head>
       <body>
         <NavigationProgressBar />

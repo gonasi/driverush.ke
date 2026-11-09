@@ -3,8 +3,11 @@
  * credited to. One source of truth so every primary route shares the same chrome.
  */
 import { Link } from "react-router";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Call02FreeIcons, Mail01FreeIcons } from "@hugeicons/core-free-icons";
+import { Icon } from "~/components/brand/icon";
+import {
+  PhoneIcon,
+  MailIcon,
+} from "~/components/brand/icons";
 
 import { analytics } from "~/lib/analytics";
 import { SIGN_BRAND, SIGN_SOURCE } from "~/lib/sign-credits";
@@ -45,10 +48,9 @@ export function SiteFooter() {
                   }
                   className="inline-flex items-center gap-2 font-mono text-xs tracking-wide opacity-85 hover:underline"
                 >
-                  <HugeiconsIcon
-                    icon={Call02FreeIcons}
+                  <Icon
+                    icon={PhoneIcon}
                     size={14}
-                    strokeWidth={2}
                   />
                   {SITE.contact.phoneDisplay}
                 </a>
@@ -64,10 +66,9 @@ export function SiteFooter() {
                   }
                   className="inline-flex items-center gap-2 break-all font-mono text-xs tracking-wide opacity-85 hover:underline"
                 >
-                  <HugeiconsIcon
-                    icon={Mail01FreeIcons}
+                  <Icon
+                    icon={MailIcon}
                     size={14}
-                    strokeWidth={2}
                   />
                   {SITE.contact.email}
                 </a>

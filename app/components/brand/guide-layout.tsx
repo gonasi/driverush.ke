@@ -11,6 +11,7 @@ import { Button } from "~/components/ui/button";
 import { Rail } from "~/components/brand/rail";
 import { SiteFooter } from "~/components/brand/site-footer";
 import { SiteNav } from "~/components/brand/site-nav";
+import { InlineAd } from "~/components/brand/inline-ad";
 
 /** "2026-11-05" reads as "5 November 2026", without a timezone shifting the day. */
 function formatChecked(date: string) {
@@ -29,6 +30,7 @@ export function GuideLayout({
   checked,
   dateLabel = "Checked",
   showTrainers = true,
+  showAd = true,
   children,
 }: {
   kicker: string;
@@ -38,6 +40,8 @@ export function GuideLayout({
   checked: string;
   dateLabel?: string;
   showTrainers?: boolean;
+  /** In-content ad after the body. Off for pages like privacy and about. */
+  showAd?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -78,6 +82,7 @@ export function GuideLayout({
           )}
 
           <article className="pt-4">{children}</article>
+          {showAd && <InlineAd />}
         </div>
       </main>
       <SiteFooter />

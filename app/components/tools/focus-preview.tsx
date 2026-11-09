@@ -1,12 +1,12 @@
 import * as React from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { Icon } from "~/components/brand/icon";
 import {
-  ArrowLeft01FreeIcons,
-  ArrowRight01FreeIcons,
-  FocusPointFreeIcons,
-  PauseFreeIcons,
-  PlayFreeIcons,
-} from "@hugeicons/core-free-icons";
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  FocusIcon,
+  PauseIcon,
+  PlayIcon,
+} from "~/components/brand/icons";
 
 import {
   computeRegionTransform,
@@ -214,17 +214,15 @@ export function FocusPreview({
           onClick={() => goToOrderIndex(currentIndex - 1)}
           aria-label="Previous region"
         >
-          <HugeiconsIcon
-            icon={ArrowLeft01FreeIcons}
+          <Icon
+            icon={ChevronLeftIcon}
             size={14}
-            strokeWidth={2.5}
           />
         </Button>
         <Button variant="ink" size="sm" onClick={togglePlay}>
-          <HugeiconsIcon
-            icon={playing ? PauseFreeIcons : PlayFreeIcons}
+          <Icon
+            icon={playing ? PauseIcon : PlayIcon}
             size={14}
-            strokeWidth={2.5}
           />
           {playing ? "Pause" : "Play"}
         </Button>
@@ -234,10 +232,9 @@ export function FocusPreview({
           onClick={() => goToOrderIndex(currentIndex + 1)}
           aria-label="Next region"
         >
-          <HugeiconsIcon
-            icon={ArrowRight01FreeIcons}
+          <Icon
+            icon={ChevronRightIcon}
             size={14}
-            strokeWidth={2.5}
           />
         </Button>
 
@@ -248,10 +245,9 @@ export function FocusPreview({
           size="sm"
           onClick={() => setPhase((p) => (p === "full" ? "focused" : "full"))}
         >
-          <HugeiconsIcon
-            icon={FocusPointFreeIcons}
+          <Icon
+            icon={FocusIcon}
             size={14}
-            strokeWidth={2.5}
           />
           {phase === "full" ? "Zoom in" : "Show full"}
         </Button>

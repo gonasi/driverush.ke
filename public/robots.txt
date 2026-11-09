@@ -2,6 +2,10 @@
 # Public pages are open to all crawlers. Internal authoring tools are not meant
 # to be indexed.
 
+# AdSense crawler: may read every page, so ads match the content.
+User-agent: Mediapartners-Google
+Allow: /
+
 User-agent: *
 Allow: /
 Disallow: /tools

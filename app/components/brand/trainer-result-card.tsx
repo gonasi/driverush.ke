@@ -6,12 +6,12 @@
 import type * as React from "react";
 import { motion, type Variants } from "framer-motion";
 import { Link } from "react-router";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { Icon } from "~/components/brand/icon";
 import {
-  ArrowRight02FreeIcons,
-  Cancel01FreeIcons,
-  RefreshFreeIcons,
-} from "@hugeicons/core-free-icons";
+  ArrowRightIcon,
+  CloseIcon,
+  RefreshIcon,
+} from "~/components/brand/icons";
 
 import pelican from "~/data/road-signs-pelican.json";
 import { regionSpriteStyle, type FocusRegion } from "~/lib/image-focus";
@@ -28,6 +28,7 @@ import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
 import { CelebrationConfetti } from "~/components/brand/celebration-confetti";
 import { ShareButton } from "~/components/brand/share-button";
+import { RoundDoneScene } from "~/components/brand/art/scenes";
 
 const CARD = {
   hidden: {},
@@ -155,13 +156,14 @@ export function TrainerResultCard({
             onClick={onExit}
             className="-my-1 inline-flex size-6 shrink-0 items-center justify-center border-2 border-paper text-paper outline-none transition-colors duration-100 hover:bg-paper hover:text-ink focus-visible:bg-paper focus-visible:text-ink"
           >
-            <HugeiconsIcon
-              icon={Cancel01FreeIcons}
+            <Icon
+              icon={CloseIcon}
               size={13}
-              strokeWidth={2.75}
             />
           </button>
         </div>
+
+        <RoundDoneScene crop className="h-24 border-b-2 border-ink sm:h-28" />
 
         <div className="flex flex-col items-center gap-3 px-5 py-6">
           <motion.h2
@@ -211,10 +213,9 @@ export function TrainerResultCard({
                   onClick={onResetMastery}
                   className="mt-2 inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest text-ink-3 outline-none hover:text-ink focus-visible:text-ink"
                 >
-                  <HugeiconsIcon
-                    icon={RefreshFreeIcons}
+                  <Icon
+                    icon={RefreshIcon}
                     size={11}
-                    strokeWidth={2.5}
                   />
                   Reset progress
                 </button>
@@ -226,10 +227,9 @@ export function TrainerResultCard({
             {missed.length > 0 ? (
               <>
                 <Button variant="rush" size="lg" onClick={onDrill}>
-                  <HugeiconsIcon
-                    icon={RefreshFreeIcons}
+                  <Icon
+                    icon={RefreshIcon}
                     size={18}
-                    strokeWidth={2.5}
                   />
                   Drill {missed.length === 1 ? "it" : `these ${missed.length}`}{" "}
                   again
@@ -241,10 +241,9 @@ export function TrainerResultCard({
             ) : (
               <Button variant="rush" size="lg" onClick={onNext}>
                 {nextLabel}
-                <HugeiconsIcon
-                  icon={ArrowRight02FreeIcons}
+                <Icon
+                  icon={ArrowRightIcon}
                   size={16}
-                  strokeWidth={2.5}
                 />
               </Button>
             )}

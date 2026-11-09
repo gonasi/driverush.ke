@@ -2,11 +2,11 @@
  * Everything under a trainer's preview before a run: the one big Start, the
  * whole-chart option, where you stand, and settings. Shared by both trainers.
  */
-import { HugeiconsIcon } from "@hugeicons/react";
+import { Icon } from "~/components/brand/icon";
 import {
-  Configuration01FreeIcons,
-  PlayFreeIcons,
-} from "@hugeicons/core-free-icons";
+  SettingsIcon,
+  PlayIcon,
+} from "~/components/brand/icons";
 
 import type { SignCounts } from "~/lib/pelican-progress";
 import { ROUND_SIZE, type RunScope } from "~/lib/trainer-rounds";
@@ -57,7 +57,7 @@ export function TrainerReadyPanel({
         className="w-full"
         onClick={() => onStart(link ?? undefined)}
       >
-        <HugeiconsIcon icon={PlayFreeIcons} size={18} strokeWidth={2.5} />
+        <Icon icon={PlayIcon} size={18} />
         {primaryLabel}
       </Button>
 
@@ -111,10 +111,9 @@ export function TrainerReadyPanel({
           onClick={onSettings}
           aria-label="Settings"
         >
-          <HugeiconsIcon
-            icon={Configuration01FreeIcons}
+          <Icon
+            icon={SettingsIcon}
             size={14}
-            strokeWidth={2.5}
           />
           Settings
         </Button>

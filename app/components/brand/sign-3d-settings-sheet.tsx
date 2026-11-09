@@ -1,12 +1,12 @@
 import * as React from "react";
 import {
-  FocusPointFreeIcons,
-  RotateClockwiseFreeIcons,
-  ShuffleFreeIcons,
-  Tick02FreeIcons,
-  TrafficLightFreeIcons,
-  VolumeHighFreeIcons,
-} from "@hugeicons/core-free-icons";
+  FocusIcon,
+  RotateIcon,
+  ShuffleIcon,
+  CheckIcon,
+  TrafficLightIcon,
+  SoundIcon,
+} from "~/components/brand/icons";
 
 import {
   SIGN_CATEGORIES,
@@ -98,7 +98,7 @@ export function Sign3DSettingsSheet() {
           <SettingSection
             title="What to practise"
             description={`${practiceCount} of ${signs.length} sign${signs.length === 1 ? "" : "s"}`}
-            icon={TrafficLightFreeIcons}
+            icon={TrafficLightIcon}
             action={
               <ChipToggle
                 active={allSelected}
@@ -132,7 +132,7 @@ export function Sign3DSettingsSheet() {
           </SettingSection>
 
           {/* ---- Order ---- */}
-          <SettingSection title="Order" icon={ShuffleFreeIcons}>
+          <SettingSection title="Order" icon={ShuffleIcon}>
             <SelectRow
               label="Sign order"
               value={settings.order}
@@ -154,7 +154,7 @@ export function Sign3DSettingsSheet() {
           </SettingSection>
 
           {/* ---- Reveal ---- */}
-          <SettingSection title="Reveal" icon={FocusPointFreeIcons}>
+          <SettingSection title="Reveal" icon={FocusIcon}>
             <SelectRow
               label="Reveal mode"
               value={settings.revealMode}
@@ -200,7 +200,7 @@ export function Sign3DSettingsSheet() {
           </SettingSection>
 
           {/* ---- Self-grading ---- */}
-          <SettingSection title="Self-grading" icon={Tick02FreeIcons}>
+          <SettingSection title="Self-grading" icon={CheckIcon}>
             <ToggleRow
               label="Track what you know"
               description="After each sign, mark whether you knew it"
@@ -235,7 +235,7 @@ export function Sign3DSettingsSheet() {
           </SettingSection>
 
           {/* ---- Audio & motion ---- */}
-          <SettingSection title="Audio & motion" icon={VolumeHighFreeIcons}>
+          <SettingSection title="Audio & motion" icon={SoundIcon}>
             <ToggleRow
               label="Play sound"
               description="Whoosh, reveal chime, and a sign's spoken name (if it has one)"
@@ -244,7 +244,7 @@ export function Sign3DSettingsSheet() {
             />
             <ToggleRow
               label="Auto-spin"
-              icon={RotateClockwiseFreeIcons}
+              icon={RotateIcon}
               description="Slowly turntable the sign while you study it (off if your device prefers reduced motion)"
               checked={settings.autoRotate}
               onCheckedChange={(b) => setSetting({ autoRotate: b })}

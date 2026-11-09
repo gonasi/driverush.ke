@@ -9,6 +9,24 @@ import type { AdSlotId, UserAdTier } from "./ad-types";
 export const AD_CLIENT = "ca-pub-9749836423673560";
 
 /**
+ * Site-wide AdSense switch, separate from `AD_RULES.enabled` (the custom
+ * interstitial modal, which stays off). When true, production pages get the
+ * AdSense loader in <head> (site verification + Auto ads, configured in the
+ * AdSense dashboard) and the inline in-content units (`<InlineAd />`).
+ * The loader is skipped on /tools.
+ */
+export const ADSENSE_LIVE = true;
+
+export const ADSENSE_SRC = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${AD_CLIENT}`;
+
+/**
+ * Responsive in-content display unit used by `<InlineAd />`. Create a
+ * dedicated "In-article" or "Display" unit in AdSense and put its ID here to
+ * split reporting from the modal placements.
+ */
+export const INLINE_AD_SLOT = "5315769413";
+
+/**
  * Real ad-unit slot IDs from the AdSense dashboard. Empty strings mean
  * "no real slot configured yet" — the factory falls back to the mock provider
  * for that slot in development. Populate before flipping AdSense to live.

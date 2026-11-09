@@ -1,6 +1,8 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import { Icon } from "~/components/brand/icon";
+import type { IconDef } from "~/components/brand/icons";
+import { SignIcon } from "~/components/brand/art/sign-glyphs";
 
 import { cn } from "~/lib/utils";
 
@@ -42,14 +44,12 @@ const signFrameVariants = cva(
 
 type SignCardProps = Omit<React.ComponentProps<"figure">, "title"> &
   VariantProps<typeof signFrameVariants> & {
-    /** Hugeicons icon for the sign symbol. */
-    icon: IconSvgElement;
+    /** Icon for the sign. One with a `sign` twin renders as the real sign. */
+    icon: IconDef;
     /** Caption — primary name (e.g. "Mandatory · Stop"). */
     name: React.ReactNode;
     /** Sub caption — classification (e.g. "Octagon · 200 mm"). */
     classification?: React.ReactNode;
-    /** Override the icon's stroke width. */
-    iconStrokeWidth?: number;
     /** Override the icon's pixel size. */
     iconSize?: number;
   };
@@ -66,7 +66,6 @@ function SignCard({
   icon,
   name,
   classification,
-  iconStrokeWidth = 2.5,
   iconSize = 56,
   ...props
 }: SignCardProps) {
@@ -83,14 +82,19 @@ function SignCard({
       )}
       {...props}
     >
-      <div className={cn(signFrameVariants({ shape, tone }))}>
-        <HugeiconsIcon
-          icon={icon}
-          size={iconSize}
-          strokeWidth={iconStrokeWidth}
-          className={cn(iconOffset, iconRotate)}
-        />
-      </div>
+      {icon.sign ? (
+        <div className="flex size-28 shrink-0 items-center justify-center">
+          <SignIcon name={icon.sign} size={iconSize * 2} />
+        </div>
+      ) : (
+        <div className={cn(signFrameVariants({ shape, tone }))}>
+          <Icon
+            icon={icon}
+            size={iconSize}
+            className={cn(iconOffset, iconRotate)}
+          />
+        </div>
+      )}
       <figcaption className="space-y-1">
         <div className="font-display text-[13px] font-extrabold uppercase tracking-wide text-ink">
           {name}

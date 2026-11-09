@@ -1,10 +1,10 @@
 import * as React from "react";
 import { Checkbox as CheckboxPrimitive } from "radix-ui";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { Icon } from "~/components/brand/icon";
 import {
-  Tick02FreeIcons,
-  MinusSignFreeIcons,
-} from "@hugeicons/core-free-icons";
+  CheckIcon,
+  MinusIcon,
+} from "~/components/brand/icons";
 
 import { cn } from "~/lib/utils";
 
@@ -32,9 +32,9 @@ function Checkbox({
         className="flex items-center justify-center"
       >
         {props.checked === "indeterminate" ? (
-          <HugeiconsIcon icon={MinusSignFreeIcons} size={14} strokeWidth={3} />
+          <Icon icon={MinusIcon} size={14} />
         ) : (
-          <HugeiconsIcon icon={Tick02FreeIcons} size={14} strokeWidth={3} />
+          <Icon icon={CheckIcon} size={14} />
         )}
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>

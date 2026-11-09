@@ -1,18 +1,18 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { Icon } from "~/components/brand/icon";
 import {
-  ArrowLeft01FreeIcons,
-  ArrowRight01FreeIcons,
-  Cancel01FreeIcons,
-  Configuration01FreeIcons,
-  PauseFreeIcons,
-  PlayFreeIcons,
-  RefreshFreeIcons,
-  Tick02FreeIcons,
-  VolumeHighFreeIcons,
-} from "@hugeicons/core-free-icons";
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CloseIcon,
+  SettingsIcon,
+  PauseIcon,
+  PlayIcon,
+  RefreshIcon,
+  CheckIcon,
+  SoundIcon,
+} from "~/components/brand/icons";
 import { useShallow } from "zustand/react/shallow";
 
 import { getSignCategory } from "~/lib/image-focus";
@@ -262,7 +262,7 @@ export function ImageFocusPlayer({
           aria-label="Exit trainer"
           className="pointer-events-auto"
         >
-          <HugeiconsIcon icon={Cancel01FreeIcons} size={14} strokeWidth={2.5} />
+          <Icon icon={CloseIcon} size={14} />
           Exit
         </Button>
         <span className="whitespace-nowrap bg-ink/70 px-2 py-0.5 font-mono text-[10px] font-bold tracking-wider tabular-nums text-paper">
@@ -277,10 +277,9 @@ export function ImageFocusPlayer({
           aria-label="Settings"
           className="pointer-events-auto"
         >
-          <HugeiconsIcon
-            icon={Configuration01FreeIcons}
+          <Icon
+            icon={SettingsIcon}
             size={14}
-            strokeWidth={2.5}
           />
         </Button>
       </motion.div>
@@ -317,10 +316,9 @@ export function ImageFocusPlayer({
               disabled={pos === 0}
               aria-label="Previous sign"
             >
-              <HugeiconsIcon
-                icon={ArrowLeft01FreeIcons}
+              <Icon
+                icon={ChevronLeftIcon}
                 size={14}
-                strokeWidth={2.5}
               />
             </Button>
             <Button
@@ -328,10 +326,9 @@ export function ImageFocusPlayer({
               size="sm"
               onClick={() => (running ? s.pause() : s.resume())}
             >
-              <HugeiconsIcon
-                icon={running ? PauseFreeIcons : PlayFreeIcons}
+              <Icon
+                icon={running ? PauseIcon : PlayIcon}
                 size={14}
-                strokeWidth={2.5}
               />
               {running ? "Pause" : "Resume"}
             </Button>
@@ -341,10 +338,9 @@ export function ImageFocusPlayer({
               onClick={() => s.start(s.runScope)}
               aria-label="Restart"
             >
-              <HugeiconsIcon
-                icon={RefreshFreeIcons}
+              <Icon
+                icon={RefreshIcon}
                 size={14}
-                strokeWidth={2.5}
               />
             </Button>
             <Button
@@ -354,10 +350,9 @@ export function ImageFocusPlayer({
               aria-label="Skip / next sign"
             >
               Skip
-              <HugeiconsIcon
-                icon={ArrowRight01FreeIcons}
+              <Icon
+                icon={ChevronRightIcon}
                 size={14}
-                strokeWidth={2.5}
               />
             </Button>
           </motion.div>
@@ -381,10 +376,9 @@ export function ImageFocusPlayer({
               transition={{ ...transition.enter, delay: 0.04 }}
             >
               <Button variant="paper" size="lg" onClick={() => s.resume()}>
-                <HugeiconsIcon
-                  icon={PlayFreeIcons}
+                <Icon
+                  icon={PlayIcon}
                   size={18}
-                  strokeWidth={2.5}
                 />
                 Resume
               </Button>
@@ -477,10 +471,9 @@ export function ImageFocusPlayer({
                     size="sm"
                     onClick={() => s.replayRegionAudio()}
                   >
-                    <HugeiconsIcon
-                      icon={VolumeHighFreeIcons}
+                    <Icon
+                      icon={SoundIcon}
                       size={14}
-                      strokeWidth={2.5}
                     />
                     Replay sound
                   </Button>
@@ -495,10 +488,9 @@ export function ImageFocusPlayer({
                       className="flex-1"
                       onClick={() => s.gradeAndNext("knew")}
                     >
-                      <HugeiconsIcon
-                        icon={Tick02FreeIcons}
+                      <Icon
+                        icon={CheckIcon}
                         size={14}
-                        strokeWidth={2.75}
                       />
                       Knew it
                     </Button>
@@ -507,10 +499,9 @@ export function ImageFocusPlayer({
                       className="flex-1"
                       onClick={() => s.gradeAndNext("missed")}
                     >
-                      <HugeiconsIcon
-                        icon={Cancel01FreeIcons}
+                      <Icon
+                        icon={CloseIcon}
                         size={14}
-                        strokeWidth={2.75}
                       />
                       Missed it
                     </Button>
@@ -523,10 +514,9 @@ export function ImageFocusPlayer({
               ) : (
                 <motion.div variants={ANSWER_ITEM} className="flex gap-2 pt-1">
                   <Button variant="paper" onClick={() => s.prev()}>
-                    <HugeiconsIcon
-                      icon={ArrowLeft01FreeIcons}
+                    <Icon
+                      icon={ChevronLeftIcon}
                       size={14}
-                      strokeWidth={2.5}
                     />
                     Prev
                   </Button>
@@ -536,10 +526,9 @@ export function ImageFocusPlayer({
                     onClick={() => s.next()}
                   >
                     Next
-                    <HugeiconsIcon
-                      icon={ArrowRight01FreeIcons}
+                    <Icon
+                      icon={ChevronRightIcon}
                       size={14}
-                      strokeWidth={2.5}
                     />
                   </Button>
                 </motion.div>

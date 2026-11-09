@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { Icon } from "~/components/brand/icon";
 import {
-  ArrowLeft02FreeIcons,
-  ImageCropFreeIcons,
-  Menu01FreeIcons,
-} from "@hugeicons/core-free-icons";
+  ArrowLeftIcon,
+  CropIcon,
+  MenuIcon,
+} from "~/components/brand/icons";
 
 import type { Route } from "./+types/tools-layout";
 
@@ -78,10 +78,9 @@ function ToolNav({ onNavigate }: { onNavigate?: () => void }) {
         );
         const inner = (
           <>
-            <HugeiconsIcon
+            <Icon
               icon={tool.icon}
               size={18}
-              strokeWidth={2}
               className="mt-px shrink-0"
             />
             <span className="min-w-0">
@@ -124,10 +123,9 @@ function ToolNav({ onNavigate }: { onNavigate?: () => void }) {
           "outline-none transition-colors duration-100 hover:text-ink focus-visible:text-ink",
         )}
       >
-        <HugeiconsIcon
-          icon={ArrowLeft02FreeIcons}
+        <Icon
+          icon={ArrowLeftIcon}
           size={13}
-          strokeWidth={2.5}
         />
         Back to site
       </Link>
@@ -142,7 +140,7 @@ function SidebarHeader() {
       className="flex items-center gap-2.5 border-b-2 border-ink bg-ink px-4 py-3.5 text-paper outline-none"
     >
       <span className="flex size-7 items-center justify-center border-2 border-paper bg-paper text-ink">
-        <HugeiconsIcon icon={ImageCropFreeIcons} size={15} strokeWidth={2.25} />
+        <Icon icon={CropIcon} size={15} />
       </span>
       <span className="leading-none">
         <span className="block font-display text-[13px] font-extrabold uppercase tracking-wide">
@@ -173,10 +171,9 @@ export default function ToolsLayout() {
       <header className="sticky top-0 z-30 flex items-center justify-between border-b-2 border-ink bg-surface px-4 py-3 md:hidden">
         <Link to="/tools" className="flex items-center gap-2 outline-none">
           <span className="flex size-7 items-center justify-center border-2 border-ink bg-ink text-paper">
-            <HugeiconsIcon
-              icon={ImageCropFreeIcons}
+            <Icon
+              icon={CropIcon}
               size={14}
-              strokeWidth={2.25}
             />
           </span>
           <span className="font-display text-[13px] font-extrabold uppercase tracking-wide">
@@ -186,10 +183,9 @@ export default function ToolsLayout() {
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button variant="paper" size="sm" aria-label="Open tools menu">
-              <HugeiconsIcon
-                icon={Menu01FreeIcons}
+              <Icon
+                icon={MenuIcon}
                 size={16}
-                strokeWidth={2.5}
               />
               Tools
             </Button>

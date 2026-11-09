@@ -1,10 +1,10 @@
 import * as React from "react";
 import { Link } from "react-router";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { Icon } from "~/components/brand/icon";
 import {
-  ArrowRight02FreeIcons,
-  TrafficLightFreeIcons,
-} from "@hugeicons/core-free-icons";
+  ArrowRightIcon,
+  PelicanIcon,
+} from "~/components/brand/icons";
 
 import type { Route } from "./+types/blogs";
 
@@ -164,10 +164,9 @@ export default function BlogsIndex() {
                     <Button variant="rush" size="lg" asChild>
                       <Link to={`/blogs/${hero.slug}`}>
                         Read it
-                        <HugeiconsIcon
-                          icon={ArrowRight02FreeIcons}
+                        <Icon
+                          icon={ArrowRightIcon}
                           size={16}
-                          strokeWidth={2.5}
                         />
                       </Link>
                     </Button>
@@ -224,11 +223,7 @@ export default function BlogsIndex() {
             <div className="flex flex-wrap gap-3">
               <Button variant="rush" size="lg" asChild>
                 <Link to="/road-signs/pelican">
-                  <HugeiconsIcon
-                    icon={TrafficLightFreeIcons}
-                    size={18}
-                    strokeWidth={2.25}
-                  />
+                  <Icon icon={PelicanIcon} size={18} />
                   Train on the Pelican chart
                 </Link>
               </Button>

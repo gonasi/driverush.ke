@@ -1,11 +1,11 @@
 import { useEffect } from "react";
 import { Link } from "react-router";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { Icon } from "~/components/brand/icon";
 import {
-  ArrowLeft02FreeIcons,
-  BirdFreeIcons,
-  Configuration01FreeIcons,
-} from "@hugeicons/core-free-icons";
+  ArrowLeftIcon,
+  PelicanIcon,
+  SettingsIcon,
+} from "~/components/brand/icons";
 
 import type { Route } from "./+types/road-signs-3d";
 
@@ -92,10 +92,9 @@ export default function ThreeDSigns() {
               to="/road-signs"
               className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-ink-3 outline-none hover:text-ink focus-visible:text-ink"
             >
-              <HugeiconsIcon
-                icon={ArrowLeft02FreeIcons}
+              <Icon
+                icon={ArrowLeftIcon}
                 size={14}
-                strokeWidth={2.5}
               />
               All signs
             </Link>
@@ -129,10 +128,9 @@ export default function ThreeDSigns() {
                 size="lg"
                 onClick={() => setSettingsOpen(true)}
               >
-                <HugeiconsIcon
-                  icon={Configuration01FreeIcons}
+                <Icon
+                  icon={SettingsIcon}
                   size={16}
-                  strokeWidth={2.5}
                 />
                 Open settings
               </Button>
@@ -149,10 +147,9 @@ export default function ThreeDSigns() {
             </span>
             <Button variant="paper" size="sm" asChild>
               <Link to="/road-signs/pelican">
-                <HugeiconsIcon
-                  icon={BirdFreeIcons}
+                <Icon
+                  icon={PelicanIcon}
                   size={14}
-                  strokeWidth={2.5}
                 />
                 Pelican chart
               </Link>

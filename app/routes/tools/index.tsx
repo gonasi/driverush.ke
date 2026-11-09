@@ -1,6 +1,8 @@
 import { Link } from "react-router";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowRight02FreeIcons } from "@hugeicons/core-free-icons";
+import { Icon } from "~/components/brand/icon";
+import {
+  ArrowRightIcon,
+} from "~/components/brand/icons";
 
 import type { Route } from "./+types/index";
 
@@ -42,10 +44,9 @@ export default function ToolsIndex() {
             >
               <div className="flex items-start gap-4">
                 <div className="flex size-12 shrink-0 items-center justify-center border-2 border-ink bg-paper-3 text-ink">
-                  <HugeiconsIcon
+                  <Icon
                     icon={tool.icon}
                     size={24}
-                    strokeWidth={2.25}
                   />
                 </div>
                 <div className="min-w-0">
@@ -69,10 +70,9 @@ export default function ToolsIndex() {
                   <Button variant="ink" size="lg" asChild>
                     <Link to={tool.path}>
                       Open
-                      <HugeiconsIcon
-                        icon={ArrowRight02FreeIcons}
+                      <Icon
+                        icon={ArrowRightIcon}
                         size={16}
-                        strokeWidth={2.5}
                       />
                     </Link>
                   </Button>

@@ -7,6 +7,7 @@ import Body from "~/guides/ntsa-test.mdx";
 import { breadcrumbLd, graphLd, guideLd, pageMeta } from "~/lib/site";
 
 import { GuideLayout } from "~/components/brand/guide-layout";
+import { RoundDoneScene } from "~/components/brand/art/scenes";
 
 const PATH = "/ntsa-test";
 const CHECKED = "2026-11-05";
@@ -35,6 +36,7 @@ export function meta(_: Route.MetaArgs) {
 export default function NtsaTest() {
   return (
     <GuideLayout
+      art={<RoundDoneScene />}
       kicker="Guide · NTSA test"
       title={
         <>

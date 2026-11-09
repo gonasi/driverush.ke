@@ -1,7 +1,9 @@
 import * as React from "react";
 import { Dialog as DialogPrimitive } from "radix-ui";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Cancel01FreeIcons } from "@hugeicons/core-free-icons";
+import { Icon } from "~/components/brand/icon";
+import {
+  CloseIcon,
+} from "~/components/brand/icons";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "~/lib/utils";
@@ -84,10 +86,9 @@ function SheetContent({
               "focus-visible:bg-ink focus-visible:text-paper",
             )}
           >
-            <HugeiconsIcon
-              icon={Cancel01FreeIcons}
+            <Icon
+              icon={CloseIcon}
               size={14}
-              strokeWidth={2.5}
             />
           </DialogPrimitive.Close>
         )}

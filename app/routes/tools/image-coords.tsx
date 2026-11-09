@@ -1,17 +1,18 @@
 import * as React from "react";
 import { useFetcher } from "react-router";
-import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import { Icon } from "~/components/brand/icon";
+import type { IconDef } from "~/components/brand/icons";
 import { toast } from "sonner";
 import {
-  ArrowDown01FreeIcons,
-  ArrowUp01FreeIcons,
-  Copy01FreeIcons,
-  Delete02FreeIcons,
-  Download01FreeIcons,
-  FloppyDiskFreeIcons,
-  Image02FreeIcons,
-  PencilEdit01FreeIcons,
-} from "@hugeicons/core-free-icons";
+  ChevronDownIcon,
+  ChevronUpIcon,
+  CopyIcon,
+  DeleteIcon,
+  DownloadIcon,
+  SaveIcon,
+  ImageIcon,
+  EditIcon,
+} from "~/components/brand/icons";
 
 import type { Route } from "./+types/image-coords";
 
@@ -381,7 +382,7 @@ export default function ImageCoordsTool({ loaderData }: Route.ComponentProps) {
       {/* ---- Status bar ---- */}
       <section className="flex flex-wrap items-center justify-between gap-3 border-2 border-ink bg-paper-3 px-4 py-3">
         <span className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
-          <HugeiconsIcon icon={Image02FreeIcons} size={13} strokeWidth={2} />
+          <Icon icon={ImageIcon} size={13} />
           {ROAD_SIGNS_IMAGE_SRC}
           {" · "}
           {naturalSize
@@ -404,10 +405,9 @@ export default function ImageCoordsTool({ loaderData }: Route.ComponentProps) {
             onClick={saveToProject}
             disabled={!canSave || !dirty || saving}
           >
-            <HugeiconsIcon
-              icon={FloppyDiskFreeIcons}
+            <Icon
+              icon={SaveIcon}
               size={14}
-              strokeWidth={2.5}
             />
             {saving ? "Saving…" : "Save to project"}
           </Button>
@@ -510,19 +510,19 @@ export default function ImageCoordsTool({ loaderData }: Route.ComponentProps) {
                     <div className="flex shrink-0 items-center gap-1">
                       <IconBtn
                         label="Move up"
-                        icon={ArrowUp01FreeIcons}
+                        icon={ChevronUpIcon}
                         disabled={i === 0}
                         onClick={() => moveRegion(r.id, -1)}
                       />
                       <IconBtn
                         label="Move down"
-                        icon={ArrowDown01FreeIcons}
+                        icon={ChevronDownIcon}
                         disabled={i === regions.length - 1}
                         onClick={() => moveRegion(r.id, 1)}
                       />
                       <IconBtn
                         label="Edit crop"
-                        icon={PencilEdit01FreeIcons}
+                        icon={EditIcon}
                         onClick={() => {
                           setEditingRegionId(r.id);
                           setSelectedRegionId(r.id);
@@ -531,7 +531,7 @@ export default function ImageCoordsTool({ loaderData }: Route.ComponentProps) {
                       />
                       <IconBtn
                         label="Delete"
-                        icon={Delete02FreeIcons}
+                        icon={DeleteIcon}
                         danger
                         onClick={() => deleteRegion(r.id)}
                       />
@@ -601,18 +601,16 @@ export default function ImageCoordsTool({ loaderData }: Route.ComponentProps) {
           </h2>
           <div className="flex flex-wrap gap-2">
             <Button variant="ink" size="sm" onClick={copyJson}>
-              <HugeiconsIcon
-                icon={Copy01FreeIcons}
+              <Icon
+                icon={CopyIcon}
                 size={14}
-                strokeWidth={2.5}
               />
               {copied ? "Copied!" : "Copy"}
             </Button>
             <Button variant="paper" size="sm" onClick={downloadJson}>
-              <HugeiconsIcon
-                icon={Download01FreeIcons}
+              <Icon
+                icon={DownloadIcon}
                 size={14}
-                strokeWidth={2.5}
               />
               Download
             </Button>
@@ -671,7 +669,7 @@ function IconBtn({
   danger,
 }: {
   label: string;
-  icon: IconSvgElement;
+  icon: IconDef;
   onClick: () => void;
   disabled?: boolean;
   danger?: boolean;
@@ -690,7 +688,7 @@ function IconBtn({
         danger && "hover:bg-rush focus-visible:bg-rush",
       )}
     >
-      <HugeiconsIcon icon={icon} size={13} strokeWidth={2.25} />
+      <Icon icon={icon} size={13} />
     </button>
   );
 }

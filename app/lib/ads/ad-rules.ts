@@ -16,8 +16,12 @@ import type {
  */
 
 export const AD_RULES = {
-  // Off for now. This is the one switch: while it's false the AdSense script never
-  // loads, the session timer never starts and triggers do nothing.
+  // The custom interstitial modal (forced 10s countdown before close). Kept
+  // off: AdSense policy doesn't allow Google ads in custom pop-ups, and
+  // countdown prestitials fail the Better Ads standard on mobile. Site ads run
+  // through `ADSENSE_LIVE` in ad-constants.ts instead (Auto ads + inline
+  // units). While this is false the session timer never starts and triggers
+  // do nothing.
   enabled: false,
 } as const;
 

@@ -23,6 +23,7 @@ import { SignClassList } from "~/components/brand/sign-class-list";
 import { SiteFooter } from "~/components/brand/site-footer";
 import { SiteNav } from "~/components/brand/site-nav";
 import { TrainerCards } from "~/components/home/trainer-cards";
+import { InlineAd } from "~/components/brand/inline-ad";
 
 const PATH = "/road-signs";
 /** Classes the trainers don't drill, so the text reference is all there is. */
@@ -240,6 +241,8 @@ export default function RoadSigns() {
               </figure>
             </details>
           </section>
+
+          <InlineAd />
 
           <section className="dr-reveal mt-14 scroll-mt-8" id="more">
             <SectionHead

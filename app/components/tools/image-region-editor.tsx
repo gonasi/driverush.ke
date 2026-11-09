@@ -1,12 +1,12 @@
 import * as React from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { Icon } from "~/components/brand/icon";
 import {
-  Add01FreeIcons,
-  Cancel01FreeIcons,
-  GridViewFreeIcons,
-  PencilEdit01FreeIcons,
-  Tick02FreeIcons,
-} from "@hugeicons/core-free-icons";
+  PlusIcon,
+  CloseIcon,
+  GridIcon,
+  EditIcon,
+  CheckIcon,
+} from "~/components/brand/icons";
 import Cropper, {
   type Area,
   type MediaSize,
@@ -191,7 +191,7 @@ function RegionCropper({
             checked={showGrid}
             onCheckedChange={(c) => setShowGrid(c === true)}
           />
-          <HugeiconsIcon icon={GridViewFreeIcons} size={13} strokeWidth={2} />
+          <Icon icon={GridIcon} size={13} />
           Grid
         </label>
         <label className="flex cursor-pointer items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-ink-2">
@@ -210,11 +210,11 @@ function RegionCropper({
 
       <div className="flex flex-wrap gap-2.5 border-t-2 border-dashed border-ink pt-4">
         <Button variant="rush" onClick={handleConfirm} disabled={!croppedArea}>
-          <HugeiconsIcon icon={Tick02FreeIcons} size={16} strokeWidth={2.5} />
+          <Icon icon={CheckIcon} size={16} />
           {region ? "Update box" : "Add region"}
         </Button>
         <Button variant="ghost" onClick={onCancel}>
-          <HugeiconsIcon icon={Cancel01FreeIcons} size={16} strokeWidth={2.5} />
+          <Icon icon={CloseIcon} size={16} />
           Cancel
         </Button>
       </div>
@@ -281,7 +281,7 @@ export function ImageRegionEditor({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2.5">
         <Button variant="ink" onClick={onRequestNewRegion}>
-          <HugeiconsIcon icon={Add01FreeIcons} size={16} strokeWidth={2.5} />
+          <Icon icon={PlusIcon} size={16} />
           New region
         </Button>
         <span className="font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
@@ -345,10 +345,9 @@ export function ImageRegionEditor({
               >
                 {r.index + 1}
               </span>
-              <HugeiconsIcon
-                icon={PencilEdit01FreeIcons}
+              <Icon
+                icon={EditIcon}
                 size={12}
-                strokeWidth={2.5}
                 className={cn(
                   "absolute right-0.5 top-0.5 opacity-0 transition-opacity group-hover/box:opacity-100",
                   active

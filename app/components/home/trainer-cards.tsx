@@ -6,11 +6,11 @@
  */
 import * as React from "react";
 import { Link } from "react-router";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { Icon } from "~/components/brand/icon";
 import {
-  ArrowRight02FreeIcons,
-  ThreeDViewFreeIcons,
-} from "@hugeicons/core-free-icons";
+  ArrowRightIcon,
+  Sign3DIcon,
+} from "~/components/brand/icons";
 
 import pelican from "~/data/road-signs-pelican.json";
 import type { FocusRegion } from "~/lib/image-focus";
@@ -125,7 +125,7 @@ function SpinPreview() {
         className="dr-sway block size-full object-cover"
       />
       <span className="absolute bottom-1.5 right-1.5 inline-flex items-center gap-1 border-2 border-ink bg-surface px-1.5 py-0.5 font-mono text-[9.5px] uppercase tracking-widest text-ink shadow-stamp-xs transition-colors group-hover:bg-amber group-hover:text-amber-foreground sm:text-[10.5px]">
-        <HugeiconsIcon icon={ThreeDViewFreeIcons} size={12} strokeWidth={2.5} />
+        <Icon icon={Sign3DIcon} size={12} />
         Tap to spin
       </span>
     </button>
@@ -176,10 +176,9 @@ export function TrainerCards({ firstStep = 0 }: { firstStep?: number }) {
               <Button variant="rush" asChild className="mt-1.5 w-full px-2">
                 <Link to={trainerHref(game.to, { go: true })}>
                   {started ? "Continue" : `Start ${ROUND_SIZE} signs`}
-                  <HugeiconsIcon
-                    icon={ArrowRight02FreeIcons}
+                  <Icon
+                    icon={ArrowRightIcon}
                     size={14}
-                    strokeWidth={2.5}
                     className="dr-arrow hidden sm:inline"
                   />
                 </Link>

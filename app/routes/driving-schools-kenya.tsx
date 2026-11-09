@@ -8,6 +8,7 @@ import Body from "~/guides/driving-schools.mdx";
 import { breadcrumbLd, graphLd, guideLd, pageMeta } from "~/lib/site";
 
 import { GuideLayout } from "~/components/brand/guide-layout";
+import { LearnerScene } from "~/components/brand/art/scenes";
 
 const PATH = "/driving-schools-kenya";
 const CHECKED = "2026-11-05";
@@ -59,6 +60,7 @@ export function meta(_: Route.MetaArgs) {
 export default function DrivingSchoolsKenya() {
   return (
     <GuideLayout
+      art={<LearnerScene />}
       kicker="Guide · Driving schools"
       title={
         <>

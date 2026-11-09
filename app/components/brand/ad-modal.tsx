@@ -1,6 +1,8 @@
 import * as React from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowRight02FreeIcons } from "@hugeicons/core-free-icons";
+import { Icon } from "~/components/brand/icon";
+import {
+  ArrowRightIcon,
+} from "~/components/brand/icons";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -116,10 +118,9 @@ export function AdModal() {
             {canDismiss ? (
               <Button variant="rush" size="lg" onClick={() => dismiss()}>
                 Continue
-                <HugeiconsIcon
-                  icon={ArrowRight02FreeIcons}
+                <Icon
+                  icon={ArrowRightIcon}
                   size={16}
-                  strokeWidth={2.5}
                 />
               </Button>
             ) : (

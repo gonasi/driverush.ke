@@ -19,11 +19,9 @@
  */
 import { Link } from "react-router";
 import * as React from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  ArrowRight02FreeIcons,
-  Award01FreeIcons,
-} from "@hugeicons/core-free-icons";
+import { Icon } from "~/components/brand/icon";
+import { ArrowRightIcon } from "~/components/brand/icons";
+import { SignIcon } from "~/components/brand/art/sign-glyphs";
 
 import type { Route } from "./+types/share-landing";
 
@@ -94,13 +92,7 @@ export default function ShareLanding({ loaderData }: Route.ComponentProps) {
       <main className="mx-auto w-full max-w-3xl px-5 py-14 sm:px-9 sm:py-20">
         <div className="grid justify-items-center gap-6 border-2 border-ink bg-surface px-6 py-12 text-center shadow-stamp sm:px-10">
           {resolved.valid && (
-            <span className="flex size-16 items-center justify-center border-2 border-ink bg-kenya-green text-kenya-green-foreground">
-              <HugeiconsIcon
-                icon={Award01FreeIcons}
-                size={30}
-                strokeWidth={2.25}
-              />
-            </span>
+            <SignIcon name="finish" size={64} />
           )}
           <div>
             <p className="m-0 font-mono text-[11px] uppercase tracking-widest text-ink-3">
@@ -117,10 +109,9 @@ export default function ShareLanding({ loaderData }: Route.ComponentProps) {
             <Button variant="rush" size="lg" asChild>
               <Link to={resolved.ctaHref}>
                 {resolved.ctaLabel}
-                <HugeiconsIcon
-                  icon={ArrowRight02FreeIcons}
+                <Icon
+                  icon={ArrowRightIcon}
                   size={16}
-                  strokeWidth={2.5}
                 />
               </Link>
             </Button>

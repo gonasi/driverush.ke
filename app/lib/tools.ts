@@ -4,14 +4,14 @@
  * utilities for *producing* that content. The sidebar in
  * `app/routes/tools/_layout.tsx` and the `/tools` landing both render this list.
  */
-import type { IconSvgElement } from "@hugeicons/react";
+import type { IconDef } from "~/components/brand/icons";
 import {
-  ImageCropFreeIcons,
-  Image02FreeIcons,
-  Link04FreeIcons,
-  ThreeDViewFreeIcons,
-  VolumeHighFreeIcons,
-} from "@hugeicons/core-free-icons";
+  CropIcon,
+  ImageIcon,
+  LinkIcon,
+  Sign3DIcon,
+  SoundIcon,
+} from "~/components/brand/icons";
 
 export type ToolStatus = "live" | "soon";
 
@@ -23,7 +23,7 @@ export type Tool = {
   title: string;
   /** One-line description for the sidebar / landing card. */
   blurb: string;
-  icon: IconSvgElement;
+  icon: IconDef;
   status: ToolStatus;
 };
 
@@ -34,7 +34,7 @@ export const TOOLS: Tool[] = [
     title: "Image coordinates",
     blurb:
       "Map focus regions on the road-sign sheet — drag a crop box, set the name & metadata, preview the zoom-and-blur playback, then save to app/data/road-signs-pelican.json (the trainer's source of truth).",
-    icon: ImageCropFreeIcons,
+    icon: CropIcon,
     status: "live",
   },
   {
@@ -43,7 +43,7 @@ export const TOOLS: Tool[] = [
     title: "3D sign mapper",
     blurb:
       "Preview each road-sign GLB, tune its name, note, audio and 3D framing (yaw / pitch / zoom), reorder, then save to app/data/road-signs-3d.json — the 3D trainer's source of truth. Flags any model that isn't mapped yet.",
-    icon: ThreeDViewFreeIcons,
+    icon: Sign3DIcon,
     status: "live",
   },
   {
@@ -52,7 +52,7 @@ export const TOOLS: Tool[] = [
     title: "Share builder",
     blurb:
       "Tag any DriveRush link with UTMs before posting — pick a channel preset, set the campaign, copy the tagged URL. Keeps GA attribution clean and the campaign vocabulary consistent.",
-    icon: Link04FreeIcons,
+    icon: LinkIcon,
     status: "live",
   },
   {
@@ -61,7 +61,7 @@ export const TOOLS: Tool[] = [
     title: "Sprite slicer",
     blurb:
       "Cut a sign sheet into individual PNG/SVG assets with consistent padding. Planned.",
-    icon: Image02FreeIcons,
+    icon: ImageIcon,
     status: "soon",
   },
   {
@@ -70,7 +70,7 @@ export const TOOLS: Tool[] = [
     title: "Audio namer",
     blurb:
       "Record or attach the spoken name for each sign and batch-export the audio map. Planned.",
-    icon: VolumeHighFreeIcons,
+    icon: SoundIcon,
     status: "soon",
   },
 ];

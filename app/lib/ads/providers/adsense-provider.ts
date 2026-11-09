@@ -1,4 +1,4 @@
-import { AD_CLIENT, AD_SLOTS } from "../ad-constants";
+import { AD_CLIENT, AD_SLOTS, ADSENSE_SRC } from "../ad-constants";
 import type { AdProvider, AdSlotId } from "../ad-types";
 
 /**
@@ -11,8 +11,6 @@ import type { AdProvider, AdSlotId } from "../ad-types";
  *
  * Dev gets the mock provider so flows are testable without real ad traffic.
  */
-
-const ADSENSE_SRC = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${AD_CLIENT}`;
 
 declare global {
   interface Window {

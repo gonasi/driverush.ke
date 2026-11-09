@@ -1,11 +1,11 @@
 import * as React from "react";
 import {
-  FocusPointFreeIcons,
-  ShuffleFreeIcons,
-  Tick02FreeIcons,
-  TrafficLightFreeIcons,
-  VolumeHighFreeIcons,
-} from "@hugeicons/core-free-icons";
+  FocusIcon,
+  ShuffleIcon,
+  CheckIcon,
+  TrafficLightIcon,
+  SoundIcon,
+} from "~/components/brand/icons";
 
 import {
   SIGN_CATEGORIES,
@@ -97,7 +97,7 @@ export function PelicanSettingsSheet() {
           <SettingSection
             title="What to practise"
             description={`${practiceCount} of ${regions.length} sign${regions.length === 1 ? "" : "s"}`}
-            icon={TrafficLightFreeIcons}
+            icon={TrafficLightIcon}
             action={
               <ChipToggle
                 active={allSelected}
@@ -131,7 +131,7 @@ export function PelicanSettingsSheet() {
           </SettingSection>
 
           {/* ---- Order ---- */}
-          <SettingSection title="Order" icon={ShuffleFreeIcons}>
+          <SettingSection title="Order" icon={ShuffleIcon}>
             <SelectRow
               label="Sign order"
               value={settings.order}
@@ -153,7 +153,7 @@ export function PelicanSettingsSheet() {
           </SettingSection>
 
           {/* ---- Reveal ---- */}
-          <SettingSection title="Reveal" icon={FocusPointFreeIcons}>
+          <SettingSection title="Reveal" icon={FocusIcon}>
             <SelectRow
               label="Reveal mode"
               value={settings.revealMode}
@@ -199,7 +199,7 @@ export function PelicanSettingsSheet() {
           </SettingSection>
 
           {/* ---- Self-grading ---- */}
-          <SettingSection title="Self-grading" icon={Tick02FreeIcons}>
+          <SettingSection title="Self-grading" icon={CheckIcon}>
             <ToggleRow
               label="Track what you know"
               description="After each sign, mark whether you knew it"
@@ -234,7 +234,7 @@ export function PelicanSettingsSheet() {
           </SettingSection>
 
           {/* ---- Audio & visuals ---- */}
-          <SettingSection title="Audio & visuals" icon={VolumeHighFreeIcons}>
+          <SettingSection title="Audio & visuals" icon={SoundIcon}>
             <ToggleRow
               label="Play sound"
               description="Camera whoosh, reveal chime, and a sign's audio (if it has one)"
