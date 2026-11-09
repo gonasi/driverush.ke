@@ -43,7 +43,7 @@ const CHART_BY_CODE = new Map(
   (pelican.regions as FocusRegion[]).map((r) => [r.code, r]),
 );
 const THUMBNAILS_SHOWN = 6;
-const THUMB_PAD = 0.1;
+const THUMB_PAD = 0;
 
 export type MissedSign = { id: string; code?: string; name: string };
 

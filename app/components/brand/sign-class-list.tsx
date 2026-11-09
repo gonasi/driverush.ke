@@ -16,7 +16,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Accordion, AccordionItem } from "~/components/brand/accordion";
 
-const THUMB_PAD = 0.1;
+const THUMB_PAD = 0;
 
 /** Classes that actually have signs, in the chart's order. */
 const CLASSES = SIGN_CATEGORIES.map((category) => ({

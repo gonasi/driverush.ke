@@ -32,8 +32,8 @@ const CHART_SRC = pelican.imageSrc as string;
 const ROUND_SIZE = 10;
 const OPTION_COUNT = 4;
 
-/** Trims the printed sign code off the crop, so it can't give the answer away. */
-const CROP_PAD = 0.1;
+/** Regions are measured to the sign's edges (code label excluded), so no trim. */
+const CROP_PAD = 0;
 
 function shuffled<T>(items: readonly T[]): T[] {
   const out = [...items];

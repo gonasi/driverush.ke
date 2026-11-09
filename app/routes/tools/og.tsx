@@ -54,10 +54,10 @@ function region(code: string): Region | undefined {
 }
 
 /**
- * The same sprite maths the trainers use, pulled in a little so the printed sign
- * code and neighbouring sign stay out of frame at poster size.
+ * The same sprite maths the trainers use. Regions are measured to each sign's
+ * edges with a small margin, so the code label and neighbours stay out of frame.
  */
-function crop(r: Region, pad = 0.11): React.CSSProperties {
+function crop(r: Region, pad = 0): React.CSSProperties {
   return regionSpriteStyle(r, SHEET, pad);
 }
 
@@ -170,9 +170,6 @@ function DefaultCard() {
 }
 
 function PelicanCard() {
-  // Two signs that frame cleanly on the sheet. The trainer's region boxes are
-  // hand-placed, so some signs sit high in their box and crop badly at poster
-  // size; these two don't.
   const signs = ["R.1", "P.1", "M.1"].map(region).filter(Boolean) as Region[];
   return (
     <Card
@@ -190,9 +187,7 @@ function PelicanCard() {
           {signs.map((r) => (
             <span
               key={r.id}
-              // Negative pad widens the box: at this size the sign needs air
-              // around it, and the sheet's own gutter provides it.
-              style={crop(r, 0.03)}
+              style={crop(r)}
               className="size-[196px] border-2 border-paper bg-paper"
             />
           ))}

@@ -13,9 +13,9 @@ export type SignPage = FocusRegion & {
   slug: string;
   detail: string;
   /**
-   * The sign's exact edges on the chart. The trainers' regions are looser hand-placed
-   * boxes, so a crop from those clips some signs and catches their neighbours. These
-   * were measured from the chart, and need re-measuring if the chart is redrawn.
+   * The sign's exact edges on the chart, measured from the SVG geometry. The
+   * trainers' regions are the same boxes plus a 5px margin. Both need
+   * re-measuring if the chart is redrawn.
    */
   crop: RegionBox;
 };
