@@ -11,7 +11,7 @@ to date when an asset or an agreement changes. No personal contact details here.
 - **In writing:** _to fill in: where the confirmation is kept_
 
 ## Chart and 3D models
-- **Made by:** the DriveRush team, in-house. Files: `public/assets/road-signs/road-signs.svg`, `public/assets/road-signs/models/`.
+- **Made by:** the DriveRush team, in-house. Files: `public/assets/road-signs/road-signs.v2.svg`, `public/assets/road-signs/models/`.
 - **Contractors:** _to fill in: anyone paid to draw or model these, and where the assignment of rights is kept_
 - Do not credit Pelican Signs as the author of this artwork.
 - **Missing:** the 3D model for M.5 (Pass to the left). `M_5.glb` was an exact copy of the M.7 bicycle, so it was deleted and M.5 is out of the 3D trainer until it's re-exported. Add it back in `app/data/road-signs-3d.json` or `/tools/sign-3d`. The chart trainer still has M.5.

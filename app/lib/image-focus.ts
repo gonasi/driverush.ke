@@ -14,7 +14,7 @@
 import type { CSSProperties } from "react";
 
 /** The one road-sign sheet every trainer board zooms into. Lives in `public/`. */
-export const ROAD_SIGNS_IMAGE_SRC = "/assets/road-signs/road-signs.svg";
+export const ROAD_SIGNS_IMAGE_SRC = "/assets/road-signs/road-signs.v2.svg";
 
 /**
  * Kenyan road-sign categories (NTSA Highway Code), keyed by the official code
@@ -198,7 +198,7 @@ export type ImageFocusSettings = {
 
 /** A complete authored board: the image + its settings + its regions. */
 export type ImageFocusData = {
-  /** Image URL/path, e.g. `/assets/road-signs/road-signs.svg`. */
+  /** Image URL/path, e.g. `/assets/road-signs/road-signs.v2.svg`. */
   imageSrc: string;
   /** Intrinsic image width in px (for reference / coordinate sanity checks). */
   imageWidth: number;

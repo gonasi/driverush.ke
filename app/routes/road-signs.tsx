@@ -227,7 +227,7 @@ export default function RoadSigns() {
               </summary>
               <figure className="bg-white p-3 sm:p-5">
                 <img
-                  src="/assets/road-signs/road-signs.svg"
+                  src="/assets/road-signs/road-signs.v2.svg"
                   alt="Kenyan road signs chart: warning, regulatory, mandatory, information, traffic-light and road-marking signs used on Kenya's roads and in the NTSA test"
                   width={1920}
                   height={1080}
