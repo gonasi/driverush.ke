@@ -5,6 +5,7 @@
  */
 import crops from "~/data/road-sign-crops.json";
 import { SIGN_DETAILS } from "~/data/road-sign-details";
+import { SIGN_GUIDES, type SignGuide } from "~/data/road-sign-guides";
 import pelican from "~/data/road-signs-pelican.json";
 import signs3d from "~/data/road-signs-3d.json";
 import type { FocusRegion, RegionBox, SignCategoryId } from "~/lib/image-focus";
@@ -40,6 +41,7 @@ export const SIGN_PAGES: SignPage[] = (pelican.regions as FocusRegion[]).map(
 );
 
 const BY_SLUG = new Map(SIGN_PAGES.map((sign) => [sign.slug, sign]));
+const BY_CODE = new Map(SIGN_PAGES.map((sign) => [sign.code, sign]));
 const CODES_IN_3D = new Set(signs3d.signs.map((sign) => sign.code));
 
 export function signPageBySlug(slug: string | undefined): SignPage | undefined {
@@ -102,6 +104,17 @@ const CONFIRMED_CODES = new Set([
 
 export function isSignConfirmed(sign: { code?: string }): boolean {
   return !!sign.code && CONFIRMED_CODES.has(sign.code);
+}
+
+export function signPageByCode(code: string): SignPage | undefined {
+  return BY_CODE.get(code);
+}
+
+/** The long-form write-up, for signs that are in search. */
+export function signGuide(sign: { code?: string }): SignGuide | undefined {
+  return sign.code && isSignConfirmed(sign)
+    ? SIGN_GUIDES[sign.code]
+    : undefined;
 }
 
 export function signPagePath(sign: { slug: string }): string {

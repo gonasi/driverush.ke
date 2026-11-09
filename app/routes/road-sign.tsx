@@ -14,6 +14,8 @@ import {
   isSignConfirmed,
   relatedSigns,
   SIGN_CLASS_GUIDE,
+  signGuide,
+  signPageByCode,
   signPageBySlug,
   signPagePath,
 } from "~/lib/road-sign-pages";
@@ -92,6 +94,11 @@ export default function RoadSign({ loaderData }: Route.ComponentProps) {
   const sign = signPageBySlug(loaderData.slug)!;
   const guide = SIGN_CLASS_GUIDE[sign.category!];
   const codes = sign.code ? [sign.code] : [];
+  const extra = signGuide(sign);
+  const lookAlikes = (extra?.confusedWith ?? []).flatMap(({ code, how }) => {
+    const other = signPageByCode(code);
+    return other ? [{ other, how }] : [];
+  });
 
   return (
     <>
@@ -149,25 +156,64 @@ export default function RoadSign({ loaderData }: Route.ComponentProps) {
             </div>
           </header>
 
-          <section className="mt-10 grid gap-6 border-t-2 border-ink pt-8 font-serif text-[18px] leading-relaxed text-ink-2">
-            <div>
-              <h2 className="m-0 mb-2 font-display text-xl font-extrabold uppercase tracking-tight text-ink">
-                What it means
-              </h2>
+          <section className="mt-10 grid gap-8 border-t-2 border-ink pt-8 font-serif text-[18px] leading-relaxed text-ink-2">
+            {extra && (
+              <Block title="What it looks like">
+                <p className="m-0">{extra.looks}</p>
+              </Block>
+            )}
+            <Block title="What it means">
               <p className="m-0">{sign.detail}</p>
-            </div>
-            <div>
-              <h2 className="m-0 mb-2 font-display text-xl font-extrabold uppercase tracking-tight text-ink">
-                What to do
-              </h2>
+            </Block>
+            <Block title="What to do">
               <p className="m-0">{sign.note}</p>
-            </div>
-            <div>
-              <h2 className="m-0 mb-2 font-display text-xl font-extrabold uppercase tracking-tight text-ink">
-                How to read {guide.label.toLowerCase()}
-              </h2>
+            </Block>
+            {extra && (
+              <>
+                <Block title="Where you'll see it in Kenya">
+                  <p className="m-0">{extra.where}</p>
+                </Block>
+                <Block title="Common mistakes">
+                  <ul className="m-0 grid list-disc gap-3 pl-5 marker:text-rush">
+                    {extra.mistakes.map((m) => (
+                      <li key={m}>{m}</li>
+                    ))}
+                  </ul>
+                </Block>
+                {lookAlikes.length > 0 && (
+                  <Block title="Don't mix it up with">
+                    <ul className="m-0 grid list-none gap-4 p-0">
+                      {lookAlikes.map(({ other, how }) => (
+                        <li
+                          key={other.slug}
+                          className="grid grid-cols-[56px_1fr] items-start gap-4"
+                        >
+                          <SignImage
+                            sign={other}
+                            className="size-14 border-2 border-ink"
+                          />
+                          <p className="m-0">
+                            <Link
+                              to={signPagePath(other)}
+                              className="font-sans font-semibold text-rush hover:underline"
+                            >
+                              {other.name} ({other.code})
+                            </Link>
+                            . {how}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  </Block>
+                )}
+                <Block title="How to remember it">
+                  <p className="m-0">{extra.remember}</p>
+                </Block>
+              </>
+            )}
+            <Block title={`How to read ${guide.label.toLowerCase()}`}>
               <p className="m-0">{guide.rule}</p>
-            </div>
+            </Block>
           </section>
 
           <InlineAd />
@@ -218,5 +264,22 @@ export default function RoadSign({ loaderData }: Route.ComponentProps) {
       </main>
       <SiteFooter />
     </>
+  );
+}
+
+function Block({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <h2 className="m-0 mb-2 font-display text-xl font-extrabold uppercase tracking-tight text-ink">
+        {title}
+      </h2>
+      {children}
+    </div>
   );
 }
