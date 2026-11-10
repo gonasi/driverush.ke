@@ -16,6 +16,7 @@ import {
   MEDIAN_START,
   RING_LANES,
   RING_OUTER_R,
+  SOLID_ZONE,
   armHalfWidth,
   laneBearing,
   lanePoint,
@@ -39,6 +40,7 @@ export const BOARD_COLORS = {
 
 const C = BOARD_COLORS;
 const LINE = 0.24;
+const KERB = 0.7;
 const DASH = "2.6 2.6";
 /** Arrows sit this far from the centre, numbers a little further back. */
 const ARROW_ALONG = 30;
@@ -122,22 +124,48 @@ function armLine(arm: Arm, offset: number, from: number, to: number): string {
   return `M${n(a.x)} ${n(a.z)} L${n(b.x)} ${n(b.z)}`;
 }
 
-function laneLines(arm: Arm): string {
-  const paths: string[] = [];
+/**
+ * Lane lines. Broken where you may change lanes; continuous on the way in to
+ * the roundabout, where you may not.
+ */
+function laneLines(arm: Arm): { broken: string; solid: string } {
+  const broken: string[] = [];
+  const solid: string[] = [];
   for (const side of [-1, 1]) {
     for (let k = 1; k < arm.lanes; k += 1) {
       const offset = side * (arm.medianHalf + k * LANE_W);
       const from = Math.sqrt(RING_OUTER_R ** 2 - offset ** 2);
-      paths.push(armLine(arm, offset, from, BOARD_HALF));
+      // A negative offset is the side driving toward the roundabout.
+      if (side < 0) {
+        solid.push(armLine(arm, offset, from, SOLID_ZONE));
+        broken.push(armLine(arm, offset, SOLID_ZONE, BOARD_HALF));
+      } else {
+        broken.push(armLine(arm, offset, from, BOARD_HALF));
+      }
     }
   }
-  return paths.join(" ");
+  return { broken: broken.join(" "), solid: solid.join(" ") };
+}
+
+/** A kerb painted in yellow and black blocks. */
+function striped(shape: string): string {
+  const base = `fill="none" stroke-width="${KERB}"`;
+  return (
+    shape.replace("/>", ` ${base} stroke="${C.kerbBlack}"/>`) +
+    shape.replace(
+      "/>",
+      ` ${base} stroke="${C.yellow}" stroke-dasharray="1.3 1.3"/>`,
+    )
+  );
 }
 
 function edgeLines(arm: Arm): string {
   const half = armHalfWidth(arm);
   const from = Math.sqrt(RING_OUTER_R ** 2 - half ** 2);
-  return [-1, 1].map((s) => armLine(arm, s * half, from, BOARD_HALF)).join(" ");
+  // Just outside the tarmac, so the kerb doesn't eat into lane 1.
+  return [-1, 1]
+    .map((s) => armLine(arm, s * (half + KERB / 2), from, BOARD_HALF))
+    .join(" ");
 }
 
 function centreMarking(arm: Arm): string {
@@ -150,7 +178,10 @@ function centreMarking(arm: Arm): string {
     return at(
       { x: arm.out.x * MEDIAN_START, z: arm.out.z * MEDIAN_START },
       bearing,
-      `<rect x="${n(-arm.medianHalf)}" y="${n(-len)}" width="${n(w)}" height="${n(len)}" rx="${n(arm.medianHalf)}" fill="${C.island}" stroke="${C.yellow}" stroke-width="0.3"/>`,
+      `<rect x="${n(-arm.medianHalf)}" y="${n(-len)}" width="${n(w)}" height="${n(len)}" rx="${n(arm.medianHalf)}" fill="${C.island}"/>` +
+        striped(
+          `<rect x="${n(-arm.medianHalf + 0.2)}" y="${n(-len)}" width="${n(w - 0.4)}" height="${n(len - 0.2)}" rx="${n(arm.medianHalf - 0.2)}"/>`,
+        ),
     );
   }
   // A double continuous yellow line: stay on your side.
@@ -229,6 +260,8 @@ export function boardSvg(options: BoardSvgOptions = {}): string {
       ? ` preserveAspectRatio="xMidYMid slice"`
       : "";
 
+  const lines = arms.map(laneLines);
+
   const ringLines = Array.from({ length: RING_LANES - 1 }, (_, i) => {
     const r = RING_OUTER_R - (i + 1) * LANE_W;
     return `<circle r="${n(r)}"/>`;
@@ -238,13 +271,16 @@ export function boardSvg(options: BoardSvgOptions = {}): string {
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${view}"${size}>`,
     `<rect x="${-BOARD_HALF}" y="${-BOARD_HALF}" width="${BOARD_HALF * 2}" height="${BOARD_HALF * 2}" fill="${C.grass}"/>`,
     `<g fill="${C.asphalt}">${arms.map(armRect).join("")}<circle r="${RING_OUTER_R}"/></g>`,
-    // Yellow kerb along every road edge.
-    `<path d="${arms.map(edgeLines).join(" ")}" fill="none" stroke="${C.yellow}" stroke-width="0.5"/>`,
+    // The yellow kerb along every road edge.
+    striped(`<path d="${arms.map(edgeLines).join(" ")}"/>`),
     // Broken white lines: lanes you may change between when it is clear.
-    `<path d="${arms.map(laneLines).join(" ")}" fill="none" stroke="${C.white}" stroke-width="${LINE}" stroke-dasharray="${DASH}"/>`,
+    `<path d="${lines.map((l) => l.broken).join(" ")}" fill="none" stroke="${C.white}" stroke-width="${LINE}" stroke-dasharray="${DASH}"/>`,
+    // Continuous white lines: no changing lanes this close to the roundabout.
+    `<path d="${lines.map((l) => l.solid).join(" ")}" fill="none" stroke="${C.white}" stroke-width="${LINE}"/>`,
     `<g fill="none" stroke="${C.white}" stroke-width="${LINE}" stroke-dasharray="${DASH}">${ringLines}<circle r="${n(RING_OUTER_R - 0.15)}"/></g>`,
     arms.map(centreMarking).join(""),
-    `<circle r="${ISLAND_R}" fill="${C.island}" stroke="${C.yellow}" stroke-width="0.5"/>`,
+    `<circle r="${ISLAND_R}" fill="${C.island}"/>`,
+    striped(`<circle r="${n(ISLAND_R - KERB / 2)}"/>`),
     ARM_ORDER.map(approachPaint).join(""),
     options.goal ? goalBox(options.goal) : "",
     (options.cars ?? [])

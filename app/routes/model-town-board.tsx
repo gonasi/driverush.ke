@@ -19,7 +19,7 @@ const PATH = "/model-town-board";
 const CHECKED = "2026-11-10";
 const TITLE = "Model Town Board Kenya: free practice trainer and guide";
 const DESCRIPTION =
-  "Drive the Model Town Board's roundabout in 3D and learn which lane to use for each turn, the roundabout rules and the three route rules. Free, no signup.";
+  "Drive the Model Town Board's roundabout and learn which lane to use for each turn, the roundabout rules and the three route rules. Free, no signup.";
 
 export function meta(_: Route.MetaArgs) {
   return [

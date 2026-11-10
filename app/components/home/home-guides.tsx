@@ -21,7 +21,7 @@ const GUIDES = [
   {
     to: "/model-town-board",
     title: "The Model Town Board",
-    blurb: "Drive the roundabout in 3D, then read the lane and route rules.",
+    blurb: "Drive the roundabout, then read the lane and route rules.",
   },
   {
     to: "/driving-schools-kenya",

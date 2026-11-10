@@ -195,6 +195,8 @@ export const analytics = {
   boardFaulted: (args: {
     challenge_id: string;
     rule: string;
+    /** Small mistakes cost a star; serious ones end the attempt. */
+    severity: "small" | "serious";
     /** 1 for the first fault on this challenge, and so on. */
     fault_number: number;
   }) => emit("board_faulted", args),

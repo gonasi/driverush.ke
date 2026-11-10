@@ -5,7 +5,7 @@ import { stagger } from "~/lib/motion";
 
 import { Badge } from "~/components/ui/badge";
 
-/** A still of the board. The 3D scene only loads on the trainer's own page. */
+/** A still of the board. The game itself only loads on the trainer's own page. */
 const POSTER = boardSvg({ cover: true });
 
 /**
@@ -31,7 +31,7 @@ export function BoardNotice() {
             Model Town Board
           </span>
           <span className="text-[14.5px] leading-snug text-ink-2">
-            Drive the roundabout in 3D. Pick your lane, take your exit, and
+            Drive the roundabout. Pick your lane, take your exit, and
             learn the rule when the examiner stops you. Free, no signup.
           </span>
         </span>

@@ -1,8 +1,8 @@
 /**
- * Client-only wrapper round the 3D board. The scene (and with it `three`) is
+ * Client-only wrapper round the game board. The stage (and with it PixiJS) is
  * pulled in with `React.lazy` after mount, so it never runs on the server and
- * only downloads once the learner has asked to drive. Until the road surface is
- * painted, the house traffic-light loader covers the canvas.
+ * only downloads once the learner has asked to drive. Until the board is
+ * painted, the house traffic-light loader covers it.
  */
 import * as React from "react";
 
@@ -11,9 +11,9 @@ import type { BoardQuality } from "~/lib/board-store";
 import { cn } from "~/lib/utils";
 
 import { LoadingPanel } from "~/components/brand/traffic-loader";
-import type { BoardTier } from "~/components/board/board-canvas";
+import type { BoardTier } from "~/components/board/board-stage";
 
-const BoardCanvas = React.lazy(() => import("~/components/board/board-canvas"));
+const BoardStage = React.lazy(() => import("~/components/board/board-stage"));
 
 /** Low-memory and few-core phones get the lighter scene unless told otherwise. */
 export function pickTier(quality: BoardQuality): BoardTier {
@@ -49,7 +49,7 @@ export function BoardViewer({
   driving: boolean;
   attempt: number;
   quality: BoardQuality;
-  /** This device can't draw the 3D board at all. */
+  /** This device can't draw the board at all. */
   onUnsupported?: () => void;
   className?: string;
 }) {
@@ -75,7 +75,7 @@ export function BoardViewer({
     <div className={cn("relative h-full w-full overflow-hidden", className)}>
       {state === "ok" && (
         <React.Suspense fallback={loader}>
-          <BoardCanvas
+          <BoardStage
             challenge={challenge}
             driving={driving && painted}
             attempt={attempt}

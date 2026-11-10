@@ -1,8 +1,8 @@
 /**
  * The Model Town Board trainer on its page. Before a run it is a still picture
  * of the board (in the server's HTML) with one Start button. Start opens a
- * fullscreen overlay with the live 3D board, the examiner's task and the
- * joystick. The store (`board-store.ts`) owns the run; this is the shell.
+ * fullscreen overlay with the game, the examiner's task and the three controls.
+ * The store (`board-store.ts`) owns the run; this is the shell.
  */
 import * as React from "react";
 import { createPortal } from "react-dom";
@@ -143,6 +143,7 @@ export function BoardPlayer({ className }: { className?: string }) {
       pos: st.pos,
       faults: st.faults,
       fault: st.fault,
+      notice: st.notice,
       lastStars: st.lastStars,
       attempt: st.attempt,
       runClean: st.runClean,
@@ -196,7 +197,7 @@ export function BoardPlayer({ className }: { className?: string }) {
       {unsupported ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
           <p className="m-0 max-w-sm text-[15px] leading-snug">
-            This phone or browser can't draw the 3D board. The guide below the
+            This phone or browser can't draw the game board. The guide below the
             trainer still has the lane rules, and the sign trainers work
             everywhere.
           </p>
@@ -259,6 +260,26 @@ export function BoardPlayer({ className }: { className?: string }) {
         </div>
       )}
 
+      {/* A small mistake: the rule, a star gone, and the drive carries on. */}
+      {s.phase === "driving" && s.notice && (
+        <div
+          key={s.notice.n}
+          role="status"
+          className="dr-flash pointer-events-none absolute inset-x-0 top-[42%] z-20 flex justify-center px-4"
+          // Long enough to read a one-line rule.
+          style={{ animationDuration: "3.6s" }}
+        >
+          <div className="max-w-xs rounded-md border-2 border-[#17181b] bg-[#f6c416] px-3.5 py-2.5 text-center text-[#17181b] shadow-[0_4px_0_rgba(0,0,0,0.45)]">
+            <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-widest">
+              {faultTip(s.notice.fault).title} · 1 star lost
+            </p>
+            <p className="m-0 mt-1 text-[13.5px] font-semibold leading-snug">
+              {faultTip(s.notice.fault).rule}
+            </p>
+          </div>
+        </div>
+      )}
+
       {!unsupported && <BoardControls active={s.phase === "driving"} />}
 
       {/* Stopped by the referee: the rule, and another go. */}
@@ -311,7 +332,7 @@ export function BoardPlayer({ className }: { className?: string }) {
               <p className="m-0 text-[13.5px] leading-snug text-ink-2">
                 {s.faults === 0
                   ? "Right lane, right exit, and you stopped in the box."
-                  : `You got there after ${s.faults} ${s.faults === 1 ? "stop" : "stops"}. It will come back in a later round.`}
+                  : `You got there with ${s.faults} ${s.faults === 1 ? "mistake" : "mistakes"}. It will come back in a later round.`}
               </p>
               <Button variant="rush" size="lg" onClick={s.next} autoFocus>
                 {last ? "See how you did" : "Next task"}
@@ -418,7 +439,7 @@ export function BoardPlayer({ className }: { className?: string }) {
             </div>
           ) : (
             <p className="m-0 text-center font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
-              {POOL} tasks · one joystick, or arrow keys
+              {POOL} tasks · three buttons, or arrow keys
             </p>
           )}
         </div>

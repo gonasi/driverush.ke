@@ -19,6 +19,11 @@ export const RING_OUTER_R = ISLAND_R + RING_LANES * LANE_W;
 export const MEDIAN_HALF = 0.8;
 /** Where the central reserve starts, measured from the centre. */
 export const MEDIAN_START = RING_OUTER_R + 4;
+/**
+ * Lane lines are continuous for this far before the roundabout: choose your lane
+ * before them, because a continuous white line means no changing lanes.
+ */
+export const SOLID_ZONE = RING_OUTER_R + 14;
 /** A car has left the roundabout once it is this far out along an arm. */
 export const EXIT_CLEAR = RING_OUTER_R + 3;
 

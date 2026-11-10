@@ -2,7 +2,7 @@
  * The Model Town Board trainer's store, built like `pelican-store.ts`: persisted
  * progress and settings, plus the run in flight. The car itself is not in here.
  * It moves sixty times a second in `board/runtime.ts`, and this store only hears
- * about it when the referee calls a fault or a pass.
+ * about it when the referee calls a mistake or a pass.
  */
 import { create } from "zustand";
 import {
@@ -47,6 +47,9 @@ type BoardState = {
   /** Faults on the challenge in front of the learner. */
   faults: number;
   fault: Fault | null;
+  /** The latest small mistake, shown as a toast. `n` restarts its animation. */
+  notice: { fault: Fault; n: number } | null;
+  noticeCount: number;
   lastStars: number;
   /** Bumped on every (re)start, so the scene knows to snap the camera. */
   attempt: number;
@@ -80,6 +83,8 @@ const FRESH_RUN = {
   pos: 0,
   faults: 0,
   fault: null,
+  notice: null as { fault: Fault; n: number } | null,
+  noticeCount: 0,
   lastStars: 0,
   runClean: [] as string[],
   runFaulted: [] as string[],
@@ -96,16 +101,13 @@ export function starsFor(faults: number): number {
 export const useBoardStore = create<BoardState>()(
   persist(
     (set, get) => {
-      const onFault = (fault: Fault) => {
-        const { queue, pos, faults, settings } = get();
+      /** Count a mistake against the task. The first one sends it back a box. */
+      const record = (fault: Fault) => {
+        const { queue, pos, faults } = get();
         const challenge = queue[pos];
         if (!challenge) return;
-        if (settings.sound) playSfx("wrong");
-        buzz(BUZZ.miss);
         const first = faults === 0;
         set((s) => ({
-          phase: "fault",
-          fault,
           faults: s.faults + 1,
           runFaultCount: s.runFaultCount + 1,
           runStreak: 0,
@@ -113,7 +115,6 @@ export const useBoardStore = create<BoardState>()(
           runFaultRules: s.runFaultRules.includes(fault.id)
             ? s.runFaultRules
             : [...s.runFaultRules, fault.id],
-          // One step back the first time, the way a missed sign is graded.
           progress: first
             ? applyGrade(s.progress, challenge.id, "missed")
             : s.progress,
@@ -121,8 +122,28 @@ export const useBoardStore = create<BoardState>()(
         analytics.boardFaulted({
           challenge_id: challenge.id,
           rule: fault.id,
+          severity: fault.serious ? "serious" : "small",
           fault_number: faults + 1,
         });
+      };
+
+      /** A serious mistake: the examiner stops the attempt. */
+      const onFault = (fault: Fault) => {
+        if (get().settings.sound) playSfx("wrong");
+        buzz(BUZZ.miss);
+        record(fault);
+        set({ phase: "fault", fault, notice: null });
+      };
+
+      /** A small mistake: a star is lost, and the drive goes on. */
+      const onSmall = (fault: Fault) => {
+        if (get().settings.sound) playSfx("wrong");
+        buzz(BUZZ.miss);
+        record(fault);
+        set((s) => ({
+          notice: { fault, n: s.noticeCount + 1 },
+          noticeCount: s.noticeCount + 1,
+        }));
       };
 
       const onGoal = () => {
@@ -164,8 +185,13 @@ export const useBoardStore = create<BoardState>()(
         const { queue, pos } = get();
         const challenge = queue[pos];
         if (!challenge) return;
-        beginChallenge(challenge, { onFault, onGoal });
-        set((s) => ({ phase: "driving", fault: null, attempt: s.attempt + 1 }));
+        beginChallenge(challenge, { onFault, onSmall, onGoal });
+        set((s) => ({
+          phase: "driving",
+          fault: null,
+          notice: null,
+          attempt: s.attempt + 1,
+        }));
       };
 
       return {

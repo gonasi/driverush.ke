@@ -37,7 +37,7 @@ export type BoardChallenge = {
   otherCars: OtherCar[];
 };
 
-const START_ALONG = 50;
+const START_ALONG = 56;
 const BOX = { alongMin: 33, alongMax: 44 };
 
 function turnChallenge(
