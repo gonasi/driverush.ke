@@ -1,19 +1,25 @@
 /**
- * `/model-town-board`: how the Model Town Board works. Learners search for it by name, so this is a
- * real guide. The interactive trainer isn't built yet, and the page says so.
+ * `/model-town-board`: the board trainer, with the guide under it. The product
+ * comes first (one tap into driving), and the guide stays in the server's HTML
+ * for the learners who arrive searching for how the board works.
  */
+import * as React from "react";
+import { useSearchParams } from "react-router";
+
 import type { Route } from "./+types/model-town-board";
 
 import Body from "~/guides/model-town-board.mdx";
+import { useBoardStore } from "~/lib/board-store";
 import { breadcrumbLd, graphLd, guideLd, pageMeta } from "~/lib/site";
 
+import { BoardPlayer } from "~/components/board/board-player";
 import { GuideLayout } from "~/components/brand/guide-layout";
 
 const PATH = "/model-town-board";
-const CHECKED = "2026-11-05";
-const TITLE = "Model Town Board Kenya: how it works in the NTSA test";
+const CHECKED = "2026-11-10";
+const TITLE = "Model Town Board Kenya: free practice trainer and guide";
 const DESCRIPTION =
-  "What the Model Town Board is, the three route rules, what you're tested on in the NTSA test, the signs you need and practice questions with answers.";
+  "Drive the Model Town Board's roundabout in 3D and learn which lane to use for each turn, the roundabout rules and the three route rules. Free, no signup.";
 
 export function meta(_: Route.MetaArgs) {
   return [
@@ -34,16 +40,38 @@ export function meta(_: Route.MetaArgs) {
 }
 
 export default function ModelTownBoard() {
+  const [params, setParams] = useSearchParams();
+  const go = params.get("go") === "1";
+
+  // `?go=1` drops the learner straight into a round. The param is cleared so a
+  // reload or a shared link doesn't start one again.
+  React.useEffect(() => {
+    if (!go) return;
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete("go");
+        return next;
+      },
+      { replace: true },
+    );
+    useBoardStore.getState().start();
+  }, [go, setParams]);
+
+  // Leaving the page mid-drive closes the board.
+  React.useEffect(() => () => useBoardStore.getState().exit(), []);
+
   return (
     <GuideLayout
-      kicker="Guide · Model Town Board"
+      kicker="Trainer · Model Town Board"
       title={
         <>
-          Model Town Board. <em>How it works.</em>
+          Model Town Board. <em>Drive it.</em>
         </>
       }
-      lede="What the board is, the route rules to learn, what you're tested on and the signs you need."
+      lede="Pick your lane, take the roundabout, and stop where the examiner asks. Break a lane rule and you're told which one. Free, no signup."
       checked={CHECKED}
+      lead={<BoardPlayer />}
     >
       <Body />
     </GuideLayout>

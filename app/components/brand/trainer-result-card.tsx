@@ -95,12 +95,16 @@ export function TrainerResultCard({
   counts,
   bestStreak = 0,
   share,
+  summary,
+  missedSlot,
+  nextLabel: nextLabelOverride,
+  crossLink,
   onDrill,
   onNext,
   onResetMastery,
   onExit,
 }: {
-  trainer: "pelican" | "3d";
+  trainer: "pelican" | "3d" | "board";
   selfGraded: boolean;
   scope: RunScopeKind;
   /** Distinct signs in this run. */
@@ -112,7 +116,15 @@ export function TrainerResultCard({
   counts: SignCounts;
   /** Longest run of "Knew it" in a row this run. */
   bestStreak?: number;
-  share: { surface: string; payload: SharePayload };
+  /** Left out, the card has no share button. */
+  share?: { surface: string; payload: SharePayload };
+  /** Replaces the line under the headline. The board talks about rules. */
+  summary?: string;
+  /** Shown instead of the missed-sign thumbnails. */
+  missedSlot?: React.ReactNode;
+  nextLabel?: string;
+  /** Replaces the link to the other sign trainer. */
+  crossLink?: { to: string; label: string };
   onDrill: () => void;
   onNext: () => void;
   onResetMastery: () => void;
@@ -134,7 +146,9 @@ export function TrainerResultCard({
       : flawless
         ? "Flawless."
         : `${firstTry} of ${signsTotal} first try.`;
-  const nextLabel = scope === "chart" ? "Go again" : `Next ${ROUND_SIZE} signs`;
+  const nextLabel =
+    nextLabelOverride ??
+    (scope === "chart" ? "Go again" : `Next ${ROUND_SIZE} signs`);
   // Only mounts on the client (inside the trainer overlay), so reading storage
   // here can't cause a hydration mismatch.
   const days = liveStreak(readPracticeStreak()).days;
@@ -192,17 +206,18 @@ export function TrainerResultCard({
               variants={ITEM}
               className="m-0 text-[13.5px] leading-snug text-ink-2"
             >
-              {missed.length > 0
-                ? `${recalled} of ${signsTotal} recalled. These tripped you up:`
-                : recalled < signsTotal
-                  ? `${recalled} of ${signsTotal} recalled. Skipped signs come back later.`
-                  : "Every one on the first try."}
+              {summary ??
+                (missed.length > 0
+                  ? `${recalled} of ${signsTotal} recalled. These tripped you up:`
+                  : recalled < signsTotal
+                    ? `${recalled} of ${signsTotal} recalled. Skipped signs come back later.`
+                    : "Every one on the first try.")}
             </motion.p>
           )}
 
           {missed.length > 0 && (
             <motion.div variants={ITEM}>
-              <MissedThumbnails signs={missed} />
+              {missedSlot ?? <MissedThumbnails signs={missed} />}
             </motion.div>
           )}
 
@@ -268,14 +283,18 @@ export function TrainerResultCard({
             )}
             <Button variant="ink" asChild>
               <Link
-                to={trainerHref(other.path, { codes: missedCodes, go: true })}
+                to={
+                  crossLink?.to ??
+                  trainerHref(other.path, { codes: missedCodes, go: true })
+                }
                 onClick={onExit}
               >
-                Try {missed.length > 0 ? "them" : "signs"} {other.label}
+                {crossLink?.label ??
+                  `Try ${missed.length > 0 ? "them" : "signs"} ${other.label}`}
               </Link>
             </Button>
             <div className="flex gap-2 [&>*]:flex-1">
-              {selfGraded && (
+              {selfGraded && share && (
                 <ShareButton
                   surface={share.surface}
                   payload={share.payload}

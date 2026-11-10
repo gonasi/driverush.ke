@@ -185,6 +185,36 @@ export const analytics = {
     miss_tip?: "guide" | "class_rule";
   }) => emit("sign_graded", args),
 
+  // ----- Model Town Board -----
+
+  /** A board round kicked off. */
+  boardStarted: (args: { challenges: number; scope: "round" | "drill" }) =>
+    emit("board_started", args),
+
+  /** The referee stopped the learner. Shows which rules trip people up. */
+  boardFaulted: (args: {
+    challenge_id: string;
+    rule: string;
+    /** 1 for the first fault on this challenge, and so on. */
+    fault_number: number;
+  }) => emit("board_faulted", args),
+
+  /** A challenge was passed, cleanly or after faults. */
+  boardChallengePassed: (args: {
+    challenge_id: string;
+    clean: boolean;
+    faults: number;
+    stars: number;
+    seconds: number;
+  }) => emit("board_challenge_passed", args),
+
+  /** A board round finished. */
+  boardCompleted: (args: {
+    challenges: number;
+    clean: number;
+    fault_count: number;
+  }) => emit("board_completed", args),
+
   /** Outbound click to a credited source site. */
   partnerClicked: (args: { name: string; url: string }) =>
     emit("partner_clicked", {

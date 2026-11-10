@@ -50,6 +50,9 @@ export const CheckIcon: IconDef = { s: "M5 12.5l4.5 4.5L19 7" };
 export const CloseIcon: IconDef = { s: "M6 6l12 12M18 6L6 18" };
 export const PlusIcon: IconDef = { s: "M12 5v14M5 12h14" };
 export const MinusIcon: IconDef = { s: "M5 12h14" };
+export const StarIcon: IconDef = {
+  f: "M12 3.2l2.6 5.5 6 .8-4.4 4.1 1.1 5.9L12 16.6l-5.3 2.9 1.1-5.9L3.4 9.5l6-.8z",
+};
 export const RefreshIcon: IconDef = {
   s: "M19.5 12a7.5 7.5 0 1 1-2.2-5.3M18 3.5v4h-4",
 };

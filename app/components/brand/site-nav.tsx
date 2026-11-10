@@ -1,7 +1,7 @@
 /**
  * Shared top navigation. The site does one thing, so the nav is that thing: the
- * two trainers, the full list of signs, and a marked "soon" item for the Model
- * Town Board. Blog lives in the footer and the mobile menu.
+ * two sign trainers, the full list of signs, and the Model Town Board trainer,
+ * marked as new. Blog lives in the footer and the mobile menu.
  */
 import { Link, useLocation } from "react-router";
 import { Icon } from "~/components/brand/icon";
@@ -35,10 +35,10 @@ export const NAV_LINKS = [
 
 const BOARD_HREF = "/model-town-board";
 
-function SoonBadge() {
+function NewBadge() {
   return (
-    <span className="ml-1.5 border border-ink bg-amber px-1 py-px font-mono text-[9px] font-bold uppercase leading-none tracking-wider text-amber-foreground">
-      Soon
+    <span className="ml-1.5 border border-ink bg-kenya-green px-1 py-px font-mono text-[9px] font-bold uppercase leading-none tracking-wider text-kenya-green-foreground">
+      New
     </span>
   );
 }
@@ -71,7 +71,7 @@ export function SiteNav() {
             <Link to={BOARD_HREF}>
               <span className="lg:hidden">Board</span>
               <span className="hidden lg:inline">Model Town Board</span>
-              <SoonBadge />
+              <NewBadge />
             </Link>
           </AppBarLink>
         </>
@@ -122,10 +122,10 @@ export function SiteNav() {
                   <SheetClose asChild>
                     <Link
                       to={BOARD_HREF}
-                      className="flex items-center justify-between gap-3 border-2 border-dashed border-ink bg-paper-3 px-4 py-3 font-display text-[13px] font-bold uppercase tracking-wider text-ink"
+                      className="flex items-center justify-between gap-3 border-2 border-ink bg-surface px-4 py-3 font-display text-[13px] font-bold uppercase tracking-wider text-ink hover:bg-paper-3"
                     >
                       Model Town Board
-                      <SoonBadge />
+                      <NewBadge />
                     </Link>
                   </SheetClose>
                   <SheetClose asChild>

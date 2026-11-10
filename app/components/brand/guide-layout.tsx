@@ -34,6 +34,7 @@ export function GuideLayout({
   showTrainers = true,
   showAd = true,
   art,
+  lead,
   children,
 }: {
   kicker: string;
@@ -47,6 +48,8 @@ export function GuideLayout({
   showAd?: boolean;
   /** A scene from `art/scenes`, beside the lede on tablet and up. */
   art?: React.ReactNode;
+  /** The thing to do on this page, shown above the reading. */
+  lead?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -79,6 +82,8 @@ export function GuideLayout({
               )}
             </div>
           </header>
+
+          {lead && <div className="mt-5">{lead}</div>}
 
           {showTrainers && (
             <aside className="mt-5 flex flex-wrap items-center justify-between gap-3 border-2 border-ink bg-paper-2 px-4 py-3 sm:px-5">

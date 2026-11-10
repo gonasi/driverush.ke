@@ -7,6 +7,7 @@
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
+    "test": "vitest run",
     "ping-indexnow": "node scripts/ping-indexnow.mjs",
     "build:og": "node scripts/build-og-images.mjs"
   },
@@ -48,6 +49,7 @@
     "remark-mdx-frontmatter": "^5.2.0",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
-    "vite": "^8.0.3"
+    "vite": "^8.0.3",
+    "vitest": "^5.1.0"
   }
 }
