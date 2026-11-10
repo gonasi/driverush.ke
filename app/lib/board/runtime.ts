@@ -1,11 +1,12 @@
 /**
- * The live drive: one car, the pedals and wheel, and the referee, stepped at a
- * fixed rate. It sits in module scope on purpose. The 3D scene reads `car` every
- * frame and the controls write `input`, and neither goes through React.
+ * The live drive: one car, the joystick, and the referee, stepped at a fixed
+ * rate. It sits in module scope on purpose. The 3D scene reads `car` every frame
+ * and the controls write `stick`, and neither goes through React.
  */
 import { stepCar, type CarInput, type CarState } from "./car-sim";
 import type { BoardChallenge } from "./challenges";
 import { laneBearing, lanePoint } from "./geometry";
+import { stickToInput, type Stick } from "./joystick";
 import { createRef, refStep, type Fault, type RefState } from "./referee";
 
 const STEP = 1 / 60;
@@ -13,7 +14,10 @@ const STEP = 1 / 60;
 const MAX_FRAME = 0.1;
 
 export const car: CarState = { x: 0, z: 0, heading: 0, speed: 0, steer: 0 };
-export const input: CarInput = { steer: 0, throttle: 0, brake: 0 };
+/** Where the learner is holding the knob. The controls write this. */
+export const stick: Stick = { x: 0, y: 0 };
+/** What the knob works out to, for the physics. Rewritten every step. */
+const input: CarInput = { steer: 0, throttle: 0, brake: 0 };
 
 type Callbacks = { onFault: (fault: Fault) => void; onGoal: () => void };
 
@@ -25,6 +29,8 @@ let carry = 0;
 let elapsed = 0;
 
 export function resetInput(): void {
+  stick.x = 0;
+  stick.y = 0;
   input.steer = 0;
   input.throttle = 0;
   input.brake = 0;
@@ -74,6 +80,7 @@ export function tick(frameSeconds: number): void {
   while (carry >= STEP) {
     carry -= STEP;
     elapsed += STEP;
+    stickToInput(stick, car, input);
     stepCar(car, input, STEP);
     const result = refStep(ref, challenge, car, STEP);
     if (result.fault) {

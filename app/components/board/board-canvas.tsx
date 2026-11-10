@@ -43,7 +43,7 @@ export type BoardTier = "low" | "high";
 
 export type BoardCanvasProps = {
   challenge: BoardChallenge | null;
-  /** True while the learner has the wheel. Frames only render then. */
+  /** True while the learner is driving. Frames only render then. */
   driving: boolean;
   /** Changes on every (re)start, so the camera snaps instead of gliding. */
   attempt: number;
@@ -679,7 +679,7 @@ function Scene({
     }
 
     // The camera stays pointing north and glides after the car. A tall screen
-    // sees a narrower strip of road, and sits the car above the pedals.
+    // sees a narrower strip of road, and sits the car above the joystick.
     const aspect = state.size.width / Math.max(1, state.size.height);
     const wide = Math.min(1, Math.max(0, (aspect - 0.6) / 1));
     const width = 31 + (66 - 31) * wide;

@@ -1,8 +1,8 @@
 /**
  * The Model Town Board trainer on its page. Before a run it is a still picture
  * of the board (in the server's HTML) with one Start button. Start opens a
- * fullscreen overlay with the live 3D board, the examiner's task, the wheel and
- * the pedals. The store (`board-store.ts`) owns the run; this is the shell.
+ * fullscreen overlay with the live 3D board, the examiner's task and the
+ * joystick. The store (`board-store.ts`) owns the run; this is the shell.
  */
 import * as React from "react";
 import { createPortal } from "react-dom";
@@ -418,7 +418,7 @@ export function BoardPlayer({ className }: { className?: string }) {
             </div>
           ) : (
             <p className="m-0 text-center font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
-              {POOL} tasks · wheel and pedals, or arrow keys
+              {POOL} tasks · one joystick, or arrow keys
             </p>
           )}
         </div>

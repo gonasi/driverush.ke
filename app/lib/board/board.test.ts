@@ -17,6 +17,7 @@ import {
   type Turn,
   type Vec,
 } from "./geometry";
+import { STICK_DEADZONE, stickToInput, type Stick } from "./joystick";
 import { lanePath } from "./lane-paths";
 import { faultTip } from "./board-rules";
 import { createRef, refStep, type Fault } from "./referee";
@@ -282,5 +283,135 @@ describe("the referee, on faults", () => {
     const task = challenge("straight");
     const result = drive(lanePath("S", 2, "straight", 50, 58), task);
     expect(result.goal).toBe(false);
+  });
+});
+
+/** Drive a path the way a learner does: by pointing the knob at the road ahead. */
+function driveByStick(
+  path: Vec[],
+  task: BoardChallenge,
+  stopAt: Vec,
+  push = 0.6,
+): { fault?: Fault; goal: boolean } {
+  const car: CarState = {
+    x: path[0].x,
+    z: path[0].z,
+    heading: bearingOf(path[1].x - path[0].x, path[1].z - path[0].z),
+    speed: 0,
+    steer: 0,
+  };
+  const ref = createRef();
+  const input: CarInput = { steer: 0, throttle: 0, brake: 0 };
+  const stick: Stick = { x: 0, y: 0 };
+  let nearest = 0;
+  for (let i = 0; i < 120 / STEP; i += 1) {
+    while (
+      nearest < path.length - 1 &&
+      Math.hypot(path[nearest + 1].x - car.x, path[nearest + 1].z - car.z) <
+        Math.hypot(path[nearest].x - car.x, path[nearest].z - car.z)
+    ) {
+      nearest += 1;
+    }
+    const target = path[Math.min(path.length - 1, nearest + 3)];
+    const dx = target.x - car.x;
+    const dz = target.z - car.z;
+    const reach = Math.hypot(dx, dz) || 1;
+    const letGo = Math.hypot(stopAt.x - car.x, stopAt.z - car.z) < 2.5;
+    // World x and z are the screen's x and y: the camera faces north.
+    stick.x = letGo ? 0 : (dx / reach) * push;
+    stick.y = letGo ? 0 : (dz / reach) * push;
+
+    stickToInput(stick, car, input);
+    stepCar(car, input, STEP);
+    const result = refStep(ref, task, car, STEP);
+    if (result.fault) return { fault: result.fault, goal: false };
+    if (result.goal) return { goal: true };
+  }
+  return { goal: false };
+}
+
+describe("the joystick", () => {
+  const fresh = (heading = 0, speed = 0): CarState => ({
+    x: 0,
+    z: 40,
+    heading,
+    speed,
+    steer: 0,
+  });
+  const run = (car: CarState, stick: Stick, seconds: number) => {
+    const input: CarInput = { steer: 0, throttle: 0, brake: 0 };
+    for (let i = 0; i < seconds / STEP; i += 1) {
+      stickToInput(stick, car, input);
+      stepCar(car, input, STEP);
+    }
+    return car;
+  };
+
+  it("stops the car when you let go", () => {
+    const car = run(fresh(0, 8), { x: 0, y: 0 }, 3);
+    expect(car.speed).toBe(0);
+    // A nudge inside the dead zone is still letting go.
+    const nudged = run(fresh(0, 8), { x: 0, y: -STICK_DEADZONE / 2 }, 3);
+    expect(nudged.speed).toBe(0);
+  });
+
+  it("drives straight north when pushed up", () => {
+    const car = run(fresh(), { x: 0, y: -1 }, 3);
+    expect(car.z).toBeLessThan(30);
+    expect(car.x).toBeCloseTo(0, 5);
+    expect(car.heading).toBeCloseTo(0, 5);
+  });
+
+  it("goes faster the further you push", () => {
+    const gentle = run(fresh(), { x: 0, y: -0.5 }, 6);
+    const full = run(fresh(), { x: 0, y: -1 }, 6);
+    expect(gentle.speed).toBeGreaterThan(1);
+    expect(full.speed).toBeGreaterThan(gentle.speed + 2);
+  });
+
+  it("turns toward where the knob points, whichever way the car faces", () => {
+    // Heading south, knob pushed to the screen's left: the car ends up going west.
+    const car = run(fresh(Math.PI, 3), { x: -1, y: 0 }, 4);
+    expect(Math.abs(wrapPi(car.heading - -Math.PI / 2))).toBeLessThan(0.15);
+    expect(car.x).toBeLessThan(-3);
+  });
+
+  it("brakes instead of spinning round when pulled straight back", () => {
+    const car = run(fresh(0, 6), { x: 0, y: 1 }, 3);
+    expect(car.speed).toBe(0);
+    expect(car.heading).toBeCloseTo(0, 5);
+    expect(car.x).toBeCloseTo(0, 5);
+  });
+
+  it("gets every shipped task right when pointed along the road", () => {
+    const lanes: Record<string, number> = {
+      straight: 2,
+      left: 1,
+      right: 3,
+      back: 4,
+      "behind-red": 1,
+    };
+    for (const task of BOARD_CHALLENGES) {
+      const lane = lanes[task.id];
+      const result = driveByStick(
+        lanePath("S", lane, task.turn),
+        task,
+        boxCentre(task, lane),
+      );
+      expect(result.fault, task.id).toBeUndefined();
+      expect(result.goal, task.id).toBe(true);
+    }
+  });
+
+  it("holds the inner roundabout lane even at full push", () => {
+    const task = BOARD_CHALLENGES.find((c) => c.id === "back")!;
+    const result = driveByStick(
+      lanePath("S", 4, "back"),
+      task,
+      boxCentre(task, 4),
+      1,
+    );
+    expect(result.fault).toBeUndefined();
+    expect(result.goal).toBe(true);
   });
 });

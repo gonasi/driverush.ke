@@ -1,264 +1,196 @@
 /**
- * The steering wheel and pedals, drawn in plain DOM over the 3D board. Touches
- * write straight into `board/runtime.ts`'s `input`, and one animation frame loop
- * turns the wheel on screen, so driving never re-renders React.
+ * The joystick: one knob, drawn in plain DOM over the 3D board. Push it toward
+ * where you want the car to go on the screen, further to go faster, and let go
+ * to stop. `board/joystick.ts` turns that into steering and pedals.
  *
- * Wheel and pedals each capture their own pointer, so a thumb on each works at
- * the same time. On a computer the arrow keys or WASD do the same job.
+ * It writes straight into `board/runtime.ts`'s `stick` and moves the knob with a
+ * transform, so driving never re-renders React. Arrow keys and WASD push the
+ * same knob on a computer.
  */
 import * as React from "react";
 
-import { input, resetInput } from "~/lib/board/runtime";
+import { STICK_DEADZONE } from "~/lib/board/joystick";
+import { resetInput, stick } from "~/lib/board/runtime";
 import { cn } from "~/lib/utils";
 
-/** How far the wheel turns each way, in degrees. */
-const LOCK = 105;
+type Dir = "left" | "right" | "up" | "down";
 
-type Held = {
-  angle: number;
-  grabbing: boolean;
-  last: number;
-  left: boolean;
-  right: boolean;
-  go: boolean;
-  stop: boolean;
-  pedalGo: boolean;
-  pedalStop: boolean;
+const KEYS: Record<string, Dir> = {
+  ArrowLeft: "left",
+  a: "left",
+  A: "left",
+  ArrowRight: "right",
+  d: "right",
+  D: "right",
+  ArrowUp: "up",
+  w: "up",
+  W: "up",
+  ArrowDown: "down",
+  s: "down",
+  S: "down",
 };
 
-const KEYS: Record<string, keyof Pick<Held, "left" | "right" | "go" | "stop">> =
-  {
-    ArrowLeft: "left",
-    a: "left",
-    A: "left",
-    ArrowRight: "right",
-    d: "right",
-    D: "right",
-    ArrowUp: "go",
-    w: "go",
-    W: "go",
-    ArrowDown: "stop",
-    s: "stop",
-    S: "stop",
-    " ": "stop",
-  };
-
-function Wheel() {
-  return (
-    <svg viewBox="0 0 120 120" className="size-full" aria-hidden>
-      <circle
-        cx="60"
-        cy="60"
-        r="50"
-        fill="none"
-        stroke="#17181b"
-        strokeWidth="15"
-      />
-      <circle
-        cx="60"
-        cy="60"
-        r="50"
-        fill="none"
-        stroke="#3a3c42"
-        strokeWidth="3"
-      />
-      <path
-        d="M60 10v14"
-        stroke="#f6c416"
-        strokeWidth="7"
-        strokeLinecap="round"
-      />
-      <path
-        d="M13 55 46 58M107 55 74 58M60 76v32"
-        stroke="#17181b"
-        strokeWidth="13"
-        strokeLinecap="round"
-      />
-      <circle
-        cx="60"
-        cy="62"
-        r="17"
-        fill="#22242a"
-        stroke="#3a3c42"
-        strokeWidth="2"
-      />
-      <circle cx="60" cy="62" r="5" fill="#f6c416" />
-    </svg>
-  );
-}
-
-function Pedal({
-  label,
-  tall,
-  onChange,
-}: {
-  label: string;
-  tall?: boolean;
-  onChange: (down: boolean) => void;
-}) {
-  const set = (el: HTMLButtonElement, down: boolean) => {
-    el.dataset.down = String(down);
-    onChange(down);
-  };
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      onPointerDown={(e) => {
-        e.currentTarget.setPointerCapture(e.pointerId);
-        set(e.currentTarget, true);
-      }}
-      onPointerUp={(e) => set(e.currentTarget, false)}
-      onPointerCancel={(e) => set(e.currentTarget, false)}
-      onLostPointerCapture={(e) => set(e.currentTarget, false)}
-      onContextMenu={(e) => e.preventDefault()}
-      className={cn(
-        "pointer-events-auto flex w-[4.6rem] touch-none select-none flex-col items-center justify-end gap-1.5 rounded-md border-2 border-white/25 bg-[#2b2d33] pb-2 pt-3 font-mono text-[9.5px] font-bold uppercase tracking-widest text-white/85 shadow-[0_6px_0_rgba(0,0,0,0.55)] outline-none transition-transform duration-75 data-[down=true]:translate-y-1 data-[down=true]:bg-[#3a3d45] data-[down=true]:shadow-[0_2px_0_rgba(0,0,0,0.55)] focus-visible:border-white",
-        tall ? "h-[7.5rem]" : "h-[5.25rem]",
-      )}
-    >
-      <span aria-hidden className="grid w-full flex-1 content-evenly px-2.5">
-        {Array.from({ length: tall ? 5 : 3 }, (_, i) => (
-          <span key={i} className="block h-1 rounded-full bg-white/30" />
-        ))}
-      </span>
-      {label}
-    </button>
-  );
-}
-
 export function BoardControls({ active }: { active: boolean }) {
-  const wheel = React.useRef<HTMLDivElement>(null);
-  const held = React.useRef<Held>({
-    angle: 0,
-    grabbing: false,
-    last: 0,
+  const base = React.useRef<HTMLDivElement>(null);
+  const knob = React.useRef<HTMLDivElement>(null);
+  const dragging = React.useRef(false);
+  const held = React.useRef<Record<Dir, boolean>>({
     left: false,
     right: false,
-    go: false,
-    stop: false,
-    pedalGo: false,
-    pedalStop: false,
+    up: false,
+    down: false,
   });
+  // Shown until the learner has pushed the knob once.
+  const [hint, setHint] = React.useState(true);
+
+  /** Put the knob at `x`, `y` (each -1 to 1) and tell the car. */
+  const place = React.useCallback((x: number, y: number) => {
+    const reach = Math.hypot(x, y);
+    const k = reach > 1 ? 1 / reach : 1;
+    stick.x = x * k;
+    stick.y = y * k;
+    const b = base.current;
+    const el = knob.current;
+    if (b && el) {
+      const travel = (b.offsetWidth - el.offsetWidth) / 2;
+      el.style.transform = `translate(${(stick.x * travel).toFixed(1)}px, ${(stick.y * travel).toFixed(1)}px)`;
+    }
+    if (reach > STICK_DEADZONE) setHint(false);
+  }, []);
 
   React.useEffect(() => {
-    const h = held.current;
-    if (!active) {
-      Object.assign(h, {
-        angle: 0,
-        grabbing: false,
-        left: false,
-        right: false,
-        go: false,
-        stop: false,
-        pedalGo: false,
-        pedalStop: false,
-      });
+    const keys = held.current;
+    const release = () => {
+      dragging.current = false;
+      keys.left = keys.right = keys.up = keys.down = false;
+      if (knob.current) knob.current.dataset.held = "false";
+      place(0, 0);
       resetInput();
-      if (wheel.current) wheel.current.style.transform = "rotate(0deg)";
+    };
+    if (!active) {
+      release();
       return;
     }
 
+    const fromKeys = () => {
+      if (dragging.current) return;
+      const x = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+      const y = (keys.down ? 1 : 0) - (keys.up ? 1 : 0);
+      place(x, y);
+    };
     const onKey = (down: boolean) => (e: KeyboardEvent) => {
-      const key = KEYS[e.key];
-      if (!key) return;
+      if (e.key === " ") {
+        // Space lets go of everything.
+        e.preventDefault();
+        if (down) {
+          keys.left = keys.right = keys.up = keys.down = false;
+          fromKeys();
+        }
+        return;
+      }
+      const dir = KEYS[e.key];
+      if (!dir) return;
       e.preventDefault();
-      h[key] = down;
+      keys[dir] = down;
+      fromKeys();
     };
     const keyDown = onKey(true);
     const keyUp = onKey(false);
     window.addEventListener("keydown", keyDown);
     window.addEventListener("keyup", keyUp);
-
-    let frame = 0;
-    const loop = () => {
-      if (!h.grabbing) {
-        // Keys pull the wheel over; letting go lets it spring back.
-        const want = ((h.right ? 1 : 0) - (h.left ? 1 : 0)) * LOCK;
-        h.angle += (want - h.angle) * 0.22;
-        if (want === 0 && Math.abs(h.angle) < 0.4) h.angle = 0;
-      }
-      input.steer = h.angle / LOCK;
-      input.throttle = h.go || h.pedalGo ? 1 : 0;
-      input.brake = h.stop || h.pedalStop ? 1 : 0;
-      if (wheel.current) {
-        wheel.current.style.transform = `rotate(${h.angle.toFixed(1)}deg)`;
-      }
-      frame = requestAnimationFrame(loop);
-    };
-    frame = requestAnimationFrame(loop);
+    // Switching tabs mid-push must not leave the car driving itself.
+    window.addEventListener("blur", release);
 
     return () => {
-      cancelAnimationFrame(frame);
       window.removeEventListener("keydown", keyDown);
       window.removeEventListener("keyup", keyUp);
-      resetInput();
+      window.removeEventListener("blur", release);
+      release();
     };
-  }, [active]);
+  }, [active, place]);
 
-  const angleOf = (e: React.PointerEvent<HTMLDivElement>) => {
-    const box = e.currentTarget.getBoundingClientRect();
-    return (
-      (Math.atan2(
-        e.clientY - (box.top + box.height / 2),
-        e.clientX - (box.left + box.width / 2),
-      ) *
-        180) /
-      Math.PI
+  const follow = (e: React.PointerEvent<HTMLDivElement>) => {
+    const b = base.current;
+    const el = knob.current;
+    if (!b || !el) return;
+    const box = b.getBoundingClientRect();
+    const travel = (b.offsetWidth - el.offsetWidth) / 2 || 1;
+    place(
+      (e.clientX - (box.left + box.width / 2)) / travel,
+      (e.clientY - (box.top + box.height / 2)) / travel,
     );
+  };
+  const drop = () => {
+    if (!dragging.current) return;
+    dragging.current = false;
+    if (knob.current) knob.current.dataset.held = "false";
+    place(0, 0);
   };
 
   return (
     <div
       className={cn(
-        "pointer-events-none absolute inset-x-0 bottom-0 z-20 flex items-end justify-between px-4 pb-[max(1rem,env(safe-area-inset-bottom))] transition-opacity duration-200 sm:px-8 sm:pb-8",
+        "pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-1 pb-[max(0.75rem,env(safe-area-inset-bottom))] transition-opacity duration-200 sm:pb-6",
         active ? "opacity-100" : "opacity-0",
       )}
     >
-      <div
-        role="slider"
-        aria-label="Steering wheel"
-        aria-valuemin={-100}
-        aria-valuemax={100}
-        aria-valuenow={0}
-        tabIndex={-1}
+      <p
+        aria-hidden={!hint}
         className={cn(
-          "size-[8.5rem] touch-none select-none rounded-full drop-shadow-[0_6px_0_rgba(0,0,0,0.5)] sm:size-40",
+          "m-0 rounded-md bg-[#101114]/85 px-3 py-1.5 text-center text-[12.5px] font-semibold leading-snug text-white transition-opacity duration-300",
+          hint ? "opacity-100" : "opacity-0",
+        )}
+      >
+        Push toward where you want to go. Let go to stop.
+      </p>
+
+      {/* The pad is bigger than the drawn base, so a thumb doesn't have to aim. */}
+      <div
+        role="application"
+        aria-label="Joystick. Push toward where you want the car to go, and let go to stop. Arrow keys work too."
+        className={cn(
+          "flex size-[12.5rem] touch-none select-none items-center justify-center",
           active && "pointer-events-auto",
         )}
         onPointerDown={(e) => {
-          e.currentTarget.setPointerCapture(e.pointerId);
-          held.current.grabbing = true;
-          held.current.last = angleOf(e);
+          try {
+            e.currentTarget.setPointerCapture(e.pointerId);
+          } catch {
+            // No capture (some webviews): the drag still works over the pad.
+          }
+          dragging.current = true;
+          if (knob.current) knob.current.dataset.held = "true";
+          follow(e);
         }}
         onPointerMove={(e) => {
-          const h = held.current;
-          if (!h.grabbing) return;
-          const now = angleOf(e);
-          let turn = now - h.last;
-          if (turn > 180) turn -= 360;
-          if (turn < -180) turn += 360;
-          h.last = now;
-          h.angle = Math.max(-LOCK, Math.min(LOCK, h.angle + turn));
+          if (dragging.current) follow(e);
         }}
-        onPointerUp={() => (held.current.grabbing = false)}
-        onPointerCancel={() => (held.current.grabbing = false)}
-        onLostPointerCapture={() => (held.current.grabbing = false)}
+        onPointerUp={drop}
+        onPointerCancel={drop}
+        onLostPointerCapture={drop}
         onContextMenu={(e) => e.preventDefault()}
       >
-        <div ref={wheel} className="size-full will-change-transform">
-          <Wheel />
+        <div
+          ref={base}
+          className="relative flex size-36 items-center justify-center rounded-full border-2 border-white/30 bg-[#17181b]/70 shadow-[0_6px_0_rgba(0,0,0,0.45)]"
+        >
+          {/* Four ticks: the knob points at the screen, not at the car. */}
+          <svg
+            viewBox="0 0 100 100"
+            aria-hidden
+            className="absolute inset-0 size-full text-white/45"
+          >
+            <path
+              d="M50 9l5 7H45zM50 91l5-7H45zM9 50l7-5v10zM91 50l-7-5v10z"
+              fill="currentColor"
+            />
+          </svg>
+          <div
+            ref={knob}
+            data-held="false"
+            className="size-16 rounded-full border-2 border-[#f6c416] bg-[#2b2d33] shadow-[0_4px_0_rgba(0,0,0,0.55),inset_0_2px_0_rgba(255,255,255,0.18)] will-change-transform data-[held=false]:transition-transform data-[held=false]:duration-150"
+          />
         </div>
-      </div>
-
-      <div
-        className={cn(
-          "flex items-end gap-2.5",
-          !active && "[&>*]:pointer-events-none",
-        )}
-      >
-        <Pedal label="Brake" onChange={(d) => (held.current.pedalStop = d)} />
-        <Pedal label="Go" tall onChange={(d) => (held.current.pedalGo = d)} />
       </div>
     </div>
   );
