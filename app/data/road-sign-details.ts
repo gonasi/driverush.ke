@@ -91,7 +91,7 @@ export const SIGN_DETAILS: Record<string, string> = {
   "M.5":
     "Usually fixed to a traffic island or the start of a central divider, showing which side traffic must pass on.",
   "M.7":
-    "Blue discs give orders, so this one sets a track aside for bicycles. It keeps cyclists away from faster traffic.",
+    "Blue discs give orders, so this one sets a track aside for bicycles. Motor vehicles may not use it, and it keeps cyclists away from faster traffic.",
   "M.8":
     "Sets a path aside for people on foot, usually where walking on the road itself would be unsafe.",
   "M.9":
@@ -103,7 +103,7 @@ export const SIGN_DETAILS: Record<string, string> = {
   "P.1":
     "This is the sign you meet at the wrong end of a one-way street or at an exit-only access. You may not drive in from this side.",
   "P.2":
-    "Nothing may use this road, often because of damage, works or an event. It's stronger than a diversion notice.",
+    "A plain red ring with nothing inside bans every vehicle, in both directions. It's used to close a street to traffic, often to make it a pedestrian street, and a plate below can limit it to certain hours or days.",
   "P.3":
     "Covers every kind of vehicle, whether it has an engine or not. The road is closed to vehicles from this point.",
   "P.4":
@@ -163,7 +163,7 @@ export const SIGN_DETAILS: Record<string, string> = {
   "P.32":
     "Bans parking, not stopping, which is how it differs from the no-waiting and no-stopping signs.",
   "P.33":
-    "Stricter than a plain no-parking sign, because it bans waiting as well.",
+    "A red X on a blue disc bans stopping as well as parking. A road signed this way is a clearway, and a plate below can give the hours it applies.",
   "P.39":
     "The strictest of the stopping bans, and it covers a whole marked zone rather than a single spot.",
   "A.1":

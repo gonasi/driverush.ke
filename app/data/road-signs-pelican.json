@@ -562,7 +562,7 @@
       "width": 6.719,
       "height": 12.778,
       "code": "M.7",
-      "note": "This track is for cyclists. Motor vehicles may not use it, except for access.",
+      "note": "This track is for bicycles. Motor vehicles may not use it.",
       "audioSrc": "/assets/road-signs/sounds/M.6.mp3"
     },
     {
@@ -640,7 +640,7 @@
       "width": 6.719,
       "height": 12.778,
       "code": "P.2",
-      "note": "This road is closed to all traffic. Turn around and find another way, and don't go around the barriers.",
+      "note": "No vehicle may enter, from either direction. It's often used to keep a street for people on foot, with a plate underneath giving the hours.",
       "audioSrc": "/assets/road-signs/sounds/P.2.mp3"
     },
     {

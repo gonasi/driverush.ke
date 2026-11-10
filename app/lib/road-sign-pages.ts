@@ -53,6 +53,13 @@ export function signPageBySlug(slug: string | undefined): SignPage | undefined {
  * Bridges, Part 5a). No copy of the NTSA Highway Code itself could be obtained.
  * The rest still have pages for anyone browsing, but stay out of search until
  * someone checks them against the Highway Code: add the code here when they do.
+ *
+ * Added 2026-11-10, matched by artwork against the same manual's figures, since
+ * it doesn't use the chart's codes: M.7 (cycle track, fig. 5.28), M.10 and M.11
+ * (minimum speed, fig. 5.21), P.2 (no vehicles, fig. 5.33), P.33 (no stopping,
+ * fig. 5.25). Still open: P.39's artwork (one bar, ZONE) is a no-parking sign but
+ * it's named "No stopping zone", and P.3 shows a car but is named for all
+ * vehicles. Both need new audio before their names can change.
  */
 const CONFIRMED_CODES = new Set([
   "W.1",
@@ -87,7 +94,11 @@ const CONFIRMED_CODES = new Set([
   "M.2",
   "M.3",
   "M.5",
+  "M.7",
+  "M.10",
+  "M.11",
   "P.1",
+  "P.2",
   "P.15",
   "P.16",
   "P.17",
@@ -99,6 +110,7 @@ const CONFIRMED_CODES = new Set([
   "P.27b",
   "P.30",
   "P.32",
+  "P.33",
 ]);
 
 export function isSignConfirmed(sign: { code?: string }): boolean {

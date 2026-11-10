@@ -11,6 +11,7 @@
  */
 import { absUrl } from "~/lib/site";
 import { getAllPosts } from "~/lib/blog";
+import { SIGN_CLASS_PAGES } from "~/lib/sign-class-pages";
 import {
   isSignConfirmed,
   SIGN_PAGES,
@@ -43,6 +44,7 @@ const STATIC_PAGES: Entry[] = [
   page("/ntsa-test", "0.9"),
   page("/model-town-board", "0.9"),
   page("/driving-schools-kenya", "0.9"),
+  ...SIGN_CLASS_PAGES.map((p) => page(p.path, "0.8")),
   page("/road-signs/pelican", "0.7", "weekly"),
   page("/road-signs/3d", "0.7", "weekly"),
   page("/blogs", "0.7", "weekly"),

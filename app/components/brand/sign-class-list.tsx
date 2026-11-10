@@ -9,6 +9,7 @@ import { Link } from "react-router";
 import { regionSpriteStyle, SIGN_CATEGORIES } from "~/lib/image-focus";
 import { isDue, MASTERED_BOX, type SignProgress } from "~/lib/pelican-progress";
 import { CHART_SRC, SIGN_PAGES, signPagePath } from "~/lib/road-sign-pages";
+import { signClassPage } from "~/lib/sign-class-pages";
 import { trainerHref } from "~/lib/trainer-rounds";
 import { useSignProgress } from "~/lib/use-sign-progress";
 
@@ -81,6 +82,14 @@ export function SignClassList() {
                   In 3D
                 </Link>
               </Button>
+              {signClassPage(category.id) && (
+                <Link
+                  to={signClassPage(category.id)!.path}
+                  className="ml-auto font-sans text-[13px] font-semibold text-rush hover:underline"
+                >
+                  Read the guide
+                </Link>
+              )}
             </div>
             <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2">
               {signs.map((sign) => (

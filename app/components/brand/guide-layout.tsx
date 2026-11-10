@@ -7,6 +7,7 @@
 import * as React from "react";
 import { Link } from "react-router";
 
+import { SITE } from "~/lib/site";
 import { Button } from "~/components/ui/button";
 import { Rail } from "~/components/brand/rail";
 import { SiteFooter } from "~/components/brand/site-footer";
@@ -58,7 +59,11 @@ export function GuideLayout({
             <p className="m-0 flex flex-wrap justify-between gap-x-4 gap-y-1 font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
               <span>{kicker}</span>
               <span>
-                {dateLabel} {formatChecked(checked)}
+                By{" "}
+                <Link to="/about" className="hover:text-ink hover:underline">
+                  {SITE.byline}
+                </Link>{" "}
+                · {dateLabel} {formatChecked(checked)}
               </span>
             </p>
             <h1 className="m-0 mt-4 font-display text-[clamp(34px,6.4vw,64px)] font-extrabold uppercase leading-[0.94] tracking-tighter [&_em]:font-serif [&_em]:font-normal [&_em]:normal-case [&_em]:italic [&_em]:text-rush">
@@ -69,7 +74,9 @@ export function GuideLayout({
                 {lede}
               </p>
               {/* Phones skip the art so the trainers stay near the top. */}
-              {art && <ScenePlate className="hidden sm:block">{art}</ScenePlate>}
+              {art && (
+                <ScenePlate className="hidden sm:block">{art}</ScenePlate>
+              )}
             </div>
           </header>
 

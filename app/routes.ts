@@ -11,7 +11,17 @@ export default [
   route("road-signs", "routes/road-signs.tsx"),
   route("road-signs/pelican", "routes/road-signs-pelican.tsx"),
   route("road-signs/3d", "routes/road-signs-3d.tsx"),
-  // One page per sign. The two trainers above take priority over the slug.
+  // Class guides. One file, three routes: the path picks the class.
+  route("road-signs/warning-signs", "routes/road-sign-class.tsx", {
+    id: "sign-class-warning",
+  }),
+  route("road-signs/mandatory-signs", "routes/road-sign-class.tsx", {
+    id: "sign-class-mandatory",
+  }),
+  route("road-signs/prohibitory-signs", "routes/road-sign-class.tsx", {
+    id: "sign-class-prohibitory",
+  }),
+  // One page per sign. The trainers and class guides above take priority.
   route("road-signs/:slug", "routes/road-sign.tsx"),
   route("model-town-board", "routes/model-town-board.tsx"),
 

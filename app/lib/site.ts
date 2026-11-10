@@ -16,6 +16,8 @@ export const SITE = {
     "drive rush",
   ],
   url: "https://driverush.ke",
+  /** Byline on every blog post and guide. Links to /about. */
+  byline: "DriveRush team",
   locale: "en_KE",
   lang: "en-KE",
   /**

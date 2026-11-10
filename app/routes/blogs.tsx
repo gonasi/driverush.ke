@@ -71,7 +71,7 @@ export function meta(_: Route.MetaArgs) {
           headline: p.title,
           description: p.description,
           datePublished: p.date,
-          dateModified: p.date,
+          dateModified: p.updated ?? p.date,
           url: absUrl(`${PATH}/${p.slug}`),
           author: { "@type": "Organization", name: SITE.name },
           mainEntityOfPage: absUrl(`${PATH}/${p.slug}`),
@@ -171,7 +171,7 @@ export default function BlogsIndex() {
                       </Link>
                     </Button>
                     <span className="font-mono text-[11px] uppercase tracking-widest text-ink-3">
-                      {hero.readingMinutes} min read · By DriveRush editors
+                      {hero.readingMinutes} min read · By {SITE.byline}
                     </span>
                   </div>
                 </div>

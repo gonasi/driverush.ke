@@ -1,0 +1,89 @@
+---
+title: "Parking and stopping signs in Kenya: one bar, two bars and the plate below"
+description: "What Kenya's blue parking and stopping signs mean: no parking, no stopping on a clearway, the zone version, the plates that set the hours, and the parking and taxi rank signs in the Ministry of Roads manual."
+slug: parking-and-stopping-signs-kenya
+date: "2026-11-10"
+readingMinutes: 6
+tone: practical
+category: Road signs
+tags: [road signs, parking, clearway, prohibitory signs, Highway Code]
+lede: A blue disc with a red ring is about the kerb. Count the red lines, then read the plate underneath.
+kicker: "Dispatch № 13 · Road signs"
+---
+
+import { Link } from "react-router";
+import {
+  Alert,
+  AlertBody,
+  AlertTitle,
+  AlertDescription,
+} from "~/components/ui/alert";
+import { Button } from "~/components/ui/button";
+
+Most prohibitory signs are white inside with a red ring. The parking and stopping signs are the exception: they're blue inside, with a red ring and red lines across. That blue makes them look like the mandatory signs, but they're bans, and the number of red lines tells you how strict the ban is.
+
+<Alert variant="info" className="my-7">
+  <AlertBody>
+    <AlertTitle>The short version</AlertTitle>
+    <AlertDescription>
+      One red bar: don't park. A red X: don't stop at all. A plate underneath
+      can limit either one to certain hours, so read it before you pull in.
+    </AlertDescription>
+  </AlertBody>
+</Alert>
+
+## One bar: no parking
+
+[Parking prohibited](/road-signs/parking-prohibited) (P.32) is a blue disc with a red ring and one red diagonal bar. You may not park here. The Ministry of Roads road signs manual says the details of a parking ban, such as the hours, should be shown on an information plate with the sign.
+
+On the chart there's also a zone sign (P.39), with the word ZONE under the disc. Its rule covers a whole area rather than one stretch of kerb, so watch for it as you drive in, not only when you're looking for a place to stop.
+
+## Two bars: no stopping
+
+[Parking or waiting prohibited](/road-signs/parking-or-waiting-prohibited) (P.33) has a red X across the blue. It's stricter than the single bar. The manual calls a road signed this way a clearway: you may not stop or park on it while it's in operation, and the hours should be shown on a plate under the sign. The end of the clearway is marked with the same sign and a plate saying END.
+
+"Not stopping" means not stopping for anything you chose to do. Dropping a passenger off, picking someone up, answering a call or checking directions all count. If you need to do any of those, drive on until you're past the END plate or find a legal place.
+
+## The plate decides the hours
+
+A plate under a sign never stands on its own, but it can change what the sign means for you right now. The manual shows plates giving times and days, like "0700 to 1030, Mon to Fri". Outside those hours, the ban on that plate doesn't apply. Inside them, it applies in full.
+
+So read in this order: the bars first (park or stop?), then the plate (when?). If there's no plate, assume the ban applies all the time.
+
+The chart has four plates of its own, the [additional panels](/road-signs#additional-panels), that add a direction, a distance or a length to the sign above them.
+
+## Signs that allow parking
+
+The manual describes signs that work the other way, too:
+
+- **Parking permitted.** A sign showing that parking is allowed, usually with a plate below giving the restrictions, such as how long you may stay.
+- **Disc parking.** Where a disc parking system runs, a plate below the parking sign gives the hours it operates and the longest single stay allowed on that stretch.
+- **Taxi rank.** An appointed stand for taxis. The manual says no vehicle other than a taxi available for hire may park there, so don't wait in one, even briefly.
+
+Parking rules and fees in towns are set by county governments, so the details vary from place to place. The signs and plates on the street are what apply where you are.
+
+## Common mistakes
+
+- **Treating the blue as permission.** Blue usually means "you must" on a round sign, but with a red ring and red bars it's a ban.
+- **Counting the bars wrong.** A single bar bans parking. An X bans stopping as well, so even a short stop breaks it.
+- **Ignoring the plate.** Drivers often get caught by a ban that only runs at rush hour, or assume a ban that has ended still applies.
+- **Stopping "just for a second" on a clearway.** Clearways exist because one stopped car blocks a busy lane.
+
+## Practise them
+
+The three signs make a quick round. Drill them on the chart until you can say "park" or "stop" the moment you see the bars.
+
+<div className="my-7 grid gap-3 sm:grid-cols-2 not-prose">
+  <Button variant="rush" size="lg" asChild>
+    <Link to="/road-signs/pelican?codes=P.32,P.33,P.39&go=1">
+      Drill the parking signs
+    </Link>
+  </Button>
+  <Button variant="paper" size="lg" asChild>
+    <Link to="/road-signs/prohibitory-signs">All prohibitory signs</Link>
+  </Button>
+</div>
+
+## Sources
+
+- [Design Manual for Roads and Bridges, Part 5a: Road Signs](https://transport.go.ke/sites/default/files/2023-07/Part%205a%20-%20Road%20Signs.pdf), Ministry of Roads, draft of December 2009. Section 5.6 covers parking restriction signs, clearways, disc parking and taxi ranks.

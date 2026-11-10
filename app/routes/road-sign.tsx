@@ -19,6 +19,7 @@ import {
   signPageBySlug,
   signPagePath,
 } from "~/lib/road-sign-pages";
+import { signClassPage } from "~/lib/sign-class-pages";
 import { absUrl, breadcrumbLd, graphLd, pageMeta } from "~/lib/site";
 import { trainerHref } from "~/lib/trainer-rounds";
 
@@ -53,6 +54,7 @@ export function meta({ data }: Route.MetaArgs) {
     ];
   }
   const guide = SIGN_CLASS_GUIDE[sign.category!];
+  const classPage = signClassPage(sign.category);
   const path = signPagePath(sign);
   return [
     ...pageMeta({
@@ -72,6 +74,7 @@ export function meta({ data }: Route.MetaArgs) {
       breadcrumbLd([
         { name: "Home", url: "/" },
         { name: "Road signs", url: "/road-signs" },
+        ...(classPage ? [{ name: classPage.name, url: classPage.path }] : []),
         { name: sign.name!, url: path },
       ]),
       {
@@ -93,6 +96,7 @@ export function meta({ data }: Route.MetaArgs) {
 export default function RoadSign({ loaderData }: Route.ComponentProps) {
   const sign = signPageBySlug(loaderData.slug)!;
   const guide = SIGN_CLASS_GUIDE[sign.category!];
+  const classPage = signClassPage(sign.category);
   const codes = sign.code ? [sign.code] : [];
   const extra = signGuide(sign);
   const lookAlikes = (extra?.confusedWith ?? []).flatMap(({ code, how }) => {
@@ -115,7 +119,7 @@ export default function RoadSign({ loaderData }: Route.ComponentProps) {
             </Link>
             <span aria-hidden>/</span>
             <Link
-              to={`/road-signs#${sign.category}`}
+              to={classPage?.path ?? `/road-signs#${sign.category}`}
               className="hover:text-ink hover:underline"
             >
               {guide.label}
@@ -213,10 +217,22 @@ export default function RoadSign({ loaderData }: Route.ComponentProps) {
             )}
             <Block title={`How to read ${guide.label.toLowerCase()}`}>
               <p className="m-0">{guide.rule}</p>
+              {classPage && (
+                <p className="m-0 mt-3">
+                  <Link
+                    to={classPage.path}
+                    className="font-sans text-[15px] font-semibold text-rush hover:underline"
+                  >
+                    The full guide to {guide.label.toLowerCase()}
+                  </Link>
+                </p>
+              )}
             </Block>
           </section>
 
-          <InlineAd />
+          {/* Only signs with the full write-up carry an ad. The rest are short
+              and noindex, and an ad on a thin page reads as low value. */}
+          {extra && <InlineAd />}
 
           <section className="mt-10">
             <h2 className="m-0 mb-4 border-b-2 border-ink pb-3 font-display text-xl font-extrabold uppercase tracking-tight">

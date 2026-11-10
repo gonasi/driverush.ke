@@ -770,6 +770,121 @@ export const SIGN_GUIDES: Record<string, SignGuide> = {
     remember:
       "The arrow slides down to the left, and so do you: keep left of the island.",
   },
+  "M.7": {
+    looks:
+      "A blue disc with a white bicycle in the middle and a thin white border. There are no words on it.",
+    where:
+      "It marks the start of a track set aside for bicycles, beside a road or along its own path, and it works together with the cycle-track markings painted on the surface. You may see a plate under it saying where the track starts or ends.",
+    confusedWith: [
+      {
+        code: "P.5",
+        how: "P.5 shows a bicycle too, but on a white disc with a red ring and a red slash, and it bans bicycles. Blue with a bicycle means bicycles go here; red with a bicycle means they don't.",
+      },
+      {
+        code: "M.8",
+        how: "M.8 has a walking adult and child on the blue disc, and it sets a path aside for people on foot. Look at what is drawn: the picture tells you who the track belongs to.",
+      },
+    ],
+    mistakes: [
+      "Driving or parking on the track because it looks empty. It belongs to cyclists whether or not one is on it right now.",
+      "Riding a motorbike along it to skip traffic. A cycle track is for pedal bicycles, not anything with an engine.",
+      "Forgetting to check for cyclists where the track crosses a junction or a driveway, where they may come across your path.",
+    ],
+    remember:
+      "Blue means you must, and the bike shows who: this lane is the bicycle's.",
+  },
+  "M.10": {
+    looks:
+      "A blue disc with a large white number in the middle (30 on the chart) and no red anywhere on it.",
+    where:
+      "It goes on fast roads where a very slow vehicle would be a danger to everyone around it, so that traffic keeps moving at a safe, even pace. It stays in force until you pass the end sign, M.11.",
+    confusedWith: [
+      {
+        code: "P.25",
+        how: "P.25 shows a number on a white disc with a red ring, and that number is the most you may do. On this blue disc the number is the least you may do. Read the colour before the number.",
+      },
+      {
+        code: "M.11",
+        how: "M.11 is the same blue disc and number with red diagonal lines through it, and it means the minimum speed has ended.",
+      },
+    ],
+    mistakes: [
+      "Reading it as a speed limit and slowing down to the number shown. On a blue disc, the number is a floor, not a ceiling.",
+      "Thinking the minimum applies even when traffic or weather makes it unsafe. Never drive faster than conditions allow.",
+      "Taking a slow, heavily loaded vehicle onto the road when it can't keep up. Plan a different route instead.",
+    ],
+    remember:
+      "Red ring, the top speed. Blue disc, the bottom speed. Blue is the floor.",
+  },
+  "M.11": {
+    looks:
+      "The minimum speed sign, a blue disc with a white number, crossed by a band of thin red diagonal lines running from lower left to upper right.",
+    where:
+      "It is placed where a stretch with a minimum speed ends, such as where a fast road meets ordinary roads again. After it, you may go slower than the number shown, within the normal limits.",
+    confusedWith: [
+      {
+        code: "M.10",
+        how: "M.10 is the same disc without the red lines, and it means the minimum speed starts. The red lines crossing it out are the only difference.",
+      },
+      {
+        code: "P.30",
+        how: "P.30 ends a maximum speed limit, and it's a white disc with black diagonal lines. M.11 is blue with a red line, and it ends a minimum. Ask which kind of limit is being cancelled.",
+      },
+    ],
+    mistakes: [
+      "Taking it to mean you may now go as fast as you like. It only lifts the minimum. Any maximum speed limit still applies.",
+      "Slowing sharply right at the sign while traffic behind you is still moving fast. Ease off gradually.",
+      "Missing it and staying anxious about a minimum that no longer applies.",
+    ],
+    remember:
+      "Lines through a sign cancel it. Red lines through the blue floor mean the floor is gone.",
+  },
+  "P.2": {
+    looks:
+      "A white disc with a thick red ring and nothing at all inside it: no picture, no number, no bar.",
+    where:
+      "It closes a street to vehicles in both directions. It is often used to make a street pedestrian-only, with an information plate underneath showing the hours or days it applies, and it should stand on both sides of the street facing traffic.",
+    confusedWith: [
+      {
+        code: "P.1",
+        how: "P.1 is a solid red disc with a white bar, and it stops you entering from your side only. P.2 is white inside with just the red ring, and it shuts the street to vehicles from both ends.",
+      },
+      {
+        code: "P.25",
+        how: "P.25 has the same white disc and red ring, with a number inside, and it sets a speed limit. When the ring is empty, nothing may drive past it at any speed.",
+      },
+    ],
+    mistakes: [
+      "Driving in because the street looks quiet. An empty ring bans every vehicle, whether people are walking there or not.",
+      "Ignoring the plate underneath. If it gives hours, the ban applies during those hours, so read it before deciding.",
+      "Treating it as a road-works warning that you can drive through slowly. It is an order, not a warning.",
+    ],
+    remember:
+      "An empty red ring is an empty street: no vehicles at all, from either end.",
+  },
+  "P.33": {
+    looks:
+      "A blue disc with a red ring and a red X across it, the two red lines meeting in the middle.",
+    where:
+      "It marks a clearway, a stretch of road where you may not stop or park at all, usually because stopped vehicles would block a busy road. A plate below may give the hours it applies, and the end of the clearway is shown by the same sign with an END plate.",
+    confusedWith: [
+      {
+        code: "P.32",
+        how: "P.32 has a single red slash across the blue, and it bans parking. P.33 has two slashes making an X, and it bans stopping as well. Count the red lines: two is stricter than one.",
+      },
+      {
+        code: "P.39",
+        how: "P.39 adds the word ZONE under its disc and has a single slash. P.33 has the X and covers the road you're on.",
+      },
+    ],
+    mistakes: [
+      "Stopping 'just for a second' to drop off or pick up a passenger. On a clearway, any stop counts.",
+      "Pulling over to answer a call or check directions. Drive on until you're past the END plate or find a legal place to stop.",
+      "Not reading the time plate. Outside the hours shown, the ban may not apply, but inside them it applies in full.",
+    ],
+    remember:
+      "One red line, don't park. A red X, don't even stop.",
+  },
   "P.1": {
     looks:
       "A solid red circle with a thick white horizontal bar straight across the middle. There's no picture or writing on it.",
@@ -786,7 +901,7 @@ export const SIGN_GUIDES: Record<string, SignGuide> = {
       },
       {
         code: "P.2",
-        how: "P.2 shows the road is closed, usually for works or an event, and the closure may be temporary. P.1 normally stays in place because it's part of the street's fixed layout.",
+        how: "P.2 is a plain red ring with nothing inside, and it bans vehicles from both directions, often to make a street pedestrian-only. P.1 is solid red with a white bar and stops you entering from your side only.",
       },
     ],
     mistakes: [
@@ -1043,7 +1158,7 @@ export const SIGN_GUIDES: Record<string, SignGuide> = {
       },
       {
         code: "P.39",
-        how: "The no stopping zone sign has the word ZONE under the disc and covers a whole area, and its name tells you stopping is banned there. Treating it like a plain no-parking spot and pulling over to drop someone off would break it.",
+        how: "P.39 adds the word ZONE under the disc, so its ban covers a whole area rather than one stretch of kerb. Check for it as you drive into a town centre, not just where you stop.",
       },
     ],
     mistakes: [

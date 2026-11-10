@@ -9,6 +9,7 @@ import {
 } from "~/components/brand/icons";
 
 import { cn } from "~/lib/utils";
+import { SITE } from "~/lib/site";
 import type { BlogPost } from "~/lib/blog";
 import { Rail } from "~/components/brand/rail";
 import { ShareButton } from "~/components/brand/share-button";
@@ -40,10 +41,7 @@ function TryItNowPanel() {
       <Button variant="rush" size="sm" asChild>
         <Link to="/#try-now">
           Start training
-          <Icon
-            icon={ArrowRightIcon}
-            size={14}
-          />
+          <Icon icon={ArrowRightIcon} size={14} />
         </Link>
       </Button>
     </aside>
@@ -73,10 +71,7 @@ export function BlogPostLayout({
               to="/blogs"
               className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-ink-3 outline-none hover:text-ink focus-visible:text-ink"
             >
-              <Icon
-                icon={ArrowLeftIcon}
-                size={14}
-              />
+              <Icon icon={ArrowLeftIcon} size={14} />
               All posts
             </Link>
             <span className="font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
@@ -111,7 +106,12 @@ export function BlogPostLayout({
               <div className="flex flex-wrap items-center gap-2 font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
                 <span>{post.readingMinutes} min read</span>
                 <span aria-hidden>·</span>
-                <span>By DriveRush editors</span>
+                <span>
+                  By{" "}
+                  <Link to="/about" className="hover:text-ink hover:underline">
+                    {SITE.byline}
+                  </Link>
+                </span>
                 {post.tags.length > 0 && (
                   <>
                     <span aria-hidden>·</span>
@@ -164,10 +164,7 @@ export function BlogPostLayout({
               </Button>
               <Button variant="paper" size="lg" asChild>
                 <Link to="/road-signs/3d">
-                  <Icon
-                    icon={Sign3DIcon}
-                    size={18}
-                  />
+                  <Icon icon={Sign3DIcon} size={18} />
                   Spin signs in 3D
                 </Link>
               </Button>

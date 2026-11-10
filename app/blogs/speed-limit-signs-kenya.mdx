@@ -1,0 +1,112 @@
+---
+title: "Speed signs in Kenya: limits, minimums and where they end"
+description: "How to read every Kenyan speed sign: the red-ring limit, the blue minimum, the signs that end each one, repeater signs, and the speed limits listed in the Ministry of Roads road signs manual."
+slug: speed-limit-signs-kenya
+date: "2026-11-10"
+readingMinutes: 6
+tone: explainer
+category: Road signs
+tags: [road signs, speed limits, NTSA, Highway Code, prohibitory signs]
+lede: Four round signs carry a speed. Two set a limit and two end one, and the colour tells you which way the number works.
+kicker: "Dispatch № 12 · Road signs"
+---
+
+import { Link } from "react-router";
+import {
+  Alert,
+  AlertBody,
+  AlertTitle,
+  AlertDescription,
+} from "~/components/ui/alert";
+import { Button } from "~/components/ui/button";
+
+Speed signs look like the easiest signs to learn. There's a number on them, and the number is the speed. But there are four of them on the chart, they work in two different directions, and two of them exist only to cancel the other two. Mixing them up is one of the quickest ways to read a sign backwards.
+
+<Alert variant="info" className="my-7">
+  <AlertBody>
+    <AlertTitle>The short version</AlertTitle>
+    <AlertDescription>
+      A number in a red ring is the most you may do. A number on blue is the
+      least you may do. Lines through either one mean that limit has ended.
+    </AlertDescription>
+  </AlertBody>
+</Alert>
+
+## The four speed signs
+
+**[Speed limit](/road-signs/speed-limit) (P.25).** A white disc with a bold red ring and a black number. The number is the highest speed you may drive at, in kilometres per hour. There's no "km/h" written on it: in Kenya the figure is always in kilometres per hour.
+
+**[End of speed limit](/road-signs/end-of-speed-limit) (P.30).** A white disc with a thin black outline instead of the red ring, with the number crossed by a band of thin black diagonal lines. It tells you the limit shown on it has ended.
+
+**[Compulsory minimum speed](/road-signs/compulsory-minimum-speed) (M.10).** A blue disc with a white number. This is the lowest speed you may drive at. You'll find it on fast roads where a very slow vehicle would be a danger to traffic around it.
+
+**[End of compulsory minimum speed](/road-signs/end-of-compulsory-minimum-speed) (M.11).** The same blue disc and number, crossed through with red diagonal lines. The minimum has ended, so you may go slower again.
+
+## Read the colour before the number
+
+The number on all four signs is drawn the same way, so the number alone tells you nothing about which way it works. The colour does.
+
+- **Red ring:** a ceiling. Don't go above it.
+- **Blue disc:** a floor. Don't go below it.
+
+This is the same rule that runs through all the round signs. A red ring forbids something, and a blue disc orders it. Read more in our guides to [prohibitory signs](/road-signs/prohibitory-signs) and [mandatory signs](/road-signs/mandatory-signs).
+
+A minimum speed never means you must drive faster than is safe. If traffic, rain or poor visibility make the number unsafe, conditions come first.
+
+## Lines mean "ends here"
+
+Both end signs use diagonal lines through the number, and they're easy to confuse with each other.
+
+- **Black lines on white, no red ring:** the maximum has ended.
+- **Red lines on blue:** the minimum has ended.
+
+Ending a limit doesn't mean there's no limit at all. When a special limit ends, the ordinary limit for that kind of road applies again. When a minimum ends, any maximum still applies.
+
+There's also a fifth sign that can end a speed limit: [end of all prohibitions](/road-signs/end-of-all-prohibitions) (P.29), a white disc with diagonal black lines and no number. It cancels every earlier ban at once, not just the speed limit. The end of speed limit sign only ends the limit shown on it, so a no-overtaking ban, for example, may still be in force.
+
+## What the manual says about the limits
+
+The Ministry of Roads road signs manual is a December 2009 draft, and it lists four kinds of maximum speed limit under traffic law:
+
+| Kind of limit       | Speed in the manual |
+| ------------------- | ------------------- |
+| Built-up area       | 50 km/h             |
+| Special speed limit | 70 or 80 km/h       |
+| General speed limit | 100 km/h            |
+| Motorway            | 120 km/h            |
+
+The manual also says the limits are set in the traffic laws or in regulations made by the ministry, so they can change, and different kinds of vehicle can have their own limits. The number on the sign in front of you is the one that counts. If you're unsure about the limit for a particular vehicle class, ask your driving school.
+
+## Repeaters, and where the signs stand
+
+You won't only see a speed sign where the limit starts. The manual recommends repeater signs at intervals of 500 metres on long stretches with a special limit, and allows smaller repeaters, half the normal size, on long speed-restricted sections. If you see a small speed sign by the road with no junction near it, it's a reminder, not a new limit.
+
+The manual also says speed limit signs go on both sides of the road, and on both sides of a dual carriageway. If the sign on your left is blocked by a lorry, check the one on your right.
+
+## Common mistakes
+
+- **Treating a blue number as a limit.** Slowing to 30 at a blue 30 sign is exactly the wrong reaction.
+- **Speeding up the moment you pass an end sign.** The old limit has ended, but another one now applies. Ease up to it gradually.
+- **Missing the T.** A number followed by T in a red ring is a [weight limit](/road-signs/no-entry-for-vehicles-exceeding-weight-shown) in tonnes, not a speed.
+- **Reading the end of speed limit as the end of all prohibitions.** Only the sign with no number cancels everything.
+
+## Practise them
+
+The four speed signs make a short, useful round on their own. Drill them on the Pelican chart, saying "ceiling" or "floor" before you name each one, then spin them in 3D to practise reading the number from an angle.
+
+<div className="my-7 grid gap-3 sm:grid-cols-2 not-prose">
+  <Button variant="rush" size="lg" asChild>
+    <Link to="/road-signs/pelican?codes=P.25,P.30,M.10,M.11,P.29&go=1">
+      Drill the speed signs
+    </Link>
+  </Button>
+  <Button variant="paper" size="lg" asChild>
+    <Link to="/road-signs/3d?codes=P.25,P.30,M.10,M.11,P.29&go=1">
+      Spin them in 3D
+    </Link>
+  </Button>
+</div>
+
+## Sources
+
+- [Design Manual for Roads and Bridges, Part 5a: Road Signs](https://transport.go.ke/sites/default/files/2023-07/Part%205a%20-%20Road%20Signs.pdf), Ministry of Roads, draft of December 2009. Section 5.5 covers speed limit signs, repeaters and where they stand.
