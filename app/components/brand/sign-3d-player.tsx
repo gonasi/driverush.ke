@@ -25,6 +25,7 @@ import {
   selectCanResume,
   useSigns3DStore,
 } from "~/lib/signs-3d-store";
+import { missTip } from "~/lib/miss-tips";
 import { cn } from "~/lib/utils";
 
 import { Button } from "~/components/ui/button";
@@ -38,7 +39,10 @@ import {
 import { RevealCountdown } from "~/components/brand/reveal-countdown";
 import { TrainerReadyPanel } from "~/components/brand/trainer-ready-panel";
 import { TrainerResultCard } from "~/components/brand/trainer-result-card";
+import { MissTip } from "~/components/brand/miss-tip";
 import { Sign3DViewer } from "~/components/brand/sign-3d-viewer";
+
+const STREAK_CALLOUTS = new Set([3, 5, 10]);
 
 // --- motion -----------------------------------------------------------------
 const ANSWER_CONTAINER = {
@@ -90,6 +94,8 @@ export function Sign3DPlayer({
       runRecalled: st.runRecalled,
       runMissed: st.runMissed,
       runMissCount: st.runMissCount,
+      runStreak: st.runStreak,
+      runBestStreak: st.runBestStreak,
       runScope: st.runScope,
       countdownLive: st.countdownLive,
       canResume: selectCanResume(st),
@@ -103,6 +109,7 @@ export function Sign3DPlayer({
       prev: st.prev,
       revealNow: st.revealNow,
       gradeAndNext: st.gradeAndNext,
+      continueAfterMiss: st.continueAfterMiss,
       replaySignAudio: st.replaySignAudio,
       setSettingsOpen: st.setSettingsOpen,
       exit: st.exit,
@@ -255,7 +262,7 @@ export function Sign3DPlayer({
         </Button>
         <span className="whitespace-nowrap bg-ink/70 px-2 py-0.5 font-mono text-[10px] font-bold tracking-wider tabular-nums text-paper">
           {settings.selfGrading
-            ? `${tally.recalled} / ${tally.signsTotal}${s.runMissCount > 0 ? ` · ✗${s.runMissCount}` : ""}`
+            ? `${tally.recalled} / ${tally.signsTotal}${s.runMissCount > 0 ? ` · ✗${s.runMissCount}` : ""}${s.runStreak >= 2 ? ` · ${s.runStreak} in a row` : ""}`
             : `${pos + 1} / ${s.queue.length}`}
         </span>
         <Button
@@ -271,6 +278,19 @@ export function Sign3DPlayer({
           />
         </Button>
       </motion.div>
+
+      {/* streak callout at 3, 5 and 10 in a row; fades itself away */}
+      {settings.selfGrading && STREAK_CALLOUTS.has(s.runStreak) && (
+        <div
+          key={`streak-${s.runStreak}`}
+          aria-live="polite"
+          className="dr-flash pointer-events-none absolute inset-x-0 top-16 z-20 flex justify-center"
+        >
+          <span className="border-2 border-ink bg-kenya-green px-3 py-1 font-display text-[15px] font-extrabold uppercase tracking-tight text-kenya-green-foreground shadow-stamp-xs">
+            {s.runStreak} in a row
+          </span>
+        </div>
+      )}
 
       {/* spin hint + manual reveal — only while the answer is hidden */}
       {(phase === "initial" || phase === "focused") && (
@@ -399,6 +419,7 @@ export function Sign3DPlayer({
             missed={practiced.filter((r) => s.runMissed.includes(r.id))}
             poolTotal={total}
             counts={counts}
+            bestStreak={s.runBestStreak}
             share={{
               surface: "signs3d_complete",
               payload: {
@@ -418,7 +439,10 @@ export function Sign3DPlayer({
       </AnimatePresence>
 
       {/* answer bottom sheet */}
-      <Sheet open={phase === "revealed"} modal={false}>
+      <Sheet
+        open={phase === "revealed" || phase === "missed"}
+        modal={false}
+      >
         <SheetContent
           side="bottom"
           hideOverlay
@@ -426,7 +450,7 @@ export function Sign3DPlayer({
           onEscapeKeyDown={(e) => e.preventDefault()}
           onPointerDownOutside={(e) => e.preventDefault()}
           onInteractOutside={(e) => e.preventDefault()}
-          className="max-h-[70vh] gap-0 p-0"
+          className="max-h-[80vh] gap-0 overflow-y-auto p-0"
         >
           {sign && (
             <motion.div
@@ -477,7 +501,22 @@ export function Sign3DPlayer({
                 </motion.div>
               )}
 
-              {settings.selfGrading ? (
+              {phase === "missed" ? (
+                <motion.div variants={ANSWER_ITEM} className="space-y-3">
+                  <MissTip tip={missTip(sign)} />
+                  <Button
+                    variant="ink"
+                    className="w-full"
+                    onClick={() => s.continueAfterMiss()}
+                  >
+                    Next sign
+                    <Icon icon={ChevronRightIcon} size={14} />
+                  </Button>
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-ink-3">
+                    It comes back later this run.
+                  </p>
+                </motion.div>
+              ) : settings.selfGrading ? (
                 <motion.div variants={ANSWER_ITEM} className="space-y-3">
                   <div className="flex gap-2 pt-1">
                     <Button
@@ -504,7 +543,7 @@ export function Sign3DPlayer({
                     </Button>
                   </div>
                   <p className="font-mono text-[10px] uppercase tracking-widest text-ink-3">
-                    Missed → it comes back later this run.
+                    Missed signs come back later this run.
                     {isMastered(s.progress, sign.id) ? " · known ✓" : ""}
                   </p>
                 </motion.div>

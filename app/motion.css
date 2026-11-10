@@ -94,6 +94,38 @@
   animation-delay: calc(var(--i, 0) * 45ms);
 }
 
+/* Pops in, holds, then fades away: a streak callout in the trainers. */
+@keyframes dr-flash {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  15% {
+    opacity: 1;
+    transform: none;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes dr-flash-still {
+  0%,
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.dr-flash {
+  animation: dr-flash 1800ms var(--ease-snap) forwards;
+}
+
 /* Fades in once the camera has landed. */
 .dr-settle {
   animation: dr-settle 260ms ease-out backwards;
@@ -232,5 +264,10 @@ p {
 
   [data-camera] {
     transition-duration: 1ms !important;
+  }
+
+  /* Still has to leave, so fade without moving. */
+  .dr-flash {
+    animation-name: dr-flash-still;
   }
 }

@@ -181,6 +181,8 @@ export const analytics = {
     box_after: number;
     first_try: boolean;
     scope: string;
+    /** On a miss: whether the tip was the sign's own guide or its class rule. */
+    miss_tip?: "guide" | "class_rule";
   }) => emit("sign_graded", args),
 
   /** Outbound click to a credited source site. */

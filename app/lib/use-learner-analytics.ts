@@ -29,6 +29,7 @@ import {
   TRAINER_STORAGE_KEYS,
   type SignProgress,
 } from "./pelican-progress";
+import { liveStreak, readPracticeStreak } from "./practice-streak";
 
 const FIRST_SEEN_KEY = "driverush:first-seen";
 
@@ -66,6 +67,7 @@ function buildProfile(): LearnerProfile {
     signs_mastered_pelican: pelicanMastered,
     signs_mastered_3d: signs3dMastered,
     learner_stage: learnerStage(pelicanMastered + signs3dMastered),
+    practice_streak_days: liveStreak(readPracticeStreak()).days,
   };
 }
 

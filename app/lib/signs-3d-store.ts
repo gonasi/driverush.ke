@@ -37,6 +37,8 @@ import {
   type SignProgress,
 } from "./pelican-progress";
 import { analytics } from "./analytics";
+import { missTip } from "./miss-tips";
+import { bumpPracticeStreak } from "./practice-streak";
 import { triggerAdAndAwaitClose, triggerAdFromNonReact } from "./ads/ad-engine";
 import {
   defaultScope,
@@ -185,6 +187,7 @@ export type TrainerPhase =
   | "initial"
   | "focused"
   | "revealed"
+  | "missed"
   | "between"
   | "complete";
 export type AssetStatus = "idle" | "ready";
@@ -212,6 +215,9 @@ type Signs3DState = {
   runMissed: string[];
   runMissCount: number;
   runSeen: number;
+  /** "Knew it" taps in a row this run. A miss resets it. */
+  runStreak: number;
+  runBestStreak: number;
   // ---- actions ----
   configure: (board: Signs3DData) => void;
   preload: () => void;
@@ -229,6 +235,8 @@ type Signs3DState = {
   prev: () => void;
   revealNow: () => void;
   gradeAndNext: (r: GradeResult) => void;
+  /** Leave the miss tip for the next sign. */
+  continueAfterMiss: () => void;
   replaySignAudio: () => void;
   exit: () => void;
   // ---- internal engine steps ----
@@ -263,6 +271,8 @@ export const useSigns3DStore = create<Signs3DState>()(
       runMissed: [],
       runMissCount: 0,
       runSeen: 0,
+      runStreak: 0,
+      runBestStreak: 0,
 
       // ---- config / preload ----
       configure: (board) => set({ board }),
@@ -299,6 +309,8 @@ export const useSigns3DStore = create<Signs3DState>()(
             runMissed: [],
             runMissCount: 0,
             runSeen: 0,
+            runStreak: 0,
+            runBestStreak: 0,
           });
         }
         if (touchedOrder && get().overlayOpen) {
@@ -354,6 +366,8 @@ export const useSigns3DStore = create<Signs3DState>()(
           runMissed: [],
           runMissCount: 0,
           runSeen: 0,
+          runStreak: 0,
+          runBestStreak: 0,
           // Starting the whole chart replaces any saved chart run. A round or
           // drill leaves the save alone, so it can still be resumed afterwards.
           ...(scope.kind === "chart" ? { inProgressRun: null } : {}),
@@ -406,6 +420,8 @@ export const useSigns3DStore = create<Signs3DState>()(
           runMissed: run.runMissed,
           runMissCount: run.runMissCount,
           runSeen: run.runSeen,
+          runStreak: 0,
+          runBestStreak: 0,
         });
         get()._armBetween();
       },
@@ -431,6 +447,9 @@ export const useSigns3DStore = create<Signs3DState>()(
             break;
           case "between":
             get()._armBetween();
+            break;
+          case "missed":
+            // The miss tip waits for a tap, so there is nothing to arm.
             break;
           default:
             break;
@@ -458,7 +477,15 @@ export const useSigns3DStore = create<Signs3DState>()(
         buzz(r === "knew" ? BUZZ.tap : BUZZ.miss);
         const before = boxOf(get().progress, sign.id);
         const progress = applyGrade(get().progress, sign.id, r);
-        set({ progress });
+        set((s) => {
+          const runStreak = r === "knew" ? s.runStreak + 1 : 0;
+          return {
+            progress,
+            runStreak,
+            runBestStreak: Math.max(s.runBestStreak, runStreak),
+          };
+        });
+        bumpPracticeStreak();
         analytics.signGraded({
           trainer: "3d",
           sign_code: sign.code ?? sign.id,
@@ -468,6 +495,7 @@ export const useSigns3DStore = create<Signs3DState>()(
           box_after: boxOf(progress, sign.id),
           first_try: !get().runMissed.includes(sign.id),
           scope: get().runScope.kind,
+          miss_tip: r === "missed" ? missTip(sign).source : undefined,
         });
         if (r === "knew") {
           set((s) => ({
@@ -488,7 +516,15 @@ export const useSigns3DStore = create<Signs3DState>()(
             };
           });
         }
+        // A miss holds on the tip until the learner taps Next.
+        if (r === "missed") {
+          set({ phase: "missed" });
+          return;
+        }
         get()._toBetween();
+      },
+      continueAfterMiss: () => {
+        if (get().phase === "missed") get()._toBetween();
       },
       replaySignAudio: () => {
         const { queue, pos } = get();
@@ -510,6 +546,8 @@ export const useSigns3DStore = create<Signs3DState>()(
           runMissed: [],
           runMissCount: 0,
           runSeen: 0,
+          runStreak: 0,
+          runBestStreak: 0,
         });
       },
 

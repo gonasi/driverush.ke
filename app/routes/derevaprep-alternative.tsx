@@ -11,7 +11,7 @@ import { breadcrumbLd, graphLd, guideLd, pageMeta } from "~/lib/site";
 import { GuideLayout } from "~/components/brand/guide-layout";
 
 const PATH = "/derevaprep-alternative";
-const CHECKED = "2026-11-05";
+const CHECKED = "2026-11-10";
 const TITLE = "Dereva Prep alternative: how DriveRush compares";
 const DESCRIPTION =
   "Looking for a Dereva Prep alternative? An honest comparison with DriveRush on road signs, the Model Town Board, theory questions, sign-up and price.";

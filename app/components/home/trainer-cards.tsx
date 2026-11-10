@@ -7,10 +7,7 @@
 import * as React from "react";
 import { Link } from "react-router";
 import { Icon } from "~/components/brand/icon";
-import {
-  ArrowRightIcon,
-  Sign3DIcon,
-} from "~/components/brand/icons";
+import { ArrowRightIcon, Sign3DIcon } from "~/components/brand/icons";
 
 import pelican from "~/data/road-signs-pelican.json";
 import type { FocusRegion } from "~/lib/image-focus";
@@ -18,6 +15,7 @@ import { stagger } from "~/lib/motion";
 import { signCounts } from "~/lib/pelican-progress";
 import { SIGN_GAMES, type SignGame } from "~/lib/road-signs";
 import { ROUND_SIZE, trainerHref } from "~/lib/trainer-rounds";
+import { usePracticeStreak } from "~/lib/practice-streak";
 import { useSignProgress } from "~/lib/use-sign-progress";
 
 import { Button } from "~/components/ui/button";
@@ -139,54 +137,69 @@ const PREVIEWS: Record<SignGame["slug"], () => React.JSX.Element> = {
 
 export function TrainerCards({ firstStep = 0 }: { firstStep?: number }) {
   const progress = useSignProgress();
+  const streak = usePracticeStreak();
   return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-5">
-      {SIGN_GAMES.map((game, index) => {
-        const Preview = PREVIEWS[game.slug];
-        const saved = progress?.[game.slug] ?? {};
-        const counts = signCounts(saved, Object.keys(saved));
-        const started = counts.known + counts.learning > 0;
-        return (
-          <article
-            key={game.slug}
-            style={stagger(firstStep + index)}
-            className="dr-rise dr-lift flex min-w-0 flex-col border-2 border-ink bg-surface shadow-stamp"
-          >
-            <div className="border-b-2 border-ink">
-              <Preview />
-            </div>
-            <div className="flex flex-1 flex-col gap-1.5 p-3 sm:gap-2 sm:p-4">
-              <h2 className="m-0 font-display text-[clamp(16px,3.4vw,30px)] font-extrabold uppercase leading-none tracking-tight text-ink">
-                {game.title}
-              </h2>
-              {started ? (
-                <p className="m-0 flex-1 text-[12.5px] font-semibold leading-snug text-ink sm:text-[15px]">
-                  {counts.known} known · {counts.learning} learning
-                  {counts.due > 0 && (
-                    <span className="block font-normal text-ink-2">
-                      {counts.due} sign{counts.due === 1 ? "" : "s"} due
-                    </span>
-                  )}
-                </p>
-              ) : (
-                <p className="m-0 flex-1 text-[12.5px] leading-snug text-ink-2 sm:text-[15px]">
-                  {game.blurb}
-                </p>
-              )}
-              <Button variant="rush" asChild className="mt-1.5 w-full px-2">
-                <Link to={trainerHref(game.to, { go: true })}>
-                  {started ? "Continue" : `Start ${ROUND_SIZE} signs`}
-                  <Icon
-                    icon={ArrowRightIcon}
-                    size={14}
-                    className="dr-arrow hidden sm:inline"
-                  />
-                </Link>
-              </Button>
-            </div>
-          </article>
-        );
-      })}
-    </div>
+    <>
+      <div className="grid grid-cols-2 gap-3 sm:gap-5">
+        {SIGN_GAMES.map((game, index) => {
+          const Preview = PREVIEWS[game.slug];
+          const saved = progress?.[game.slug] ?? {};
+          const counts = signCounts(saved, Object.keys(saved));
+          const started = counts.known + counts.learning > 0;
+          return (
+            <article
+              key={game.slug}
+              style={stagger(firstStep + index)}
+              className="dr-rise dr-lift flex min-w-0 flex-col border-2 border-ink bg-surface shadow-stamp"
+            >
+              <div className="border-b-2 border-ink">
+                <Preview />
+              </div>
+              <div className="flex flex-1 flex-col gap-1.5 p-3 sm:gap-2 sm:p-4">
+                <h2 className="m-0 font-display text-[clamp(16px,3.4vw,30px)] font-extrabold uppercase leading-none tracking-tight text-ink">
+                  {game.title}
+                </h2>
+                {started ? (
+                  <p className="m-0 flex-1 text-[12.5px] font-semibold leading-snug text-ink sm:text-[15px]">
+                    {counts.known} known · {counts.learning} learning
+                    {counts.due > 0 && (
+                      <span className="block font-normal text-ink-2">
+                        {counts.due} sign{counts.due === 1 ? "" : "s"} due
+                      </span>
+                    )}
+                  </p>
+                ) : (
+                  <p className="m-0 flex-1 text-[12.5px] leading-snug text-ink-2 sm:text-[15px]">
+                    {game.blurb}
+                  </p>
+                )}
+                <Button variant="rush" asChild className="mt-1.5 w-full px-2">
+                  <Link to={trainerHref(game.to, { go: true })}>
+                    {started ? "Continue" : `Start ${ROUND_SIZE} signs`}
+                    <Icon
+                      icon={ArrowRightIcon}
+                      size={14}
+                      className="dr-arrow hidden sm:inline"
+                    />
+                  </Link>
+                </Button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+      {/* Only for returning learners, so a first visit stays all action. */}
+      {streak && streak.days > 0 && (
+        <p className="dr-settle m-0 mt-3 text-center font-mono text-[11px] font-bold uppercase tracking-widest text-ink-2">
+          {streak.days} day{streak.days === 1 ? "" : "s"} in a row
+          {!streak.practisedToday && (
+            <span className="font-normal text-ink-3">
+              {" "}
+              · practise today to keep it
+            </span>
+          )}
+        </p>
+      )}
+    </>
   );
 }

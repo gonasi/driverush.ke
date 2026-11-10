@@ -18,6 +18,7 @@ import { regionSpriteStyle, type FocusRegion } from "~/lib/image-focus";
 import { signCrop } from "~/lib/sign-crops";
 import { ease } from "~/lib/motion";
 import type { SignCounts } from "~/lib/pelican-progress";
+import { liveStreak, readPracticeStreak } from "~/lib/practice-streak";
 import type { SharePayload } from "~/lib/share";
 import {
   ROUND_SIZE,
@@ -92,6 +93,7 @@ export function TrainerResultCard({
   missed,
   poolTotal,
   counts,
+  bestStreak = 0,
   share,
   onDrill,
   onNext,
@@ -108,6 +110,8 @@ export function TrainerResultCard({
   missed: readonly MissedSign[];
   poolTotal: number;
   counts: SignCounts;
+  /** Longest run of "Knew it" in a row this run. */
+  bestStreak?: number;
   share: { surface: string; payload: SharePayload };
   onDrill: () => void;
   onNext: () => void;
@@ -131,6 +135,15 @@ export function TrainerResultCard({
         ? "Flawless."
         : `${firstTry} of ${signsTotal} first try.`;
   const nextLabel = scope === "chart" ? "Go again" : `Next ${ROUND_SIZE} signs`;
+  // Only mounts on the client (inside the trainer overlay), so reading storage
+  // here can't cause a hydration mismatch.
+  const days = liveStreak(readPracticeStreak()).days;
+  const streakLine = [
+    bestStreak >= 2 ? `Best streak ${bestStreak}` : null,
+    days >= 1 ? `${days} day${days === 1 ? "" : "s"} in a row` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <motion.div
@@ -208,6 +221,11 @@ export function TrainerResultCard({
                 aria-label="Signs known"
                 className="h-3"
               />
+              {streakLine && (
+                <p className="m-0 mt-2 font-mono text-[10px] font-bold uppercase tracking-widest text-ink-2">
+                  {streakLine}
+                </p>
+              )}
               {allKnown && (
                 <button
                   type="button"
