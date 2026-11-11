@@ -27,6 +27,8 @@ export type RouteRefState = {
   goalTime: number;
   /** How long the car has sat in the bay without being straight in it. */
   askewTime: number;
+  /** The learner has been told the car is not straight in the bay. */
+  askewTold: boolean;
   /** Stop lines the car has stopped at, by the step that starts at them. */
   stopped: Set<number>;
   cooldown: Partial<Record<SmallFaultId, number>>;
@@ -39,6 +41,7 @@ export function createRouteRef(): RouteRefState {
     wrongWayTime: 0,
     goalTime: 0,
     askewTime: 0,
+    askewTold: false,
     stopped: new Set(),
     cooldown: {},
   };
@@ -223,8 +226,10 @@ export function routeRefStep(
     }
     // stopped in the bay, but over a line or at an angle: say so, once in a while
     ref.askewTime = !parked && gap < BAY_NEAR && still ? ref.askewTime + dt : 0;
-    if (ref.askewTime > ASKEW_GRACE && !(ref.cooldown.bay_line! > 0)) {
-      ref.cooldown.bay_line = 6;
+    // Once an attempt: lining up in a bay takes a few goes, and each of them
+    // should not cost another star.
+    if (ref.askewTime > ASKEW_GRACE && !ref.askewTold) {
+      ref.askewTold = true;
       ref.askewTime = 0;
       result.small.push({ id: "bay_line", serious: false });
     }

@@ -182,7 +182,7 @@ export function TrainerResultCard({
             type="button"
             aria-label="Close"
             onClick={onExit}
-            className="-my-1 inline-flex size-6 shrink-0 items-center justify-center border-2 border-paper text-paper outline-none transition-colors duration-100 hover:bg-paper hover:text-ink focus-visible:bg-paper focus-visible:text-ink"
+            className="relative -my-1 inline-flex size-6 shrink-0 items-center justify-center border-2 border-paper before:absolute before:-inset-2.5 before:content-[''] text-paper outline-none transition-colors duration-100 hover:bg-paper hover:text-ink focus-visible:bg-paper focus-visible:text-ink"
           >
             <Icon
               icon={CloseIcon}
@@ -233,7 +233,7 @@ export function TrainerResultCard({
                 value={poolTotal > 0 ? (counts.known / poolTotal) * 100 : 0}
                 tone="green"
                 showTicks={false}
-                aria-label="Signs known"
+                aria-label={trainer === "board" ? "Tasks known" : "Signs known"}
                 className="h-3"
               />
               {streakLine && (

@@ -57,10 +57,26 @@ export type AssistState = {
   entryLane: number | null;
   /** How long the knob has been held back with the car at rest. */
   backTime: number;
+  /** How firmly the lane is being held this step, 0 to 1. For the scene. */
+  hold: number;
+  /** Where on that lane the assist is aiming, and which way the lane runs. */
+  aimX: number;
+  aimZ: number;
+  along: number;
+  /** Reverse gear coming in: 0 to 1 while the knob is held back at rest. */
+  backing: number;
 };
 
 export function createAssist(): AssistState {
-  return { entryLane: null, backTime: 0 };
+  return {
+    entryLane: null,
+    backTime: 0,
+    hold: 0,
+    aimX: 0,
+    aimZ: 0,
+    along: 0,
+    backing: 0,
+  };
 }
 
 /** The compass bearing of "up" on the knob, for each seat. */
@@ -81,6 +97,8 @@ const PULL_BACK = (135 * Math.PI) / 180;
 const TURN_SLOWDOWN = 0.55;
 const QUARTER_TURN = Math.PI / 2;
 const RELEASE_BRAKE = 0.7;
+/** Within this of the speed asked for, the throttle eases off. Metres a second. */
+const THROTTLE_BAND = 1.2;
 /** Held back this long at a standstill, the car goes into reverse. */
 const REVERSE_DWELL = 0.35;
 const STEP = 1 / 60;
@@ -125,6 +143,8 @@ function laneAhead(
   left: number;
   right: number;
   cap: number;
+  /** The point on the lane being steered for. */
+  aim: { x: number; z: number };
 } | null {
   const loc = locate(car.x, car.z);
   const reach = 3.5 + 0.35 * car.speed;
@@ -144,6 +164,7 @@ function laneAhead(
       left: ROAD_CONE,
       right: ROAD_CONE,
       cap: CAR.maxSpeed,
+      aim,
     };
   }
 
@@ -169,6 +190,7 @@ function laneAhead(
       left: RING_CONE_OUT,
       right: RING_CONE_IN,
       cap: Math.sqrt(BEND_GRIP * r),
+      aim: { x: dir.x * r, z: dir.z * r },
     };
   }
 
@@ -192,6 +214,7 @@ function laneAhead(
         left: ROAD_CONE,
         right: ROAD_CONE,
         cap: lane.road === "aisle" ? 4 : CAR.maxSpeed,
+        aim: { x: lane.a.x + dir.x * ahead, z: lane.a.z + dir.z * ahead },
       };
     }
   }
@@ -209,6 +232,8 @@ export function stickToInput(
   const push = Math.min(1, Math.hypot(stick.x, stick.y));
   // Keep the assist's memory of the approach lane fresh even when coasting.
   const lane = options.assist ? laneAhead(car, state) : null;
+  state.hold = 0;
+  state.backing = 0;
 
   if (push < STICK_DEADZONE) {
     // Let go: come to a stop, wheels straight.
@@ -240,6 +265,7 @@ export function stickToInput(
         return;
       }
       state.backTime += STEP;
+      state.backing = Math.min(1, state.backTime / REVERSE_DWELL);
       if (!reversing && state.backTime < REVERSE_DWELL) {
         input.steer = 0;
         input.throttle = 0;
@@ -287,6 +313,10 @@ export function stickToInput(
     );
     target = knob + hold * wrapPi(lane.heading - knob);
     cap = CAR.maxSpeed + hold * (lane.cap - CAR.maxSpeed);
+    state.hold = hold;
+    state.aimX = lane.aim.x;
+    state.aimZ = lane.aim.z;
+    state.along = lane.along;
   }
 
   const off = wrapPi(target - car.heading);
@@ -298,6 +328,11 @@ export function stickToInput(
     cap,
     CAR.maxSpeed * reach * (1 - TURN_SLOWDOWN * turning),
   );
-  input.throttle = car.speed < speed - 0.15 ? 1 : 0;
+  // Ease onto the speed asked for, rather than switching the engine on and
+  // off round it.
+  input.throttle = Math.max(
+    0,
+    Math.min(1, (speed - car.speed) / THROTTLE_BAND),
+  );
   input.brake = car.speed > speed + 1 ? 0.5 : 0;
 }

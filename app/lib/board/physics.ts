@@ -31,6 +31,9 @@ const STALL_SPEED = 0.3;
 const STALL_TIME = 0.35;
 /** How fast a blocked car turns, as if it were rolling at this speed. */
 const PIVOT_SPEED = 1.2;
+/** Blocked against the scenery, the car backs off this long and tries again. */
+const BACKOFF_TIME = 0.4;
+const BACKOFF_SPEED = 0.9;
 /** Kerbs are drawn thin but stop the car like a wall this thick. */
 const KERB_DEPTH = 2;
 
@@ -54,6 +57,10 @@ export type Physics = {
   steer: number;
   /** How long the car has been pushing against something without moving. */
   stalled: number;
+  /** The car is resting against the scenery this step. */
+  touching: boolean;
+  /** Time left backing off a kerb it was wedged on. */
+  backoff: number;
 };
 
 function carBody(x: number, z: number, heading: number, label: string) {
@@ -151,7 +158,21 @@ export function createPhysics(challenge: BoardChallenge, car: CarState) {
     impact: 0,
     steer: 0,
     stalled: 0,
+    touching: false,
+    backoff: 0,
   };
+
+  Events.on(engine, "collisionActive", (event) => {
+    for (const pair of event.pairs) {
+      const other =
+        pair.bodyA === player
+          ? pair.bodyB
+          : pair.bodyB === player
+            ? pair.bodyA
+            : null;
+      if (other?.isStatic) physics.touching = true;
+    }
+  });
 
   Events.on(engine, "collisionStart", (event) => {
     for (const pair of event.pairs) {
@@ -222,8 +243,24 @@ function driveCar(physics: Physics, input: CarInput): void {
   // swing round on the spot, slowly, so nobody gets stuck.
   const pushing = input.throttle > 0 && forward < STALL_SPEED;
   physics.stalled = pushing ? physics.stalled + DT : 0;
-  const rolling =
+  // Wedged on a kerb: ease back off it while the nose swings, then go again.
+  // A thumb held against a wall should not hold the car there.
+  if (
+    physics.stalled > STALL_TIME &&
+    physics.touching &&
+    physics.backoff <= 0
+  ) {
+    physics.backoff = BACKOFF_TIME;
+  }
+  let rolling =
     physics.stalled > STALL_TIME ? Math.max(forward, PIVOT_SPEED) : forward;
+  if (physics.backoff > 0) {
+    physics.backoff -= DT;
+    forward = input.throttle > 0 ? -BACKOFF_SPEED : 0;
+    rolling = PIVOT_SPEED * 2;
+    if (physics.backoff <= 0) physics.stalled = 0;
+  }
+  physics.touching = false;
   const yaw = (rolling / CAR.wheelbase) * Math.tan(physics.steer);
 
   // Matter measures speed per step, not per second.

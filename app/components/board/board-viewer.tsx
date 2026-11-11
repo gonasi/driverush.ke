@@ -47,7 +47,9 @@ export function BoardViewer({
   seat,
   car,
   learning,
+  focus,
   onUnsupported,
+  onPainted,
   className,
 }: {
   challenge: BoardChallenge | null;
@@ -60,8 +62,12 @@ export function BoardViewer({
   car: BoardCarId;
   /** Learn mode: no task on the table. */
   learning?: boolean;
+  /** Stopped by the examiner: keep the view on the car. */
+  focus?: boolean;
   /** This device can't draw the board at all. */
   onUnsupported?: () => void;
+  /** The board is drawn and on screen. */
+  onPainted?: () => void;
   className?: string;
 }) {
   const [state, setState] = React.useState<"boot" | "ok" | "none">("boot");
@@ -94,7 +100,11 @@ export function BoardViewer({
             seat={seat}
             car={car}
             learning={learning}
-            onReady={() => setPainted(true)}
+            focus={focus}
+            onReady={() => {
+              setPainted(true);
+              onPainted?.();
+            }}
           />
         </React.Suspense>
       )}

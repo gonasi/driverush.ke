@@ -7,12 +7,12 @@
  *
  * It writes straight into `board/runtime.ts`'s `stick` and moves the knob with a
  * transform, so driving never re-renders React. Arrow keys and WASD push the
- * same knob on a computer.
+ * same knob on a computer, and holding Shift pushes it gently, for parking.
  */
 import * as React from "react";
 
 import { STICK_DEADZONE } from "~/lib/board/joystick";
-import { resetInput, stick } from "~/lib/board/runtime";
+import { resetInput, stick, view } from "~/lib/board/runtime";
 import { cn } from "~/lib/utils";
 
 type Dir = "left" | "right" | "up" | "down";
@@ -32,10 +32,25 @@ const KEYS: Record<string, Dir> = {
   S: "down",
 };
 
-export function BoardControls({ active }: { active: boolean }) {
+/** How far the keys push the knob with Shift held: a crawl, for a parking bay. */
+const GENTLE = 0.45;
+
+export function BoardControls({
+  active,
+  reverse = false,
+  note,
+}: {
+  active: boolean;
+  /** The task has a reverse gear: say when it is coming in, and when it is in. */
+  reverse?: boolean;
+  /** Guidance for this task, shown once the first-push hint has gone. */
+  note?: string;
+}) {
   const base = React.useRef<HTMLDivElement>(null);
   const knob = React.useRef<HTMLDivElement>(null);
+  const gear = React.useRef<HTMLParagraphElement>(null);
   const dragging = React.useRef(false);
+  const gentle = React.useRef(false);
   const held = React.useRef<Record<Dir, boolean>>({
     left: false,
     right: false,
@@ -64,8 +79,10 @@ export function BoardControls({ active }: { active: boolean }) {
     const keys = held.current;
     const release = () => {
       dragging.current = false;
+      gentle.current = false;
       keys.left = keys.right = keys.up = keys.down = false;
       if (knob.current) knob.current.dataset.held = "false";
+      if (base.current) base.current.dataset.held = "false";
       place(0, 0);
       resetInput();
     };
@@ -78,9 +95,17 @@ export function BoardControls({ active }: { active: boolean }) {
       if (dragging.current) return;
       const x = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
       const y = (keys.down ? 1 : 0) - (keys.up ? 1 : 0);
-      place(x, y);
+      // Two keys at once would push further than one: keep it to the rim.
+      const reach = Math.hypot(x, y) || 1;
+      const push = gentle.current ? GENTLE : 1;
+      place((x / reach) * push, (y / reach) * push);
     };
     const onKey = (down: boolean) => (e: KeyboardEvent) => {
+      if (e.key === "Shift") {
+        gentle.current = down;
+        fromKeys();
+        return;
+      }
       if (e.key === " ") {
         // Space lets go of everything.
         e.preventDefault();
@@ -126,30 +151,65 @@ export function BoardControls({ active }: { active: boolean }) {
     if (!dragging.current) return;
     dragging.current = false;
     if (knob.current) knob.current.dataset.held = "false";
+    if (base.current) base.current.dataset.held = "false";
     place(0, 0);
   };
 
+  // Reverse gear takes a moment of holding back to come in. Say so, so the
+  // learner knows the car heard them, and say when it is in.
+  React.useEffect(() => {
+    const el = gear.current;
+    if (!el) return;
+    if (!active || !reverse) {
+      el.style.opacity = "0";
+      return;
+    }
+    let frame = 0;
+    let shown = "";
+    const look = () => {
+      frame = requestAnimationFrame(look);
+      const text = view.reversing
+        ? "Reverse"
+        : view.backing > 0
+          ? "Keep holding to reverse"
+          : "";
+      if (text === shown) return;
+      shown = text;
+      if (text) el.textContent = text;
+      el.style.opacity = text ? "1" : "0";
+    };
+    frame = requestAnimationFrame(look);
+    return () => cancelAnimationFrame(frame);
+  }, [active, reverse]);
+
   return (
     <div
+      data-board-stick
       className={cn(
         "pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-1 pb-[max(0.75rem,env(safe-area-inset-bottom))] transition-opacity duration-200 sm:pb-6",
         active ? "opacity-100" : "opacity-0",
       )}
     >
+      {/* One line of guidance, and no box at all once it has been read: the
+          road above the joystick is where the car is. */}
+      {(hint || note) && (
+        <p
+          key={hint ? "hint" : "note"}
+          className="dr-rise m-0 max-w-[17rem] rounded-md bg-[#101114]/85 px-3 py-1.5 text-center text-[12.5px] font-semibold leading-snug text-white"
+        >
+          {hint ? "Push toward where you want to go. Let go to stop." : note}
+        </p>
+      )}
       <p
-        aria-hidden={!hint}
-        className={cn(
-          "m-0 rounded-md bg-[#101114]/85 px-3 py-1.5 text-center text-[12.5px] font-semibold leading-snug text-white transition-opacity duration-300",
-          hint ? "opacity-100" : "opacity-0",
-        )}
-      >
-        Push toward where you want to go. Let go to stop.
-      </p>
+        ref={gear}
+        role="status"
+        className="m-0 rounded-md border-2 border-[#17181b] bg-[#f6c416] px-3 py-1 text-center font-mono text-[11px] font-bold uppercase tracking-widest text-[#17181b] opacity-0 transition-opacity duration-150"
+      />
 
       {/* The pad is bigger than the drawn base, so a thumb doesn't have to aim. */}
       <div
         role="application"
-        aria-label="Joystick. Push toward where you want the car to go, and let go to stop. Arrow keys work too."
+        aria-label="Joystick. Push toward where you want the car to go, and let go to stop. The arrow keys or W, A, S and D work too. Hold Shift to go slowly."
         className={cn(
           "flex size-[12.5rem] touch-none select-none items-center justify-center",
           active && "pointer-events-auto",
@@ -162,6 +222,7 @@ export function BoardControls({ active }: { active: boolean }) {
           }
           dragging.current = true;
           if (knob.current) knob.current.dataset.held = "true";
+          if (base.current) base.current.dataset.held = "true";
           follow(e);
         }}
         onPointerMove={(e) => {
@@ -174,7 +235,9 @@ export function BoardControls({ active }: { active: boolean }) {
       >
         <div
           ref={base}
-          className="relative flex size-36 items-center justify-center rounded-full border-2 border-white/30 bg-[#17181b]/70 shadow-[0_6px_0_rgba(0,0,0,0.45)]"
+          data-held="false"
+          // Under a thumb the base goes faint, so the road shows through it.
+          className="relative flex size-36 items-center justify-center rounded-full border-2 border-white/30 bg-[#17181b]/70 shadow-[0_6px_0_rgba(0,0,0,0.45)] transition-colors duration-150 data-[held=true]:border-white/20 data-[held=true]:bg-[#17181b]/30 data-[held=true]:shadow-none"
         >
           {/* Four ticks: the knob points at the screen, not at the car. */}
           <svg

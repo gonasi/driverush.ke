@@ -1,6 +1,6 @@
 /**
  * The board's settings: which side of the table you stand at, which car you
- * drive, lane assist and sound. Opened from the gear button while driving.
+ * drive, how sharp the picture is, lane assist and sound. Opened from the gear button while driving.
  */
 import * as React from "react";
 
@@ -11,7 +11,7 @@ import {
 } from "~/lib/board/cars";
 import { fullBoardSvg } from "~/lib/board/full-board";
 import type { Seat } from "~/lib/board/joystick";
-import { useBoardStore } from "~/lib/board-store";
+import { useBoardStore, type BoardQuality } from "~/lib/board-store";
 import { cn } from "~/lib/utils";
 
 import { RoadIcon, SoundIcon } from "~/components/brand/icons";
@@ -43,6 +43,12 @@ const CAR_CHOICES: { value: BoardCarSetting; label: string }[] = [
 const CAR_LABEL = Object.fromEntries(
   BOARD_CARS.map((car) => [car.id, car.label]),
 ) as Record<BoardCarId, string>;
+
+const PICTURE_CHOICES: { value: BoardQuality; label: string }[] = [
+  { value: "auto", label: "Auto" },
+  { value: "low", label: "Smooth" },
+  { value: "high", label: "Sharp" },
+];
 
 const CHOICE =
   "min-h-11 min-w-[5.5rem] border-2 border-ink px-3 py-2 font-display text-[13px] font-extrabold uppercase tracking-wider outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ink";
@@ -163,6 +169,30 @@ export function BoardSettingsSheet({
             <p className="m-0 text-[12.5px] leading-snug text-ink-2">
               The cars only look different. They are the same size and drive
               the same way. Surprise me picks one each time you visit.
+            </p>
+          </SettingSection>
+
+          <SettingSection title="Picture">
+            <div className="grid grid-cols-3 gap-2.5">
+              {PICTURE_CHOICES.map((choice) => (
+                <button
+                  key={choice.value}
+                  type="button"
+                  aria-pressed={choice.value === settings.quality}
+                  onClick={() => setSetting({ quality: choice.value })}
+                  className={cn(
+                    CHOICE,
+                    "min-w-0",
+                    choice.value === settings.quality ? CHOICE_ON : CHOICE_OFF,
+                  )}
+                >
+                  {choice.label}
+                </button>
+              ))}
+            </div>
+            <p className="m-0 text-[12.5px] leading-snug text-ink-2">
+              Smooth drops the shadows and the fine detail, for a phone that
+              stutters. Sharp keeps them. Auto picks for your phone.
             </p>
           </SettingSection>
 

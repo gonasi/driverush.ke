@@ -18,7 +18,13 @@ import {
   type BoardChallenge,
 } from "./board/challenges";
 import type { Fault, FaultId } from "./board/referee";
-import { beginChallenge, elapsedSeconds, stopDriving } from "./board/runtime";
+import {
+  beginChallenge,
+  elapsedSeconds,
+  hasMoved,
+  stopDriving,
+  trail,
+} from "./board/runtime";
 import type { BoardCarSetting } from "./board/cars";
 import type { Seat } from "./board/joystick";
 import {
@@ -79,8 +85,12 @@ type BoardState = {
   phase: BoardPhase;
   queue: BoardChallenge[];
   pos: number;
-  /** Faults on the challenge in front of the learner. */
+  /** Faults on this attempt at the task. The stars count these. */
   faults: number;
+  /** Faults on the task over every attempt at it. */
+  taskFaults: number;
+  /** Which attempt at the task this is, from 1. */
+  tries: number;
   fault: Fault | null;
   /** The latest small mistake, shown as a toast. `n` restarts its animation. */
   notice: { fault: Fault; n: number } | null;
@@ -126,6 +136,8 @@ const FRESH_RUN = {
   queue: [] as BoardChallenge[],
   pos: 0,
   faults: 0,
+  taskFaults: 0,
+  tries: 1,
   fault: null,
   notice: null as { fault: Fault; n: number } | null,
   noticeCount: 0,
@@ -142,17 +154,23 @@ export function starsFor(faults: number): number {
   return faults === 0 ? 3 : faults === 1 ? 2 : 1;
 }
 
+/** This many small mistakes in one attempt and the examiner stops it. */
+export const SMALL_FAULT_LIMIT = 3;
+/** The line the car drove, painted on the table when the examiner stops it. */
+const DRIVEN_COLOR = "#ff6b5e";
+
 export const useBoardStore = create<BoardState>()(
   persist(
     (set, get) => {
       /** Count a mistake against the task. The first one sends it back a box. */
       const record = (fault: Fault) => {
-        const { queue, pos, faults } = get();
+        const { queue, pos, taskFaults } = get();
         const challenge = queue[pos];
         if (!challenge) return;
-        const first = faults === 0;
+        const first = taskFaults === 0;
         set((s) => ({
           faults: s.faults + 1,
+          taskFaults: s.taskFaults + 1,
           runFaultCount: s.runFaultCount + 1,
           runStreak: 0,
           runFaulted: first ? [...s.runFaulted, challenge.id] : s.runFaulted,
@@ -167,7 +185,7 @@ export const useBoardStore = create<BoardState>()(
           challenge_id: challenge.id,
           rule: fault.id,
           severity: fault.serious ? "serious" : "small",
-          fault_number: faults + 1,
+          fault_number: taskFaults + 1,
         });
       };
 
@@ -176,7 +194,23 @@ export const useBoardStore = create<BoardState>()(
         if (get().settings.sound) playSfx("wrong");
         buzz(BUZZ.miss);
         record(fault);
+        stopped(fault);
+      };
+
+      /** The attempt is over: the card, and the line the car drove. */
+      const stopped = (fault: Fault) => {
         set({ phase: "fault", fault, notice: null });
+        if (trail.length > 1) {
+          useStage.getState().show([
+            {
+              id: "driven",
+              points: trail.map(({ x, z }) => ({ x, z })),
+              color: DRIVEN_COLOR,
+              width: 1.1,
+              opacity: 0.9,
+            },
+          ]);
+        }
       };
 
       /** A small mistake: a star is lost, and the drive goes on. */
@@ -184,6 +218,12 @@ export const useBoardStore = create<BoardState>()(
         if (get().settings.sound) playSfx("wrong");
         buzz(BUZZ.miss);
         record(fault);
+        // Small mistakes add up. Leaning on kerbs all the way round is not a pass.
+        if (get().faults >= SMALL_FAULT_LIMIT) {
+          stopDriving();
+          stopped({ ...fault, serious: true });
+          return;
+        }
         set((s) => ({
           notice: { fault, n: s.noticeCount + 1 },
           noticeCount: s.noticeCount + 1,
@@ -191,13 +231,16 @@ export const useBoardStore = create<BoardState>()(
       };
 
       const onGoal = () => {
-        const { queue, pos, faults, settings } = get();
+        const { queue, pos, faults, taskFaults, tries, hinted, settings } =
+          get();
         const challenge = queue[pos];
         if (!challenge) return;
         if (settings.sound) playSfx("correct");
         buzz(BUZZ.tap);
-        const clean = faults === 0;
-        const stars = starsFor(faults);
+        // Clean means alone and first time: no mistake on any attempt, no hint.
+        const clean = taskFaults === 0 && !hinted;
+        // The stars are for this attempt. Shown the way, it is two at most.
+        const stars = Math.min(starsFor(faults), hinted ? 2 : 3);
         set((s) => {
           const runStreak = clean ? s.runStreak + 1 : 0;
           return {
@@ -207,10 +250,9 @@ export const useBoardStore = create<BoardState>()(
             runBestStreak: Math.max(s.runBestStreak, runStreak),
             runClean: clean ? [...s.runClean, challenge.id] : s.runClean,
             // with a hint it was not known yet, so it comes round again
-            progress:
-              clean && !s.hinted
-                ? applyGrade(s.progress, challenge.id, "knew")
-                : s.progress,
+            progress: clean
+              ? applyGrade(s.progress, challenge.id, "knew")
+              : s.progress,
             bestStars: {
               ...s.bestStars,
               [challenge.id]: Math.max(s.bestStars[challenge.id] ?? 0, stars),
@@ -221,8 +263,9 @@ export const useBoardStore = create<BoardState>()(
         analytics.boardChallengePassed({
           challenge_id: challenge.id,
           clean,
-          faults,
+          faults: taskFaults,
           stars,
+          tries,
           seconds: Math.round(elapsedSeconds()),
         });
       };
@@ -236,6 +279,7 @@ export const useBoardStore = create<BoardState>()(
         beginChallenge(challenge, { onFault, onSmall, onGoal });
         set((s) => ({
           phase: "driving",
+          faults: 0,
           fault: null,
           notice: null,
           attempt: s.attempt + 1,
@@ -276,7 +320,9 @@ export const useBoardStore = create<BoardState>()(
         },
 
         retry: () => {
-          if (get().phase === "fault") begin();
+          if (get().phase !== "fault") return;
+          set((s) => ({ tries: s.tries + 1 }));
+          begin();
         },
 
         restart: () => {
@@ -296,11 +342,34 @@ export const useBoardStore = create<BoardState>()(
             set({ phase: "complete" });
             return;
           }
-          set({ pos: s.pos + 1, faults: 0, hinted: false });
+          set({
+            pos: s.pos + 1,
+            faults: 0,
+            taskFaults: 0,
+            tries: 1,
+            hinted: false,
+          });
           begin();
         },
 
         exit: () => {
+          const before = get();
+          const task = before.queue[before.pos];
+          if (
+            before.mode === "drive" &&
+            task &&
+            before.phase !== "complete" &&
+            before.phase !== "ready"
+          ) {
+            analytics.boardAbandoned({
+              challenge_id: task.id,
+              phase: before.phase,
+              task: before.pos + 1,
+              of: before.queue.length,
+              tries: before.tries,
+              moved: hasMoved(),
+            });
+          }
           stopDriving();
           stopAllSfx();
           useStage.getState().clear();
@@ -347,7 +416,10 @@ export const useBoardStore = create<BoardState>()(
         },
 
         resume: () => {
-          if (get().phase === "watch") begin();
+          if (get().phase !== "watch") return;
+          // Watching after being stopped, then going again, is another try.
+          if (get().fault) set((s) => ({ tries: s.tries + 1 }));
+          begin();
         },
 
         markLearned: (id) =>

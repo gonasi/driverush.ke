@@ -33,9 +33,9 @@ import {
   type Box,
 } from "~/lib/board/full-board";
 import { dirOf } from "~/lib/board/geometry";
-import type { Seat } from "~/lib/board/joystick";
+import { STICK_DEADZONE, type Seat } from "~/lib/board/joystick";
 import { taskGoalBox } from "~/lib/board/lessons";
-import { car, tick, view } from "~/lib/board/runtime";
+import { car, shown, stick, tick, view } from "~/lib/board/runtime";
 import { advance, cam, finish, setWake, useStage } from "~/lib/board/stage";
 
 import {
@@ -64,6 +64,11 @@ export type BoardTableProps = {
   car: BoardCarId;
   /** Learning, with no task on: the car only shows while a route plays. */
   learning?: boolean;
+  /**
+   * Stopped by the examiner: stay closed in on the car, held clear of the card
+   * over the bottom of the screen, so the learner sees where it went wrong.
+   */
+  focus?: boolean;
   /** The board is painted and on screen. */
   onReady?: () => void;
 };
@@ -684,7 +689,17 @@ const SPAN_PART = 64;
 /** Faster than this and the view closes in. */
 const MOVING = 0.8;
 /** How long after stopping before it backs off, so a pause doesn't pump it. */
-const LINGER = 0.9;
+const LINGER = 2;
+/** The joystick's pad and the task card, in pixels: the car is held between them. */
+const PAD_PX = 232;
+const HUD_PX = 150;
+/** The examiner's card is taller than the joystick. */
+const CARD_PX = 380;
+/** Backing up, the view closes in this much further: a bay is a tight fit. */
+const REVERSE_CLOSER = 0.72;
+/** The strip of light on the lane that lane assist is holding, metres. */
+const HOLD_W = 3;
+const HOLD_L = 9;
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const clamp = (v: number, lo: number, hi: number) =>
@@ -700,6 +715,12 @@ type Rig = {
   z: number;
   snappedFor: number;
   seat: Seat | null;
+  /** 1 looking past the nose, -1 past the tail, eased between the two. */
+  look: number;
+  /** 0 to 1 as the view closes in further for reversing. */
+  tight: number;
+  /** The lane strip's brightness, eased so it fades rather than blinks. */
+  hold: number;
 };
 
 function Scene({
@@ -710,6 +731,7 @@ function Scene({
   seat,
   car: driven,
   learning = false,
+  focus = false,
   onReady,
   models,
 }: BoardTableProps & { models: CarSources }) {
@@ -894,7 +916,12 @@ function Scene({
     z: CZ,
     snappedFor: -1,
     seat: null,
+    look: 1,
+    tight: 0,
+    hold: 0,
   });
+  const holdStrip = React.useRef<THREE.Group>(null);
+  const holdMaterial = React.useRef<THREE.MeshBasicMaterial>(null);
 
   // Off the clock, one frame is enough to show where things stand.
   React.useEffect(() => {
@@ -909,6 +936,7 @@ function Scene({
     route,
     playing,
     learning,
+    focus,
     invalidate,
   ]);
 
@@ -958,8 +986,11 @@ function Scene({
         0.3 + 0.12 * Math.sin(state.clock.elapsedTime * 3);
     }
 
-    player.position.set(car.x, 0, car.z);
-    player.rotation.y = -car.heading;
+    // In a drive the car is drawn between two physics steps, so it is smooth
+    // on a screen faster or slower than the physics.
+    const at = driving ? shown : car;
+    player.position.set(at.x, 0, at.z);
+    player.rotation.y = -at.heading;
     const model = player.userData.model as CarModel;
     model.userData.tail.emissiveIntensity =
       view.braking || view.reversing || pose?.reversing ? 2.4 : 0.5;
@@ -996,10 +1027,18 @@ function Scene({
     const halfH = Math.atan(Math.tan(halfV) * aspect);
 
     const moving = driving && Math.abs(car.speed) > MOVING;
-    r.linger = moving ? LINGER : Math.max(0, r.linger - dt);
-    const wantIn = driving && (moving || r.linger > 0) ? 1 : 0;
-    if (fresh) r.zoom = 0;
-    else {
+    // A thumb on the stick counts as driving, so a car held against a kerb or
+    // waiting on reverse gear doesn't send the view out and back in.
+    const busy =
+      moving || (driving && Math.hypot(stick.x, stick.y) > STICK_DEADZONE);
+    r.linger = busy ? LINGER : Math.max(0, r.linger - dt);
+    const wantIn = focus || (driving && (busy || r.linger > 0)) ? 1 : 0;
+    if (fresh) {
+      r.zoom = 0;
+      r.look = 1;
+      r.tight = 0;
+      r.hold = 0;
+    } else {
       const rate = wantIn > r.zoom ? 2.4 : 1.3;
       r.zoom += (wantIn - r.zoom) * (1 - Math.exp(-dt * rate));
     }
@@ -1037,11 +1076,30 @@ function Scene({
 
     // Closed in: the car, a little of the road ahead of it, and more of the
     // table beyond it than in front.
-    const nearIn = (SPAN_IN * Math.max(1, aspect / 0.62)) / 2 / Math.tan(halfH);
+    // Backing up, it looks past the tail instead of the nose, and closes in
+    // further, because a bay is a tight fit.
+    const backing = driving && view.reversing;
+    const turnRate = 1 - Math.exp(-dt * 3);
+    r.look += ((backing ? -1 : 1) - r.look) * turnRate;
+    r.tight += ((backing ? 1 : 0) - r.tight) * turnRate;
+    const nearIn =
+      ((SPAN_IN * Math.max(1, aspect / 0.62)) / 2 / Math.tan(halfH)) *
+      lerp(1, REVERSE_CLOSER, r.tight);
     const depthIn = (2 * nearIn * Math.tan(halfV)) / Math.sin(TILT_IN);
-    const ahead = dirOf(car.heading);
-    const inX = car.x + ahead.x * 4 + away.x * 0.1 * depthIn;
-    const inZ = car.z + ahead.z * 4 + away.z * 0.1 * depthIn;
+    const nose = dirOf(at.heading);
+    const ahead = { x: nose.x * r.look, z: nose.z * r.look };
+    // The joystick covers the bottom of the screen and the task card the top:
+    // hold the car in the clear part between them, not under the thumb. With
+    // the examiner's card up, that is higher still.
+    const lift = clamp(
+      ((focus ? CARD_PX : PAD_PX) - HUD_PX) /
+        2 /
+        Math.max(1, state.size.height),
+      0.03,
+      0.3,
+    );
+    const inX = at.x + ahead.x * 4 - away.x * lift * depthIn;
+    const inZ = at.z + ahead.z * 4 - away.z * lift * depthIn;
 
     let distance = lerp(farOut, nearIn, close);
     let goalX = lerp(outX, inX, close);
@@ -1092,7 +1150,7 @@ function Scene({
           const out = clamp((cam.span / cam.max - 0.7) / 0.3, 0, 1);
           cam.x = lerp(
             clamp(
-              car.x + ahead.x * 4 + away.x * 0.1 * depth,
+              at.x + ahead.x * 4 - away.x * lift * depth,
               BOUNDS.x0,
               BOUNDS.x1,
             ),
@@ -1101,7 +1159,7 @@ function Scene({
           );
           cam.z = lerp(
             clamp(
-              car.z + ahead.z * 4 + away.z * 0.1 * depth,
+              at.z + ahead.z * 4 - away.z * lift * depth,
               BOUNDS.z0,
               BOUNDS.z1,
             ),
@@ -1144,6 +1202,16 @@ function Scene({
       sz + r.dist * Math.cos(tiltNow) * Math.cos(angle),
     );
     state.camera.lookAt(sx, lookY, sz);
+
+    // The lane that lane assist is holding, lit a little way ahead of the car.
+    // It fades when the stick points somewhere else: the learner has the wheel.
+    r.hold += ((driving ? view.hold : 0) - r.hold) * (1 - Math.exp(-dt * 8));
+    if (holdStrip.current && holdMaterial.current) {
+      holdStrip.current.visible = r.hold > 0.02;
+      holdStrip.current.position.set(view.aimX, 0.045, view.aimZ);
+      holdStrip.current.rotation.y = -view.along;
+      holdMaterial.current.opacity = 0.15 * r.hold;
+    }
 
     // Where the finish is on the screen, for the marker drawn over the table.
     finish.on = driving && goal !== null;
@@ -1214,6 +1282,20 @@ function Scene({
       )}
 
       {fence && <primitive object={fence} />}
+
+      <group ref={holdStrip} visible={false}>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={1}>
+          <planeGeometry args={[HOLD_W, HOLD_L]} />
+          <meshBasicMaterial
+            ref={holdMaterial}
+            color="#ffffff"
+            transparent
+            opacity={0}
+            depthWrite={false}
+            toneMapped={false}
+          />
+        </mesh>
+      </group>
 
       <primitive object={ribbons} />
       {glow && (

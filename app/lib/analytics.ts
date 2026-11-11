@@ -208,7 +208,22 @@ export const analytics = {
     faults: number;
     stars: number;
     seconds: number;
+    /** Which attempt at the task it was passed on, from 1. */
+    tries: number;
   }) => emit("board_challenge_passed", args),
+
+  /** The learner left a round before the end. Shows where people give up. */
+  boardAbandoned: (args: {
+    challenge_id: string;
+    /** What was on screen: driving, the examiner's card, the replay. */
+    phase: string;
+    /** The task's place in the round, from 1, and the round's length. */
+    task: number;
+    of: number;
+    tries: number;
+    /** False when they left without ever pushing the joystick. */
+    moved: boolean;
+  }) => emit("board_abandoned", args),
 
   /** A board round finished. */
   boardCompleted: (args: {

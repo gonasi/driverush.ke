@@ -31,7 +31,13 @@ import {
   taskParks,
 } from "~/lib/board/lessons";
 import { distanceNear, poseAt, stepPoints } from "~/lib/board/network";
-import { car, drive, elapsedSeconds } from "~/lib/board/runtime";
+import {
+  car,
+  drive,
+  elapsedSeconds,
+  hasMoved,
+  setPaused,
+} from "~/lib/board/runtime";
 import { peekAt, useStage } from "~/lib/board/stage";
 import { BOARD_CHALLENGE_IDS, useBoardStore } from "~/lib/board-store";
 import { signCounts } from "~/lib/pelican-progress";
@@ -69,6 +75,26 @@ const TrainerResultCard = React.lazy(() =>
 );
 
 const POOL = BOARD_CHALLENGES.length;
+
+/** The tasks by what they practise, for choosing one to drive. */
+const TASK_GROUPS = [
+  {
+    title: "At the roundabout",
+    tasks: BOARD_CHALLENGES.filter((c) => !isRouteTask(c)),
+  },
+  {
+    title: "Routes",
+    tasks: BOARD_CHALLENGES.filter(
+      (c) => isRouteTask(c) && !/^(park|leave)-/.test(c.id),
+    ),
+  },
+  {
+    title: "Parking",
+    tasks: BOARD_CHALLENGES.filter(
+      (c) => isRouteTask(c) && /^(park|leave)-/.test(c.id),
+    ),
+  },
+].filter((group) => group.tasks.length > 0);
 
 /**
  * The still board, lying the way it does on a wide screen: the yellow car on
@@ -414,6 +440,10 @@ export function BoardPlayer({
       queue: st.queue,
       pos: st.pos,
       faults: st.faults,
+      taskFaults: st.taskFaults,
+      tries: st.tries,
+      hinted: st.hinted,
+      bestStars: st.bestStars,
       fault: st.fault,
       notice: st.notice,
       lastStars: st.lastStars,
@@ -438,7 +468,36 @@ export function BoardPlayer({
   const [unsupported, setUnsupported] = React.useState(false);
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const [wrongStep, setWrongStep] = React.useState<number | null>(null);
+  // Asked before a drive that is under way is thrown away.
+  const [leaving, setLeaving] = React.useState(false);
+  const [picking, setPicking] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
+
+  // With the settings or the "leave?" question over the table, the drive
+  // holds still: the car, the referee and the clock.
+  const held = settingsOpen || leaving;
+  React.useEffect(() => {
+    setPaused(held);
+    return () => setPaused(false);
+  }, [held]);
+  React.useEffect(() => {
+    if (s.phase !== "driving") setLeaving(false);
+  }, [s.phase, s.attempt]);
+  const heldRef = React.useRef({ settingsOpen, leaving });
+  heldRef.current = { settingsOpen, leaving };
+
+  /** Leave the board. Mid-drive, ask first: it is one tap from a restart. */
+  const askToLeave = () => {
+    const store = useBoardStore.getState();
+    if (store.phase === "driving" && hasMoved() && !heldRef.current.leaving) {
+      setLeaving(true);
+      return;
+    }
+    setLeaving(false);
+    store.exit();
+  };
+  const askRef = React.useRef(askToLeave);
+  askRef.current = askToLeave;
 
   /** Pause the task and play the right way through it. */
   const showTheWay = (kind: "show_me" | "after_fault") => {
@@ -478,7 +537,10 @@ export function BoardPlayer({
     document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
       const store = useBoardStore.getState();
-      if (e.key === "Escape") store.exit();
+      // The settings sheet closes itself on Escape. It must not take the
+      // board with it.
+      if (heldRef.current.settingsOpen) return;
+      if (e.key === "Escape") askRef.current();
       if (e.key === "Enter") {
         if (store.phase === "fault") store.retry();
         if (store.phase === "passed") store.next();
@@ -544,6 +606,7 @@ export function BoardPlayer({
           seat={seat}
           car={boardCar}
           learning={s.mode === "learn"}
+          focus={s.phase === "fault"}
           onUnsupported={() => setUnsupported(true)}
           className="absolute inset-0"
         />
@@ -577,6 +640,8 @@ export function BoardPlayer({
           <div>
             <div
               key={`${challenge.id}-${s.attempt}`}
+              // A new task is read out, not only shown.
+              role="status"
               className="dr-rise max-w-[19rem] rounded-md border-2 border-white/15 bg-[#101114]/85 px-3.5 py-3 shadow-[0_4px_0_rgba(0,0,0,0.4)]"
             >
               <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-widest text-kenya-gold">
@@ -602,6 +667,24 @@ export function BoardPlayer({
                 onShowMe={() => showTheWay("show_me")}
               />
             )}
+            {/* A small mistake: the rule, a star gone, and the drive carries
+                on. It sits here, clear of the car and the road ahead of it. */}
+            {s.phase === "driving" && s.notice && (
+              <div
+                key={s.notice.n}
+                role="status"
+                className="dr-flash mt-2 max-w-[19rem] rounded-md border-2 border-[#17181b] bg-[#f6c416] px-3.5 py-2.5 text-[#17181b] shadow-[0_4px_0_rgba(0,0,0,0.45)]"
+                // Long enough to read a one-line rule.
+                style={{ animationDuration: "3.6s" }}
+              >
+                <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-widest">
+                  {faultTip(s.notice.fault).title} · 1 star lost
+                </p>
+                <p className="m-0 mt-1 text-[13.5px] font-semibold leading-snug">
+                  {faultTip(s.notice.fault).rule}
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="flex shrink-0 flex-col items-end gap-2">
@@ -626,14 +709,14 @@ export function BoardPlayer({
               <button
                 type="button"
                 aria-label="Exit the board"
-                onClick={s.exit}
+                onClick={askToLeave}
                 className="inline-flex size-11 items-center justify-center rounded-md border-2 border-white/15 bg-[#101114]/85 outline-none transition-colors hover:bg-white/15 focus-visible:border-white"
               >
                 <Icon icon={CloseIcon} size={20} />
               </button>
             </div>
             <div className="flex items-center gap-2 rounded-md border-2 border-white/15 bg-[#101114]/85 px-2.5 py-1.5 font-mono text-[12px] font-bold">
-              <Clock running={s.phase === "driving"} key={s.attempt} />
+              <Clock running={s.phase === "driving" && !held} key={s.attempt} />
               <Stars count={Math.max(1, 3 - s.faults)} />
             </div>
             {goalBox && (
@@ -652,26 +735,6 @@ export function BoardPlayer({
         </div>
       )}
 
-      {/* A small mistake: the rule, a star gone, and the drive carries on. */}
-      {s.phase === "driving" && s.notice && (
-        <div
-          key={s.notice.n}
-          role="status"
-          className="dr-flash pointer-events-none absolute inset-x-0 top-[42%] z-20 flex justify-center px-4"
-          // Long enough to read a one-line rule.
-          style={{ animationDuration: "3.6s" }}
-        >
-          <div className="max-w-xs rounded-md border-2 border-[#17181b] bg-[#f6c416] px-3.5 py-2.5 text-center text-[#17181b] shadow-[0_4px_0_rgba(0,0,0,0.45)]">
-            <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-widest">
-              {faultTip(s.notice.fault).title} · 1 star lost
-            </p>
-            <p className="m-0 mt-1 text-[13.5px] font-semibold leading-snug">
-              {faultTip(s.notice.fault).rule}
-            </p>
-          </div>
-        </div>
-      )}
-
       {!unsupported && s.mode === "drive" && challenge && (
         <BoardSignCue active={s.phase === "driving"} />
       )}
@@ -679,7 +742,12 @@ export function BoardPlayer({
         <BoardFinishCue parks={taskParks(challenge)} onPeek={peek} />
       )}
       {!unsupported && s.mode === "drive" && (
-        <BoardControls active={s.phase === "driving" && !settingsOpen} />
+        <BoardControls
+          active={s.phase === "driving" && !held}
+          reverse={
+            challenge != null && isRouteTask(challenge) && challenge.reverse
+          }
+        />
       )}
       <BoardSettingsSheet
         open={settingsOpen}
@@ -688,9 +756,47 @@ export function BoardPlayer({
         car={boardCar}
       />
 
-      {/* Stopped by the referee: the rule, and another go. */}
-      {s.phase === "fault" && s.fault && (
+      {/* Leaving mid-drive: one question, so a slip of the thumb costs nothing. */}
+      {leaving && s.phase === "driving" && (
         <div className="absolute inset-x-0 bottom-0 z-30 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-8">
+          <div
+            role="alertdialog"
+            aria-labelledby="board-leave-title"
+            className="dr-rise w-full max-w-md border-2 border-ink bg-surface text-ink shadow-stamp-xl"
+          >
+            <div className="grid gap-3 p-4">
+              <h2
+                id="board-leave-title"
+                className="m-0 font-display text-[clamp(22px,5.5vw,28px)] font-extrabold uppercase leading-none tracking-tight"
+              >
+                Leave the board?
+              </h2>
+              <p className="m-0 text-[13.5px] leading-snug text-ink-2">
+                The tasks you have passed are saved. This one starts again next
+                time.
+              </p>
+              <div className="flex gap-2 [&>*]:flex-1">
+                <Button
+                  variant="rush"
+                  size="lg"
+                  onClick={() => setLeaving(false)}
+                  autoFocus
+                >
+                  Keep driving
+                </Button>
+                <Button variant="paper" size="lg" onClick={askToLeave}>
+                  Leave
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stopped by the referee: the rule, and another go. On a wide screen
+          the card stands to one side, so the car and the line it drove show. */}
+      {s.phase === "fault" && s.fault && (
+        <div className="absolute inset-x-0 bottom-0 z-30 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-8 lg:justify-start lg:pl-6">
           <div
             role="alertdialog"
             aria-labelledby="board-fault-title"
@@ -707,6 +813,13 @@ export function BoardPlayer({
                 {faultTip(s.fault).title}
               </h2>
               <BoardFaultTip tip={faultTip(s.fault)} />
+              <p className="m-0 flex items-center gap-2 text-[12.5px] font-semibold leading-snug text-ink-2">
+                <span
+                  aria-hidden
+                  className="inline-block h-1.5 w-7 shrink-0 rounded-full bg-[#ff6b5e]"
+                />
+                The line on the table is the way you drove.
+              </p>
               <div className="flex gap-2 [&>*]:flex-1">
                 <Button variant="rush" size="lg" onClick={s.retry} autoFocus>
                   <Icon icon={RefreshIcon} size={16} />
@@ -745,16 +858,24 @@ export function BoardPlayer({
             </p>
             <div className="grid gap-3 p-4">
               <h2 className="m-0 font-display text-[clamp(22px,5.5vw,28px)] font-extrabold uppercase leading-none tracking-tight">
-                {s.faults === 0 ? "Clean, first try." : challenge.title}
+                {s.taskFaults === 0
+                  ? s.hinted
+                    ? "Passed, with a hint."
+                    : "Clean, first try."
+                  : s.tries > 1
+                    ? `Passed on try ${s.tries}.`
+                    : challenge.title}
               </h2>
               <p className="m-0 text-[13.5px] leading-snug text-ink-2">
-                {s.faults === 0
-                  ? taskParks(challenge)
-                    ? "In the bay, inside the lines and straight."
-                    : isRouteTask(challenge)
-                      ? "Right way, right lane, and you stopped in the box."
-                      : "Right lane, right exit, and you stopped in the box."
-                  : `You got there with ${s.faults} ${s.faults === 1 ? "mistake" : "mistakes"}. It will come back in a later round.`}
+                {s.taskFaults > 0
+                  ? `You got there with ${s.taskFaults} ${s.taskFaults === 1 ? "mistake" : "mistakes"}. It will come back in a later round.`
+                  : s.hinted
+                    ? "You got there with help. It will come back in a later round, to do on your own."
+                    : taskParks(challenge)
+                      ? "In the bay, inside the lines and straight."
+                      : isRouteTask(challenge)
+                        ? "Right way, right lane, and you stopped in the box."
+                        : "Right lane, right exit, and you stopped in the box."}
               </p>
               <Button variant="rush" size="lg" onClick={s.next} autoFocus>
                 {last ? "See how you did" : "Next task"}
@@ -783,7 +904,9 @@ export function BoardPlayer({
             summary={
               s.runFaulted.length > 0
                 ? `${s.runClean.length} of ${s.queue.length} tasks clean. These rules stopped you:`
-                : "Every task on the first try."
+                : s.runClean.length === s.queue.length
+                  ? "Every task on the first try."
+                  : `${s.runClean.length} of ${s.queue.length} tasks clean. The rest took a hint.`
             }
             missedSlot={
               <ul className="m-0 grid list-none gap-1.5 p-0 text-left">
@@ -857,6 +980,69 @@ export function BoardPlayer({
               <Icon icon={LearnerIcon} size={18} />
               Learn the board
             </Button>
+          </div>
+          <div>
+            <button
+              type="button"
+              aria-expanded={picking}
+              aria-controls="board-task-list"
+              onClick={() => setPicking((v) => !v)}
+              className="flex min-h-11 w-full items-center justify-between gap-3 border-2 border-ink bg-paper-2 px-3.5 py-2 text-left font-mono text-[11px] font-bold uppercase tracking-widest text-ink outline-none transition-colors hover:bg-paper-3 focus-visible:bg-paper-3"
+            >
+              Choose a task
+              <span aria-hidden className="text-[15px] leading-none">
+                {picking ? "−" : "+"}
+              </span>
+            </button>
+            {picking && (
+              <div id="board-task-list" className="dr-rise mt-3 grid gap-4">
+                {TASK_GROUPS.map((group) => (
+                  <section key={group.title} aria-label={group.title}>
+                    <h3 className="m-0 mb-1.5 font-mono text-[10px] font-bold uppercase tracking-widest text-ink-3">
+                      {group.title}
+                    </h3>
+                    <ul className="m-0 grid list-none gap-1.5 p-0 sm:grid-cols-2">
+                      {group.tasks.map((task) => {
+                        const best = mounted ? (s.bestStars[task.id] ?? 0) : 0;
+                        return (
+                          <li key={task.id}>
+                            <button
+                              type="button"
+                              onClick={() => s.start([task.id])}
+                              className="flex min-h-11 w-full items-center justify-between gap-3 border-2 border-ink bg-surface px-3 py-2 text-left text-[13.5px] font-semibold leading-snug text-ink outline-none transition-colors hover:bg-paper-2 focus-visible:bg-paper-2"
+                            >
+                              {task.title}
+                              <span
+                                role="img"
+                                aria-label={
+                                  best > 0
+                                    ? `Best: ${best} of 3 stars`
+                                    : "Not driven yet"
+                                }
+                                className="inline-flex shrink-0 gap-0.5"
+                              >
+                                {[1, 2, 3].map((n) => (
+                                  <Icon
+                                    key={n}
+                                    icon={StarIcon}
+                                    size={14}
+                                    className={
+                                      n <= best
+                                        ? "text-kenya-gold"
+                                        : "text-ink/20"
+                                    }
+                                  />
+                                ))}
+                              </span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </section>
+                ))}
+              </div>
+            )}
           </div>
           {started ? (
             <div>

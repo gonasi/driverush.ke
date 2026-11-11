@@ -10,6 +10,7 @@ import { challengeRoute, taskParks, taskStart } from "./lessons";
 import { bearingOf, wrapPi } from "./geometry";
 import { poseAt, type Route } from "./network";
 import {
+  STICK_DEADZONE,
   createAssist,
   stickToInput,
   type AssistState,
@@ -48,7 +49,34 @@ export const view = {
   reversing: false,
   /** Set for a moment when something is hit, 0 to 1. */
   jolt: 0,
+  /** Lane assist: 0 when the learner has the wheel, 1 when the lane is held. */
+  hold: 0,
+  /** Where on the held lane the assist is aiming, and which way the lane runs. */
+  aimX: 0,
+  aimZ: 0,
+  along: 0,
+  /** Holding back for reverse gear: 0 to 1 as it comes in. */
+  backing: 0,
 };
+
+/**
+ * The car as it is drawn: between the last two physics steps, so it moves
+ * smoothly on a screen that is faster or slower than the physics.
+ */
+export const shown = { x: 0, z: 0, heading: 0 };
+
+/** Where the car has been this attempt, a point about every metre. */
+export const trail: { x: number; z: number }[] = [];
+const TRAIL_GAP = 1;
+const TRAIL_MAX = 900;
+
+/**
+ * A car leaning on a kerb backs off and touches it again. That is one bump,
+ * not several: the next one only counts once the car has moved on this far.
+ */
+const BUMP_APART = 5;
+const BUMPS = new Set(["kerb", "central_reserve", "island"]);
+let lastBump: { x: number; z: number } | null = null;
 
 type Callbacks = {
   /** A serious mistake: the attempt is over. */
@@ -73,8 +101,13 @@ let taskParking = false;
 let assist: AssistState = createAssist();
 let callbacks: Callbacks | null = null;
 let driving = false;
+/** A sheet or a question is over the table: the drive holds still. */
+let paused = false;
+/** The learner has pushed the stick. The clock starts then, not before. */
+let moved = false;
 let carry = 0;
 let elapsed = 0;
+const before = { x: 0, z: 0, heading: 0 };
 const input: CarInput = { steer: 0, throttle: 0, brake: 0 };
 
 /** Fetch the physics. The car waits on its start line until it's in. */
@@ -120,11 +153,26 @@ export function beginChallenge(next: BoardChallenge, cb: Callbacks): void {
   view.braking = false;
   view.reversing = false;
   view.jolt = 0;
+  view.hold = 0;
+  view.backing = 0;
   carry = 0;
   elapsed = 0;
+  moved = false;
+  paused = false;
+  trail.length = 0;
+  trail.push({ x: car.x, z: car.z });
+  lastBump = null;
+  settle();
   driving = true;
   resetInput();
   if (!engine) void loadPhysics();
+}
+
+/** Draw the car exactly where it is. */
+function settle(): void {
+  before.x = shown.x = car.x;
+  before.z = shown.z = car.z;
+  before.heading = shown.heading = car.heading;
 }
 
 export function stopDriving(): void {
@@ -132,7 +180,21 @@ export function stopDriving(): void {
   car.speed = 0;
   view.braking = false;
   view.reversing = false;
+  view.hold = 0;
+  view.backing = 0;
+  settle();
   resetInput();
+}
+
+/** Hold the drive still, clock and all, while something is over the table. */
+export function setPaused(value: boolean): void {
+  paused = value;
+  if (value) resetInput();
+}
+
+/** Has the learner set off yet? */
+export function hasMoved(): boolean {
+  return moved;
 }
 
 export function isDriving(): boolean {
@@ -192,12 +254,18 @@ function reverseLine(at: CarState): { heading: number; along: number } | null {
 
 /** Advance the drive by one rendered frame. */
 export function tick(frameSeconds: number): void {
-  if (!driving || !challenge || !callbacks || !physics || !engine) return;
+  if (!driving || paused || !challenge || !callbacks || !physics || !engine) {
+    return;
+  }
   const { physicsStep } = engine;
   carry += Math.min(frameSeconds, MAX_FRAME);
   while (carry >= STEP) {
     carry -= STEP;
-    elapsed += STEP;
+    before.x = car.x;
+    before.z = car.z;
+    before.heading = car.heading;
+    if (!moved && Math.hypot(stick.x, stick.y) > STICK_DEADZONE) moved = true;
+    if (moved) elapsed += STEP;
     view.jolt = Math.max(0, view.jolt - STEP * 2.5);
 
     if (physics.crashed) {
@@ -212,8 +280,20 @@ export function tick(frameSeconds: number): void {
 
     stickToInput(stick, car, input, manoeuvring() ? HANDS_ON : drive, assist);
     view.braking = input.brake > 0 && car.speed > 0.05;
+    view.hold = assist.hold;
+    view.aimX = assist.aimX;
+    view.aimZ = assist.aimZ;
+    view.along = assist.along;
+    view.backing = assist.backing;
     physicsStep(physics, car, input);
     view.reversing = car.speed < -0.05;
+    const last = trail[trail.length - 1];
+    if (
+      trail.length < TRAIL_MAX &&
+      Math.hypot(car.x - last.x, car.z - last.z) > TRAIL_GAP
+    ) {
+      trail.push({ x: car.x, z: car.z });
+    }
 
     if (physics.crashed) {
       view.jolt = Math.max(0.5, physics.impact);
@@ -235,6 +315,13 @@ export function tick(frameSeconds: number): void {
       : refStep(ref, challenge, car, physics.contacts, STEP);
     for (const fault of result.small) {
       view.jolt = Math.max(view.jolt, 0.6 * Math.max(0.5, physics.impact));
+      if (BUMPS.has(fault.id)) {
+        const again =
+          lastBump !== null &&
+          Math.hypot(car.x - lastBump.x, car.z - lastBump.z) < BUMP_APART;
+        lastBump = { x: car.x, z: car.z };
+        if (again) continue;
+      }
       callbacks.onSmall(fault);
     }
     if (result.fault) {
@@ -248,4 +335,10 @@ export function tick(frameSeconds: number): void {
       return;
     }
   }
+  // What is left of the frame is a share of the next step: draw the car that
+  // far on from where it was a step ago.
+  const part = carry / STEP;
+  shown.x = before.x + (car.x - before.x) * part;
+  shown.z = before.z + (car.z - before.z) * part;
+  shown.heading = before.heading + wrapPi(car.heading - before.heading) * part;
 }
