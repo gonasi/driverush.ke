@@ -189,14 +189,26 @@ function driveCar(physics: Physics, input: CarInput): void {
   let forward = vx * sin - vz * cos;
   let across = vx * cos + vz * sin;
 
-  if (forward >= 0) {
+  if (input.throttle < 0) {
+    // Reverse gear: stop first, then back up at a walking pace.
+    if (forward > 0.05) {
+      forward = Math.max(0, forward - CAR.brake * DT);
+    } else {
+      const target = CAR.reverseSpeed * Math.min(1, -input.throttle);
+      forward =
+        forward < -target
+          ? Math.min(-target, forward + CAR.brake * DT)
+          : Math.max(-target, forward - CAR.accel * 0.7 * DT);
+    }
+  } else if (forward >= 0) {
     const fill = forward / CAR.maxSpeed;
     forward += input.throttle * CAR.accel * (1 - fill) * DT;
     forward -= input.brake * CAR.brake * DT;
     if (input.throttle <= 0) forward -= CAR.coast * DT;
     forward = Math.min(CAR.maxSpeed, Math.max(0, forward));
   } else {
-    // Knocked backwards by a bump: the brakes bring it back to rest.
+    // Rolling backwards with reverse let go, or knocked back by a bump: the
+    // brakes bring it to rest.
     forward = Math.min(0, forward + CAR.brake * DT);
   }
   across *= 1 - GRIP;
@@ -249,10 +261,10 @@ export function physicsStep(
   car.x = player.position.x / SCALE;
   car.z = player.position.y / SCALE;
   car.heading = player.angle;
-  car.speed = Math.max(
-    0,
-    ((player.velocity.x * sin - player.velocity.y * cos) * 60) / SCALE,
-  );
+  car.speed =
+    ((player.velocity.x * sin - player.velocity.y * cos) * 60) / SCALE;
+  // only a car in reverse gear counts as going backwards, not one bumped back
+  if (input.throttle >= 0 && car.speed < 0) car.speed = 0;
   car.steer = physics.crashed ? 0 : physics.steer;
 
   if (!physics.crashed) return false;

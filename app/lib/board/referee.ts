@@ -9,7 +9,7 @@
  * short grace time) so brushing a line isn't punished.
  */
 import type { CarState } from "./car";
-import type { BoardChallenge } from "./challenges";
+import type { TurnChallenge } from "./challenges";
 import {
   ARMS,
   EXIT_CLEAR,
@@ -32,7 +32,8 @@ export type SmallFaultId =
   | "island"
   | "solid_line"
   | "roundabout_lane_change"
-  | "roundabout_stop";
+  | "roundabout_stop"
+  | "bay_line";
 export type SeriousFaultId =
   | "wrong_exit"
   | "wrong_destination"
@@ -41,7 +42,9 @@ export type SeriousFaultId =
   | "full_circle"
   | "collision"
   | "past_end"
-  | "off_route";
+  | "off_route"
+  | "wrong_lane"
+  | "stop_line";
 export type FaultId = SmallFaultId | SeriousFaultId;
 
 export type Fault = {
@@ -138,7 +141,7 @@ function small(id: SmallFaultId): Fault {
 
 export function refStep(
   ref: RefState,
-  challenge: BoardChallenge,
+  challenge: TurnChallenge,
   car: CarState,
   contacts: readonly Contact[],
   dt: number,

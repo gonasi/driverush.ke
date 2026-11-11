@@ -1,0 +1,242 @@
+/**
+ * What the table shows besides the drive: routes painted on it, a part of the
+ * board lit up, a car playing a route back, and a camera the learner can move.
+ * Learn mode and the driving tasks' hints both work through this.
+ *
+ * Like `runtime.ts`, the things that change every frame (how far the playback
+ * has got, where the camera is) live at module scope and never re-render
+ * React. The store holds only what the screen has to redraw for.
+ */
+import { create } from "zustand";
+
+import { BOUNDS, type Box } from "./full-board";
+import type { Vec } from "./geometry";
+import { poseAt, type Pose, type Route } from "./network";
+
+export type StageLine = {
+  id: string;
+  points: Vec[];
+  color: string;
+  /** Metres. */
+  width?: number;
+  opacity?: number;
+};
+
+const CX = (BOUNDS.x0 + BOUNDS.x1) / 2;
+const CZ = (BOUNDS.z0 + BOUNDS.z1) / 2;
+
+/**
+ * The camera, when the learner has hold of it. `span` is how many metres of
+ * table fit across the screen. The scene fills in `max`, which depends on the
+ * screen's shape. The camera never turns: it slides and zooms.
+ */
+export const cam = {
+  free: false,
+  /** Keep the playing car in the middle. Any drag lets go of it. */
+  follow: false,
+  x: CX,
+  z: CZ,
+  span: 9999,
+  /**
+   * How far up the screen to hold what is being looked at, as a share of the
+   * table in view. For when a panel covers the bottom of the screen.
+   */
+  lift: 0,
+  min: 16,
+  max: 240,
+};
+
+/** How far along its route the playback has got, in metres. */
+export const play = { distance: 0 };
+
+let wake: () => void = () => {};
+/** The scene hands over its "draw a frame" call, for when nothing is animating. */
+export function setWake(fn: () => void): void {
+  wake = fn;
+}
+
+const clamp = (v: number, lo: number, hi: number) =>
+  Math.min(hi, Math.max(lo, v));
+
+/** Slide the view by a distance on the table. */
+export function panBy(dx: number, dz: number): void {
+  cam.free = true;
+  cam.follow = false;
+  cam.x = clamp(cam.x + dx, BOUNDS.x0, BOUNDS.x1);
+  cam.z = clamp(cam.z + dz, BOUNDS.z0, BOUNDS.z1);
+  wake();
+}
+
+/** Zoom: under 1 closes in, over 1 backs off. */
+export function zoomBy(factor: number): void {
+  cam.free = true;
+  cam.span = clamp(Math.min(cam.span, cam.max) * factor, cam.min, cam.max);
+  wake();
+}
+
+/** Back off to the whole table. */
+export function fitTable(): void {
+  cam.free = true;
+  cam.follow = false;
+  cam.x = CX;
+  cam.z = CZ;
+  cam.span = cam.max;
+  wake();
+}
+
+/** Look at one part of the board. `sideways` is true from the left or right seat. */
+export function flyTo(box: Box, sideways = false): void {
+  cam.free = true;
+  cam.follow = false;
+  cam.x = (box.x0 + box.x1) / 2;
+  cam.z = (box.z0 + box.z1) / 2;
+  const across = sideways ? box.z1 - box.z0 : box.x1 - box.x0;
+  const deep = sideways ? box.x1 - box.x0 : box.z1 - box.z0;
+  // what is deep on the table is squashed on the screen, so it needs less room
+  cam.span = clamp(Math.max(across, deep * 1.1) * 1.25, cam.min, cam.max);
+  wake();
+}
+
+/** Hand the camera back to the drive. */
+export function releaseCamera(): void {
+  cam.free = false;
+  cam.follow = false;
+}
+
+/** Metres a second the playback car covers at normal speed. */
+const PLAY_SPEED = 9;
+const REVERSE_SPEED = 3;
+const TURN_SPEED = 5.5;
+
+export const PLAY_RATES = [0.5, 1, 2] as const;
+
+type StageState = {
+  lines: StageLine[];
+  /** A part of the board to light up. */
+  glow: Box | null;
+  /** The route being played back, if any. */
+  route: Route | null;
+  playing: boolean;
+  rate: number;
+  /** The step of the route the car is in. */
+  step: number;
+  ended: boolean;
+  /** Stop once, on reaching this step. */
+  pauseAt: number | null;
+  show: (lines: StageLine[], glow?: Box | null) => void;
+  watch: (route: Route, options?: { pauseAt?: number; from?: number }) => void;
+  setPlaying: (playing: boolean) => void;
+  setRate: (rate: number) => void;
+  seek: (distance: number) => void;
+  toStep: (index: number) => void;
+  clear: () => void;
+};
+
+export const useStage = create<StageState>()((set, get) => ({
+  lines: [],
+  glow: null,
+  route: null,
+  playing: false,
+  rate: 1,
+  step: 0,
+  ended: false,
+  pauseAt: null,
+
+  show: (lines, glow = null) => {
+    set({ lines, glow });
+    wake();
+  },
+
+  watch: (route, options) => {
+    play.distance = options?.from ?? 0;
+    cam.free = true;
+    cam.follow = true;
+    cam.span = clamp(Math.min(cam.span, 62), cam.min, cam.max);
+    set({
+      route,
+      playing: true,
+      ended: false,
+      step: poseAt(route, play.distance).step,
+      pauseAt: options?.pauseAt ?? null,
+    });
+    wake();
+  },
+
+  setPlaying: (playing) => {
+    const { route, ended } = get();
+    if (!route) return;
+    if (playing && ended) play.distance = 0;
+    set({ playing, ended: playing ? false : ended, pauseAt: null });
+    wake();
+  },
+
+  setRate: (rate) => set({ rate }),
+
+  seek: (distance) => {
+    const { route } = get();
+    if (!route) return;
+    play.distance = clamp(distance, 0, route.length);
+    set({
+      step: poseAt(route, play.distance).step,
+      ended: play.distance >= route.length,
+    });
+    wake();
+  },
+
+  toStep: (index) => {
+    const { route } = get();
+    if (!route) return;
+    const step = route.steps[clamp(index, 0, route.steps.length - 1)];
+    get().seek(step.from + 0.01);
+  },
+
+  clear: () => {
+    play.distance = 0;
+    set({
+      lines: [],
+      glow: null,
+      route: null,
+      playing: false,
+      ended: false,
+      step: 0,
+      pauseAt: null,
+    });
+    wake();
+  },
+}));
+
+/**
+ * Move the playback on by one frame and say where the car is. The scene calls
+ * this; it returns null when there is no route to show.
+ */
+export function advance(dt: number): Pose | null {
+  const state = useStage.getState();
+  const { route } = state;
+  if (!route) return null;
+  if (state.playing) {
+    const now = poseAt(route, play.distance);
+    const maneuver = route.steps[now.step]?.maneuver ?? "follow";
+    const pace = now.reversing
+      ? REVERSE_SPEED
+      : maneuver === "follow" || maneuver === "hold_lane"
+        ? PLAY_SPEED
+        : TURN_SPEED;
+    play.distance = Math.min(
+      route.length,
+      play.distance + pace * state.rate * dt,
+    );
+  }
+  const pose = poseAt(route, play.distance);
+  if (state.playing) {
+    if (play.distance >= route.length) {
+      useStage.setState({ playing: false, ended: true, step: pose.step });
+    } else if (pose.step !== state.step) {
+      if (state.pauseAt === pose.step) {
+        useStage.setState({ step: pose.step, playing: false, pauseAt: null });
+      } else {
+        useStage.setState({ step: pose.step });
+      }
+    }
+  }
+  return pose;
+}

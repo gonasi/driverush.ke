@@ -77,6 +77,7 @@ export default [
       route("image-coords", "routes/tools/image-coords.tsx"),
       route("sign-3d", "routes/tools/sign-3d.tsx"),
       route("share", "routes/tools/share.tsx"),
+      route("board-network", "routes/tools/board-network.tsx"),
     ]),
     // Outside the dashboard layout on purpose: `?card=<id>` must render the
     // card alone so a 1200×630 screenshot contains nothing else.

@@ -217,6 +217,21 @@ export const analytics = {
     fault_count: number;
   }) => emit("board_completed", args),
 
+  /** Learn mode opened on the board. */
+  boardLearnOpened: () => emit("board_learn_opened", {}),
+
+  /** A lesson's route was played back, or a board feature looked at. */
+  boardLessonViewed: (args: {
+    kind: "lane" | "feature" | "route" | "parking";
+    lesson_id: string;
+  }) => emit("board_lesson_viewed", args),
+
+  /** A hint was used on a driving task. */
+  boardHintUsed: (args: {
+    challenge_id: string;
+    kind: "next_step" | "show_me" | "after_fault";
+  }) => emit("board_hint_used", args),
+
   /** Outbound click to a credited source site. */
   partnerClicked: (args: { name: string; url: string }) =>
     emit("partner_clicked", {

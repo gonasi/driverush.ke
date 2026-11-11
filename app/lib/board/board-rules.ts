@@ -35,7 +35,7 @@ function laneList(lanes: number[]): string {
   return `lane ${lanes.slice(0, -1).join(", ")} or ${lanes[lanes.length - 1]}`;
 }
 
-function laneRule(lanes: number, lane: number): string {
+export function laneRule(lanes: number, lane: number): string {
   if (lane <= 1) return "Lane 1 goes straight or left.";
   if (lane === 2) return "Lane 2 only goes straight.";
   if (lanes === 4 && lane === 3) return "Lane 3 goes straight or right.";
@@ -99,6 +99,18 @@ const RULES: Record<FaultId, { title: string; rule: string }> = {
     title: "Not that road",
     rule: "Follow the road the examiner asked for.",
   },
+  wrong_lane: {
+    title: "Wrong lane at the roundabout",
+    rule: "Be in the lane for your turn before the lines turn continuous, and hold it.",
+  },
+  stop_line: {
+    title: "You did not stop at the stop line",
+    rule: "At a stop line you stop every time, even when the road is clear.",
+  },
+  bay_line: {
+    title: "Not straight in the bay",
+    rule: "Park with the whole car inside the lines, straight in the bay.",
+  },
 };
 
 function reasonFor(fault: Fault): string {
@@ -135,6 +147,12 @@ function reasonFor(fault: Fault): string {
       return "You drove into the red car. Ease off early and stop behind it with a gap.";
     case "off_route":
       return "You turned onto a road this task does not use. Stay on the road you were asked to take, and stop in the green box.";
+    case "wrong_lane":
+      return "You came up to the roundabout, or went round it, in a lane that does not make this turn. Choose the lane further back, where the lines are broken, and stay in it until your exit.";
+    case "stop_line":
+      return "You drove over the stop line without stopping. A stop line means stop every time, look both ways, and go only when the road is clear.";
+    case "bay_line":
+      return "The car is in the bay but over a line or at an angle. Straighten up so the whole car sits inside the lines. You can reverse a little to line it up.";
     case "past_end":
       return "You drove on past the green box. Ease off as you reach the box, then let go and the car brakes to a stop.";
   }

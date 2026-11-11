@@ -49,7 +49,7 @@ function SeatButton({
       aria-pressed={active}
       onClick={() => onPick(seat)}
       className={cn(
-        "border-2 border-ink px-3 py-2 font-display text-[12px] font-extrabold uppercase tracking-wider outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ink",
+        "min-h-11 min-w-[5.5rem] border-2 border-ink px-3 py-2 font-display text-[13px] font-extrabold uppercase tracking-wider outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ink",
         active
           ? "bg-kenya-gold text-kenya-gold-foreground shadow-stamp"
           : "bg-surface text-ink hover:bg-paper-3",

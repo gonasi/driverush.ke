@@ -5,8 +5,9 @@
  * goes through React.
  */
 import type { CarInput, CarState } from "./car";
-import type { BoardChallenge } from "./challenges";
-import { laneBearing, lanePoint } from "./geometry";
+import { isRouteTask, type BoardChallenge } from "./challenges";
+import { challengeRoute, taskParks, taskStart } from "./lessons";
+import type { Route } from "./network";
 import {
   createAssist,
   stickToInput,
@@ -22,6 +23,11 @@ import {
   type Fault,
   type RefState,
 } from "./referee";
+import {
+  createRouteRef,
+  routeRefStep,
+  type RouteRefState,
+} from "./route-referee";
 
 const STEP = 1 / 60;
 /** A stalled tab mustn't fast-forward the car when it wakes. */
@@ -37,6 +43,8 @@ export const drive: DriveOptions = { seat: "south", assist: true };
 export const view = {
   others: [] as OtherPose[],
   braking: false,
+  /** Backing up, for the lamps. */
+  reversing: false,
   /** Set for a moment when something is hit, 0 to 1. */
   jolt: 0,
 };
@@ -57,6 +65,10 @@ let loading: Promise<void> | null = null;
 let challenge: BoardChallenge | null = null;
 let physics: Physics | null = null;
 let ref: RefState = createRef();
+/** A route task's own referee, and the line it checks the drive against. */
+let routeRef: RouteRefState = createRouteRef();
+let taskRoute: Route | null = null;
+let taskParking = false;
 let assist: AssistState = createAssist();
 let callbacks: Callbacks | null = null;
 let driving = false;
@@ -86,15 +98,14 @@ export function resetInput(): void {
 
 /** Put the car on its start line and hand control to the learner. */
 export function beginChallenge(next: BoardChallenge, cb: Callbacks): void {
-  const start = lanePoint(
-    next.start.arm,
-    "approach",
-    next.start.lane,
-    next.start.along,
-  );
+  const start = taskStart(next);
   car.x = start.x;
   car.z = start.z;
-  car.heading = laneBearing(next.start.arm, "approach");
+  car.heading = start.heading;
+  routeRef = createRouteRef();
+  taskRoute = isRouteTask(next) ? challengeRoute(next) : null;
+  taskParking = taskParks(next);
+  drive.reverse = isRouteTask(next) && next.reverse;
   car.speed = 0;
   car.steer = 0;
   challenge = next;
@@ -106,6 +117,7 @@ export function beginChallenge(next: BoardChallenge, cb: Callbacks): void {
     ? physics.poses
     : next.otherCars.map(({ x, z, heading }) => ({ x, z, heading }));
   view.braking = false;
+  view.reversing = false;
   view.jolt = 0;
   carry = 0;
   elapsed = 0;
@@ -118,6 +130,7 @@ export function stopDriving(): void {
   driving = false;
   car.speed = 0;
   view.braking = false;
+  view.reversing = false;
   resetInput();
 }
 
@@ -128,6 +141,28 @@ export function isDriving(): boolean {
 /** Seconds spent driving this attempt. */
 export function elapsedSeconds(): number {
   return elapsed;
+}
+
+/** The drive's options with lane assist off, for getting into or out of a bay. */
+const HANDS_ON: DriveOptions = { seat: "south", assist: false };
+
+/**
+ * Is the car at a parking bay, going in or coming out? Lane assist lets go
+ * there: holding the lane is the opposite of what the learner is trying to do.
+ */
+function manoeuvring(): boolean {
+  if (!taskRoute) return false;
+  const at = routeRef.progress;
+  const near = taskRoute.steps.some(
+    (step) =>
+      (step.road === "angle_bay" || step.road === "flush_bay") &&
+      at > step.from - 7 &&
+      at < step.to + 2,
+  );
+  if (!near) return false;
+  HANDS_ON.seat = drive.seat;
+  HANDS_ON.reverse = drive.reverse;
+  return true;
 }
 
 /** Advance the drive by one rendered frame. */
@@ -150,9 +185,10 @@ export function tick(frameSeconds: number): void {
       continue;
     }
 
-    stickToInput(stick, car, input, drive, assist);
+    stickToInput(stick, car, input, manoeuvring() ? HANDS_ON : drive, assist);
     view.braking = input.brake > 0 && car.speed > 0.05;
     physicsStep(physics, car, input);
+    view.reversing = car.speed < -0.05;
 
     if (physics.crashed) {
       view.jolt = Math.max(0.5, physics.impact);
@@ -160,7 +196,18 @@ export function tick(frameSeconds: number): void {
       continue;
     }
 
-    const result = refStep(ref, challenge, car, physics.contacts, STEP);
+    const result = isRouteTask(challenge)
+      ? taskRoute
+        ? routeRefStep(
+            routeRef,
+            taskRoute,
+            taskParking,
+            car,
+            physics.contacts,
+            STEP,
+          )
+        : { small: [] }
+      : refStep(ref, challenge, car, physics.contacts, STEP);
     for (const fault of result.small) {
       view.jolt = Math.max(view.jolt, 0.6 * Math.max(0.5, physics.impact));
       callbacks.onSmall(fault);

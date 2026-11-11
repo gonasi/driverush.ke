@@ -9,6 +9,7 @@ import {
   CropIcon,
   ImageIcon,
   LinkIcon,
+  RoadIcon,
   Sign3DIcon,
   SoundIcon,
 } from "~/components/brand/icons";
@@ -53,6 +54,15 @@ export const TOOLS: Tool[] = [
     blurb:
       "Tag any DriveRush link with UTMs before posting — pick a channel preset, set the campaign, copy the tagged URL. Keeps GA attribution clean and the campaign vocabulary consistent.",
     icon: LinkIcon,
+    status: "live",
+  },
+  {
+    slug: "board-network",
+    path: "/tools/board-network",
+    title: "Board lane network",
+    blurb:
+      "Every lane, turn, U-turn and parking move on the Model Town Board, drawn flat for checking. Pick a start and an end to see the route the lessons will teach, step by step, and the list of rules a driving school still has to confirm.",
+    icon: RoadIcon,
     status: "live",
   },
   {

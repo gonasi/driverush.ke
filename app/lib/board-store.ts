@@ -20,6 +20,7 @@ import {
 import type { Fault, FaultId } from "./board/referee";
 import { beginChallenge, elapsedSeconds, stopDriving } from "./board/runtime";
 import type { Seat } from "./board/joystick";
+import { fitTable, releaseCamera, useStage } from "./board/stage";
 import { applyGrade, type SignProgress } from "./pelican-progress";
 import { bumpPracticeStreak } from "./practice-streak";
 import { BUZZ, buzz, playSfx, stopAllSfx, warmSfx } from "./sounds";
@@ -42,7 +43,17 @@ export const DEFAULT_BOARD_SETTINGS: BoardSettings = {
   quality: "auto",
 };
 
-export type BoardPhase = "ready" | "driving" | "fault" | "passed" | "complete";
+/** "watch" is the drive paused while the right way is played back. */
+export type BoardPhase =
+  | "ready"
+  | "driving"
+  | "fault"
+  | "watch"
+  | "passed"
+  | "complete";
+
+/** Driving the tasks, or learning the board with no task on. */
+export type BoardMode = "drive" | "learn";
 
 type BoardState = {
   // ---- persisted ----
@@ -50,8 +61,13 @@ type BoardState = {
   /** Same boxes as the sign trainers, keyed by challenge id. */
   progress: SignProgress;
   bestStars: Record<string, number>;
+  /** Lessons watched to the end. */
+  learned?: string[];
   // ---- transient ----
   overlayOpen: boolean;
+  mode: BoardMode;
+  /** A hint was used on the task in front of the learner. */
+  hinted: boolean;
   phase: BoardPhase;
   queue: BoardChallenge[];
   pos: number;
@@ -79,6 +95,15 @@ type BoardState = {
   restart: () => void;
   next: () => void;
   exit: () => void;
+  /** Open the board to learn it: no task, no clock. */
+  learn: () => void;
+  /** A hint was shown. The task no longer counts as known without help. */
+  hint: (kind: "next_step" | "show_me" | "after_fault") => void;
+  /** Pause the task to watch the right way played back. */
+  watch: () => void;
+  /** Done watching: the task again, from its start line. */
+  resume: () => void;
+  markLearned: (id: string) => void;
   setSetting: (patch: Partial<BoardSettings>) => void;
   resetProgress: () => void;
 };
@@ -173,9 +198,11 @@ export const useBoardStore = create<BoardState>()(
             runStreak,
             runBestStreak: Math.max(s.runBestStreak, runStreak),
             runClean: clean ? [...s.runClean, challenge.id] : s.runClean,
-            progress: clean
-              ? applyGrade(s.progress, challenge.id, "knew")
-              : s.progress,
+            // with a hint it was not known yet, so it comes round again
+            progress:
+              clean && !s.hinted
+                ? applyGrade(s.progress, challenge.id, "knew")
+                : s.progress,
             bestStars: {
               ...s.bestStars,
               [challenge.id]: Math.max(s.bestStars[challenge.id] ?? 0, stars),
@@ -196,6 +223,8 @@ export const useBoardStore = create<BoardState>()(
         const { queue, pos } = get();
         const challenge = queue[pos];
         if (!challenge) return;
+        useStage.getState().clear();
+        releaseCamera();
         beginChallenge(challenge, { onFault, onSmall, onGoal });
         set((s) => ({
           phase: "driving",
@@ -211,6 +240,8 @@ export const useBoardStore = create<BoardState>()(
         bestStars: {},
 
         overlayOpen: false,
+        mode: "drive",
+        hinted: false,
         phase: "ready",
         attempt: 0,
         ...FRESH_RUN,
@@ -222,7 +253,13 @@ export const useBoardStore = create<BoardState>()(
             : pickRound(BOARD_CHALLENGES, get().progress, BOARD_ROUND_SIZE);
           if (queue.length === 0) return;
           if (get().settings.sound) warmSfx();
-          set({ ...FRESH_RUN, queue, overlayOpen: true });
+          set({
+            ...FRESH_RUN,
+            queue,
+            overlayOpen: true,
+            mode: "drive",
+            hinted: false,
+          });
           analytics.boardStarted({
             challenges: queue.length,
             scope: wanted ? "drill" : "round",
@@ -251,15 +288,64 @@ export const useBoardStore = create<BoardState>()(
             set({ phase: "complete" });
             return;
           }
-          set({ pos: s.pos + 1, faults: 0 });
+          set({ pos: s.pos + 1, faults: 0, hinted: false });
           begin();
         },
 
         exit: () => {
           stopDriving();
           stopAllSfx();
-          set({ ...FRESH_RUN, overlayOpen: false, phase: "ready" });
+          useStage.getState().clear();
+          releaseCamera();
+          set({
+            ...FRESH_RUN,
+            overlayOpen: false,
+            phase: "ready",
+            mode: "drive",
+            hinted: false,
+          });
         },
+
+        learn: () => {
+          stopDriving();
+          useStage.getState().clear();
+          fitTable();
+          set({
+            ...FRESH_RUN,
+            overlayOpen: true,
+            phase: "ready",
+            mode: "learn",
+            hinted: false,
+          });
+          analytics.boardLearnOpened();
+        },
+
+        hint: (kind) => {
+          const { queue, pos } = get();
+          set({ hinted: true });
+          analytics.boardHintUsed({
+            challenge_id: queue[pos]?.id ?? "",
+            kind,
+          });
+        },
+
+        watch: () => {
+          const { phase } = get();
+          if (phase !== "driving" && phase !== "fault") return;
+          stopDriving();
+          set({ phase: "watch", hinted: true, notice: null });
+        },
+
+        resume: () => {
+          if (get().phase === "watch") begin();
+        },
+
+        markLearned: (id) =>
+          set((s) =>
+            s.learned?.includes(id)
+              ? s
+              : { learned: [...(s.learned ?? []), id] },
+          ),
 
         setSetting: (patch) =>
           set((s) => ({ settings: { ...s.settings, ...patch } })),
@@ -276,6 +362,7 @@ export const useBoardStore = create<BoardState>()(
         settings: s.settings,
         progress: s.progress,
         bestStars: s.bestStars,
+        learned: s.learned,
       }),
       // Here from day one, so a later version bump can keep progress instead
       // of wiping it. New optional fields don't need a bump at all.
@@ -285,6 +372,7 @@ export const useBoardStore = create<BoardState>()(
           settings: { ...DEFAULT_BOARD_SETTINGS, ...prev?.settings },
           progress: prev?.progress ?? {},
           bestStars: prev?.bestStars ?? {},
+          learned: prev?.learned ?? [],
         };
       },
       merge: (persisted, current) => {

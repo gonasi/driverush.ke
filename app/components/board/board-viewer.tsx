@@ -44,6 +44,7 @@ export function BoardViewer({
   attempt,
   quality,
   seat,
+  learning,
   onUnsupported,
   className,
 }: {
@@ -53,6 +54,8 @@ export function BoardViewer({
   quality: BoardQuality;
   /** The side of the table the learner stands at. */
   seat: Seat;
+  /** Learn mode: no task on the table. */
+  learning?: boolean;
   /** This device can't draw the board at all. */
   onUnsupported?: () => void;
   className?: string;
@@ -85,6 +88,7 @@ export function BoardViewer({
             attempt={attempt}
             tier={tier}
             seat={seat}
+            learning={learning}
             onReady={() => setPainted(true)}
           />
         </React.Suspense>

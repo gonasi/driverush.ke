@@ -3,7 +3,12 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { faultTip } from "./board-rules";
 import { CAR } from "./car";
-import { BOARD_CHALLENGES, type BoardChallenge } from "./challenges";
+import {
+  BOARD_CHALLENGES,
+  isRouteTask,
+  type BoardChallenge,
+  type TurnChallenge,
+} from "./challenges";
 import { BOUNDS, U_TURN_GAPS, onTarmac } from "./full-board";
 import {
   ARMS,
@@ -25,6 +30,8 @@ import {
 } from "./geometry";
 import { SEATS, stickBearing, type Seat } from "./joystick";
 import { lanePath, turnBackPath } from "./lane-paths";
+import { challengeRoute, taskParks } from "./lessons";
+import { distanceNear, poseAt, type Route } from "./network";
 import { createPhysics, physicsStep } from "./physics";
 import type { Fault } from "./referee";
 import {
@@ -43,7 +50,7 @@ const STEP = 1 / 60;
 const RELEASE_DECEL = 0.7 * CAR.brake + CAR.coast;
 const DEG = Math.PI / 180;
 
-function task(turn: Turn, startLane = 1): BoardChallenge {
+function task(turn: Turn, startLane = 1): TurnChallenge {
   return {
     id: "test",
     title: "test",
@@ -113,7 +120,7 @@ function play(
 }
 
 /** True once the car should let go to stop in the middle of the box. */
-function atBox(challenge: BoardChallenge): boolean {
+function atBox(challenge: TurnChallenge): boolean {
   const goal = challenge.goal;
   const side = goal.side ?? "exit";
   const loc = locate(car.x, car.z);
@@ -143,7 +150,7 @@ type Follow = {
  * it first.
  */
 function follower(
-  challenge: BoardChallenge,
+  challenge: TurnChallenge,
   path: Vec[],
   options: Follow = {},
 ) {
@@ -205,7 +212,7 @@ function follower(
 
 /** Drive a task properly, getting into `lane` first. */
 function proper(
-  challenge: BoardChallenge,
+  challenge: TurnChallenge,
   lane: number,
   options: Follow = {},
 ): Outcome {
@@ -215,6 +222,10 @@ function proper(
       : lanePath("S", lane, challenge.turn);
   return play(challenge, follower(challenge, path, options));
 }
+
+const TURN_TASKS = BOARD_CHALLENGES.filter(
+  (c): c is TurnChallenge => !isRouteTask(c),
+);
 
 const SHIPPED_LANES: Record<string, number> = {
   straight: 2,
@@ -432,7 +443,7 @@ describe("driving properly", () => {
 
     it(`passes every shipped task, lane changes included, assist ${assist ? "on" : "off"}`, () => {
       drive.assist = assist;
-      for (const challenge of BOARD_CHALLENGES) {
+      for (const challenge of TURN_TASKS) {
         const result = proper(challenge, SHIPPED_LANES[challenge.id]);
         expect(result.fault, challenge.id).toBeUndefined();
         expect(result.small, challenge.id).toEqual([]);
@@ -616,7 +627,7 @@ describe("solid things are solid", () => {
   });
 
   it("the red car gets shoved, and that ends the attempt", () => {
-    const challenge = BOARD_CHALLENGES.find((c) => c.id === "behind-red")!;
+    const challenge = TURN_TASKS.find((c) => c.id === "behind-red")!;
     const before = { ...challenge.otherCars[0] };
     const result = proper(challenge, 1, { through: true });
     expect(result.fault).toMatchObject({ id: "collision", serious: true });
@@ -725,7 +736,7 @@ describe("serious mistakes end the attempt", () => {
   });
 
   it("turning back, then driving on past the box toward the roundabout", () => {
-    const challenge = BOARD_CHALLENGES.find((c) => c.id === "turn-back")!;
+    const challenge = TURN_TASKS.find((c) => c.id === "turn-back")!;
     const result = play(
       challenge,
       follower(challenge, turnBackPath(2, 56, 26), { through: true }),
@@ -800,5 +811,154 @@ describe("small mistakes cost a star and the drive goes on", () => {
     });
     expect(result.small.map((f) => f.id)).toEqual(["roundabout_stop"]);
     expect(result.goal).toBe(true);
+  });
+});
+
+// ---- tasks away from the roundabout: the street, the two-way road, parking ----
+
+const ROUTE_TASKS = BOARD_CHALLENGES.filter(isRouteTask);
+
+type RouteFollow = {
+  /** Drive over stop lines without stopping. */
+  runStopLines?: boolean;
+  /** Metres to hold to the side of the route, to be in the wrong lane. */
+  aside?: number;
+};
+
+/**
+ * A learner who knows the way: the knob points a few metres down the task's
+ * route, they stop at each stop line, and they let go to stop at the end. On a
+ * stretch in reverse the knob points where the tail has to go.
+ */
+function routeFollower(
+  challenge: BoardChallenge,
+  route: Route,
+  options: RouteFollow = {},
+) {
+  const parks = taskParks(challenge);
+  const waited = new Set<number>();
+  let progress = 0;
+  return () => {
+    // near where it last was, so a route that crosses itself is not confused
+    let best = Infinity;
+    for (let d = Math.max(0, progress - 3); d <= progress + 8; d += 0.25) {
+      const p = poseAt(route, d);
+      const gap = Math.hypot(p.x - car.x, p.z - car.z);
+      if (gap < best) {
+        best = gap;
+        progress = d;
+      }
+    }
+    const speed = Math.abs(car.speed);
+    const stopping = speed ** 2 / (2 * RELEASE_DECEL);
+
+    if (!options.runStopLines) {
+      for (let i = 0; i < route.steps.length; i += 1) {
+        const step = route.steps[i];
+        if (step.control !== "stop" || waited.has(i)) continue;
+        const left = step.from - progress;
+        if (left < 6 && left > -1.5 && left - stopping < 2.5) {
+          letGo();
+          if (speed < 0.05 && left < 6) waited.add(i);
+          return;
+        }
+      }
+    }
+
+    const end = route.length - (parks ? 0 : 6);
+    if (progress + stopping >= end - (parks ? 0.15 : 0)) {
+      letGo();
+      return;
+    }
+
+    const here = poseAt(route, progress);
+    const aim = poseAt(route, Math.min(route.length, progress + (here.reversing ? 3 : 4.5)));
+    let bearing = bearingOf(aim.x - car.x, aim.z - car.z);
+    if (options.aside) {
+      const side = poseAt(route, Math.min(route.length, progress + 6));
+      const left = side.heading - Math.PI / 2;
+      bearing = bearingOf(
+        side.x + Math.sin(left) * options.aside - car.x,
+        side.z - Math.cos(left) * options.aside - car.z,
+      );
+    }
+    point(bearing, here.reversing ? 0.6 : 0.7);
+  };
+}
+
+describe("tasks away from the roundabout", () => {
+  for (const assist of [true, false]) {
+    for (const challenge of ROUTE_TASKS) {
+      it(`passes "${challenge.title}", assist ${assist ? "on" : "off"}`, () => {
+        drive.assist = assist;
+        const route = challengeRoute(challenge)!;
+        const result = play(challenge, routeFollower(challenge, route), 240);
+        expect(result.fault, challenge.id).toBeUndefined();
+        expect(result.small, challenge.id).toEqual([]);
+        expect(result.goal, challenge.id).toBe(true);
+      });
+    }
+  }
+
+  it("running a stop line ends the attempt", () => {
+    const challenge = ROUTE_TASKS.find((c) => c.id === "down-the-street")!;
+    const route = challengeRoute(challenge)!;
+    const result = play(
+      challenge,
+      routeFollower(challenge, route, { runStopLines: true }),
+      240,
+    );
+    expect(result.fault).toMatchObject({ id: "stop_line", serious: true });
+  });
+
+  it("coming up to the roundabout a lane out ends the attempt", () => {
+    const challenge = ROUTE_TASKS.find((c) => c.id === "from-two-way")!;
+    const route = challengeRoute(challenge)!;
+    const result = play(
+      challenge,
+      routeFollower(challenge, route, { aside: -3.6 }),
+      240,
+    );
+    expect(result.fault?.id).toMatch(/wrong_lane|off_route|centre_line|wrong_way/);
+  });
+
+  it("driving off down another road ends the attempt", () => {
+    const challenge = ROUTE_TASKS.find((c) => c.id === "down-the-street")!;
+    // straight on down the dual carriageway, past the street
+    const result = play(challenge, () => point(Math.PI, 0.8), 120);
+    expect(result.fault).toMatchObject({ id: "off_route", serious: true });
+  });
+
+  it("the car only reverses in a task that has a reverse gear", () => {
+    const parking = ROUTE_TASKS.find((c) => c.id === "leave-angle")!;
+    let back = 0;
+    play(
+      parking,
+      () => {
+        point(car.heading + Math.PI, 0.7);
+        back = Math.min(back, car.speed);
+      },
+      3,
+    );
+    expect(back).toBeLessThan(-0.5);
+
+    let slowest = 0;
+    play(
+      TURN_TASKS[0],
+      () => {
+        point(car.heading + Math.PI, 0.7);
+        slowest = Math.min(slowest, car.speed);
+      },
+      3,
+    );
+    expect(slowest).toBe(0);
+  });
+
+  it("starts every task on the road, clear of the frame, and ends in reach", () => {
+    for (const challenge of ROUTE_TASKS) {
+      const route = challengeRoute(challenge)!;
+      expect(route.length).toBeGreaterThan(15);
+      expect(distanceNear(route, poseAt(route, 0))).toBeLessThan(0.1);
+    }
   });
 });

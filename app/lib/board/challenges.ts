@@ -1,8 +1,16 @@
 /**
- * What the examiner asks for. Every challenge starts on the four-lane road,
- * because that is the approach the handbook spells out lane by lane. The start
- * lane is often the wrong one for the turn, so choosing a lane is part of it.
+ * What the examiner asks for. There are two kinds of task.
+ *
+ * A turn task starts on the four-lane road, because that is the approach the
+ * handbook spells out lane by lane. The start lane is often the wrong one for
+ * the turn, so choosing a lane is part of it.
+ *
+ * A route task goes somewhere else on the board: down the street, onto the
+ * two-way road, into a parking bay or out of one. It is one of the lessons in
+ * `lessons.ts`, driven by the learner instead of watched, and the referee
+ * checks the drive against that lesson's route.
  */
+import { parkedSpots } from "./full-board";
 import {
   armForTurn,
   laneBearing,
@@ -32,16 +40,34 @@ export type BoardGoal = {
   alongMax: number;
 };
 
-export type BoardChallenge = {
+type TaskBase = {
   id: string;
   title: string;
   /** Said to the learner, examiner style. */
   prompt: string;
+  otherCars: OtherCar[];
+};
+
+export type TurnChallenge = TaskBase & {
   start: { arm: ArmId; lane: number; along: number };
   turn: Turn;
   goal: BoardGoal;
-  otherCars: OtherCar[];
 };
+
+export type RouteChallenge = TaskBase & {
+  /** The id of the lesson in `lessons.ts` whose route this task drives. */
+  lesson: string;
+  /** The car has a reverse gear in this task. */
+  reverse: boolean;
+};
+
+export type BoardChallenge = TurnChallenge | RouteChallenge;
+
+export function isRouteTask(
+  challenge: BoardChallenge,
+): challenge is RouteChallenge {
+  return "lesson" in challenge;
+}
 
 /** Far enough back that there is room to change lanes before the continuous lines. */
 const START_ALONG = 60;
@@ -53,7 +79,7 @@ function turnChallenge(
   prompt: string,
   startLane: number,
   turn: Turn,
-): BoardChallenge {
+): TurnChallenge {
   return {
     id,
     title,
@@ -68,6 +94,69 @@ function turnChallenge(
 const RED_ALONG = 46;
 const redArm = armForTurn("S", "left");
 const redAt = lanePoint(redArm, "exit", 1, RED_ALONG);
+
+/** The cars standing in the parking bays. Solid, in the tasks that go there. */
+const PARKED: OtherCar[] = parkedSpots().map((spot) => ({
+  ...spot,
+  color: "red",
+}));
+
+const ROUTE_TASKS: readonly RouteChallenge[] = [
+  {
+    id: "to-two-way",
+    lesson: "right-to-two-way",
+    title: "Right, then the two-way road",
+    prompt:
+      "Turn right at the roundabout. At the stop line, stop, then turn right onto the two-way road. Stop in the green box.",
+    reverse: false,
+    otherCars: [],
+  },
+  {
+    id: "down-the-street",
+    lesson: "street",
+    title: "Down the street",
+    prompt:
+      "Take the street on your left. Stop at the stop line, then turn left onto the two-way road. Stop in the green box.",
+    reverse: false,
+    otherCars: [],
+  },
+  {
+    id: "from-two-way",
+    lesson: "two-way-to-dual",
+    title: "Back to the dual carriageway",
+    prompt:
+      "Turn left into the three-lane road, then left at the roundabout. Stop in the green box.",
+    reverse: false,
+    otherCars: [],
+  },
+  {
+    id: "park-flush",
+    lesson: "park-flush",
+    title: "Flush parking",
+    prompt:
+      "Drive up the two-way road and park in the empty flush parking bay, inside the box.",
+    reverse: true,
+    otherCars: PARKED,
+  },
+  {
+    id: "park-angle",
+    lesson: "park-angle",
+    title: "Angle parking",
+    prompt:
+      "Take the street, turn into the parking aisle, and park nose in, in the bay with the green box.",
+    reverse: true,
+    otherCars: PARKED,
+  },
+  {
+    id: "leave-angle",
+    lesson: "leave-angle-reverse",
+    title: "Reverse out of the bay",
+    prompt:
+      "Reverse out of the bay: stop, pull the joystick back and hold it. Then leave by the three-lane road, stop at the stop line and turn left. Stop in the green box.",
+    reverse: true,
+    otherCars: PARKED,
+  },
+];
 
 export const BOARD_CHALLENGES: readonly BoardChallenge[] = [
   turnChallenge(
@@ -131,6 +220,7 @@ export const BOARD_CHALLENGES: readonly BoardChallenge[] = [
       },
     ],
   },
+  ...ROUTE_TASKS,
 ];
 
 export const BOARD_ROUND_SIZE = 5;

@@ -17,14 +17,13 @@ import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 
-import type { BoardChallenge } from "~/lib/board/challenges";
+import { isRouteTask, type BoardChallenge } from "~/lib/board/challenges";
 import {
   BOUNDS,
   CAR_COLORS,
   COLORS,
   ISLAND_R,
   fullBoardSvg,
-  goalBox,
   kerbHighlights,
   parkedSpots,
   reserves,
@@ -32,8 +31,15 @@ import {
 } from "~/lib/board/full-board";
 import { dirOf } from "~/lib/board/geometry";
 import type { Seat } from "~/lib/board/joystick";
+import { taskGoalBox } from "~/lib/board/lessons";
 import { car, tick, view } from "~/lib/board/runtime";
+import { advance, cam, setWake, useStage } from "~/lib/board/stage";
 
+import {
+  buildRibbon,
+  chevronTexture,
+  disposeRibbons,
+} from "~/components/board/route-ribbon";
 import {
   WHEEL_RADIUS,
   buildCar,
@@ -50,6 +56,8 @@ export type BoardTableProps = {
   attempt: number;
   tier: BoardTier;
   seat: Seat;
+  /** Learning, with no task on: the car only shows while a route plays. */
+  learning?: boolean;
   /** The board is painted and on screen. */
   onReady?: () => void;
 };
@@ -613,6 +621,8 @@ const clamp = (v: number, lo: number, hi: number) =>
 const ease = (t: number) => t * t * (3 - 2 * t);
 
 type Rig = {
+  /** How far back the camera is. */
+  dist: number;
   zoom: number;
   linger: number;
   x: number;
@@ -627,6 +637,7 @@ function Scene({
   attempt,
   tier,
   seat,
+  learning = false,
   onReady,
 }: BoardTableProps) {
   const gl = useThree((s) => s.gl);
@@ -729,7 +740,7 @@ function Scene({
 
   const goal = React.useMemo(() => {
     if (!challenge) return null;
-    const box = goalBox(challenge.goal);
+    const box = taskGoalBox(challenge);
     return {
       x: (box.x0 + box.x1) / 2,
       z: (box.z0 + box.z1) / 2,
@@ -749,7 +760,36 @@ function Scene({
     invalidate();
   }, [invalidate]);
 
+  // ---- routes painted on the table, and a part of it lit up ----
+  const lines = useStage((s) => s.lines);
+  const glow = useStage((s) => s.glow);
+  const route = useStage((s) => s.route);
+  const playing = useStage((s) => s.playing);
+  const chevrons = React.useMemo(() => chevronTexture(), []);
+  React.useEffect(() => () => chevrons.dispose(), [chevrons]);
+  const ribbons = React.useMemo(() => {
+    const group = new THREE.Group();
+    for (const line of lines) {
+      if (line.points.length > 1) group.add(buildRibbon(line, chevrons));
+    }
+    return group;
+  }, [lines, chevrons]);
+  React.useEffect(() => () => disposeRibbons(ribbons), [ribbons]);
+  const glowMaterial = React.useRef<THREE.MeshBasicMaterial>(null);
+  const stillChevrons = React.useMemo(
+    () =>
+      tier === "low" ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    [tier],
+  );
+  // The camera pad and the lessons ask for a frame when nothing is animating.
+  React.useEffect(() => {
+    setWake(invalidate);
+    return () => setWake(() => {});
+  }, [invalidate]);
+
   const rig = React.useRef<Rig>({
+    dist: 0,
     zoom: 0,
     linger: 0,
     x: CX,
@@ -761,7 +801,18 @@ function Scene({
   // Off the clock, one frame is enough to show where things stand.
   React.useEffect(() => {
     invalidate();
-  }, [driving, attempt, challenge, seat, invalidate]);
+  }, [
+    driving,
+    attempt,
+    challenge,
+    seat,
+    lines,
+    glow,
+    route,
+    playing,
+    learning,
+    invalidate,
+  ]);
 
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.1);
@@ -783,10 +834,37 @@ function Scene({
       }
     }
 
+    // A route being played back moves the car itself, so the minimap and the
+    // camera follow it as they follow a drive.
+    const pose = driving ? null : advance(dt);
+    if (pose) {
+      const moved = Math.hypot(pose.x - car.x, pose.z - car.z);
+      if (moved < 2) rollWheels(player, pose.reversing ? -moved : moved);
+      car.x = pose.x;
+      car.z = pose.z;
+      car.heading = pose.heading;
+      car.speed = 0;
+      car.steer = 0;
+    }
+    player.visible = !learning || route !== null;
+    // In a parking task the parked cars are solid and drawn with the task's
+    // own cars, so the ones that only dress the board step aside.
+    parked.visible = !(
+      challenge &&
+      isRouteTask(challenge) &&
+      challenge.otherCars.length > 0
+    );
+    if (playing && !stillChevrons) chevrons.offset.x -= dt * 0.9;
+    if (glowMaterial.current) {
+      glowMaterial.current.opacity =
+        0.3 + 0.12 * Math.sin(state.clock.elapsedTime * 3);
+    }
+
     player.position.set(car.x, 0, car.z);
     player.rotation.y = -car.heading;
     const model = player.userData.model as CarModel;
-    model.userData.tail.emissiveIntensity = view.braking ? 2.4 : 0.5;
+    model.userData.tail.emissiveIntensity =
+      view.braking || view.reversing || pose?.reversing ? 2.4 : 0.5;
     // The wheels roll with the road and the front pair follows the steering.
     if (driving) rollWheels(player, car.speed * dt);
     const lock = clamp(car.steer, -MAX_STEER_SHOWN, MAX_STEER_SHOWN);
@@ -815,7 +893,7 @@ function Scene({
     const halfV = (VFOV * DEG) / 2;
     const halfH = Math.atan(Math.tan(halfV) * aspect);
 
-    const moving = driving && car.speed > MOVING;
+    const moving = driving && Math.abs(car.speed) > MOVING;
     r.linger = moving ? LINGER : Math.max(0, r.linger - dt);
     const wantIn = driving && (moving || r.linger > 0) ? 1 : 0;
     if (fresh) r.zoom = 0;
@@ -863,10 +941,40 @@ function Scene({
     const inX = car.x + ahead.x * 4 + away.x * 0.1 * depthIn;
     const inZ = car.z + ahead.z * 4 + away.z * 0.1 * depthIn;
 
-    const distance = lerp(farOut, nearIn, close);
-    const goalX = lerp(outX, inX, close);
-    const goalZ = lerp(outZ, inZ, close);
+    let distance = lerp(farOut, nearIn, close);
+    let goalX = lerp(outX, inX, close);
+    let goalZ = lerp(outZ, inZ, close);
+    let near = close;
     const k = fresh ? 1 : 1 - Math.exp(-dt * 4);
+
+    // The learner has hold of the camera: it goes where they slide it and as
+    // close as they pinch it. It still never turns.
+    const spanOf = (d: number) => 2 * d * Math.tan(halfH);
+    cam.max = spanOf(whole);
+    const free = cam.free && !driving;
+    if (free) {
+      if (cam.follow && pose) {
+        cam.x = pose.x;
+        cam.z = pose.z;
+      }
+      cam.span = clamp(cam.span, cam.min, cam.max);
+      distance = cam.span / 2 / Math.tan(halfH);
+      r.dist += (distance - r.dist) * (r.dist === 0 ? 1 : k);
+      near = clamp((whole - r.dist) / Math.max(1, whole - nearIn), 0, 1);
+      // A panel over the bottom of the screen: look a little nearer, so what
+      // matters sits above it.
+      const depth =
+        (2 * r.dist * Math.tan(halfV)) / Math.sin(lerp(TILT_OUT, TILT_IN, near));
+      goalX = cam.x - away.x * cam.lift * depth;
+      goalZ = cam.z - away.z * cam.lift * depth;
+    } else {
+      cam.free = false;
+      r.dist = distance;
+      cam.x = r.x;
+      cam.z = r.z;
+      cam.span = spanOf(distance);
+    }
+    const tiltNow = free ? lerp(TILT_OUT, TILT_IN, near) : tilt;
     r.snappedFor = attempt;
     r.seat = seat;
     r.x += (goalX - r.x) * k;
@@ -876,18 +984,19 @@ function Scene({
     const shake = driving ? view.jolt * 0.3 : 0;
     const sx = r.x + Math.sin(state.clock.elapsedTime * 61) * shake;
     const sz = r.z + Math.cos(state.clock.elapsedTime * 53) * shake;
-    const lookY = lerp(-5, 0, close);
+    const lookY = lerp(-5, 0, near);
     const angle = SEAT_ANGLE[seat];
     state.camera.position.set(
-      sx + distance * Math.cos(tilt) * Math.sin(angle),
-      lookY + distance * Math.sin(tilt),
-      sz + distance * Math.cos(tilt) * Math.cos(angle),
+      sx + r.dist * Math.cos(tiltNow) * Math.sin(angle),
+      lookY + r.dist * Math.sin(tiltNow),
+      sz + r.dist * Math.cos(tiltNow) * Math.cos(angle),
     );
     state.camera.lookAt(sx, lookY, sz);
 
     // Still easing after the car has stopped: ask for another frame.
     const settled =
-      Math.abs(wantIn - r.zoom) < 0.004 &&
+      Math.abs(distance - r.dist) < 0.05 &&
+      (free || Math.abs(wantIn - r.zoom) < 0.004) &&
       Math.hypot(goalX - r.x, goalZ - r.z) < 0.03;
     if (!driving && !settled) invalidate();
   });
@@ -935,6 +1044,25 @@ function Scene({
         </mesh>
       )}
 
+      <primitive object={ribbons} />
+      {glow && (
+        <mesh
+          position={[(glow.x0 + glow.x1) / 2, 0.06, (glow.z0 + glow.z1) / 2]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          renderOrder={1}
+        >
+          <planeGeometry args={[glow.x1 - glow.x0, glow.z1 - glow.z0]} />
+          <meshBasicMaterial
+            ref={glowMaterial}
+            color="#ffd84d"
+            transparent
+            opacity={0.34}
+            depthWrite={false}
+            toneMapped={false}
+          />
+        </mesh>
+      )}
+
       {others.map((other, i) => (
         <primitive key={i} object={other} />
       ))}
@@ -945,11 +1073,12 @@ function Scene({
 
 export default function BoardTable(props: BoardTableProps) {
   const high = props.tier === "high";
+  const playing = useStage((s) => s.playing);
   return (
     <Canvas
       shadows={high ? "soft" : false}
       dpr={high ? [1, 1.75] : 1}
-      frameloop={props.driving ? "always" : "demand"}
+      frameloop={props.driving || playing ? "always" : "demand"}
       camera={{ fov: VFOV, near: 4, far: 2600, position: [CX, 240, CZ + 260] }}
       gl={{
         antialias: high,

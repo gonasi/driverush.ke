@@ -26,6 +26,7 @@ import {
   ringRadius,
   wrapPi,
 } from "./geometry";
+import { network } from "./network";
 
 /** Which side of the table the learner stands at. South is the bottom. */
 export type Seat = BoardSide;
@@ -34,16 +35,26 @@ export const SEATS: readonly Seat[] = ["south", "west", "north", "east"];
 /** The knob, as the screen sees it: `x` right, `y` down, at most 1 from centre. */
 export type Stick = { x: number; y: number };
 
-export type DriveOptions = { seat: Seat; assist: boolean };
+export type DriveOptions = {
+  seat: Seat;
+  assist: boolean;
+  /**
+   * Reverse gear, for the parking tasks. Stop, keep the knob pulled back, and
+   * the car backs up with its tail going where the knob points.
+   */
+  reverse?: boolean;
+};
 
 /** What the assist remembers between steps. */
 export type AssistState = {
   /** The lane the car came up the road in, until it has joined the ring. */
   entryLane: number | null;
+  /** How long the knob has been held back with the car at rest. */
+  backTime: number;
 };
 
 export function createAssist(): AssistState {
-  return { entryLane: null };
+  return { entryLane: null, backTime: 0 };
 }
 
 /** The compass bearing of "up" on the knob, for each seat. */
@@ -64,6 +75,11 @@ const PULL_BACK = (135 * Math.PI) / 180;
 const TURN_SLOWDOWN = 0.55;
 const QUARTER_TURN = Math.PI / 2;
 const RELEASE_BRAKE = 0.7;
+/** Held back this long at a standstill, the car goes into reverse. */
+const REVERSE_DWELL = 0.35;
+const STEP = 1 / 60;
+/** A lane away from the roundabout is held within this of its middle, metres. */
+const ROAD_LANE_REACH = 2.4;
 
 /** The assist holds while the knob is within this of the lane's direction. */
 export const ROAD_CONE = (30 * Math.PI) / 180;
@@ -148,6 +164,30 @@ function laneAhead(
     };
   }
 
+  if (loc.kind === "road") {
+    // The two-way road, the street and the parking aisle: hold whichever of
+    // their lanes the car is in and facing along.
+    for (const lane of network().roadLanes) {
+      const dir = dirOf(lane.heading);
+      const d = (car.x - lane.a.x) * dir.x + (car.z - lane.a.z) * dir.z;
+      if (d < -1 || d > lane.length + 1) continue;
+      const side = (car.x - lane.a.x) * -dir.z + (car.z - lane.a.z) * dir.x;
+      if (Math.abs(side) > ROAD_LANE_REACH) continue;
+      if (Math.abs(wrapPi(car.heading - lane.heading)) > Math.PI / 3) continue;
+      const ahead = d + reach;
+      return {
+        heading: bearingOf(
+          lane.a.x + dir.x * ahead - car.x,
+          lane.a.z + dir.z * ahead - car.z,
+        ),
+        along: lane.heading,
+        left: ROAD_CONE,
+        right: ROAD_CONE,
+        cap: lane.road === "aisle" ? 4 : CAR.maxSpeed,
+      };
+    }
+  }
+
   return null;
 }
 
@@ -171,6 +211,36 @@ export function stickToInput(
   }
 
   const knob = stickBearing(stick, options.seat);
+
+  if (options.reverse) {
+    const reversing = car.speed < -0.05;
+    const behind = Math.abs(wrapPi(knob - car.heading));
+    // Once backing up, the knob only has to stay in the half behind the car.
+    if (behind > (reversing ? Math.PI / 2 : PULL_BACK)) {
+      if (car.speed > 0.3) {
+        input.steer = 0;
+        input.throttle = 0;
+        input.brake = 1;
+        return;
+      }
+      state.backTime += STEP;
+      if (!reversing && state.backTime < REVERSE_DWELL) {
+        input.steer = 0;
+        input.throttle = 0;
+        input.brake = 1;
+        return;
+      }
+      // The tail goes where the knob points, so the nose faces away from it.
+      // Backing up, the wheel works the other way round.
+      const off = wrapPi(knob + Math.PI - car.heading);
+      const reach = (push - STICK_DEADZONE) / (1 - STICK_DEADZONE);
+      input.steer = Math.max(-1, Math.min(1, -off * STEER_GAIN));
+      input.throttle = -Math.max(0.25, reach);
+      input.brake = 0;
+      return;
+    }
+    state.backTime = 0;
+  }
 
   if (Math.abs(wrapPi(knob - car.heading)) > PULL_BACK) {
     input.steer = 0;

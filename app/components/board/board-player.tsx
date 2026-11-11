@@ -9,7 +9,11 @@ import { createPortal } from "react-dom";
 import { useShallow } from "zustand/react/shallow";
 
 import { faultRule, faultTip } from "~/lib/board/board-rules";
-import { BOARD_CHALLENGES } from "~/lib/board/challenges";
+import {
+  BOARD_CHALLENGES,
+  isRouteTask,
+  type BoardChallenge,
+} from "~/lib/board/challenges";
 import {
   BOUNDS,
   CAR_COLORS,
@@ -19,7 +23,14 @@ import {
 } from "~/lib/board/full-board";
 import { laneBearing, lanePoint } from "~/lib/board/geometry";
 import type { Seat } from "~/lib/board/joystick";
+import {
+  ROUTE_COLOR,
+  challengeRoute,
+  taskGoalBox,
+} from "~/lib/board/lessons";
+import { distanceNear, poseAt, stepPoints } from "~/lib/board/network";
 import { car, drive, elapsedSeconds } from "~/lib/board/runtime";
+import { useStage } from "~/lib/board/stage";
 import { BOARD_CHALLENGE_IDS, useBoardStore } from "~/lib/board-store";
 import { signCounts } from "~/lib/pelican-progress";
 import { cn } from "~/lib/utils";
@@ -27,6 +38,8 @@ import { cn } from "~/lib/utils";
 import { Icon } from "~/components/brand/icon";
 import {
   CloseIcon,
+  InfoIcon,
+  LearnerIcon,
   PlayIcon,
   RefreshIcon,
   SettingsIcon,
@@ -34,9 +47,16 @@ import {
 } from "~/components/brand/icons";
 import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
+import { BoardCameraPad } from "~/components/board/board-camera";
 import { BoardControls } from "~/components/board/board-controls";
 import { BoardFaultTip } from "~/components/board/board-fault-tip";
+import { BoardLearn } from "~/components/board/board-learn";
+import {
+  BoardPlayback,
+  routeLines,
+} from "~/components/board/board-playback";
 import { BoardSettingsSheet } from "~/components/board/board-settings-sheet";
+import { BoardSignCue } from "~/components/board/board-sign-cue";
 import { BoardViewer } from "~/components/board/board-viewer";
 
 // Only needed at the end of a round, and it brings framer-motion with it, so
@@ -176,6 +196,187 @@ function Minimap({
   );
 }
 
+/** Where on a task's route the car is now, as a step of it. */
+function stepUnderCar(challenge: BoardChallenge) {
+  const route = challengeRoute(challenge);
+  if (!route) return null;
+  const index = poseAt(route, distanceNear(route, car)).step;
+  return { route, index };
+}
+
+/**
+ * Help while driving a task. "Next step" lights the stretch of road ahead and
+ * gives its rule, and the drive carries on. "Show me" pauses the task and
+ * drives the whole of it for the learner to watch.
+ */
+function TaskHint({
+  challenge,
+  attempt,
+  onNextStep,
+  onShowMe,
+}: {
+  challenge: BoardChallenge;
+  attempt: number;
+  onNextStep: () => void;
+  onShowMe: () => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [tip, setTip] = React.useState<{
+    title: string;
+    why: string;
+    then?: string;
+  } | null>(null);
+  // A fresh attempt starts with no hint showing.
+  React.useEffect(() => {
+    setOpen(false);
+    setTip(null);
+  }, [attempt, challenge.id]);
+
+  const nextStep = () => {
+    const at = stepUnderCar(challenge);
+    setOpen(false);
+    if (!at) return;
+    const { route, index } = at;
+    const now = route.steps[index];
+    const then = route.steps[index + 1];
+    useStage.getState().show([
+      {
+        id: "now",
+        points: stepPoints(route, index),
+        color: ROUTE_COLOR,
+        width: 2,
+      },
+      ...(then
+        ? [
+            {
+              id: "then",
+              points: stepPoints(route, index + 1),
+              color: ROUTE_COLOR,
+              width: 1.5,
+              opacity: 0.5,
+            },
+          ]
+        : []),
+    ]);
+    setTip({ title: now.title, why: now.why, then: then?.title });
+    onNextStep();
+  };
+
+  // tall enough for a thumb
+  const small =
+    "min-h-11 rounded-md border-2 px-4 py-2 font-mono text-[12px] font-bold uppercase tracking-widest outline-none transition-colors focus-visible:border-white";
+
+  return (
+    <div className="pointer-events-auto mt-2 max-w-[19rem]">
+      {tip && (
+        <div
+          role="status"
+          className="dr-rise mb-2 rounded-md border-2 border-[#f6c416] bg-[#101114]/90 px-3.5 py-2.5 shadow-[0_4px_0_rgba(0,0,0,0.4)]"
+        >
+          <p className="m-0 text-[14px] font-bold leading-snug">{tip.title}</p>
+          <p className="m-0 mt-1 text-[13px] leading-snug text-white/80">
+            {tip.why}
+          </p>
+          {tip.then && (
+            <p className="m-0 mt-1.5 text-[12.5px] font-semibold leading-snug text-kenya-gold">
+              Then: {tip.then}
+            </p>
+          )}
+        </div>
+      )}
+      <div className="flex flex-wrap gap-1.5">
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+          className={cn(
+            small,
+            "inline-flex items-center gap-1.5 border-white/15 bg-[#101114]/85 hover:bg-white/15",
+          )}
+        >
+          <Icon icon={InfoIcon} size={16} />
+          Hint
+        </button>
+        {open && (
+          <>
+            <button
+              type="button"
+              onClick={nextStep}
+              className={cn(
+                small,
+                "border-[#f6c416] bg-[#f6c416] text-[#17181b] hover:bg-[#ffd84d]",
+              )}
+            >
+              Next step
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                setTip(null);
+                onShowMe();
+              }}
+              className={cn(
+                small,
+                "border-white/40 bg-[#101114]/85 hover:bg-white/15",
+              )}
+            >
+              Show me
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** The task paused, with the right way through it playing on the table. */
+function WatchCard({
+  wrongStep,
+  onDone,
+}: {
+  /** The step the drive went wrong on, when it was stopped by the examiner. */
+  wrongStep: number | null;
+  onDone: () => void;
+}) {
+  const route = useStage((s) => s.route);
+  const step = useStage((s) => s.step);
+  const show = useStage((s) => s.show);
+  React.useEffect(() => {
+    if (route) show(routeLines(route, step));
+  }, [route, step, show]);
+  if (!route) return null;
+  return (
+    <div className="absolute inset-x-0 bottom-0 z-30 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-8">
+      <div
+        role="region"
+        aria-label="The right way through this task"
+        className="dr-rise w-full max-w-md rounded-md border-2 border-white/20 bg-[#101114]/95 p-4 text-white shadow-[0_6px_0_rgba(0,0,0,0.45)]"
+      >
+        <p className="m-0 mb-3 font-mono text-[10.5px] font-bold uppercase tracking-widest text-white/60">
+          The right way, step by step
+        </p>
+        <BoardPlayback
+          note={
+            wrongStep !== null && step === wrongStep
+              ? "This is about where it went wrong."
+              : null
+          }
+        />
+        <Button
+          variant="rush"
+          size="lg"
+          className="mt-4 w-full"
+          onClick={onDone}
+        >
+          <Icon icon={PlayIcon} size={16} />
+          Try it yourself
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function BoardPlayer({
   className,
   posterClassName = "aspect-[4/3] sm:aspect-video",
@@ -189,6 +390,7 @@ export function BoardPlayer({
       settings: st.settings,
       progress: st.progress,
       overlayOpen: st.overlayOpen,
+      mode: st.mode,
       phase: st.phase,
       queue: st.queue,
       pos: st.pos,
@@ -206,13 +408,31 @@ export function BoardPlayer({
       restart: st.restart,
       next: st.next,
       exit: st.exit,
+      learn: st.learn,
+      hint: st.hint,
+      watch: st.watch,
+      resume: st.resume,
       resetProgress: st.resetProgress,
     })),
   );
   const [mounted, setMounted] = React.useState(false);
   const [unsupported, setUnsupported] = React.useState(false);
   const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const [wrongStep, setWrongStep] = React.useState<number | null>(null);
   React.useEffect(() => setMounted(true), []);
+
+  /** Pause the task and play the right way through it. */
+  const showTheWay = (kind: "show_me" | "after_fault") => {
+    const current = useBoardStore.getState();
+    const task = current.queue[current.pos];
+    const at = task ? stepUnderCar(task) : null;
+    if (!at) return;
+    const wrong = kind === "after_fault" ? at.index : null;
+    setWrongStep(wrong);
+    s.hint(kind);
+    s.watch();
+    useStage.getState().watch(at.route, { pauseAt: wrong ?? undefined });
+  };
 
   // Where the learner stands, and whether the car holds its lane, go straight
   // to the drive: the joystick reads them on every step.
@@ -240,6 +460,7 @@ export function BoardPlayer({
       if (e.key === "Enter") {
         if (store.phase === "fault") store.retry();
         if (store.phase === "passed") store.next();
+        if (store.phase === "watch") store.resume();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -252,7 +473,11 @@ export function BoardPlayer({
   const minimap = React.useMemo(
     () =>
       challenge
-        ? fullBoardSvg({ goal: challenge.goal, seen: seat, numbers: false })
+        ? fullBoardSvg({
+            box: taskGoalBox(challenge),
+            seen: seat,
+            numbers: false,
+          })
         : "",
     [challenge, seat],
   );
@@ -277,52 +502,85 @@ export function BoardPlayer({
           attempt={s.attempt}
           quality={s.settings.quality}
           seat={seat}
+          learning={s.mode === "learn"}
           onUnsupported={() => setUnsupported(true)}
           className="absolute inset-0"
         />
       )}
 
+      {/* Off the clock the learner can slide and zoom the view. */}
+      {!unsupported && s.phase !== "driving" && s.phase !== "complete" && (
+        <BoardCameraPad
+          seat={seat}
+          buttonsClassName={
+            s.mode === "learn"
+              ? "top-[max(0.75rem,env(safe-area-inset-top))] sm:top-5"
+              : undefined
+          }
+        />
+      )}
+
+      {!unsupported && s.mode === "learn" && (
+        <BoardLearn seat={seat} onSettings={() => setSettingsOpen(true)} />
+      )}
+
       {/* The examiner's task, top left. Status and the way out, top right. */}
       {!unsupported && challenge && s.phase !== "complete" && (
         <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-3 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 sm:pt-5">
-          <div
-            key={`${challenge.id}-${s.attempt}`}
-            className="dr-rise max-w-[19rem] rounded-md border-2 border-white/15 bg-[#101114]/85 px-3.5 py-3 shadow-[0_4px_0_rgba(0,0,0,0.4)]"
-          >
-            <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-widest text-kenya-gold">
-              Task {s.pos + 1} of {s.queue.length} · {challenge.title}
-            </p>
-            <p className="m-0 mt-1.5 text-[14.5px] font-semibold leading-snug">
-              {challenge.prompt}
-            </p>
+          <div>
+            <div
+              key={`${challenge.id}-${s.attempt}`}
+              className="dr-rise max-w-[19rem] rounded-md border-2 border-white/15 bg-[#101114]/85 px-3.5 py-3 shadow-[0_4px_0_rgba(0,0,0,0.4)]"
+            >
+              <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-widest text-kenya-gold">
+                Task {s.pos + 1} of {s.queue.length} · {challenge.title}
+              </p>
+              <p className="m-0 mt-1.5 text-[14.5px] font-semibold leading-snug">
+                {challenge.prompt}
+              </p>
+            </div>
+            {s.phase === "driving" && isRouteTask(challenge) && challenge.reverse && (
+              <p className="m-0 mt-2 max-w-[19rem] rounded-md border-2 border-white/15 bg-[#101114]/85 px-3 py-2 text-[12.5px] font-semibold leading-snug">
+                To reverse: stop, then pull the joystick back and hold it. The
+                back of the car goes where you point.
+              </p>
+            )}
+            {s.phase === "driving" && (
+              <TaskHint
+                challenge={challenge}
+                attempt={s.attempt}
+                onNextStep={() => s.hint("next_step")}
+                onShowMe={() => showTheWay("show_me")}
+              />
+            )}
           </div>
 
           <div className="flex shrink-0 flex-col items-end gap-2">
-            <div className="pointer-events-auto flex items-center gap-1.5">
+            <div className="pointer-events-auto flex items-center gap-2">
               <button
                 type="button"
                 aria-label="Restart this task"
                 onClick={s.restart}
                 disabled={s.phase !== "driving"}
-                className="inline-flex size-9 items-center justify-center rounded-md border-2 border-white/15 bg-[#101114]/85 outline-none transition-colors hover:bg-white/15 focus-visible:border-white disabled:opacity-40"
+                className="inline-flex size-11 items-center justify-center rounded-md border-2 border-white/15 bg-[#101114]/85 outline-none transition-colors hover:bg-white/15 focus-visible:border-white disabled:opacity-40"
               >
-                <Icon icon={RefreshIcon} size={16} />
+                <Icon icon={RefreshIcon} size={20} />
               </button>
               <button
                 type="button"
                 aria-label="Board settings: where you stand, lane assist, sound"
                 onClick={() => setSettingsOpen(true)}
-                className="inline-flex size-9 items-center justify-center rounded-md border-2 border-white/15 bg-[#101114]/85 outline-none transition-colors hover:bg-white/15 focus-visible:border-white"
+                className="inline-flex size-11 items-center justify-center rounded-md border-2 border-white/15 bg-[#101114]/85 outline-none transition-colors hover:bg-white/15 focus-visible:border-white"
               >
-                <Icon icon={SettingsIcon} size={16} />
+                <Icon icon={SettingsIcon} size={20} />
               </button>
               <button
                 type="button"
                 aria-label="Exit the board"
                 onClick={s.exit}
-                className="inline-flex size-9 items-center justify-center rounded-md border-2 border-white/15 bg-[#101114]/85 outline-none transition-colors hover:bg-white/15 focus-visible:border-white"
+                className="inline-flex size-11 items-center justify-center rounded-md border-2 border-white/15 bg-[#101114]/85 outline-none transition-colors hover:bg-white/15 focus-visible:border-white"
               >
-                <Icon icon={CloseIcon} size={16} />
+                <Icon icon={CloseIcon} size={20} />
               </button>
             </div>
             <div className="flex items-center gap-2 rounded-md border-2 border-white/15 bg-[#101114]/85 px-2.5 py-1.5 font-mono text-[12px] font-bold">
@@ -354,7 +612,10 @@ export function BoardPlayer({
         </div>
       )}
 
-      {!unsupported && (
+      {!unsupported && s.mode === "drive" && challenge && (
+        <BoardSignCue challenge={challenge} active={s.phase === "driving"} />
+      )}
+      {!unsupported && s.mode === "drive" && (
         <BoardControls active={s.phase === "driving" && !settingsOpen} />
       )}
       <BoardSettingsSheet
@@ -391,9 +652,21 @@ export function BoardPlayer({
                   Stop
                 </Button>
               </div>
+              <Button
+                variant="ink"
+                className="w-full"
+                onClick={() => showTheWay("after_fault")}
+              >
+                <Icon icon={PlayIcon} size={14} />
+                Watch the right way
+              </Button>
             </div>
           </div>
         </div>
+      )}
+
+      {s.phase === "watch" && (
+        <WatchCard wrongStep={wrongStep} onDone={s.resume} />
       )}
 
       {s.phase === "passed" && challenge && (
@@ -497,15 +770,26 @@ export function BoardPlayer({
           </span>
         </button>
         <div className="grid gap-3 border-t-2 border-ink bg-surface p-4">
-          <Button
-            variant="rush"
-            size="lg"
-            className="w-full"
-            onClick={() => s.start()}
-          >
-            <Icon icon={PlayIcon} size={18} />
-            {started ? "Keep driving" : "Start driving"}
-          </Button>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Button
+              variant="rush"
+              size="lg"
+              className="w-full"
+              onClick={() => s.start()}
+            >
+              <Icon icon={PlayIcon} size={18} />
+              {started ? "Keep driving" : "Start driving"}
+            </Button>
+            <Button
+              variant="ink"
+              size="lg"
+              className="w-full"
+              onClick={s.learn}
+            >
+              <Icon icon={LearnerIcon} size={18} />
+              Learn the board
+            </Button>
+          </div>
           {started ? (
             <div>
               <div className="mb-1.5 flex items-center justify-between gap-2 font-mono text-[10px] uppercase tracking-widest text-ink-3">
@@ -524,7 +808,8 @@ export function BoardPlayer({
             </div>
           ) : (
             <p className="m-0 text-center font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
-              {POOL} tasks · one joystick, or arrow keys
+              {POOL} tasks to drive · every lane, route and parking move to
+              watch
             </p>
           )}
         </div>

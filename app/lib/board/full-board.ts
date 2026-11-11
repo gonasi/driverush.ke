@@ -76,6 +76,26 @@ const R_ROAD = 2.5;
 const R_BLOCK = 1.2;
 const R_AISLE = 1.2;
 
+/**
+ * The roads away from the roundabout, for the lane network (`network.ts`),
+ * which needs the same numbers the paint uses.
+ */
+export const ROADS = {
+  WIDE,
+  NARROW,
+  SIDE,
+  STREET,
+  PARK,
+  AISLE,
+  FLUSH,
+  CROSSINGS,
+  BAY_FIRST,
+  BAY_STEP,
+  BAY_COUNT,
+  R_BLOCK,
+  R_AISLE,
+} as const;
+
 export type ArmId = "S" | "W" | "N" | "E";
 type Arm = {
   id: ArmId;
@@ -769,7 +789,20 @@ export type FullBoardOptions = {
     alongMin: number;
     alongMax: number;
   };
+  /** A green box anywhere on the board, for a task that ends off these roads. */
+  box?: Box;
   cars?: { x: number; z: number; heading: number; color: string }[];
+  /** Lines drawn over the paint: a route, or the lane network for checking. */
+  routes?: {
+    points: Point[];
+    color: string;
+    /** Metres. Left out, 0.9. */
+    width?: number;
+    dashed?: boolean;
+    opacity?: number;
+    /** An arrowhead at the far end. */
+    arrow?: boolean;
+  }[];
 };
 
 /** Parts of the board worth a picture of their own. */
@@ -935,7 +968,7 @@ export function fullBoardSvg(options: FullBoardOptions = {}): string {
     .map((span) => brokenLine(0, -span[1], 0, -span[1] - RESERVE_GAP, giveWay))
     .join("");
 
-  const target = options.goal ? goalBox(options.goal) : null;
+  const target = options.box ?? (options.goal ? goalBox(options.goal) : null);
   const goal = target
     ? rect(
         target.x0 + 0.3,
@@ -1029,6 +1062,18 @@ export function fullBoardSvg(options: FullBoardOptions = {}): string {
       ],
     ),
 
+    (options.routes ?? [])
+      .map((route) => {
+        if (route.points.length < 2) return "";
+        const width = route.width ?? 0.9;
+        const a = route.points[route.points.length - 2];
+        const b = route.points[route.points.length - 1];
+        const tip = route.arrow
+          ? `<g fill="${route.color}">${head(b.x, b.z, b.x - a.x, b.z - a.z, width * 1.5)}</g>`
+          : "";
+        return `<g opacity="${route.opacity ?? 1}"><path d="${polyline(route.points)}" fill="none" stroke="${route.color}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round"${route.dashed ? ` stroke-dasharray="${n(width * 1.6)} ${n(width * 2)}"` : ""}/>${tip}</g>`;
+      })
+      .join(""),
     (options.cars ?? [])
       .map((car) =>
         at(
