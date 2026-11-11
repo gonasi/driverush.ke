@@ -8,7 +8,7 @@ import {
 
 import type { Route } from "./+types/blogs";
 
-import { absUrl, breadcrumbLd, keywords, SITE } from "~/lib/site";
+import { absUrl, breadcrumbLd, keywords, SITE, siteWideMeta } from "~/lib/site";
 import { BLOG_KEYWORDS, getAllPosts } from "~/lib/blog";
 
 import { Badge } from "~/components/ui/badge";
@@ -36,6 +36,7 @@ export function meta(_: Route.MetaArgs) {
   return [
     { title },
     { name: "description", content: description },
+    ...siteWideMeta(),
     { name: "keywords", content: keywords(...BLOG_KEYWORDS) },
     { tagName: "link", rel: "canonical", href: url },
     { property: "og:title", content: title },
@@ -64,7 +65,7 @@ export function meta(_: Route.MetaArgs) {
           "@type": "Organization",
           name: SITE.name,
           url: SITE.url,
-          logo: { "@type": "ImageObject", url: absUrl(SITE.ogImage) },
+          logo: { "@type": "ImageObject", url: absUrl(SITE.logo) },
         },
         blogPost: posts.map((p) => ({
           "@type": "BlogPosting",

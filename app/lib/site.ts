@@ -120,6 +120,10 @@ export const BOARD_KEYWORDS = [
   "Model Town Board diagram",
   "how to pass Model Town Board",
   "Model Town Board questions and answers",
+  "Model Town Board questions and answers pdf",
+  "Model Town Board pdf",
+  "Model Town Board lane options",
+  "Model Town Board 2124",
   "Model Town Board rules",
   "Model Town Board roundabout",
   "Model Town Board parking",
@@ -280,13 +284,16 @@ export function websiteLd() {
 }
 
 /**
- * Article JSON-LD for a permanent guide. `checked` is an ISO date. A page
- * that is a tool first passes `type: "WebPage"`.
+ * Article JSON-LD for a permanent guide. `published` is the date the page
+ * first went live and never moves; `checked` is the last date it was checked
+ * against its sources. Both are ISO dates. A page that is a tool first passes
+ * `type: "WebPage"`.
  */
 export function guideLd(opts: {
   title: string;
   description: string;
   path: string;
+  published: string;
   checked: string;
   /** The page's own picture. Defaults to the site card. */
   image?: string;
@@ -304,7 +311,7 @@ export function guideLd(opts: {
     description: opts.description,
     url: absUrl(opts.path),
     mainEntityOfPage: absUrl(opts.path),
-    datePublished: opts.checked,
+    datePublished: opts.published,
     dateModified: opts.checked,
     inLanguage: SITE.lang,
     image: absUrl(opts.image ?? SITE.ogImage),
@@ -418,13 +425,8 @@ export function pageMeta(opts: {
   return [
     { title },
     { name: "description", content: opts.description },
-    // A route's meta replaces the root's, so the site-wide tags come with
-    // every page from here.
-    { name: "theme-color", content: SITE.themeColor },
-    { property: "og:site_name", content: SITE.name },
-    { property: "og:locale", content: SITE.locale },
+    ...siteWideMeta(),
     { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary_large_image" },
     {
       name: "keywords",
       content: keywords(...(opts.extraKeywords ?? [])),
@@ -452,5 +454,19 @@ export function pageMeta(opts: {
     { name: "twitter:title", content: title },
     { name: "twitter:description", content: opts.description },
     { name: "twitter:image", content: ogImage },
+  ];
+}
+
+/**
+ * The tags every page carries. A route's meta replaces the root's, so each
+ * route has to restate them: `pageMeta` does, and routes that build their
+ * meta by hand (the blog) spread this in.
+ */
+export function siteWideMeta() {
+  return [
+    { name: "theme-color", content: SITE.themeColor },
+    { property: "og:site_name", content: SITE.name },
+    { property: "og:locale", content: SITE.locale },
+    { name: "twitter:card", content: "summary_large_image" },
   ];
 }

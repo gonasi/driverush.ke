@@ -1,7 +1,7 @@
 /**
- * The Model Town Board guides under `/model-town-board/`: questions and
- * answers, the roundabout's lanes, the rules, and parking. One file serves all
- * four routes (see `routes.ts`); the path picks the guide. Their titles and
+ * The Model Town Board guides under `/model-town-board/`: the diagram, lane
+ * options, questions and answers, the roundabout, the rules, and parking. One
+ * file serves all their routes (see `routes.ts`); the path picks the guide. Their titles and
  * descriptions are in `lib/board-guides.ts` and their text is MDX in
  * `app/guides/`. Each one opens with a way into the trainer.
  */
@@ -11,6 +11,7 @@ import { Link } from "react-router";
 import type { Route } from "./+types/board-guide";
 
 import DiagramBody from "~/guides/board-diagram.mdx";
+import LaneOptionsBody from "~/guides/board-lane-options.mdx";
 import ParkingBody from "~/guides/board-parking.mdx";
 import QuestionsBody from "~/guides/board-questions.mdx";
 import RoundaboutBody from "~/guides/board-roundabout.mdx";
@@ -36,6 +37,7 @@ import { GuideLayout } from "~/components/brand/guide-layout";
 
 const BODIES: Record<BoardGuideId, React.ComponentType> = {
   diagram: DiagramBody,
+  "lane-options": LaneOptionsBody,
   questions: QuestionsBody,
   roundabout: RoundaboutBody,
   rules: RulesBody,
@@ -70,7 +72,9 @@ export function meta({ data }: Route.MetaArgs) {
         title: guide.title,
         description: guide.description,
         path: guide.path,
+        published: guide.published,
         checked: BOARD_CHECKED,
+        image: ogCardPath("board"),
       }),
     ),
   ];

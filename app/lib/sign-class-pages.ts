@@ -17,6 +17,8 @@ export type SignClassPage = {
   /** Short name for breadcrumbs and links. */
   name: string;
   lede: string;
+  /** The date the page first went live. */
+  published: string;
   checked: string;
 };
 
@@ -30,6 +32,7 @@ export const SIGN_CLASS_PAGES: SignClassPage[] = [
     description:
       "All 34 Kenyan warning signs in five groups, with the mirror-image pairs people mix up and how far ahead of a hazard each sign stands.",
     lede: "The red triangles, in five groups, with the pairs people read backwards and what to do when you see one.",
+    published: "2026-11-10",
     checked: "2026-11-10",
   },
   {
@@ -41,6 +44,7 @@ export const SIGN_CLASS_PAGES: SignClassPage[] = [
     description:
       "The 10 Kenyan mandatory signs: blue circles that tell you what you must do, how to read the arrows, and the red signs with the same picture.",
     lede: "The blue circles that tell you what you must do, and how to tell them from the red signs with the same picture.",
+    published: "2026-11-10",
     checked: "2026-11-10",
   },
   {
@@ -52,6 +56,7 @@ export const SIGN_CLASS_PAGES: SignClassPage[] = [
     description:
       "The 33 Kenyan prohibitory signs in six groups: entry, size and weight, turns, speed, stopping and parking. How to read the numbers and the bars.",
     lede: "The red rings that tell you what you may not do, in six groups, with how to read the numbers and the bars.",
+    published: "2026-11-10",
     checked: "2026-11-10",
   },
 ];

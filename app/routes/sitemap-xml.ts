@@ -5,16 +5,23 @@
  * the `Response` as-is. List the public, indexable pages here — leave out the
  * internal `/tools` routes, which `robots.txt` also disallows.
  *
- * Static pages share `STATIC_LAST_MODIFIED`; bump it when those pages get a
- * meaningful content update. Blog posts use their own frontmatter `date` so
+ * Board pages take `BOARD_CHECKED` and sign class pages their own checked
+ * date. Other static pages share `STATIC_LAST_MODIFIED`; bump it when those
+ * pages get a meaningful content update. Blog posts use their own frontmatter `date` so
  * the sitemap's `lastmod` for each post tracks the source.
  */
 import { absUrl } from "~/lib/site";
 import { getAllPosts } from "~/lib/blog";
 import {
+  BOARD_CHECKED,
   BOARD_GUIDES,
   BOARD_PATH,
+  BOARD_QUESTIONS_PDF,
 } from "~/lib/board-guides";
+import {
+  NTSA_QUESTIONS_CHECKED,
+  NTSA_QUESTIONS_PATH,
+} from "~/lib/ntsa-questions-page";
 import { SIGN_CLASS_PAGES } from "~/lib/sign-class-pages";
 import {
   isSignConfirmed,
@@ -42,20 +49,26 @@ function page(
   path: string,
   priority: string,
   changefreq: Entry["changefreq"] = "monthly",
+  lastmod: string = STATIC_LAST_MODIFIED,
 ): Entry {
-  return { path, priority, changefreq, lastmod: STATIC_LAST_MODIFIED };
+  return { path, priority, changefreq, lastmod };
 }
 
 const STATIC_PAGES: Entry[] = [
   page("/", "1.0", "weekly"),
   // The Model Town Board is what most learners come for.
-  page(BOARD_PATH, "1.0", "weekly"),
-  ...BOARD_GUIDES.map((guide) => page(guide.path, "0.8")),
+  page(BOARD_PATH, "1.0", "weekly", BOARD_CHECKED),
+  ...BOARD_GUIDES.map((guide) =>
+    page(guide.path, "0.8", "monthly", BOARD_CHECKED),
+  ),
+  // The free questions PDF, for "model town board pdf" searches.
+  page(BOARD_QUESTIONS_PDF, "0.5", "monthly", BOARD_CHECKED),
   page("/road-signs", "0.9", "weekly"),
   page("/guides", "0.6"),
   page("/ntsa-test", "0.9"),
+  page(NTSA_QUESTIONS_PATH, "0.8", "monthly", NTSA_QUESTIONS_CHECKED),
   page("/driving-schools-kenya", "0.9"),
-  ...SIGN_CLASS_PAGES.map((p) => page(p.path, "0.8")),
+  ...SIGN_CLASS_PAGES.map((p) => page(p.path, "0.8", "monthly", p.checked)),
   page("/road-signs/pelican", "0.7", "weekly"),
   page("/road-signs/3d", "0.7", "weekly"),
   page("/blogs", "0.7", "weekly"),

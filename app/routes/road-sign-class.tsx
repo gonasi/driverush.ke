@@ -60,6 +60,7 @@ export function meta({ data }: Route.MetaArgs) {
         title: page.title,
         description: page.description,
         path: page.path,
+        published: page.published,
         checked: page.checked,
       }),
     ),

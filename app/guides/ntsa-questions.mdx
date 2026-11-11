@@ -1,0 +1,28 @@
+import { Link } from "react-router";
+import {
+  PracticeQuestionBank,
+  PRACTICE_QUESTION_COUNT,
+} from "~/components/brand/practice-questions";
+
+These are {PRACTICE_QUESTION_COUNT} NTSA driving test practice questions with answers. We wrote them from NTSA's learner handbook, NTSA's service pages, the Traffic Act and the Ministry of Roads road signs manual, and each answer names its source.
+
+They are not past NTSA papers, and nobody outside NTSA has the real ones, so be wary of anyone who says they do. NTSA does not publish the test's format or its pass mark either. What these give you is the facts the questions rest on. Pick an answer before you open each one.
+
+The Model Town Board is part of the test too, and has its own <Link to="/model-town-board/questions">Model Town Board questions and answers</Link>. For road signs, learn all 83 on the <Link to="/road-signs">road signs page</Link>.
+
+<PracticeQuestionBank />
+
+## Practise the rest
+
+- **The Model Town Board.** Drive it level by level on the free <Link to="/model-town-board">Model Town Board simulator</Link>, from the lanes and the roundabout to parking.
+- **Road signs.** The <Link to="/road-signs/pelican">Pelican chart</Link> and <Link to="/road-signs/3d">3D signs</Link> trainers show you a sign and wait for you to name it.
+- **The steps and fees.** <Link to="/ntsa-test">The NTSA test, step by step</Link> has what each step costs and how to book.
+
+Your driving school is still where you learn to drive and where you find out how the test runs at your centre.
+
+## Sources
+
+- [Kenya Learner Driver Handbook](https://www.lunardrivingschool.com/wp-content/uploads/2023/09/KENYA-LEARNER-DRIVER-HANDBOOK-Light-Motor-Vehicle.pdf), compiled by NTSA, 2016. The unit and page are given with each answer. We could not find it on NTSA's own site, so this copy is hosted by a driving school.
+- NTSA: [Provisional Driving Licence](https://ntsa.go.ke/services/service/provisional-driving-licence-pdl), [Driver Test Booking](https://ntsa.go.ke/services/service/driver-test-booking) and [Interim Driving Licence](https://ntsa.go.ke/services/service/interim-driving-license-idl). Rules as shown on 5 November 2026.
+- [Traffic Act, Cap 403](https://infotradekenya.go.ke/media/Traffic%20Act%20CAP%20403.pdf), revised 2015.
+- [Design Manual for Roads and Bridges, Part 5a: Road Signs](https://transport.go.ke/sites/default/files/2023-07/Part%205a%20-%20Road%20Signs.pdf), Ministry of Roads, draft of December 2009.

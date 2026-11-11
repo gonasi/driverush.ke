@@ -38,7 +38,14 @@ export function HomeHero() {
           className="dr-rise m-0 max-w-2xl font-serif text-[clamp(16px,2.2vw,20px)] leading-snug text-ink-2"
         >
           Learn the board and the lanes, then take the roundabout and stop where
-          the examiner asks. Break a rule and you're told which one.
+          the examiner asks. Break a rule and you're told which one.{" "}
+          <Link
+            to="/model-town-board"
+            className="underline decoration-ink/30 underline-offset-2 hover:decoration-ink"
+          >
+            What the Model Town Board is, and every level
+          </Link>
+          .
         </p>
       </header>
 

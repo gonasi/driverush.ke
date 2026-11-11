@@ -1,154 +1,21 @@
 import { Link } from "react-router";
-import { Accordion, AccordionItem } from "~/components/brand/accordion";
 import { BoardGuideLinks } from "~/components/board/board-guide-links";
+import {
+  BoardQuestionBank,
+  BOARD_QUESTION_COUNT,
+} from "~/components/board/board-question-bank";
+import { BOARD_QUESTIONS_PDF } from "~/lib/board-guides";
 
-These are Model Town Board questions with answers, the kinds of questions the board is used to ask. Each answer comes from a rule in NTSA's learner handbook, and the rule is given with it. Say your answer out loud before you open one.
+These are {BOARD_QUESTION_COUNT} Model Town Board questions with answers, the kinds of questions the board is used to ask. Each answer gives the page of NTSA's learner handbook it comes from, and the few the handbook does not settle say so. Say your answer out loud before you open one.
 
 We don't have the questions any test centre uses, and NTSA does not publish them. Use these to check that you know the rules.
 
-## Lanes
+<a href={BOARD_QUESTIONS_PDF} download>
+  Download all {BOARD_QUESTION_COUNT} questions as a PDF
+</a>
+: free, no signup, ready to print.
 
-<Accordion className="my-6">
-  <AccordionItem summary="How are the lanes numbered?" open>
-    From the kerb inwards. Lane 1 is beside the kerb, and the highest number is
-    beside the middle of the road.
-  </AccordionItem>
-  <AccordionItem summary="You are on a four-lane road and want to turn left at the roundabout. Which lane?">
-    Lane 1. It goes straight or turns left. Lane 4 can also get there, but
-    only the long way round.
-  </AccordionItem>
-  <AccordionItem summary="What do the codes 2124 and 215 mean?">
-    They count the options in each lane, starting at the kerb. On the four-lane
-    road lane 1 has two options, lane 2 one, lane 3 two and lane 4 four. On the
-    three-lane road lane 1 has two, lane 2 one and lane 3 five.
-  </AccordionItem>
-  <AccordionItem summary="What are lane 4's four options?">
-    Turn right (90°), come back the way you came (180°), turn left the long way
-    round (270°), or go straight after going round (360°).
-  </AccordionItem>
-  <AccordionItem summary="What are lane 3's five options on the three-lane road?">
-    Go straight, turn right into lane 3, turn right into lane 4, come back into
-    lane 3, or turn left into lane 3 and move to lane 4 on the broken line.
-  </AccordionItem>
-  <AccordionItem summary="What do you do before you change lanes?">
-    Check your mirrors, signal for 3 seconds, then move across. Only where the
-    line is broken.
-  </AccordionItem>
-  <AccordionItem summary="You want to go straight across the roundabout. Which lanes can you use?">
-    Lanes 1, 2 or 3. Lane 2 goes straight only.
-  </AccordionItem>
-  <AccordionItem summary="You want to turn right at the roundabout. Which lanes?">
-    Lane 3 or lane 4. Lane 3 goes straight or turns right.
-  </AccordionItem>
-  <AccordionItem summary="You want to go round the roundabout and come back down the road you came up. Which lane?">
-    Lane 4, the lane beside the central reserve.
-  </AccordionItem>
-  <AccordionItem summary="You are in lane 2 near the roundabout and realise you need to turn right. The lines beside you are continuous. What do you do?">
-    Stay in lane 2 and go straight. A continuous white line means no changing
-    lanes, and lane 2 goes straight only. Then take the longest correct route
-    back to where you were asked to go. That is route rule 2.
-  </AccordionItem>
-</Accordion>
-
-## The roundabout
-
-<Accordion className="my-6">
-  <AccordionItem summary="Which way do you go round the roundabout?">
-    Clockwise. You keep left in Kenya.
-  </AccordionItem>
-  <AccordionItem summary="Who goes first at the roundabout?">
-    Traffic already on it, which comes from your right. You give way before you
-    enter.
-  </AccordionItem>
-  <AccordionItem summary="Which lane do you leave the roundabout in?">
-    The lane you came round in. Leaving in the wrong lane is one of the three
-    common mistakes.
-  </AccordionItem>
-  <AccordionItem summary="Name the five things you must not do on the roundabout.">
-    Stop, change lanes, park, overtake or wait.
-  </AccordionItem>
-  <AccordionItem summary="You entered in the wrong lane. Can you move across once you are on the roundabout?">
-    No. Changing lanes on the roundabout is not allowed. Choose your lane before
-    you enter.
-  </AccordionItem>
-  <AccordionItem summary="Which lane may go all the way round?">
-    Only the innermost lane: lane 4 from the four-lane road, lane 3 from the
-    three-lane road. In the other lanes you take your exit the first time you
-    reach it.
-  </AccordionItem>
-  <AccordionItem summary="What are the three common mistakes at the roundabout?">
-    Approaching in the wrong lane, leaving in the wrong lane, and changing lanes
-    on the roundabout.
-  </AccordionItem>
-</Accordion>
-
-<Link to="/model-town-board/roundabout">Which lane for which turn</Link> has the full table and a picture.
-
-## Routes
-
-<Accordion className="my-6">
-  <AccordionItem summary="What are the three route rules?">
-    Take the shortest correct route, avoiding the parking area. If a continuous
-    line blocks the short way from your lane, take the longest correct route,
-    still avoiding the parking area. Use the parking area only as a last
-    resort.
-  </AccordionItem>
-  <AccordionItem summary="There are two correct routes to where you are going. Which one do you take?">
-    The shorter one, as long as it avoids the parking area.
-  </AccordionItem>
-  <AccordionItem summary="The only short route cuts through the parking area, but a longer route avoids it. Which do you take?">
-    The longer route. The parking area is a last resort.
-  </AccordionItem>
-  <AccordionItem summary="The shortest way goes against a one-way road. Can you use it?">
-    No. It breaks a rule, so it is not a correct route, however short it is.
-  </AccordionItem>
-  <AccordionItem summary="There is a Stop sign on your route, but no traffic and no painted line. What do you do?">
-    Stop anyway, at or before the sign. Look right, left, then right again, and
-    go when the road is clear.
-  </AccordionItem>
-  <AccordionItem summary="The yellow line down the middle of the road is broken. What does that allow?">
-    Overtaking, or turning across it, if the road is clear. A continuous yellow
-    line means stay on your side.
-  </AccordionItem>
-</Accordion>
-
-## Parking
-
-<Accordion className="my-6">
-  <AccordionItem summary="How do you go into and out of an angle parking bay?">
-    Drive in forwards and reverse out, giving way to traffic from your right.
-  </AccordionItem>
-  <AccordionItem summary="Which vehicles may use angle parking?">
-    Small cars only. Buses and heavy vehicles do not park in the angle bays.
-  </AccordionItem>
-  <AccordionItem summary="Which vehicles may use flush parking?">
-    Any vehicle except a trailer or a tractor. It is for short stops.
-  </AccordionItem>
-  <AccordionItem summary="How does a bus or a heavy vehicle park?">
-    In its own space, not an angle bay. It drives past the space and reverses
-    in.
-  </AccordionItem>
-  <AccordionItem summary="Which bay do you take?">
-    The farthest free one, in angle parking and in flush parking. Bays fill
-    from the far end first.
-  </AccordionItem>
-  <AccordionItem summary="How do you go into and out of a flush parking space?">
-    Reverse in and drive out forwards.
-  </AccordionItem>
-  <AccordionItem summary="When may you drive through the parking area on your way somewhere else?">
-    Only when no correct route avoids it.
-  </AccordionItem>
-  <AccordionItem summary="May you park on the roundabout?">
-    No. Parking is one of the five things you must not do on it.
-  </AccordionItem>
-  <AccordionItem summary="Name the places where you must not stop, park or wait.">
-    On the roundabout, on double yellow lines or beside a yellow kerb, at or
-    within 10 metres of a junction, on a pedestrian crossing, on a pavement or
-    the green, near the brow of a hill, in a bus stop and in a clearway.
-  </AccordionItem>
-</Accordion>
-
-<Link to="/model-town-board/parking">Parking on the Model Town Board</Link> explains both kinds.
+<BoardQuestionBank />
 
 ## How to pass the Model Town Board test
 
@@ -174,4 +41,4 @@ Your driving school is still the place to practise on a real board, because the 
 
 ## Sources
 
-- [Kenya Learner Driver Handbook](https://www.lunardrivingschool.com/wp-content/uploads/2023/09/KENYA-LEARNER-DRIVER-HANDBOOK-Light-Motor-Vehicle.pdf), compiled by NTSA, 2016, Unit 3: Model Town. We could not find it on NTSA's own site, so this copy is hosted by a driving school. Ask your school whether your test centre still follows it.
+- [Kenya Learner Driver Handbook](https://www.lunardrivingschool.com/wp-content/uploads/2023/09/KENYA-LEARNER-DRIVER-HANDBOOK-Light-Motor-Vehicle.pdf), compiled by NTSA, 2016: Unit 3, Model Town (pp. 9 to 13), Unit 2 on traffic signs (p. 8) and the MSM technique (pp. 38 to 39). We could not find it on NTSA's own site, so this copy is hosted by a driving school. Ask your school whether your test centre still follows it.

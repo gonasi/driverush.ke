@@ -1,6 +1,9 @@
 import { Link } from "react-router";
 import { Accordion, AccordionItem } from "~/components/brand/accordion";
-import { PracticeQuestions } from "~/components/brand/practice-questions";
+import {
+  PracticeQuestions,
+  PRACTICE_QUESTION_COUNT,
+} from "~/components/brand/practice-questions";
 
 To get a Kenyan driving licence, you enrol at a licensed driving school, get a Provisional Driving Licence, book and pass the NTSA test, then get an interim licence and a Smart DL. NTSA's own fees for those steps add up to **KES 5,500**. Your school's fee is separate.
 
@@ -41,6 +44,8 @@ We can't confirm any of those numbers, so we won't tell you to rely on them. Ask
 We wrote these from NTSA's published rules, the Traffic Act and the Ministry of Roads road signs manual. They're practice for the facts you need, not past NTSA papers. Be wary of anyone promising you the real questions.
 
 <PracticeQuestions />
+
+These are a short set. <Link to="/ntsa-test/questions">All {PRACTICE_QUESTION_COUNT} NTSA practice questions</Link> cover the rules of the road, signs, safety, controlling the car and emergencies, each with its source.
 
 For road signs, the trainers are much better practice than a list of questions: a sign zooms in, you name it before the answer shows, and the ones you miss come back sooner.
 

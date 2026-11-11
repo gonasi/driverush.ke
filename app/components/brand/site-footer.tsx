@@ -11,6 +11,7 @@ import { SIGN_BRAND, SIGN_SOURCE } from "~/lib/sign-credits";
 import {
   BOARD_GUIDES,
   BOARD_PATH,
+  BOARD_QUESTIONS_PDF,
 } from "~/lib/board-guides";
 import { SITE } from "~/lib/site";
 import { SIGN_CLASS_PAGES } from "~/lib/sign-class-pages";
@@ -86,16 +87,20 @@ export function SiteFooter() {
           />
           <FooterCol
             heading="Model Town Board"
-            items={BOARD_GUIDES.map((guide) => ({
-              label: guide.name,
-              href: guide.path,
-            }))}
+            items={[
+              ...BOARD_GUIDES.map((guide) => ({
+                label: guide.name,
+                href: guide.path,
+              })),
+              { label: "Questions PDF", href: BOARD_QUESTIONS_PDF },
+            ]}
           />
           <FooterCol
             heading="Guides"
             items={[
               { label: "All guides", href: "/guides" },
               { label: "NTSA test", href: "/ntsa-test" },
+              { label: "NTSA questions", href: "/ntsa-test/questions" },
               { label: "Driving schools", href: "/driving-schools-kenya" },
               { label: "Blog", href: "/blogs" },
             ]}
@@ -170,7 +175,9 @@ function FooterCol({
       </h3>
       <ul className="m-0 list-none p-0">
         {items.map((it) => {
-          const isInternal = it.href.startsWith("/");
+          // A file (such as a PDF) is not a page the router can show.
+          const isInternal =
+            it.href.startsWith("/") && !/\.[a-z0-9]+$/i.test(it.href);
           return (
             <li key={it.label} className="py-1">
               {isInternal ? (

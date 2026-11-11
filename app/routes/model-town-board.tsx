@@ -5,11 +5,15 @@
  * levels: still on this page and in the server's HTML, for the learners who
  * arrive searching for how the board works.
  */
-import { Link } from "react-router";
 import type { Route } from "./+types/model-town-board";
 
 import Body from "~/guides/model-town-board.mdx";
-import { BOARD_CHECKED, BOARD_PATH } from "~/lib/board-guides";
+import {
+  BOARD_CHECKED,
+  BOARD_PATH,
+  BOARD_QUESTIONS_PDF,
+} from "~/lib/board-guides";
+import { BOARD_QUESTIONS } from "~/data/board-questions";
 import { COURSE_LEVELS, UNITS } from "~/lib/board/curriculum";
 import { ogCardAlt, ogCardPath } from "~/lib/og-cards";
 import {
@@ -27,6 +31,7 @@ import { useBoardPage } from "~/components/board/use-board-page";
 import { BoardPicture } from "~/components/board/board-picture";
 import { GuideFold } from "~/components/brand/guide-fold";
 import { GuideLayout } from "~/components/brand/guide-layout";
+import { MDX } from "~/components/brand/mdx-components";
 
 const PATH = BOARD_PATH;
 const CHECKED = BOARD_CHECKED;
@@ -56,6 +61,7 @@ export function meta(_: Route.MetaArgs) {
         title: TITLE,
         description: DESCRIPTION,
         path: PATH,
+        published: "2026-11-04",
         checked: CHECKED,
         image: ogCardPath("board"),
         type: "WebPage",
@@ -97,13 +103,40 @@ export default function ModelTownBoard() {
       lead={<BoardLevels />}
     >
       <section aria-labelledby="on-the-board" className="mt-2">
-        <h2 id="on-the-board">What's on the Model Town Board</h2>
-        <p>
-          The board is a small town on a table: a dual carriageway with four
-          lanes each way, a roundabout, a three-lane road, a two-way road, a
-          street, and a parking zone. Lane 1 is always the lane by the kerb.{" "}
-          <Link to={`${BOARD_PATH}/diagram`}>See the labelled diagram</Link>.
-        </p>
+        <MDX.h2 id="on-the-board" className="mt-6">
+          What is the Model Town Board?
+        </MDX.h2>
+        <MDX.p>
+          The Model Town Board is a table painted as a small town, used in the
+          Kenyan driving test. You move a toy car along its roads to a place the
+          examiner names, and show that you know which lane to use, when to give
+          way and how to park.
+        </MDX.p>
+        <MDX.p>
+          It has a dual carriageway with four lanes each way, a roundabout, a
+          three-lane road, a two-way road, a street, and a parking zone. Lane 1
+          is always the lane by the kerb.{" "}
+          <MDX.a href={`${BOARD_PATH}/diagram`}>See the labelled diagram</MDX.a>.
+        </MDX.p>
+        <MDX.p>
+          Test yourself with{" "}
+          <MDX.a href={`${BOARD_PATH}/questions`}>
+            {BOARD_QUESTIONS.length} questions and answers
+          </MDX.a>
+          , check{" "}
+          <MDX.a href={`${BOARD_PATH}/lane-options`}>
+            which lane takes which turn
+          </MDX.a>
+          , or{" "}
+          <a
+            href={BOARD_QUESTIONS_PDF}
+            download
+            className="font-semibold text-rush underline-offset-[3px] hover:underline"
+          >
+            download the questions as a PDF
+          </a>{" "}
+          to print.
+        </MDX.p>
         <BoardPicture
           part="whole"
           alt="Diagram of the Model Town Board: the dual carriageway, roundabout, three-lane road, two-way road, street and parking zone, numbered to the list below."

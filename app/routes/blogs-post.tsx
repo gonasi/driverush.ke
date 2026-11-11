@@ -2,7 +2,14 @@ import { Link, isRouteErrorResponse, useRouteError } from "react-router";
 
 import type { Route } from "./+types/blogs-post";
 
-import { absUrl, breadcrumbLd, keywords, pageTitle, SITE } from "~/lib/site";
+import {
+  absUrl,
+  breadcrumbLd,
+  keywords,
+  pageTitle,
+  SITE,
+  siteWideMeta,
+} from "~/lib/site";
 import {
   BLOG_KEYWORDS,
   getPostBySlug,
@@ -57,6 +64,7 @@ export function meta({ data, params }: Route.MetaArgs) {
   return [
     { title },
     { name: "description", content: post.description },
+    ...siteWideMeta(),
     {
       name: "keywords",
       content: keywords(...post.tags, ...BLOG_KEYWORDS),

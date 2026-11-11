@@ -38,6 +38,7 @@ import { SIGN_COUNT } from "~/lib/road-signs";
 import { SIGN_BRAND } from "~/lib/sign-credits";
 import { cn } from "~/lib/utils";
 
+import { BoardQuestionsPrint } from "~/components/board/board-questions-print";
 import { Sign3DViewer } from "~/components/brand/sign-3d-viewer";
 import { SignImage } from "~/components/brand/sign-image";
 import { SIGN_IMAGE_SIZE, signPageBySlug } from "~/lib/road-sign-pages";
@@ -544,8 +545,8 @@ function PrintableChart() {
       />
       <p className="m-0 mt-1 text-[8px] text-[#5b6068]">
         Free from DriveRush (driverush.ke). {SIGN_BRAND.name} name and logo used
-        with permission. Not affiliated with the NTSA. Practise the signs free at
-        driverush.ke/road-signs.
+        with permission. Not affiliated with the NTSA. Practise the signs free
+        at driverush.ke/road-signs.
       </p>
     </div>
   );
@@ -571,6 +572,10 @@ export default function OgStudio() {
   // The printable chart: one A4 page, landscape, for
   // `scripts/build-sign-images.mjs` to print to `public/downloads/`.
   if (params.get("print") === "chart") return <PrintableChart />;
+  // Every board question, on A4 pages, for `scripts/build-board-pdf.mjs`.
+  if (params.get("print") === "board-questions") {
+    return <BoardQuestionsPrint />;
+  }
 
   // One sign on its own, at `SIGN_IMAGE_SIZE` square, for
   // `scripts/build-sign-images.mjs` to capture into a file per sign page.

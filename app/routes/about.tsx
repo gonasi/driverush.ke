@@ -28,6 +28,7 @@ export function meta(_: Route.MetaArgs) {
         description: DESCRIPTION,
         path: PATH,
         checked: CHECKED,
+        published: "2026-11-05",
       }),
     ),
   ];

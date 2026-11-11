@@ -30,9 +30,12 @@ export default [
   route("model-town-board/levels", "routes/legacy-redirects.ts", {
     id: "legacy-board-levels",
   }),
-  // The board's guides. One file, four routes: the path picks the guide.
+  // The board's guides. One file, one route each: the path picks the guide.
   route("model-town-board/diagram", "routes/board-guide.tsx", {
     id: "board-guide-diagram",
+  }),
+  route("model-town-board/lane-options", "routes/board-guide.tsx", {
+    id: "board-guide-lane-options",
   }),
   route("model-town-board/questions", "routes/board-guide.tsx", {
     id: "board-guide-questions",
@@ -50,6 +53,7 @@ export default [
   // Permanent guides. MDX bodies live in `app/guides/`.
   route("guides", "routes/guides.tsx"),
   route("ntsa-test", "routes/ntsa-test.tsx"),
+  route("ntsa-test/questions", "routes/ntsa-questions.tsx"),
   route("driving-schools-kenya", "routes/driving-schools-kenya.tsx"),
   route("derevaprep-alternative", "routes/derevaprep-alternative.tsx"),
   route("about", "routes/about.tsx"),

@@ -10,7 +10,8 @@
     "test": "vitest run",
     "ping-indexnow": "node scripts/ping-indexnow.mjs",
     "build:og": "node scripts/build-og-images.mjs",
-    "build:sign-images": "node scripts/build-sign-images.mjs"
+    "build:sign-images": "node scripts/build-sign-images.mjs",
+    "build:board-pdf": "node scripts/build-board-pdf.mjs"
   },
   "dependencies": {
     "@posthog/react": "^1.10.3",

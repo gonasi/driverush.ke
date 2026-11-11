@@ -389,7 +389,7 @@ export function refStep(
     }
   }
 
-  // Leaving in the wrong lane is one of the handbook's three common mistakes.
+  // Leaving in the wrong lane is one of the common mistakes the handbook names.
   if (ref.leaving) {
     if (loc.side !== "exit" || loc.along > EXIT_CLEAR + LEAVING_REACH) {
       ref.leaving = null;

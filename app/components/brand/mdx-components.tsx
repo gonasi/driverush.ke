@@ -42,7 +42,12 @@ function MdxLink({ href, className, children, ...rest }: AnchorProps) {
   );
 }
 
-const components = {
+/**
+ * The styled elements, for components that MDX places but that build their own
+ * markup (a JSX `<p>` inside a component skips the mapping): use
+ * `MDX.p`, `MDX.h2`, `MDX.table` and so on to match the page around them.
+ */
+export const MDX = {
   h1: (props: React.ComponentProps<"h1">) => (
     <h1
       {...props}
@@ -170,5 +175,5 @@ const components = {
  * post override one element if it ever needs to.
  */
 export function useMDXComponents(extra: Record<string, unknown> = {}) {
-  return { ...components, ...extra };
+  return { ...MDX, ...extra };
 }

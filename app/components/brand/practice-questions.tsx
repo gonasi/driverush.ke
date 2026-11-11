@@ -2,18 +2,32 @@
  * Questions with the answer tucked into a native `<details>`: readable with no
  * JavaScript and fully present in the server's HTML, so search engines see them too.
  */
-import { PRACTICE_QUESTIONS } from "~/data/ntsa-practice-questions";
+import {
+  ALL_PRACTICE_QUESTIONS,
+  PRACTICE_QUESTIONS,
+  PRACTICE_TOPICS,
+  type PracticeQuestion,
+} from "~/data/ntsa-practice-questions";
 
-export function PracticeQuestions() {
+import { MDX } from "~/components/brand/mdx-components";
+
+export function PracticeQuestions({
+  questions = PRACTICE_QUESTIONS,
+  start = 1,
+}: {
+  questions?: readonly PracticeQuestion[];
+  /** The number the first question shows. */
+  start?: number;
+}) {
   return (
     <ol className="m-0 my-6 grid list-none gap-3 p-0 font-sans">
-      {PRACTICE_QUESTIONS.map((question, index) => (
+      {questions.map((question, index) => (
         <li
           key={question.prompt}
           className="border-2 border-ink bg-paper-3 p-4 sm:p-5"
         >
           <p className="m-0 font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
-            Question {index + 1}
+            Question {start + index}
           </p>
           <p className="m-0 mt-1.5 text-[16px] font-semibold leading-snug text-ink">
             {question.prompt}
@@ -48,3 +62,27 @@ export function PracticeQuestions() {
     </ol>
   );
 }
+
+/** Every practice question, one section per topic, numbered straight through. */
+export function PracticeQuestionBank() {
+  let start = 1;
+  return (
+    <>
+      {PRACTICE_TOPICS.map((topic) => {
+        const questions = ALL_PRACTICE_QUESTIONS.filter(
+          (question) => question.topic === topic.id,
+        );
+        const first = start;
+        start += questions.length;
+        return (
+          <section key={topic.id} aria-labelledby={`t-${topic.id}`}>
+            <MDX.h2 id={`t-${topic.id}`}>{topic.title}</MDX.h2>
+            <PracticeQuestions questions={questions} start={first} />
+          </section>
+        );
+      })}
+    </>
+  );
+}
+
+export const PRACTICE_QUESTION_COUNT = ALL_PRACTICE_QUESTIONS.length;

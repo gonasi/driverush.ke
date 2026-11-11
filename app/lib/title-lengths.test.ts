@@ -12,6 +12,10 @@ import {
   isSignConfirmed,
   signTitle,
 } from "./road-sign-pages";
+import {
+  NTSA_QUESTIONS_DESCRIPTION,
+  NTSA_QUESTIONS_TITLE,
+} from "./ntsa-questions-page";
 import { pageTitle } from "./site";
 
 const TITLE_MAX = 60;
@@ -26,6 +30,15 @@ describe("titles fit in a search result", () => {
   it.each(SIGN_CLASS_PAGES.map((p) => [p.path, p]))("%s", (_, page) => {
     expect(pageTitle(page.title).length).toBeLessThanOrEqual(TITLE_MAX);
     expect(page.description.length).toBeLessThanOrEqual(DESCRIPTION_MAX);
+  });
+
+  it("the NTSA questions page", () => {
+    expect(pageTitle(NTSA_QUESTIONS_TITLE).length).toBeLessThanOrEqual(
+      TITLE_MAX,
+    );
+    expect(NTSA_QUESTIONS_DESCRIPTION.length).toBeLessThanOrEqual(
+      DESCRIPTION_MAX,
+    );
   });
 
   it("every sign in search", () => {

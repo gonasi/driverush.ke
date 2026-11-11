@@ -49,6 +49,8 @@ export type SiteTabId = (typeof SITE_TABS)[number]["id"];
  * reading one is in Guides, which is where its link is.
  */
 const GUIDE_PATHS = [
+  "/model-town-board/diagram",
+  "/model-town-board/lane-options",
   "/model-town-board/questions",
   "/model-town-board/roundabout",
   "/model-town-board/rules",

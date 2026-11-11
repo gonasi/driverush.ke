@@ -183,7 +183,7 @@ function reasonFor(fault: Fault): string {
     case "stop_line":
       return "You drove over the stop line without stopping. A stop line means stop every time, look both ways, and go only when the road is clear.";
     case "exit_lane":
-      return `You came round in lane ${fault.lane ?? 1} but left the roundabout in a different lane. Leaving in the wrong lane is one of the three common mistakes. Hold your lane off the roundabout, then change lanes further on, where the lines are broken.`;
+      return `You came round in lane ${fault.lane ?? 1} but left the roundabout in a different lane. Leaving in the wrong lane is one of the common mistakes the handbook names. Hold your lane off the roundabout, then change lanes further on, where the lines are broken.`;
     case "u_turn_lane":
       return `To turn back through a gap in the central reserve, be in lane ${fault.lane ?? 4}, the lane beside the reserve, before you reach the gap. Finish the turn in the lane beside the reserve on the other side, then change lanes where the lines are broken.`;
     case "crossing_stop":

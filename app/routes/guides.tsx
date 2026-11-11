@@ -33,6 +33,12 @@ const GROUPS: readonly { title: string; items: readonly Entry[] }[] = [
           "The steps, what NTSA charges, and practice questions with answers.",
       },
       {
+        to: "/ntsa-test/questions",
+        title: "NTSA practice questions",
+        blurb:
+          "Every theory practice question we have, by topic, each with its source.",
+      },
+      {
         to: "/driving-schools-kenya",
         title: "Driving schools in Kenya",
         blurb: "What schools charge, and how to check that one is licensed.",

@@ -1,0 +1,59 @@
+import { Link } from "react-router";
+import { BoardGuideLinks } from "~/components/board/board-guide-links";
+import { BoardLaneOptions } from "~/components/board/board-lane-options";
+
+Every lane on the way into the Model Town Board roundabout has its own set of options: the turns a car in that lane may take. NTSA's learner handbook counts them for both roads and gives each road a code. Learn the two codes and you know which lane to be in before you reach the continuous lines.
+
+## The option codes: 2124 and 215
+
+Count the options in each lane, starting at the kerb:
+
+- **2124** is the four-lane road: lane 1 has two options, lane 2 has one, lane 3 has two and lane 4 has four.
+- **215** is the three-lane road: lane 1 has two options, lane 2 has one and lane 3 has five.
+
+Lanes are numbered from the outermost lane, by the kerb, to the innermost. Lane 2 is the easy one on both roads: it goes straight on, nothing else.
+
+## The four-lane road: 2124
+
+<BoardLaneOptions arm="S" />
+
+Read the other way, turn by turn:
+
+- **To turn left,** use lane 1 (90°). Lane 4 also gets there, but only the long way round (270°).
+- **To go straight,** use lane 1, 2 or 3 (0°). Lane 4 also goes straight, but only after going once round (360°).
+- **To turn right,** use lane 3 or 4 (90°).
+- **To come back the way you came,** use lane 4 (180°).
+
+Lane 4 can reach every exit, because it is the only lane that may make a full circle. For a left turn or straight on it is the long way, so it is not the lane to choose for them.
+
+## The three-lane road: 215
+
+<BoardLaneOptions arm="W" />
+
+Lane 3 is the innermost lane of the three-lane road, so it does the work lane 4 does on the four-lane road. The handbook gives it five options: go straight, turn right, turn right and enter lane 4, come back into lane 3 (180°), and turn left the long way round into lane 3 (270°), then move to lane 4 where the line is broken.
+
+## Choose your lane early
+
+Close to the roundabout the lane lines are continuous, and a continuous white line means no changing lanes. Further back the lines are broken, and that is where you move across. Use the handbook's MSM routine: mirror (and your blind spot), signal, then manoeuvre.
+
+If you reach the continuous lines in the wrong lane, you may not move across. Take a turn your lane allows, and find the longest correct route from there. That is the second of the board's <Link to="/model-town-board/rules">three route rules</Link>.
+
+## What to ask your driving school
+
+- **Lane 4 going straight (360°).** The handbook says lane 4 goes straight "after going round the roundabout". Ask whether your examiner wants one whole circle first. Our trainer accepts lane 4 leaving at the straight-on exit.
+- **Which lane a full circle ends in.** Our trainer has you leave in the lane you came round in. Some instructors teach rejoining lane 1 after a full circle.
+- **Their own board.** Boards are not all painted the same, so have your school walk you through 2124 and 215 on theirs.
+
+The rules once you are on the roundabout, such as going clockwise and never changing lanes on it, are in <Link to="/model-town-board/roundabout">the roundabout rules</Link>.
+
+## Practise it
+
+The two lane options levels of the <Link to="/model-town-board">Model Town Board simulator</Link> teach lane options the way instructors do on a real board: every car is set out at once, one for each option, and you drive one car at a time to its place. Each car is told its option and shown where to stop. Take the wrong exit and that car goes back to wait its turn. It is free, with no signup.
+
+## More on the Model Town Board
+
+<BoardGuideLinks current="lane-options" />
+
+## Sources
+
+- [Kenya Learner Driver Handbook](https://www.lunardrivingschool.com/wp-content/uploads/2023/09/KENYA-LEARNER-DRIVER-HANDBOOK-Light-Motor-Vehicle.pdf), compiled by NTSA, 2016: Unit 3, Model Town, pp. 11 and 13 (the lane options), and the MSM technique, pp. 38 to 39. We could not find it on NTSA's own site, so this copy is hosted by a driving school. Ask your school whether your test centre still follows it.
