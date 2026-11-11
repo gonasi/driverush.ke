@@ -91,14 +91,14 @@ export function LevelNext({
   return (
     <div className={cn("grid gap-2", className)}>
       {next && (
-        <Link to={levelHref(next.id)} className={primary}>
+        <Link to={levelHref(next.id)} replace className={primary}>
           <span className="min-w-0">
             Next: level {next.n}, {next.title}
           </span>
           <Icon icon={ArrowRightIcon} size={16} className="shrink-0" />
         </Link>
       )}
-      <Link to={BOARD_LEVELS_PATH} className={secondary}>
+      <Link to={BOARD_LEVELS_PATH} replace className={secondary}>
         All levels
       </Link>
     </div>
@@ -602,7 +602,7 @@ export function BoardLevel({
           <div className="flex shrink-0 items-center gap-1.5">
             <button
               type="button"
-              aria-label="Board settings: where you stand, sound"
+              aria-label="Settings"
               onClick={onSettings}
               className={iconButton}
             >
@@ -610,7 +610,7 @@ export function BoardLevel({
             </button>
             <button
               type="button"
-              aria-label="Close the board"
+              aria-label="Close"
               onClick={exit}
               className={iconButton}
             >

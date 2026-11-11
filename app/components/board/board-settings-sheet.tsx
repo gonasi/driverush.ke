@@ -101,7 +101,7 @@ export function BoardSettingsSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full max-w-md p-0">
         <SheetHeader>
-          <SheetTitle>Board settings</SheetTitle>
+          <SheetTitle>Settings</SheetTitle>
         </SheetHeader>
 
         <SheetBody className="space-y-4 p-4">

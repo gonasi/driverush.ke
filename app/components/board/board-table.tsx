@@ -60,6 +60,11 @@ export type BoardTableProps = {
   /** Changes on every fresh attempt, so the view snaps back to the start. */
   attempt: number;
   tier: BoardTier;
+  /**
+   * Draw at exactly this many pixels per CSS pixel. Only the still in
+   * `/tools/og` sets it, to capture a sharp picture; the game leaves it out.
+   */
+  pixelRatio?: number;
   seat: Seat;
   /** The car the learner drives. */
   car: BoardCarId;
@@ -1365,7 +1370,7 @@ export default function BoardTable(props: BoardTableProps) {
   return (
     <Canvas
       shadows={high ? "soft" : false}
-      dpr={high ? [1, 1.75] : 1}
+      dpr={props.pixelRatio ?? (high ? [1, 1.75] : 1)}
       frameloop={props.driving || playing ? "always" : "demand"}
       camera={{ fov: VFOV, near: 4, far: 2600, position: [CX, 240, CZ + 260] }}
       gl={{

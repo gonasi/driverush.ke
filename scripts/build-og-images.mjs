@@ -32,6 +32,12 @@ const DEV_URL = process.env.DEV_URL ?? "http://localhost:5173";
 
 const WIDTH = 1200;
 const HEIGHT = 630;
+/**
+ * Pixels per CSS pixel. Social cards stay at 1 (1200×630 is what the sites
+ * want). `SCALE=2` is for the board still, which is shown large on retina
+ * phones and has to stay sharp there.
+ */
+const SCALE = Number(process.env.SCALE ?? 1);
 
 /**
  * Keep in step with OG_CARDS in `app/lib/og-cards.ts`.
@@ -46,7 +52,12 @@ const CARDS = [
   // The 3D still of the board game. It comes first because the board's social
   // card below shows it. After capturing it, compress it and build again
   // before capturing "board":
-  //   sips -s format jpeg -s formatOptions 70 -Z 1200 public/og/board-3d.png \
+  // Capture it at twice the size, then make a large and a small file, which
+  // `board-thumb.tsx` offers with srcset:
+  //   SCALE=2 DEV_URL=http://localhost:5190 npm run build:og -- board-3d
+  //   sips -s format jpeg -s formatOptions 82 -Z 2400 public/og/board-3d.png \
+  //     --out public/assets/board/poster-2400.jpg
+  //   sips -s format jpeg -s formatOptions 78 -Z 1200 public/og/board-3d.png \
   //     --out public/assets/board/poster.jpg && rm public/og/board-3d.png
   { id: "board-3d", settleMs: 25000, minBytes: 200_000 },
   { id: "default", settleMs: 2500, minBytes: 20_000 },
@@ -115,7 +126,7 @@ async function capture(chrome, card, attempt = 1) {
       // shows up as an empty white tile on the 3D card.
       "--run-all-compositor-stages-before-draw",
       "--disable-new-content-rendering-timeout",
-      "--force-device-scale-factor=1",
+      `--force-device-scale-factor=${SCALE}`,
       `--window-size=${WIDTH},${HEIGHT}`,
       // Lets the page's own timers, fonts and model loads finish before the
       // shot without us guessing at a wall-clock sleep.

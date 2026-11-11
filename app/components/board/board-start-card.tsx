@@ -24,7 +24,7 @@ export function BoardStartCard() {
           Learn the Model Town Board level by level, then drive it and get told
           which rule you broke. Free, no signup.
         </span>
-        <span className="mt-1 inline-flex w-fit items-center gap-2 border-2 border-ink bg-rush px-3 py-2 font-display text-[12.5px] font-extrabold uppercase tracking-wider text-white">
+        <span className="mt-1 inline-flex w-fit items-center gap-2 rounded-soft bg-rush px-3.5 py-2 font-display text-[12.5px] font-bold uppercase tracking-wide text-white">
           <Icon icon={PlayIcon} size={14} />
           See the levels
         </span>

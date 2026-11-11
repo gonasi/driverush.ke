@@ -1,9 +1,8 @@
 /**
- * DriveRush home. One thing to do first: the Model Town Board, which is what
- * most learners are after, as a picture and a Start driving button that opens
- * the game on its own page. One other choice under it: the road signs, with
- * both trainers side by side. Then why the method works, and the guides, kept
- * short. The ten-sign check lives on the road signs page.
+ * DriveRush home. One thing to do: the Model Town Board, which is what most
+ * learners are after, as a picture and one button that starts the course or
+ * carries on with it. One other choice under it: the road signs, as two short
+ * rows. Nothing else. The guides are a tab away, and in the footer.
  */
 import type { Route } from "./+types/home";
 
@@ -17,12 +16,9 @@ import {
   websiteLd,
 } from "~/lib/site";
 
-import { Rail } from "~/components/brand/rail";
 import { SiteFooter } from "~/components/brand/site-footer";
 import { SiteNav } from "~/components/brand/site-nav";
-import { HomeGuides } from "~/components/home/home-guides";
 import { HomeHero } from "~/components/home/home-hero";
-import { HomeMethod } from "~/components/home/home-method";
 import { HomeSigns } from "~/components/home/home-signs";
 
 export function meta(_: Route.MetaArgs) {
@@ -56,11 +52,8 @@ export default function Home() {
     <>
       <SiteNav />
       <main className="min-h-screen text-ink">
-        <Rail />
         <HomeHero />
         <HomeSigns />
-        <HomeMethod />
-        <HomeGuides />
       </main>
       <SiteFooter />
     </>

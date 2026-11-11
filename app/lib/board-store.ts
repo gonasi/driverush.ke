@@ -59,6 +59,8 @@ export type BoardSettings = {
   assist?: boolean;
   /** Which car to drive. Left out, or "random", is a different one each visit. */
   car?: BoardCarSetting;
+  /** The first-drive tips have been read or skipped. */
+  coached?: boolean;
 };
 export const DEFAULT_BOARD_SETTINGS: BoardSettings = {
   sound: true,
@@ -394,7 +396,9 @@ export const useBoardStore = create<BoardState>()(
             before.mode === "drive" &&
             task &&
             before.phase !== "complete" &&
-            before.phase !== "ready"
+            before.phase !== "ready" &&
+            // A level that was passed is finished, not walked away from.
+            !(before.level && before.phase === "passed")
           ) {
             analytics.boardAbandoned({
               challenge_id: task.id,
@@ -512,7 +516,7 @@ export const useBoardStore = create<BoardState>()(
 
         setSetting: (patch) =>
           set((s) => ({ settings: { ...s.settings, ...patch } })),
-        resetProgress: () => set({ progress: {}, bestStars: {} }),
+        resetProgress: () => set({ progress: {}, bestStars: {}, learned: [] }),
       };
     },
     {

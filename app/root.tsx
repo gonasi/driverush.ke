@@ -1,3 +1,4 @@
+import { TabBar } from "~/components/brand/tab-bar";
 import {
   isRouteErrorResponse,
   Link,
@@ -145,6 +146,7 @@ export default function App() {
       >
         <Outlet />
       </div>
+      <TabBar />
       <AdModal />
     </AdProvider>
   );

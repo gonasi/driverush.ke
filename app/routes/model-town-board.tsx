@@ -1,8 +1,9 @@
 /**
- * `/model-town-board`: the way into the board game, with the guide under it.
- * The game is one tap away, on its own page (`/model-town-board/play`), and
- * the guide stays in the server's HTML for the learners who arrive searching
- * for how the board works.
+ * `/model-town-board`: the board course. One button starts it or carries on,
+ * and every unit and level is listed under it. The game is one tap away, on
+ * its own page (`/model-town-board/play`). The guide is folded under the
+ * levels: still on this page and in the server's HTML, for the learners who
+ * arrive searching for how the board works.
  */
 import type { Route } from "./+types/model-town-board";
 
@@ -18,8 +19,9 @@ import {
   webAppLd,
 } from "~/lib/site";
 
-import { BoardLobby } from "~/components/board/board-lobby";
+import { BoardLevels } from "~/components/board/board-levels";
 import { useBoardPage } from "~/components/board/use-board-page";
+import { GuideFold } from "~/components/brand/guide-fold";
 import { GuideLayout } from "~/components/brand/guide-layout";
 
 const PATH = BOARD_PATH;
@@ -65,17 +67,24 @@ export default function ModelTownBoard() {
 
   return (
     <GuideLayout
-      kicker="Trainer · Model Town Board"
+      kicker="Model Town Board"
       title={
         <>
           Model Town Board. <em>Drive it.</em>
         </>
       }
-      lede="Pick your lane, take the roundabout, and stop where the examiner asks. Break a lane rule and you're told which one. Free, no signup."
+      lede="Learn the board and the lanes, then drive them. Break a rule and you're told which one. Free, no signup."
       checked={CHECKED}
-      lead={<BoardLobby />}
+      byline={false}
+      lead={<BoardLevels />}
     >
-      <Body />
+      <GuideFold
+        id="guide"
+        title="Read the guide"
+        hint="How the board works, the lane and route rules, and what you are tested on."
+      >
+        <Body />
+      </GuideFold>
     </GuideLayout>
   );
 }

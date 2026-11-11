@@ -1,12 +1,12 @@
 /**
  * The Model Town Board game: the table, the examiner's task and the joystick,
  * filling the screen. It lives on the play page (`routes/board-play.tsx`).
- * The way in, with its picture and buttons, is `board-lobby.tsx`.
+ * The way in is the Board page (`board-levels.tsx`).
  * The store (`board-store.ts`) owns the run; this is the shell.
  */
 import * as React from "react";
 import { createPortal } from "react-dom";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useShallow } from "zustand/react/shallow";
 
 import { resolveCar } from "~/lib/board/cars";
@@ -52,6 +52,7 @@ import {
   CloseIcon,
   InfoIcon,
   PlayIcon,
+  MenuIcon,
   RefreshIcon,
   SettingsIcon,
   StarIcon,
@@ -566,6 +567,18 @@ function WatchCard({
   );
 }
 
+const hudButton =
+  "inline-flex size-11 items-center justify-center rounded-md border-2 border-white/15 bg-[#101114]/85 outline-none transition-colors hover:bg-white/15 focus-visible:border-white";
+const moreItem =
+  "flex min-h-11 items-center gap-2.5 rounded-sm px-2.5 text-left text-[14px] font-semibold text-white outline-none transition-colors hover:bg-white/10 focus-visible:bg-white/10";
+
+/** Said once, on a learner's first drive. */
+const COACH_STEPS = [
+  "Push the joystick toward where you want to go. Let go to stop.",
+  "The green box is where the task ends. Stop inside it. The small map shows where it is.",
+  "Stuck? Hint shows the next step, or drives the task for you to watch.",
+] as const;
+
 /**
  * The game itself: the table, the examiner's task and the joystick, filling
  * the screen. It draws nothing until the store has a round or a lesson open,
@@ -614,6 +627,13 @@ export function BoardGame() {
   const [wrongStep, setWrongStep] = React.useState<number | null>(null);
   // Asked before a drive that is under way is thrown away.
   const [leaving, setLeaving] = React.useState(false);
+  // Restart, Settings and the zoom buttons, behind one button.
+  const [moreOpen, setMoreOpen] = React.useState(false);
+  const [coachStep, setCoachStep] = React.useState(0);
+  const coaching = !s.settings.coached;
+  const setSetting = useBoardStore((st) => st.setSetting);
+  const endCoach = () => setSetting({ coached: true });
+  const navigate = useNavigate();
   // The board is drawn. Until then only the loader shows: no task, no joystick.
   const [painted, setPainted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
@@ -631,6 +651,7 @@ export function BoardGame() {
   // Any new attempt, or the drive ending, withdraws the question.
   React.useEffect(() => {
     setLeaving(false);
+    setMoreOpen(false);
   }, [s.phase, s.attempt]);
   const heldRef = React.useRef({ settingsOpen, leaving });
   heldRef.current = { settingsOpen, leaving };
@@ -680,9 +701,13 @@ export function BoardGame() {
   // Reading or watching: no task, no clock, no joystick.
   const offClock = s.mode !== "drive";
   const nextUp = level ? levelAfter(level) : undefined;
+  const nextRef = React.useRef<string | null>(null);
+  nextRef.current = nextUp?.id ?? null;
   // A popup is over the bottom of the screen. On a phone the clock and the
   // minimap step aside for it, so the zoom buttons stay clear above it.
   const sheetUp = s.phase !== "driving";
+  // A popup is up, or the leave question: the other controls step back.
+  const quiet = sheetUp || leaving;
   const reverseTask =
     challenge != null && isRouteTask(challenge) && challenge.reverse;
   const last = s.pos >= s.queue.length - 1;
@@ -700,8 +725,13 @@ export function BoardGame() {
       if (e.key === "Escape") askRef.current();
       if (e.key === "Enter") {
         if (store.phase === "fault") store.retry();
-        // A level's pass card has links on it, not a next task.
-        if (store.phase === "passed" && !store.level) store.next();
+        if (store.phase === "passed") {
+          // A level's pass card goes on to the next level, not a next task.
+          if (!store.level) store.next();
+          else if (nextRef.current) {
+            navigate(levelHref(nextRef.current), { replace: true });
+          }
+        }
         if (store.phase === "watch") store.resume();
       }
     };
@@ -710,6 +740,7 @@ export function BoardGame() {
       document.body.style.overflow = before;
       window.removeEventListener("keydown", onKey);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- navigate is stable
   }, [s.overlayOpen]);
 
   // The green box of a parking task moves with the parked cars.
@@ -756,7 +787,7 @@ export function BoardGame() {
             everywhere.
           </p>
           <Button variant="paper" onClick={s.exit}>
-            Back to the guide
+            Close
           </Button>
         </div>
       ) : (
@@ -773,6 +804,19 @@ export function BoardGame() {
           onPainted={() => setPainted(true)}
           className="absolute inset-0"
         />
+      )}
+
+      {/* While the table loads there is no task bar yet, so the way out is
+          drawn here. Learn and level panels bring their own. */}
+      {!unsupported && !painted && s.mode === "drive" && (
+        <button
+          type="button"
+          aria-label="Close"
+          onClick={s.exit}
+          className="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-30 inline-flex size-11 items-center justify-center rounded-md border-2 border-white/15 bg-[#101114]/85 outline-none transition-colors hover:bg-white/15 focus-visible:border-white sm:right-6 sm:top-5"
+        >
+          <Icon icon={CloseIcon} size={20} />
+        </button>
       )}
 
       <BoardFps />
@@ -840,32 +884,61 @@ export function BoardGame() {
 
           <div className="flex shrink-0 flex-col items-end gap-2">
             <div className="pointer-events-auto flex items-center gap-2">
+              {/* A popup owns the screen: only the way out stays beside it. */}
+              {!quiet && (
+                <button
+                  type="button"
+                  aria-label="More: restart, settings, zoom"
+                  aria-expanded={moreOpen}
+                  aria-controls="board-more"
+                  onClick={() => setMoreOpen((v) => !v)}
+                  className={cn(hudButton, moreOpen && "border-white bg-white/15")}
+                >
+                  <Icon icon={MenuIcon} size={20} />
+                </button>
+              )}
               <button
                 type="button"
-                aria-label="Restart this task"
-                onClick={s.restart}
-                disabled={s.phase !== "driving"}
-                className="inline-flex size-11 items-center justify-center rounded-md border-2 border-white/15 bg-[#101114]/85 outline-none transition-colors hover:bg-white/15 focus-visible:border-white disabled:opacity-40"
-              >
-                <Icon icon={RefreshIcon} size={20} />
-              </button>
-              <button
-                type="button"
-                aria-label="Board settings: where you stand, your car, lane assist, sound"
-                onClick={() => setSettingsOpen(true)}
-                className="inline-flex size-11 items-center justify-center rounded-md border-2 border-white/15 bg-[#101114]/85 outline-none transition-colors hover:bg-white/15 focus-visible:border-white"
-              >
-                <Icon icon={SettingsIcon} size={20} />
-              </button>
-              <button
-                type="button"
-                aria-label="Exit the board"
+                aria-label="Close"
                 onClick={askToLeave}
-                className="inline-flex size-11 items-center justify-center rounded-md border-2 border-white/15 bg-[#101114]/85 outline-none transition-colors hover:bg-white/15 focus-visible:border-white"
+                className={hudButton}
               >
                 <Icon icon={CloseIcon} size={20} />
               </button>
             </div>
+            {moreOpen && !quiet && (
+              <div
+                id="board-more"
+                className="dr-rise pointer-events-auto grid w-48 gap-1 rounded-md border-2 border-white/15 bg-[#101114]/95 p-1.5"
+              >
+                <button
+                  type="button"
+                  className={moreItem}
+                  onClick={() => {
+                    setMoreOpen(false);
+                    s.restart();
+                  }}
+                >
+                  <Icon icon={RefreshIcon} size={18} />
+                  Restart
+                </button>
+                <button
+                  type="button"
+                  className={moreItem}
+                  onClick={() => {
+                    setMoreOpen(false);
+                    setSettingsOpen(true);
+                  }}
+                >
+                  <Icon icon={SettingsIcon} size={18} />
+                  Settings
+                </button>
+                <BoardZoomButtons
+                  driving
+                  className="flex-row justify-between border-t border-white/15 pt-1.5 [&>button]:flex-1"
+                />
+              </div>
+            )}
             <div
               className={cn(
                 "flex items-center gap-2 rounded-md border-2 border-white/15 bg-[#101114]/85 px-2.5 py-1.5 font-mono text-[12px] font-bold",
@@ -889,13 +962,53 @@ export function BoardGame() {
                 />
               </div>
             )}
-            <BoardZoomButtons
-              driving={s.phase === "driving"}
-              className="pointer-events-auto"
-            />
           </div>
         </div>
       )}
+
+      {/* First drive only: three short tips, one at a time. */}
+      {!unsupported &&
+        painted &&
+        coaching &&
+        s.mode === "drive" &&
+        s.phase === "driving" &&
+        !held && (
+          <div
+            role="status"
+            className="dr-rise absolute inset-x-0 bottom-[calc(13.5rem+env(safe-area-inset-bottom))] z-30 mx-auto w-[min(19rem,calc(100%-1.5rem))] rounded-md border-2 border-[#17181b] bg-[#f6c416] p-3 text-[#17181b] shadow-[0_6px_0_rgba(0,0,0,0.45)]"
+          >
+            <p className="m-0 text-[14px] font-bold leading-snug">
+              {COACH_STEPS[coachStep]}
+            </p>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <span className="font-mono text-[10.5px] font-bold uppercase tracking-widest">
+                Tip {coachStep + 1} of {COACH_STEPS.length}
+              </span>
+              <span className="flex items-center gap-1">
+                {coachStep < COACH_STEPS.length - 1 && (
+                  <button
+                    type="button"
+                    onClick={endCoach}
+                    className="min-h-11 px-3 font-mono text-[11px] font-bold uppercase tracking-widest underline underline-offset-4 outline-none"
+                  >
+                    Skip
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() =>
+                    coachStep < COACH_STEPS.length - 1
+                      ? setCoachStep((n) => n + 1)
+                      : endCoach()
+                  }
+                  className="min-h-11 rounded-md bg-[#17181b] px-4 font-mono text-[11px] font-bold uppercase tracking-widest text-white outline-none focus-visible:ring-2 focus-visible:ring-white"
+                >
+                  {coachStep < COACH_STEPS.length - 1 ? "Next" : "Got it"}
+                </button>
+              </span>
+            </div>
+          </div>
+        )}
 
       {!unsupported &&
         painted &&
@@ -908,6 +1021,7 @@ export function BoardGame() {
         <BoardControls
           active={s.phase === "driving" && !held}
           reverse={reverseTask}
+          quietHint={coaching}
           note={
             reverseTask
               ? "To reverse: stop, pull the joystick back and hold it. The back of the car goes where you point."
@@ -934,7 +1048,7 @@ export function BoardGame() {
             id="board-leave-title"
             className="m-0 font-display text-[clamp(22px,5.5vw,28px)] font-extrabold uppercase leading-none tracking-tight"
           >
-            Leave the board?
+            Close the board?
           </h2>
           <p className="m-0 text-[13.5px] leading-snug text-ink-2">
             The tasks you have passed are saved. This one starts again next
@@ -950,7 +1064,7 @@ export function BoardGame() {
               Keep driving
             </Button>
             <Button variant="paper" size="lg" onClick={askToLeave}>
-              Leave
+              Close
             </Button>
           </div>
         </BoardSheet>
@@ -1006,7 +1120,7 @@ export function BoardGame() {
             onClick={s.exit}
             className="min-h-11 w-full text-center text-[13.5px] font-semibold text-ink-2 underline underline-offset-4 outline-none hover:text-ink focus-visible:text-ink"
           >
-            Stop for now
+            Close
           </button>
         </BoardSheet>
       )}
@@ -1055,7 +1169,7 @@ export function BoardGame() {
               size="lg"
               className="h-auto min-h-12 w-full whitespace-normal py-2 text-center leading-snug"
             >
-              <Link to={levelHref(nextUp.id)}>
+              <Link to={levelHref(nextUp.id)} replace>
                 Next: level {nextUp.n}, {nextUp.title}
               </Link>
             </Button>
@@ -1073,7 +1187,9 @@ export function BoardGame() {
                   Again
                 </Button>
                 <Button asChild variant="paper" size="lg" className="flex-1">
-                  <Link to={BOARD_LEVELS_PATH}>All levels</Link>
+                  <Link to={BOARD_LEVELS_PATH} replace>
+                    All levels
+                  </Link>
                 </Button>
               </>
             ) : (

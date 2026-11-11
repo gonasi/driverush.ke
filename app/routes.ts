@@ -26,8 +26,10 @@ export default [
   route("model-town-board", "routes/model-town-board.tsx"),
   // The game alone, with no page under it. Every way into driving links here.
   route("model-town-board/play", "routes/board-play.tsx"),
-  // The board course: every unit and level, each linking into the game.
-  route("model-town-board/levels", "routes/board-levels.tsx"),
+  // The levels had a page of their own for a day. They are the Board page now.
+  route("model-town-board/levels", "routes/legacy-redirects.ts", {
+    id: "legacy-board-levels",
+  }),
   // The board's guides. One file, four routes: the path picks the guide.
   route("model-town-board/questions", "routes/board-guide.tsx", {
     id: "board-guide-questions",
@@ -43,6 +45,7 @@ export default [
   }),
 
   // Permanent guides. MDX bodies live in `app/guides/`.
+  route("guides", "routes/guides.tsx"),
   route("ntsa-test", "routes/ntsa-test.tsx"),
   route("driving-schools-kenya", "routes/driving-schools-kenya.tsx"),
   route("derevaprep-alternative", "routes/derevaprep-alternative.tsx"),

@@ -45,7 +45,6 @@ export default function Privacy() {
       lede="No accounts. Here's what stays on your device and what we measure."
       checked={CHECKED}
       dateLabel="Updated"
-      showTrainers={false}
       showAd={false}
     >
       <Body />

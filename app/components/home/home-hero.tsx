@@ -5,21 +5,21 @@
  */
 import { Link } from "react-router";
 
-import { BOARD_LEVELS_PATH, BOARD_PLAY_PATH } from "~/lib/board-guides";
+import { COURSE_LEVELS } from "~/lib/board/curriculum";
 import { stagger } from "~/lib/motion";
 
-import { useCourseStart } from "~/components/board/board-lobby";
+import { useCourseStart } from "~/components/board/use-course-start";
 import { BoardThumb } from "~/components/board/board-thumb";
 import { Icon } from "~/components/brand/icon";
 import { PlayIcon } from "~/components/brand/icons";
 import { Button } from "~/components/ui/button";
 
 export function HomeHero() {
-  const { href, label, detail } = useCourseStart();
+  const { href, label, detail, done } = useCourseStart();
   return (
     <section
       id="try-now"
-      className="mx-auto w-full max-w-4xl scroll-mt-20 px-5 pb-12 pt-5 sm:px-9"
+      className="mx-auto w-full max-w-4xl scroll-mt-20 px-5 pb-10 pt-5 sm:px-9"
     >
       <header className="grid gap-3">
         <p className="dr-rise m-0 font-mono text-[10.5px] font-bold uppercase tracking-widest text-ink-3">
@@ -45,7 +45,7 @@ export function HomeHero() {
         <Link
           to={href}
           aria-label={`${label}: ${detail}`}
-          className="group block border-2 border-ink shadow-stamp outline-none"
+          className="group block overflow-hidden rounded-soft border border-ink/25 outline-none"
         >
           {/* Shallow on a wide screen, so the button stays above the fold. */}
           <BoardThumb
@@ -53,7 +53,7 @@ export function HomeHero() {
             className="aspect-[4/3] sm:aspect-[5/2] lg:aspect-[3/1]"
           />
         </Link>
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
           <Button
             asChild
             variant="rush"
@@ -65,18 +65,12 @@ export function HomeHero() {
               {label}
             </Link>
           </Button>
-          <Link
-            to={BOARD_LEVELS_PATH}
-            className="inline-flex min-h-11 items-center font-sans text-[14.5px] font-bold text-ink underline decoration-rush decoration-2 underline-offset-4 outline-none hover:text-rush focus-visible:text-rush"
-          >
-            See all the levels
-          </Link>
-          <Link
-            to={BOARD_PLAY_PATH}
-            className="inline-flex min-h-11 items-center font-sans text-[14.5px] font-bold text-ink underline decoration-rush decoration-2 underline-offset-4 outline-none hover:text-rush focus-visible:text-rush"
-          >
-            Just drive
-          </Link>
+          <p className="m-0 min-w-0 flex-1 text-[14px] leading-snug text-ink-2">
+            <strong className="block text-ink">{detail}</strong>
+            <span className="font-mono text-[11px] uppercase tracking-widest text-ink-3">
+              {done} of {COURSE_LEVELS.length} levels done
+            </span>
+          </p>
         </div>
       </div>
     </section>

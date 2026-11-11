@@ -13,6 +13,7 @@ import { redirect, type LoaderFunctionArgs } from "react-router";
 const EXACT_TARGETS: Record<string, string> = {
   "/blogs/ntsa-test-prep-kenya": "/ntsa-test",
   "/blogs/driving-schools-in-kenya": "/driving-schools-kenya",
+  "/model-town-board/levels": "/model-town-board",
 };
 
 /** By first path segment. */

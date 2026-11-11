@@ -28,6 +28,14 @@ function circle(x: number, y: number, r: number) {
   return `M${x - r} ${y}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0z`;
 }
 
+// Places
+export const HomeIcon: IconDef = {
+  s: "M4 11l8-7 8 7v9h-5.5v-6h-5v6H4z",
+};
+export const BookIcon: IconDef = {
+  s: "M5 4h11l3 3v13H5zM9 10h6M9 14h6",
+};
+
 // Move
 export const ArrowRightIcon: IconDef = {
   s: "M4 12h15M13.5 6.5L19 12l-5.5 5.5",

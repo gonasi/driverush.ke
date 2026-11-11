@@ -474,6 +474,8 @@ function Board3D() {
             driving={false}
             attempt={0}
             tier="high"
+            // the capture runs at a higher device scale for a sharp still
+            pixelRatio={window.devicePixelRatio}
             seat={seat}
             car="saloon"
             onReady={pose}

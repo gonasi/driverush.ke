@@ -39,7 +39,7 @@ function TryItNowPanel() {
         </p>
       </div>
       <Button variant="rush" size="sm" asChild>
-        <Link to="/#try-now">
+        <Link to="/road-signs">
           Start training
           <Icon icon={ArrowRightIcon} size={14} />
         </Link>

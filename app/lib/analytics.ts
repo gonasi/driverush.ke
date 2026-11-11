@@ -241,6 +241,10 @@ export const analytics = {
     lesson_id: string;
   }) => emit("board_lesson_viewed", args),
 
+  /** A tab in the phone's bottom bar was tapped. Shows how people move about. */
+  navTabClicked: (args: { tab: string; from: string }) =>
+    emit("nav_tab_clicked", args),
+
   /** A level of the board course was opened, from the list or from Continue. */
   boardLevelStarted: (args: {
     level: string;

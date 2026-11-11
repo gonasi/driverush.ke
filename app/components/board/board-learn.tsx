@@ -9,6 +9,7 @@ import * as React from "react";
 import { Link } from "react-router";
 
 import { analytics } from "~/lib/analytics";
+import { BOARD_PATH } from "~/lib/board-guides";
 import { RULES_SOURCE, laneRule } from "~/lib/board/board-rules";
 import { OPTION_CODES } from "~/lib/board/geometry";
 import { BOARD_FEATURES } from "~/lib/board/features";
@@ -103,7 +104,6 @@ export function BoardLearn({
   const learned = useBoardStore((s) => s.learned);
   const markLearned = useBoardStore((s) => s.markLearned);
   const exit = useBoardStore((s) => s.exit);
-  const start = useBoardStore((s) => s.start);
 
   const [tab, setTab] = React.useState<Tab>("lanes");
   const [arm, setArm] = React.useState<ArmId>("S");
@@ -248,7 +248,7 @@ export function BoardLearn({
           <div className="flex items-center gap-1.5">
             <button
               type="button"
-              aria-label="Board settings: where you stand, sound"
+              aria-label="Settings"
               onClick={onSettings}
               className="inline-flex size-11 items-center justify-center rounded-md border-2 border-white/15 outline-none transition-colors hover:bg-white/15 focus-visible:border-white"
             >
@@ -256,7 +256,7 @@ export function BoardLearn({
             </button>
             <button
               type="button"
-              aria-label="Close the board"
+              aria-label="Close"
               onClick={exit}
               className="inline-flex size-11 items-center justify-center rounded-md border-2 border-white/15 outline-none transition-colors hover:bg-white/15 focus-visible:border-white"
             >
@@ -515,14 +515,14 @@ export function BoardLearn({
             </div>
           )}
 
-          <button
-            type="button"
-            onClick={() => start()}
-            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md border-2 border-white/25 min-h-12 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-white outline-none transition-colors hover:bg-white/10 focus-visible:border-white"
+          <Link
+            to={BOARD_PATH}
+            replace
+            className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md border-2 border-white/25 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-white outline-none transition-colors hover:bg-white/10 focus-visible:border-white"
           >
-            Drive the tasks yourself
+            Go to the levels
             <Icon icon={ArrowRightIcon} size={14} />
-          </button>
+          </Link>
         </div>
       </section>
     </div>

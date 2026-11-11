@@ -1,8 +1,10 @@
 /**
- * The board course as a list: every unit, and every level in it, in the order
- * to take them. Each row opens the game on that level. All of it is in the
- * server's HTML. What is done, and which level is next, is filled in from this
- * browser's saved progress once the page is running.
+ * The Board page's working part: the picture, one button that starts the
+ * course or carries on with it, and every unit with its levels. The unit the
+ * learner is in stands open and the others open on a tap. Each row opens the
+ * game on that level. All of it is in the server's HTML. What is done, and
+ * which level is next, is filled in from this browser's saved progress once
+ * the page is running.
  */
 import { Link } from "react-router";
 
@@ -20,6 +22,7 @@ import {
 import { useCourseProgress } from "~/lib/use-course-progress";
 import { cn } from "~/lib/utils";
 
+import { BoardThumb } from "~/components/board/board-thumb";
 import { Icon } from "~/components/brand/icon";
 import {
   CheckIcon,
@@ -58,15 +61,15 @@ function LevelRow({
         to={level.kind === "mock" ? BOARD_PLAY_PATH : levelHref(level.id)}
         aria-current={next ? "step" : undefined}
         className={cn(
-          "flex min-h-14 items-center gap-3 border-2 border-ink px-3 py-2.5 text-ink no-underline outline-none transition-colors",
+          "flex min-h-14 items-center gap-3 border px-3 py-2.5 text-ink no-underline outline-none transition-colors",
           next
-            ? "bg-amber text-amber-foreground shadow-stamp hover:brightness-105 focus-visible:brightness-105"
-            : "bg-surface hover:bg-paper-2 focus-visible:bg-paper-2",
+            ? "border-ink bg-amber text-amber-foreground hover:brightness-105 focus-visible:brightness-105"
+            : "border-ink/20 bg-surface hover:bg-paper-2 focus-visible:bg-paper-2",
         )}
       >
         <span
           className={cn(
-            "flex size-9 shrink-0 items-center justify-center border-2 border-ink font-mono text-[13px] font-bold tabular-nums",
+            "flex size-9 shrink-0 items-center justify-center border border-ink/40 font-mono text-[13px] font-bold tabular-nums",
             done
               ? "bg-kenya-green text-kenya-green-foreground"
               : "bg-paper-2 text-ink",
@@ -117,93 +120,132 @@ function LevelRow({
   );
 }
 
+const quiet =
+  "inline-flex min-h-11 items-center font-sans text-[14.5px] font-bold text-ink underline decoration-rush decoration-2 underline-offset-4 outline-none hover:text-rush focus-visible:text-rush";
+
 export function BoardLevels({ className }: { className?: string }) {
   const saved = useCourseProgress();
   const empty = { learned: [], bestStars: {} };
   const done = saved ? doneCount(saved) : 0;
   const next = nextLevel(saved ?? empty);
+  const mock = next.kind === "mock";
+  const href = mock ? BOARD_PLAY_PATH : levelHref(next.id);
+  const label = mock
+    ? "Take the mock test"
+    : done > 0
+      ? `Continue: level ${next.n}`
+      : "Start level 1";
+  const units = UNITS.filter((unit) => unit.id !== "mock");
+  // The unit the learner is in stands open. The rest open on a tap. All of
+  // them are in the page either way.
+  const openUnit = mock ? null : next.unit;
 
   return (
-    <div className={cn("grid gap-8", className)}>
-      <div className="grid gap-3 border-2 border-ink bg-surface p-4 shadow-stamp">
-        <div>
-          <div className="mb-1.5 flex items-center justify-between gap-2 font-mono text-[10.5px] font-bold uppercase tracking-widest text-ink-3">
-            <span>Levels done</span>
-            <span className="tabular-nums">
-              {done} of {TOTAL}
-            </span>
+    <div id="levels" className={cn("grid scroll-mt-20 gap-5", className)}>
+      <div className="overflow-hidden rounded-soft border border-ink/25">
+        <Link
+          to={href}
+          aria-label={`${label}: ${next.title}`}
+          className="group block outline-none"
+        >
+          <BoardThumb priority className="aspect-[5/2] sm:aspect-[3/1]" />
+        </Link>
+        <div className="grid gap-3 bg-surface p-4">
+          <Button asChild variant="rush" size="lg" className="w-full">
+            <Link to={href}>
+              <Icon icon={PlayIcon} size={18} />
+              {label}
+            </Link>
+          </Button>
+          <div>
+            <div className="mb-1.5 flex items-baseline justify-between gap-3">
+              <span className="min-w-0 text-[14px] font-bold leading-snug text-ink">
+                {mock ? "Every level is done." : next.title}
+              </span>
+              <span className="shrink-0 font-mono text-[10.5px] font-bold uppercase tracking-widest tabular-nums text-ink-3">
+                {done} of {TOTAL}
+              </span>
+            </div>
+            <Progress
+              value={(done / TOTAL) * 100}
+              tone="green"
+              showTicks={false}
+              aria-label="Levels done"
+              className="h-2.5"
+            />
           </div>
-          <Progress
-            value={(done / TOTAL) * 100}
-            tone="green"
-            showTicks={false}
-            aria-label="Levels done"
-            className="h-3"
-          />
         </div>
-        <Button asChild variant="rush" size="lg" className="h-auto min-h-12 w-full whitespace-normal py-2 text-center leading-snug">
-          <Link
-            to={next.kind === "mock" ? BOARD_PLAY_PATH : levelHref(next.id)}
-          >
-            <Icon icon={PlayIcon} size={18} />
-            {next.kind === "mock"
-              ? "All done. Take the mock test"
-              : done > 0
-                ? `Continue: level ${next.n}, ${next.title}`
-                : `Start level 1: ${next.title}`}
-          </Link>
-        </Button>
-        <p className="m-0 text-center text-[13px] leading-snug text-ink-2">
-          Every level is open. Take them in order, or jump to the one you need.
-        </p>
       </div>
 
-      {UNITS.map((unit, i) => {
-        const course = unit.levels.filter((l) => l.kind !== "mock");
-        const unitDone = saved
-          ? course.filter((l) => levelDone(l, saved)).length
-          : 0;
-        return (
-          <section key={unit.id} aria-labelledby={`unit-${unit.id}`}>
-            <div className="mb-3 flex items-end justify-between gap-3 border-b-2 border-ink pb-2">
-              <div>
-                <p className="m-0 font-mono text-[10.5px] font-bold uppercase tracking-widest text-ink-3">
-                  Unit {i + 1}
-                </p>
-                <h2
-                  id={`unit-${unit.id}`}
-                  className="m-0 mt-0.5 font-display text-[clamp(20px,4.5vw,26px)] font-extrabold uppercase leading-none tracking-tight text-ink"
-                >
-                  {unit.title}
-                </h2>
-              </div>
-              {course.length > 0 && (
-                <span className="shrink-0 font-mono text-[11px] font-bold tabular-nums text-ink-3">
-                  {unitDone} / {course.length}
+      <div className="grid gap-2">
+        {units.map((unit, i) => {
+          const unitDone = saved
+            ? unit.levels.filter((l) => levelDone(l, saved)).length
+            : 0;
+          const complete = unitDone === unit.levels.length;
+          return (
+            <details
+              key={unit.id}
+              id={`unit-${unit.id}`}
+              open={unit.id === openUnit}
+              className="group scroll-mt-20 border border-ink/25 bg-surface"
+            >
+              <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 px-4 py-3 outline-none transition-colors hover:bg-paper-2 focus-visible:bg-paper-2 [&::-webkit-details-marker]:hidden">
+                <span className="min-w-0 flex-1">
+                  <span className="block font-mono text-[10px] font-bold uppercase tracking-widest text-ink-3">
+                    Unit {i + 1}
+                  </span>
+                  <span className="block font-display text-[16px] font-extrabold uppercase leading-tight tracking-tight text-ink">
+                    {unit.title}
+                  </span>
                 </span>
-              )}
-            </div>
-            <p className="m-0 mb-3 text-[14.5px] leading-snug text-ink-2">
-              {unit.blurb}
-            </p>
-            <ol className="m-0 grid list-none gap-2 p-0 sm:grid-cols-2">
-              {unit.levels.map((level) => (
-                <LevelRow
-                  key={level.id}
-                  level={level}
-                  done={saved ? levelDone(level, saved) : false}
-                  next={saved != null && level.id === next.id}
-                  stars={
-                    saved && level.kind === "drive"
-                      ? (saved.bestStars[level.challenge] ?? 0)
-                      : 0
-                  }
+                <span
+                  className={cn(
+                    "inline-flex shrink-0 items-center gap-1 font-mono text-[11px] font-bold tabular-nums",
+                    complete ? "text-kenya-green" : "text-ink-3",
+                  )}
+                >
+                  {complete && <Icon icon={CheckIcon} size={12} />}
+                  {unitDone} / {unit.levels.length}
+                </span>
+                <span
+                  aria-hidden
+                  className="w-4 shrink-0 text-center font-display text-[22px] font-extrabold leading-none text-rush before:content-['+'] group-open:before:content-['−']"
                 />
-              ))}
-            </ol>
-          </section>
-        );
-      })}
+              </summary>
+              <div className="border-t border-ink/15 p-3">
+                <p className="m-0 mb-3 text-[14px] leading-snug text-ink-2">
+                  {unit.blurb}
+                </p>
+                <ol className="m-0 grid list-none gap-2 p-0 sm:grid-cols-2">
+                  {unit.levels.map((level) => (
+                    <LevelRow
+                      key={level.id}
+                      level={level}
+                      done={saved ? levelDone(level, saved) : false}
+                      next={saved != null && level.id === next.id}
+                      stars={
+                        saved && level.kind === "drive"
+                          ? (saved.bestStars[level.challenge] ?? 0)
+                          : 0
+                      }
+                    />
+                  ))}
+                </ol>
+              </div>
+            </details>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-6">
+        <Link to={BOARD_PLAY_PATH} className={quiet}>
+          Mock test
+        </Link>
+        <Link to={`${BOARD_PLAY_PATH}?learn=1`} className={quiet}>
+          Explore the board
+        </Link>
+      </div>
     </div>
   );
 }

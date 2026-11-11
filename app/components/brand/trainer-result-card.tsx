@@ -244,7 +244,16 @@ export function TrainerResultCard({
               {allKnown && (
                 <button
                   type="button"
-                  onClick={onResetMastery}
+                  onClick={() => {
+                    // It wipes everything learned, so it asks first.
+                    if (
+                      window.confirm(
+                        "Reset your progress? Everything marked as known starts again.",
+                      )
+                    ) {
+                      onResetMastery();
+                    }
+                  }}
                   className="mt-2 inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest text-ink-3 outline-none hover:text-ink focus-visible:text-ink"
                 >
                   <Icon
@@ -287,7 +296,10 @@ export function TrainerResultCard({
                   crossLink?.to ??
                   trainerHref(other.path, { codes: missedCodes, go: true })
                 }
-                onClick={onExit}
+                // A link of the caller's own leaves the page, which closes
+                // the game. Closing it here as well would send the learner
+                // two ways at once.
+                onClick={crossLink ? undefined : onExit}
               >
                 {crossLink?.label ??
                   `Try ${missed.length > 0 ? "them" : "signs"} ${other.label}`}

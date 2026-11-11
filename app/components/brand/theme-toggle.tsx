@@ -26,7 +26,7 @@ function ThemeToggle({ className }: { className?: string }) {
       aria-label="Toggle dark mode"
       title="Toggle dark mode"
       onClick={() => toggleTheme()}
-      className={cn("w-8 px-0", className)}
+      className={cn("w-9 px-0", className)}
     >
       <Icon
         icon={SunIcon}

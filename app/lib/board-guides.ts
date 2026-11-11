@@ -13,8 +13,11 @@ export const BOARD_PATH = "/model-town-board";
 /** The game on its own: nothing but the table. Every way in links here. */
 export const BOARD_PLAY_PATH = `${BOARD_PATH}/play`;
 
-/** The course: every unit and level, in the order to take them. */
-export const BOARD_LEVELS_PATH = `${BOARD_PATH}/levels`;
+/**
+ * The course: every unit and level, in the order to take them. It is the
+ * Board page itself; the list is the first thing on it.
+ */
+export const BOARD_LEVELS_PATH = BOARD_PATH;
 /** The game opened on one level of the course. */
 export const levelHref = (id: string) => `${BOARD_PLAY_PATH}?level=${id}`;
 

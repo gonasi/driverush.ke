@@ -150,8 +150,15 @@ export default function ShareLanding({ loaderData }: Route.ComponentProps) {
   );
 }
 
-const ENTRY_POINTS = SIGN_GAMES.map((game) => ({
-  href: game.to,
-  title: game.title,
-  blurb: game.blurb,
-}));
+const ENTRY_POINTS = [
+  {
+    href: "/model-town-board",
+    title: "Model Town Board",
+    blurb: "Learn the lanes and the roundabout level by level, then drive them.",
+  },
+  ...SIGN_GAMES.map((game) => ({
+    href: game.to,
+    title: game.title,
+    blurb: game.blurb,
+  })),
+];

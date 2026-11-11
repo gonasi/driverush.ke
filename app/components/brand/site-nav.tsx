@@ -1,40 +1,24 @@
 /**
- * Shared top navigation: the things you can train on, most wanted first. The
- * Model Town Board leads, then the two sign trainers and the full list of
- * signs. Blog lives in the footer and the mobile menu.
+ * Shared top bar. On a phone it is the logo and the light/dark switch: the
+ * tab bar at the bottom does the moving around (`tab-bar.tsx`). On a wide
+ * screen it carries the same four places as links, and one button that starts
+ * the board course or carries on with it.
  */
 import { Link, useLocation } from "react-router";
-import { Icon } from "~/components/brand/icon";
-import { ArrowRightIcon, MenuIcon } from "~/components/brand/icons";
 
-import { BOARD_PLAY_PATH } from "~/lib/board-guides";
-import { isNavLinkActive } from "~/lib/nav";
+import { SITE_TABS, activeTab } from "~/lib/nav";
 
-import { Button } from "~/components/ui/button";
-import {
-  Sheet,
-  SheetBody,
-  SheetClose,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "~/components/ui/sheet";
+import { useCourseStart } from "~/components/board/use-course-start";
 import { AppBar, AppBarLink } from "~/components/brand/app-bar";
+import { Icon } from "~/components/brand/icon";
+import { ArrowRightIcon } from "~/components/brand/icons";
 import { Logo } from "~/components/brand/logo";
-import { PoweredByGonasi } from "~/components/brand/powered-by-gonasi";
-
-export const NAV_LINKS = [
-  // The board is what most learners come for, so it leads.
-  { label: "Model Town Board", short: "Board", href: "/model-town-board" },
-  { label: "Pelican chart", href: "/road-signs/pelican" },
-  { label: "3D signs", href: "/road-signs/3d" },
-  // Exact match: the trainers live under this path and have their own items.
-  { label: "All signs", href: "/road-signs", exact: true },
-];
+import { Button } from "~/components/ui/button";
 
 export function SiteNav() {
-  const { pathname, search } = useLocation();
+  const { pathname } = useLocation();
+  const current = activeTab(pathname);
+  const { href, label } = useCourseStart();
   return (
     <AppBar
       brand={
@@ -44,86 +28,25 @@ export function SiteNav() {
       }
       nav={
         <>
-          {NAV_LINKS.map((l) => (
-            <AppBarLink
-              key={l.href}
-              asChild
-              active={
-                l.exact
-                  ? pathname === l.href
-                  : isNavLinkActive(l.href, pathname, search)
-              }
-            >
-              <Link to={l.href}>
-                {l.short ? (
-                  <>
-                    <span className="lg:hidden">{l.short}</span>
-                    <span className="hidden lg:inline">{l.label}</span>
-                  </>
-                ) : (
-                  l.label
-                )}
-              </Link>
+          {SITE_TABS.filter((tab) => tab.id !== "home").map((tab) => (
+            <AppBarLink key={tab.id} asChild active={tab.id === current}>
+              <Link to={tab.href}>{tab.label}</Link>
             </AppBarLink>
           ))}
         </>
       }
       trailing={
-        <>
-          <Button variant="rush" size="sm" asChild>
-            <Link to={BOARD_PLAY_PATH}>
-              Start
-              <Icon icon={ArrowRightIcon} size={14} className="dr-arrow" />
-            </Link>
-          </Button>
-
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button
-                variant="paper"
-                size="sm"
-                aria-label="Open menu"
-                className="md:hidden"
-              >
-                <Icon icon={MenuIcon} size={16} />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right">
-              <SheetHeader>
-                <SheetTitle>Menu</SheetTitle>
-              </SheetHeader>
-              <SheetBody>
-                <nav className="grid gap-3">
-                  {NAV_LINKS.map((l) => (
-                    <SheetClose asChild key={l.href}>
-                      <Link
-                        to={l.href}
-                        className="border-2 border-ink bg-surface px-4 py-3 font-display text-[13px] font-bold uppercase tracking-wider text-ink shadow-stamp-sm hover:bg-paper-3"
-                      >
-                        {l.label}
-                      </Link>
-                    </SheetClose>
-                  ))}
-                  <SheetClose asChild>
-                    <Link
-                      to="/blogs"
-                      className="border-2 border-ink bg-surface px-4 py-3 font-mono text-[12px] uppercase tracking-widest text-ink-2 hover:bg-paper-3"
-                    >
-                      Blog
-                    </Link>
-                  </SheetClose>
-                </nav>
-                <div className="mt-6 border-t border-dashed border-ink pt-4">
-                  <PoweredByGonasi
-                    variant="inline"
-                    tone="auto"
-                    utmMedium="mobile_menu"
-                  />
-                </div>
-              </SheetBody>
-            </SheetContent>
-          </Sheet>
-        </>
+        <Button
+          variant="rush"
+          size="sm"
+          asChild
+          className="hidden md:inline-flex"
+        >
+          <Link to={href}>
+            {label}
+            <Icon icon={ArrowRightIcon} size={14} className="dr-arrow" />
+          </Link>
+        </Button>
       }
     />
   );

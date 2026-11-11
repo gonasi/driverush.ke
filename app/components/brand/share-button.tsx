@@ -147,10 +147,10 @@ export function ShareButton({
                     setOpen(false);
                   }}
                   className={cn(
-                    "inline-flex items-center gap-2.5 border-2 border-ink bg-surface px-4 py-3",
-                    "font-display text-[13px] font-extrabold uppercase tracking-wider text-ink",
-                    "shadow-stamp-sm outline-none transition-colors hover:bg-paper-3",
-                    "focus-visible:bg-paper-3 active:translate-x-[3px] active:translate-y-[3px] active:shadow-none",
+                    "inline-flex items-center gap-2.5 rounded-soft border border-ink/25 bg-surface px-4 py-3",
+                    "font-display text-[13px] font-bold uppercase tracking-wide text-ink",
+                    "outline-none transition-colors hover:border-ink/60 hover:bg-paper-2",
+                    "focus-visible:border-ink/60 focus-visible:bg-paper-2 active:translate-y-px",
                   )}
                 >
                   <Icon

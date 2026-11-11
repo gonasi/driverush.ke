@@ -2,7 +2,8 @@
  * `/model-town-board/play`: the board game and nothing else. `?level=<id>`
  * opens one level of the course, `?task=<id>` starts one task, `?learn=1`
  * opens the board to explore, and with none of them it is a round of mixed
- * tasks. Leaving the game goes back to the Model Town Board page.
+ * tasks. Closing the game goes back to the page it was opened from, or to the
+ * Model Town Board page when it was opened cold.
  *
  * Search engines are pointed at that page, not this one: there is nothing here
  * to read.
@@ -62,7 +63,16 @@ export default function BoardPlay() {
 
   React.useEffect(() => {
     if (open) wasOpen.current = true;
-    else if (wasOpen.current) navigate(BOARD_PATH, { replace: true });
+    else if (wasOpen.current) {
+      // Close takes the learner back to the page they opened the game from.
+      // The router numbers the pages visited on the site. Above 0 there is one
+      // to go back to. At 0 the game was opened cold (a typed address, a
+      // shared link), and back would leave the site. Moving from level to
+      // level replaces this entry, so one step back always leaves the game.
+      const visited = (window.history.state as { idx?: number } | null)?.idx;
+      if (visited && visited > 0) navigate(-1);
+      else navigate(BOARD_PATH, { replace: true });
+    }
   }, [open, navigate]);
 
   return (

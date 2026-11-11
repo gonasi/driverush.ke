@@ -10,7 +10,6 @@ import { analytics } from "~/lib/analytics";
 import { SIGN_BRAND, SIGN_SOURCE } from "~/lib/sign-credits";
 import {
   BOARD_GUIDES,
-  BOARD_LEVELS_PATH,
   BOARD_PATH,
 } from "~/lib/board-guides";
 import { SITE } from "~/lib/site";
@@ -82,17 +81,15 @@ export function SiteFooter() {
           />
           <FooterCol
             heading="Model Town Board"
-            items={[
-              { label: "Levels", href: BOARD_LEVELS_PATH },
-              ...BOARD_GUIDES.map((guide) => ({
-                label: guide.name,
-                href: guide.path,
-              })),
-            ]}
+            items={BOARD_GUIDES.map((guide) => ({
+              label: guide.name,
+              href: guide.path,
+            }))}
           />
           <FooterCol
             heading="Guides"
             items={[
+              { label: "All guides", href: "/guides" },
               { label: "NTSA test", href: "/ntsa-test" },
               { label: "Driving schools", href: "/driving-schools-kenya" },
               { label: "Blog", href: "/blogs" },

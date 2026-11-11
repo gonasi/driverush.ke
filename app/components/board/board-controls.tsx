@@ -39,8 +39,11 @@ export function BoardControls({
   active,
   reverse = false,
   note,
+  quietHint = false,
 }: {
   active: boolean;
+  /** The first-drive tips are saying it, so the line here stays quiet. */
+  quietHint?: boolean;
   /** The task has a reverse gear: say when it is coming in, and when it is in. */
   reverse?: boolean;
   /** Guidance for this task, shown once the first-push hint has gone. */
@@ -192,12 +195,14 @@ export function BoardControls({
     >
       {/* One line of guidance, and no box at all once it has been read: the
           road above the joystick is where the car is. */}
-      {(hint || note) && (
+      {((hint && !quietHint) || note) && (
         <p
           key={hint ? "hint" : "note"}
           className="dr-rise m-0 max-w-[17rem] rounded-md bg-[#101114]/85 px-3 py-1.5 text-center text-[12.5px] font-semibold leading-snug text-white"
         >
-          {hint ? "Push toward where you want to go. Let go to stop." : note}
+          {hint && !quietHint
+            ? "Push toward where you want to go. Let go to stop."
+            : note}
         </p>
       )}
       <p
