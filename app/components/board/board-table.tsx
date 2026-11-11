@@ -34,7 +34,11 @@ import { dirOf } from "~/lib/board/geometry";
 import type { Seat } from "~/lib/board/joystick";
 import { car, tick, view } from "~/lib/board/runtime";
 
-import { buildCar, type CarModel } from "~/components/board/car-model";
+import {
+  WHEEL_RADIUS,
+  buildCar,
+  type CarModel,
+} from "~/components/board/car-model";
 
 export type BoardTier = "low" | "high";
 
@@ -556,6 +560,22 @@ function carOnTable(paint: string, plate: string, tier: BoardTier) {
   return holder;
 }
 
+/**
+ * The most a wheel turns in one frame: under half the gap between two spokes,
+ * so a fast car's wheels never look as if they are turning backwards.
+ */
+const MAX_ROLL = (30 * Math.PI) / 180;
+/** The front wheels turn less than the real lock, so they stay inside the arches. */
+const MAX_STEER_SHOWN = 0.45;
+
+/** Roll a car's wheels as if it had just travelled `distance` metres forward. */
+function rollWheels(holder: THREE.Object3D, distance: number) {
+  const model = holder.userData.model as CarModel;
+  const turn = Math.min(distance / WHEEL_RADIUS, MAX_ROLL);
+  // The nose points down -z, so rolling forward turns the top of the wheel that way.
+  for (const wheel of model.userData.wheels) wheel.rotation.x -= turn;
+}
+
 const PARKED_PAINTS = ["#2456b4", "#dfe3e8", "#2f3238", "#1f7a4d"];
 const PARKED_PLATES = ["KDA 101B", "KCB 442T", "KDG 907K", "KCY 365H"];
 
@@ -767,9 +787,19 @@ function Scene({
     player.rotation.y = -car.heading;
     const model = player.userData.model as CarModel;
     model.userData.tail.emissiveIntensity = view.braking ? 2.4 : 0.5;
+    // The wheels roll with the road and the front pair follows the steering.
+    if (driving) rollWheels(player, car.speed * dt);
+    const lock = clamp(car.steer, -MAX_STEER_SHOWN, MAX_STEER_SHOWN);
+    for (const hub of model.userData.steering) hub.rotation.y = -lock;
     others.forEach((other, i) => {
       const pose = view.others[i] ?? challenge?.otherCars[i];
       if (!pose) return;
+      // A car that has been shoved rolls as far as it was pushed.
+      const moved = Math.hypot(
+        pose.x - other.position.x,
+        pose.z - other.position.z,
+      );
+      if (driving && moved < 1) rollWheels(other, moved);
       other.position.set(pose.x, 0, pose.z);
       other.rotation.y = -pose.heading;
     });

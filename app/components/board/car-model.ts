@@ -256,6 +256,12 @@ function alloyTexture(): THREE.CanvasTexture {
     x.beginPath();
     x.arc(0, 0, 5, 0, Math.PI * 2);
     x.fill();
+    // A valve by one spoke. Five matching spokes can look as if they are
+    // turning backwards at speed; one odd mark keeps the wheel reading forward.
+    x.fillStyle = "#15161a";
+    x.beginPath();
+    x.arc(0, -49, 4.5, 0, Math.PI * 2);
+    x.fill();
   });
   return alloy;
 }
@@ -279,8 +285,15 @@ export type CarModel = THREE.Group & {
   userData: {
     /** The tail lamps, so the scene can light them when the car brakes. */
     tail: THREE.MeshStandardMaterial;
+    /** All four wheels. Turn each about its `x` to roll it. */
+    wheels: THREE.Group[];
+    /** The front pair. Turn each about its `y` to steer it. */
+    steering: THREE.Group[];
   };
 };
+
+/** How far a wheel rolls for each radian it turns, in metres. */
+export const WHEEL_RADIUS = 0.32;
 
 export function buildCar({ paint, plate, simple = false }: CarOptions) {
   body ??= buildBody();
@@ -368,14 +381,17 @@ export function buildCar({ paint, plate, simple = false }: CarOptions) {
     car.add(mesh);
   };
 
-  // Wheels: a dark well in the body side, an arch lip in body colour, a tyre
-  // and an alloy face.
+  // Wheels: a dark well in the body side and an arch lip in body colour, both
+  // fixed to the body, and a tyre with an alloy face that turns on its axle.
+  // The front pair also turns with the steering.
   const rim = new THREE.MeshStandardMaterial({
     map: alloyTexture(),
     metalness: 0.7,
     roughness: 0.3,
   });
-  const radius = 0.32;
+  const radius = WHEEL_RADIUS;
+  const wheels: THREE.Group[] = [];
+  const steering: THREE.Group[] = [];
   const tyre = new THREE.CylinderGeometry(radius, radius, 0.225, 28);
   tyre.rotateZ(Math.PI / 2);
   const face = new THREE.CircleGeometry(0.215, 24);
@@ -389,10 +405,12 @@ export function buildCar({ paint, plate, simple = false }: CarOptions) {
   lip.rotateZ(-Math.PI * 0.08);
   // The widest the body gets, so the arch stands clear of it all the way round.
   const wide = 0.885;
-  for (const [z, t] of [
-    [1.24, 0.5 - 1.24 / LENGTH],
-    [-1.37, 0.5 + 1.37 / LENGTH],
-  ]) {
+  // The nose points down -z, so the second axle is the front one.
+  const axles: [number, number, boolean][] = [
+    [1.24, 0.5 - 1.24 / LENGTH, false],
+    [-1.37, 0.5 + 1.37 / LENGTH, true],
+  ];
+  for (const [z, t, front] of axles) {
     for (const side of [-1, 1]) {
       const lift = Math.asin((floor(t) - radius) / (radius + 0.05));
       const well = new THREE.CircleGeometry(
@@ -403,9 +421,21 @@ export function buildCar({ paint, plate, simple = false }: CarOptions) {
       );
       const outward: [number, number, number] = [0, (side * Math.PI) / 2, 0];
       add(well, dark, side * (wide + 0.004), radius, z, outward);
-      add(tyre, tyreMaterial, side * (wide - 0.105), radius, z, null, true);
-      add(face, rim, side * (wide + 0.009), radius, z, outward);
       add(lip, materials.paint, side * (wide + 0.012), radius, z, outward);
+
+      const hub = new THREE.Group();
+      hub.position.set(side * (wide - 0.105), radius, z);
+      const wheel = new THREE.Group();
+      const rubber = new THREE.Mesh(tyre, tyreMaterial);
+      rubber.castShadow = true;
+      const alloyFace = new THREE.Mesh(face, rim);
+      alloyFace.position.x = side * 0.114;
+      alloyFace.rotation.y = (side * Math.PI) / 2;
+      wheel.add(rubber, alloyFace);
+      hub.add(wheel);
+      car.add(hub);
+      wheels.push(wheel);
+      if (front) steering.push(hub);
     }
   }
 
@@ -490,5 +520,7 @@ export function buildCar({ paint, plate, simple = false }: CarOptions) {
   );
 
   car.userData.tail = materials.tail;
+  car.userData.wheels = wheels;
+  car.userData.steering = steering;
   return car as CarModel;
 }
