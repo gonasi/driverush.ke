@@ -3,13 +3,17 @@
  * the view, pinch or scroll to zoom, double tap to see the whole table. The
  * camera never turns, so "up" stays away from you whichever side you stand at.
  *
+ * It works during a drive too, under the joystick. There the zoom stays as the
+ * learner set it, a slid view comes back to the car as soon as it moves, and
+ * the third button hands the view back to the drive.
+ *
  * It writes into `board/stage.ts`'s `cam`, which the scene reads every frame,
  * so moving the view never re-renders React.
  */
 import * as React from "react";
 
 import type { Seat } from "~/lib/board/joystick";
-import { cam, fitTable, panBy, zoomBy } from "~/lib/board/stage";
+import { cam, fitTable, followCar, panBy, zoomBy } from "~/lib/board/stage";
 import { cn } from "~/lib/utils";
 
 import { Icon } from "~/components/brand/icon";
@@ -30,9 +34,12 @@ const buttonClass =
 
 export function BoardCameraPad({
   seat,
+  driving = false,
   buttonsClassName,
 }: {
   seat: Seat;
+  /** The learner is driving: the arrow keys belong to the car. */
+  driving?: boolean;
   /** Where the zoom buttons sit. */
   buttonsClassName?: string;
 }) {
@@ -54,8 +61,10 @@ export function BoardCameraPad({
     [seat],
   );
 
+  const reset = driving ? followCar : fitTable;
+
   // Keys, for a computer: plus and minus zoom, 0 shows the whole table, and
-  // the arrows slide the view.
+  // the arrows slide the view (off the clock: in a drive they steer).
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -63,7 +72,8 @@ export function BoardCameraPad({
       const step = 60;
       if (e.key === "+" || e.key === "=") zoomBy(0.8);
       else if (e.key === "-" || e.key === "_") zoomBy(1.25);
-      else if (e.key === "0") fitTable();
+      else if (e.key === "0") reset();
+      else if (driving) return;
       else if (e.key === "ArrowLeft") slide(step, 0);
       else if (e.key === "ArrowRight") slide(-step, 0);
       else if (e.key === "ArrowUp") slide(0, step);
@@ -73,7 +83,7 @@ export function BoardCameraPad({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [slide]);
+  }, [slide, driving, reset]);
 
   const spread = () => {
     const [a, b] = [...touches.current.values()];
@@ -109,7 +119,7 @@ export function BoardCameraPad({
         onPointerUp={(e) => touches.current.delete(e.pointerId)}
         onPointerCancel={(e) => touches.current.delete(e.pointerId)}
         onWheel={(e) => zoomBy(Math.exp(e.deltaY * 0.0015))}
-        onDoubleClick={() => fitTable()}
+        onDoubleClick={() => reset()}
       />
       <div
         className={cn(
@@ -135,9 +145,9 @@ export function BoardCameraPad({
         </button>
         <button
           type="button"
-          aria-label="Show the whole table"
+          aria-label={driving ? "Follow the car" : "Show the whole table"}
           className={buttonClass}
-          onClick={() => fitTable()}
+          onClick={() => reset()}
         >
           <Icon icon={FocusIcon} size={20} />
         </button>

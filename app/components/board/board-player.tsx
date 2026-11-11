@@ -32,7 +32,7 @@ import {
 } from "~/lib/board/lessons";
 import { distanceNear, poseAt, stepPoints } from "~/lib/board/network";
 import { car, drive, elapsedSeconds } from "~/lib/board/runtime";
-import { useStage } from "~/lib/board/stage";
+import { peekAt, useStage } from "~/lib/board/stage";
 import { BOARD_CHALLENGE_IDS, useBoardStore } from "~/lib/board-store";
 import { signCounts } from "~/lib/pelican-progress";
 import { cn } from "~/lib/utils";
@@ -52,12 +52,10 @@ import { Progress } from "~/components/ui/progress";
 import { BoardCameraPad } from "~/components/board/board-camera";
 import { BoardControls } from "~/components/board/board-controls";
 import { BoardFaultTip } from "~/components/board/board-fault-tip";
+import { BoardFinishCue } from "~/components/board/board-finish-cue";
 import { BoardFps } from "~/components/board/board-fps";
 import { BoardLearn } from "~/components/board/board-learn";
-import {
-  BoardPlayback,
-  routeLines,
-} from "~/components/board/board-playback";
+import { BoardPlayback, routeLines } from "~/components/board/board-playback";
 import { BoardSettingsSheet } from "~/components/board/board-settings-sheet";
 import { BoardSignCue } from "~/components/board/board-sign-cue";
 import { BoardViewer } from "~/components/board/board-viewer";
@@ -158,10 +156,16 @@ function Minimap({
   svg,
   live,
   seat,
+  finish,
+  onPeek,
 }: {
   svg: string;
   live: boolean;
   seat: Seat;
+  /** The middle of the box the task ends in. */
+  finish: { x: number; z: number };
+  /** Show the car and the finish together on the table. */
+  onPeek: () => void;
 }) {
   const dot = React.useRef<HTMLSpanElement>(null);
   React.useEffect(() => {
@@ -178,11 +182,15 @@ function Minimap({
     return () => cancelAnimationFrame(frame);
   }, [live, svg, seat]);
   const sideways = seat === "east" || seat === "west";
+  const end = placeOnPage(finish.x, finish.z, seat);
   return (
-    <div
-      aria-hidden
+    <button
+      type="button"
+      aria-label="Show where this task ends"
+      disabled={!live}
+      onClick={onPeek}
       className={cn(
-        "relative overflow-hidden rounded-md border-2 border-white/80 shadow-[0_3px_0_rgba(0,0,0,0.45)]",
+        "pointer-events-auto relative block overflow-hidden rounded-md border-2 border-white/80 p-0 shadow-[0_3px_0_rgba(0,0,0,0.45)] outline-none focus-visible:border-kenya-gold",
         sideways ? "w-28 sm:w-40" : "w-[4.5rem] sm:w-24",
       )}
       style={{ aspectRatio: sideways ? 1 / BOARD_ASPECT : BOARD_ASPECT }}
@@ -191,11 +199,19 @@ function Minimap({
         className="size-full [&>svg]:block [&>svg]:size-full"
         dangerouslySetInnerHTML={{ __html: svg }}
       />
+      {/* The finish, ringed so it shows at this size. */}
+      <span
+        className="absolute size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[#5fe08a]/40"
+        style={{
+          left: `${(end.left * 100).toFixed(1)}%`,
+          top: `${(end.top * 100).toFixed(1)}%`,
+        }}
+      />
       <span
         ref={dot}
         className="absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-ink bg-kenya-gold"
       />
-    </div>
+    </button>
   );
 }
 
@@ -488,6 +504,24 @@ export function BoardPlayer({
     [challenge, seat],
   );
 
+  const goalBox = React.useMemo(
+    () => (challenge ? taskGoalBox(challenge) : null),
+    [challenge],
+  );
+  /** Back the view off to show the car and the finish together. */
+  const peek = () => {
+    if (!goalBox) return;
+    peekAt(
+      {
+        x0: Math.min(goalBox.x0, car.x - 3),
+        x1: Math.max(goalBox.x1, car.x + 3),
+        z0: Math.min(goalBox.z0, car.z - 3),
+        z1: Math.max(goalBox.z1, car.z + 3),
+      },
+      seat === "east" || seat === "west",
+    );
+  };
+
   const overlay = (
     <div className="fixed inset-0 z-40 overflow-hidden bg-[#101114] text-white">
       {unsupported ? (
@@ -517,10 +551,11 @@ export function BoardPlayer({
 
       <BoardFps />
 
-      {/* Off the clock the learner can slide and zoom the view. */}
-      {!unsupported && s.phase !== "driving" && s.phase !== "complete" && (
+      {/* The learner can slide and zoom the view, in a drive and off the clock. */}
+      {!unsupported && s.phase !== "complete" && (
         <BoardCameraPad
           seat={seat}
+          driving={s.phase === "driving"}
           buttonsClassName={
             s.mode === "learn"
               ? "top-[max(0.75rem,env(safe-area-inset-top))] sm:top-5"
@@ -535,7 +570,10 @@ export function BoardPlayer({
 
       {/* The examiner's task, top left. Status and the way out, top right. */}
       {!unsupported && challenge && s.phase !== "complete" && (
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-3 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 sm:pt-5">
+        <div
+          data-board-hud
+          className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-3 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 sm:pt-5"
+        >
           <div>
             <div
               key={`${challenge.id}-${s.attempt}`}
@@ -548,12 +586,14 @@ export function BoardPlayer({
                 {challenge.prompt}
               </p>
             </div>
-            {s.phase === "driving" && isRouteTask(challenge) && challenge.reverse && (
-              <p className="m-0 mt-2 max-w-[19rem] rounded-md border-2 border-white/15 bg-[#101114]/85 px-3 py-2 text-[12.5px] font-semibold leading-snug">
-                To reverse: stop, then pull the joystick back and hold it. The
-                back of the car goes where you point.
-              </p>
-            )}
+            {s.phase === "driving" &&
+              isRouteTask(challenge) &&
+              challenge.reverse && (
+                <p className="m-0 mt-2 max-w-[19rem] rounded-md border-2 border-white/15 bg-[#101114]/85 px-3 py-2 text-[12.5px] font-semibold leading-snug">
+                  To reverse: stop, then pull the joystick back and hold it. The
+                  back of the car goes where you point.
+                </p>
+              )}
             {s.phase === "driving" && (
               <TaskHint
                 challenge={challenge}
@@ -596,7 +636,18 @@ export function BoardPlayer({
               <Clock running={s.phase === "driving"} key={s.attempt} />
               <Stars count={Math.max(1, 3 - s.faults)} />
             </div>
-            <Minimap svg={minimap} live={s.phase === "driving"} seat={seat} />
+            {goalBox && (
+              <Minimap
+                svg={minimap}
+                live={s.phase === "driving"}
+                seat={seat}
+                finish={{
+                  x: (goalBox.x0 + goalBox.x1) / 2,
+                  z: (goalBox.z0 + goalBox.z1) / 2,
+                }}
+                onPeek={peek}
+              />
+            )}
           </div>
         </div>
       )}
@@ -623,6 +674,9 @@ export function BoardPlayer({
 
       {!unsupported && s.mode === "drive" && challenge && (
         <BoardSignCue active={s.phase === "driving"} />
+      )}
+      {!unsupported && challenge && s.phase === "driving" && !settingsOpen && (
+        <BoardFinishCue parks={taskParks(challenge)} onPeek={peek} />
       )}
       {!unsupported && s.mode === "drive" && (
         <BoardControls active={s.phase === "driving" && !settingsOpen} />

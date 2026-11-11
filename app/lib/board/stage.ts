@@ -51,7 +51,22 @@ export const cam = {
   aspect: 1,
   min: 16,
   max: 240,
+  /**
+   * The zoom the learner chose while driving, kept from one attempt to the
+   * next. Null leaves the zoom to the drive.
+   */
+  driveSpan: null as number | null,
+  /** The view to go back to after a look at the finish. */
+  back: null as { free: boolean; span: number } | null,
 };
+
+/**
+ * Where the task's finish is on the screen, for the marker drawn over the
+ * table. The scene fills it in every frame. `x` and `y` are shares of the
+ * screen's width and height, and lie outside 0 to 1 when the finish is out of
+ * view.
+ */
+export const finish = { on: false, x: 0.5, y: 0.5, metres: 0 };
 
 /** How far along its route the playback has got, in metres. */
 export const play = { distance: 0 };
@@ -80,6 +95,7 @@ export function panBy(dx: number, dz: number): void {
 /** Zoom: under 1 closes in, over 1 backs off. */
 export function zoomBy(factor: number): void {
   cam.free = true;
+  cam.back = null;
   cam.span = clamp(Math.min(cam.span, cam.max) * factor, cam.min, cam.max);
   wake();
 }
@@ -110,10 +126,60 @@ export function flyTo(box: Box, sideways = false): void {
   wake();
 }
 
-/** Hand the camera back to the drive. */
+/**
+ * A look at the car and the finish together, while driving. The scene goes
+ * back to the view before it once the car moves off. Asked for again while
+ * looking, it goes back at once.
+ */
+export function peekAt(box: Box, sideways = false): void {
+  if (cam.back) {
+    endPeek();
+    return;
+  }
+  const back = { free: cam.free, span: cam.span };
+  cam.free = true;
+  cam.follow = false;
+  cam.x = (box.x0 + box.x1) / 2;
+  cam.z = (box.z0 + box.z1) / 2;
+  const across = sideways ? box.z1 - box.z0 : box.x1 - box.x0;
+  const deep = sideways ? box.x1 - box.x0 : box.z1 - box.z0;
+  // The task card covers the top of the screen and the joystick the bottom,
+  // so both ends have to fit in the middle third of it.
+  const tall = (deep * SLANT * cam.aspect) / 0.34;
+  cam.span = clamp(Math.max(across * 1.3, tall), cam.min, cam.max);
+  cam.back = back;
+  wake();
+}
+
+/** Go back to the view from before the look at the finish. */
+export function endPeek(): void {
+  if (!cam.back) return;
+  cam.span = cam.back.span;
+  cam.free = cam.back.free;
+  cam.follow = true;
+  cam.back = null;
+  wake();
+}
+
+/** While driving: give the zoom back to the drive, which follows the car. */
+export function followCar(): void {
+  cam.free = false;
+  cam.follow = false;
+  cam.driveSpan = null;
+  cam.back = null;
+  wake();
+}
+
+/** Hand the camera back to the drive. The zoom chosen while driving is kept. */
 export function releaseCamera(): void {
   cam.free = false;
   cam.follow = false;
+  cam.back = null;
+}
+
+/** Leaving the drive: the next one starts with its own zoom. */
+export function forgetDriveZoom(): void {
+  cam.driveSpan = null;
 }
 
 /** Metres a second the playback car covers at normal speed. */

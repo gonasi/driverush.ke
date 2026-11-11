@@ -36,7 +36,7 @@ import { dirOf } from "~/lib/board/geometry";
 import type { Seat } from "~/lib/board/joystick";
 import { taskGoalBox } from "~/lib/board/lessons";
 import { car, tick, view } from "~/lib/board/runtime";
-import { advance, cam, setWake, useStage } from "~/lib/board/stage";
+import { advance, cam, finish, setWake, useStage } from "~/lib/board/stage";
 
 import {
   buildRibbon,
@@ -593,6 +593,51 @@ function carOnTable(
   return holder;
 }
 
+/** How high the light round the finish stands, in metres. */
+const FENCE_H = 4.2;
+
+/** Bright at the foot and gone at the top, for the light round the finish. */
+function fadeTexture() {
+  const canvas = canvasOf(4, 64);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return textureOf(canvas);
+  const fade = ctx.createLinearGradient(0, 64, 0, 0);
+  fade.addColorStop(0, "#ffffff");
+  fade.addColorStop(0.5, "#5a5a5a");
+  fade.addColorStop(1, "#000000");
+  ctx.fillStyle = fade;
+  ctx.fillRect(0, 0, 4, 64);
+  return textureOf(canvas);
+}
+
+/**
+ * A low wall of light round the finish box, so it stands up off the table and
+ * shows from the far end of it. It has no top and no floor.
+ */
+function finishFence(width: number, depth: number) {
+  const light = new THREE.MeshBasicMaterial({
+    color: COLORS.goal,
+    alphaMap: fadeTexture(),
+    transparent: true,
+    opacity: 0.6,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    toneMapped: false,
+  });
+  const none = new THREE.MeshBasicMaterial({ visible: false });
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, FENCE_H, depth), [
+    light,
+    light,
+    none,
+    none,
+    light,
+    light,
+  ]);
+  mesh.renderOrder = 2;
+  mesh.userData.light = light;
+  return mesh;
+}
+
 /**
  * The most a wheel turns in one frame: under half the gap between two spokes,
  * so a fast car's wheels never look as if they are turning backwards.
@@ -784,6 +829,24 @@ function Scene({
     };
   }, [challenge]);
   const goalMaterial = React.useRef<THREE.MeshBasicMaterial>(null);
+  const fence = React.useMemo(() => {
+    if (!goal) return null;
+    const mesh = finishFence(goal.w, goal.h);
+    mesh.position.set(goal.x, FENCE_H / 2 + 0.05, goal.z);
+    return mesh;
+  }, [goal]);
+  React.useEffect(
+    () => () => {
+      if (!fence) return;
+      fence.geometry.dispose();
+      for (const material of fence.material as THREE.MeshBasicMaterial[]) {
+        material.alphaMap?.dispose();
+        material.dispose();
+      }
+    },
+    [fence],
+  );
+  const probe = React.useMemo(() => new THREE.Vector3(), []);
 
   // The light points at the middle of the board, which is not the origin.
   const sun = React.useRef<THREE.DirectionalLight>(null);
@@ -920,6 +983,10 @@ function Scene({
       goalMaterial.current.opacity =
         0.34 + 0.12 * Math.sin(state.clock.elapsedTime * 3);
     }
+    if (fence) {
+      (fence.userData.light as THREE.MeshBasicMaterial).opacity =
+        0.55 + 0.2 * Math.sin(state.clock.elapsedTime * 3);
+    }
 
     // ---- the camera: fixed to the seat, it only zooms and slides ----
     const r = rig.current;
@@ -987,9 +1054,25 @@ function Scene({
     const spanOf = (d: number) => 2 * d * Math.tan(halfH);
     cam.aspect = aspect;
     cam.max = spanOf(whole);
-    const free = cam.free && !driving;
+    // A fresh attempt keeps the zoom the learner chose on the one before.
+    if (fresh && driving && !cam.free && cam.driveSpan !== null) {
+      cam.free = true;
+      cam.follow = true;
+      cam.span = cam.driveSpan;
+    }
+    // Once the car is under way the view comes back to it, from a look at
+    // the finish or from wherever it was slid to. The zoom stays.
+    if (moving && cam.free) {
+      if (cam.back) {
+        cam.span = cam.back.span;
+        cam.free = cam.back.free;
+        cam.back = null;
+      }
+      cam.follow = true;
+    }
+    const free = cam.free;
     if (free) {
-      if (cam.follow && pose) {
+      if (!driving && cam.follow && pose) {
         cam.x = pose.x;
         cam.z = pose.z;
       }
@@ -1000,12 +1083,42 @@ function Scene({
       // A panel over the bottom of the screen: look a little nearer, so what
       // matters sits above it.
       const depth =
-        (2 * r.dist * Math.tan(halfV)) / Math.sin(lerp(TILT_OUT, TILT_IN, near));
-      // and a panel down the left: look a little to the left, so it sits in
-      // the middle of what is left of the screen
-      const across = spanOf(r.dist) * cam.side;
-      goalX = cam.x - away.x * cam.lift * depth - -away.z * across;
-      goalZ = cam.z - away.z * cam.lift * depth - away.x * across;
+        (2 * r.dist * Math.tan(halfV)) /
+        Math.sin(lerp(TILT_OUT, TILT_IN, near));
+      if (driving) {
+        if (cam.follow) {
+          // The car and a little of the road ahead of it, as the drive's own
+          // view has it. Backed right off, it is the middle of the table.
+          const out = clamp((cam.span / cam.max - 0.7) / 0.3, 0, 1);
+          cam.x = lerp(
+            clamp(
+              car.x + ahead.x * 4 + away.x * 0.1 * depth,
+              BOUNDS.x0,
+              BOUNDS.x1,
+            ),
+            CX,
+            out,
+          );
+          cam.z = lerp(
+            clamp(
+              car.z + ahead.z * 4 + away.z * 0.1 * depth,
+              BOUNDS.z0,
+              BOUNDS.z1,
+            ),
+            CZ,
+            out,
+          );
+        }
+        if (!cam.back) cam.driveSpan = cam.span;
+        goalX = cam.x;
+        goalZ = cam.z;
+      } else {
+        // and a panel down the left: look a little to the left, so it sits in
+        // the middle of what is left of the screen
+        const across = spanOf(r.dist) * cam.side;
+        goalX = cam.x - away.x * cam.lift * depth - -away.z * across;
+        goalZ = cam.z - away.z * cam.lift * depth - away.x * across;
+      }
     } else {
       cam.free = false;
       r.dist = distance;
@@ -1031,6 +1144,23 @@ function Scene({
       sz + r.dist * Math.cos(tiltNow) * Math.cos(angle),
     );
     state.camera.lookAt(sx, lookY, sz);
+
+    // Where the finish is on the screen, for the marker drawn over the table.
+    finish.on = driving && goal !== null;
+    if (goal && driving) {
+      state.camera.updateMatrixWorld();
+      probe.set(goal.x, FENCE_H, goal.z).project(state.camera);
+      // Behind the camera the picture is turned over: turn it back, and push
+      // it well off the screen.
+      if (probe.z > 1) {
+        const far = 3 / Math.max(0.001, Math.abs(probe.x), Math.abs(probe.y));
+        probe.x *= -far;
+        probe.y *= -far;
+      }
+      finish.x = (probe.x + 1) / 2;
+      finish.y = (1 - probe.y) / 2;
+      finish.metres = Math.hypot(goal.x - car.x, goal.z - car.z);
+    }
 
     // Still easing after the car has stopped: ask for another frame.
     const settled =
@@ -1082,6 +1212,8 @@ function Scene({
           />
         </mesh>
       )}
+
+      {fence && <primitive object={fence} />}
 
       <primitive object={ribbons} />
       {glow && (

@@ -21,7 +21,12 @@ import type { Fault, FaultId } from "./board/referee";
 import { beginChallenge, elapsedSeconds, stopDriving } from "./board/runtime";
 import type { BoardCarSetting } from "./board/cars";
 import type { Seat } from "./board/joystick";
-import { fitTable, releaseCamera, useStage } from "./board/stage";
+import {
+  fitTable,
+  forgetDriveZoom,
+  releaseCamera,
+  useStage,
+} from "./board/stage";
 import { applyGrade, type SignProgress } from "./pelican-progress";
 import { bumpPracticeStreak } from "./practice-streak";
 import { BUZZ, buzz, playSfx, stopAllSfx, warmSfx } from "./sounds";
@@ -300,6 +305,7 @@ export const useBoardStore = create<BoardState>()(
           stopAllSfx();
           useStage.getState().clear();
           releaseCamera();
+          forgetDriveZoom();
           set({
             ...FRESH_RUN,
             overlayOpen: false,
@@ -312,6 +318,7 @@ export const useBoardStore = create<BoardState>()(
         learn: () => {
           stopDriving();
           useStage.getState().clear();
+          forgetDriveZoom();
           fitTable();
           set({
             ...FRESH_RUN,
