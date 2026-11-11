@@ -32,14 +32,59 @@ const SLANT = 0.7;
 const buttonClass =
   "inline-flex size-11 items-center justify-center rounded-md border-2 border-white/15 bg-[#101114]/85 text-white outline-none transition-colors hover:bg-white/15 focus-visible:border-white";
 
+/**
+ * Zoom in, zoom out, and back to the usual view. On their own so the drive
+ * can stand them in its column of controls, where nothing can land on them.
+ */
+export function BoardZoomButtons({
+  driving = false,
+  className,
+}: {
+  driving?: boolean;
+  className?: string;
+}) {
+  const reset = driving ? followCar : fitTable;
+  return (
+    <div className={cn("flex flex-col gap-2", className)}>
+      <button
+        type="button"
+        aria-label="Zoom in"
+        className={buttonClass}
+        onClick={() => zoomBy(0.7)}
+      >
+        <Icon icon={PlusIcon} size={20} />
+      </button>
+      <button
+        type="button"
+        aria-label="Zoom out"
+        className={buttonClass}
+        onClick={() => zoomBy(1.4)}
+      >
+        <Icon icon={MinusIcon} size={20} />
+      </button>
+      <button
+        type="button"
+        aria-label={driving ? "Follow the car" : "Show the whole table"}
+        className={buttonClass}
+        onClick={() => reset()}
+      >
+        <Icon icon={FocusIcon} size={20} />
+      </button>
+    </div>
+  );
+}
+
 export function BoardCameraPad({
   seat,
   driving = false,
+  buttons = true,
   buttonsClassName,
 }: {
   seat: Seat;
   /** The learner is driving: the arrow keys belong to the car. */
   driving?: boolean;
+  /** Draw the zoom buttons here. Off when they stand somewhere else. */
+  buttons?: boolean;
   /** Where the zoom buttons sit. */
   buttonsClassName?: string;
 }) {
@@ -121,37 +166,15 @@ export function BoardCameraPad({
         onWheel={(e) => zoomBy(Math.exp(e.deltaY * 0.0015))}
         onDoubleClick={() => reset()}
       />
-      <div
-        className={cn(
-          "absolute right-3 z-20 flex flex-col gap-2 sm:right-6",
-          buttonsClassName ?? "top-[36%] -translate-y-1/2",
-        )}
-      >
-        <button
-          type="button"
-          aria-label="Zoom in"
-          className={buttonClass}
-          onClick={() => zoomBy(0.7)}
-        >
-          <Icon icon={PlusIcon} size={20} />
-        </button>
-        <button
-          type="button"
-          aria-label="Zoom out"
-          className={buttonClass}
-          onClick={() => zoomBy(1.4)}
-        >
-          <Icon icon={MinusIcon} size={20} />
-        </button>
-        <button
-          type="button"
-          aria-label={driving ? "Follow the car" : "Show the whole table"}
-          className={buttonClass}
-          onClick={() => reset()}
-        >
-          <Icon icon={FocusIcon} size={20} />
-        </button>
-      </div>
+      {buttons && (
+        <BoardZoomButtons
+          driving={driving}
+          className={cn(
+            "absolute right-3 z-20 sm:right-6",
+            buttonsClassName ?? "top-[36%] -translate-y-1/2",
+          )}
+        />
+      )}
     </>
   );
 }

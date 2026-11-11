@@ -16,8 +16,6 @@ import { finish } from "~/lib/board/stage";
 import { Icon } from "~/components/brand/icon";
 import { ArrowRightIcon, FinishIcon } from "~/components/brand/icons";
 
-/** The joystick and its pad own the bottom of the screen. */
-const BOTTOM = 232;
 const EDGE = 10;
 
 export function BoardFinishCue({
@@ -38,7 +36,11 @@ export function BoardFinishCue({
   React.useEffect(() => {
     let frame = 0;
     let n = 0;
+    // The clear part of the view: under the task and its messages, above the
+    // joystick, and left of the minimap and the zoom buttons.
     let top = 150;
+    let low = 400;
+    let right = 300;
     let shown = "";
     const place = () => {
       frame = requestAnimationFrame(place);
@@ -48,12 +50,16 @@ export function BoardFinishCue({
       if (!box || !f || !c) return;
       const w = box.clientWidth;
       const h = box.clientHeight;
-      // The task card and the minimap own the top. They change height, so
-      // look again a few times a second.
-      if (n % 20 === 0) {
-        const hud = document.querySelector("[data-board-hud]");
-        const bottom = hud?.getBoundingClientRect().bottom ?? 150;
-        top = Math.min(bottom + 8, h * 0.45);
+      // These change size as cards open and close, so look again a few times
+      // a second.
+      if (n % 15 === 0) {
+        const edge = (name: string) =>
+          document
+            .querySelector(`[data-board-${name}]`)
+            ?.getBoundingClientRect();
+        top = Math.min((edge("hud-left")?.bottom ?? 150) + 8, h * 0.45);
+        low = Math.max(top + 70, (edge("stick")?.top ?? h - 232) - 8);
+        right = (edge("minimap")?.left ?? w) - 8;
       }
       n += 1;
       if (!finish.on) {
@@ -63,8 +69,7 @@ export function BoardFinishCue({
       }
       const x = finish.x * w;
       const y = finish.y * h;
-      const low = Math.max(top + 60, h - BOTTOM);
-      const inView = x > 24 && x < w - 24 && y > top + 30 && y < low;
+      const inView = x > 24 && x < right && y > top + 30 && y < low;
       f.style.visibility = inView ? "visible" : "hidden";
       c.style.visibility = inView ? "hidden" : "visible";
       if (inView) {
@@ -73,13 +78,15 @@ export function BoardFinishCue({
       }
       // Off screen: sit on the edge of the clear part of the view, on the line
       // from its middle to the finish.
-      const halfW = c.offsetWidth / 2 + EDGE;
+      const halfW = c.offsetWidth / 2;
       const halfH = c.offsetHeight / 2;
-      const cx = w / 2;
+      const x0 = EDGE + halfW;
+      const x1 = Math.max(x0 + 2, right - halfW);
+      const cx = (x0 + x1) / 2;
       const cy = (top + low) / 2;
       const dx = x - cx;
       const dy = y - cy;
-      const reachX = Math.max(1, w / 2 - halfW);
+      const reachX = (x1 - x0) / 2;
       const reachY = Math.max(1, (low - top) / 2 - halfH);
       const t = Math.min(
         1,

@@ -694,7 +694,8 @@ const LINGER = 2;
 const PAD_PX = 232;
 const HUD_PX = 150;
 /** The examiner's card is taller than the joystick. */
-const CARD_PX = 380;
+const SHEET_SHARE = 0.64;
+const SHEET_HUD_PX = 60;
 /** Backing up, the view closes in this much further: a bay is a tight fit. */
 const REVERSE_CLOSER = 0.72;
 /** The strip of light on the lane that lane assist is holding, metres. */
@@ -1091,10 +1092,13 @@ function Scene({
     // The joystick covers the bottom of the screen and the task card the top:
     // hold the car in the clear part between them, not under the thumb. With
     // the examiner's card up, that is higher still.
+    const tall = Math.max(1, state.size.height);
     const lift = clamp(
-      ((focus ? CARD_PX : PAD_PX) - HUD_PX) /
-        2 /
-        Math.max(1, state.size.height),
+      focus
+        ? // The card may fill the lower 62% of the screen, and only the
+          // buttons are left along the top.
+          (SHEET_SHARE * tall - SHEET_HUD_PX) / 2 / tall
+        : (PAD_PX - HUD_PX) / 2 / tall,
       0.03,
       0.3,
     );

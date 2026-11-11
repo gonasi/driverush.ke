@@ -21,18 +21,19 @@ const CUES: Record<Control, { slug: string; name: string; means: string }> = {
     slug: "give-way",
     name: "Give way",
     means:
-      "Slow down. Traffic on the road you are joining goes first. Stop only if you need to.",
+      "Slow down. Traffic on the road you are joining goes first, coming from your right. Stop only if you need to.",
   },
   stop: {
     slug: "stop",
     name: "Stop",
     means:
-      "Stop at the line every time, even when the road is clear. Go when it is safe.",
+      "Stop at the line every time, even when the road is clear. Look right, left, then right again. Go when it is safe.",
   },
   crossing: {
     slug: "pedestrian-crossing",
     name: "Pedestrian crossing",
-    means: "Slow down and be ready to stop. People on the crossing go first.",
+    means:
+      "Slow down and be ready to stop before it. People on the crossing go first. Never stop on it.",
   },
 };
 
@@ -57,30 +58,34 @@ export function BoardSignCue({
   if (!control) return null;
   const cue = CUES[control];
   const sign = signPageBySlug(cue.slug);
+  // Just the card: the drive stands it in its column of messages.
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-[15.5rem] z-20 flex justify-center px-3 sm:bottom-[16.5rem]">
-      <div
-        key={control}
-        role="status"
-        className="dr-rise flex max-w-sm items-center gap-3 rounded-md border-2 border-white/25 bg-[#101114]/92 px-3 py-2.5 text-white shadow-[0_4px_0_rgba(0,0,0,0.45)]"
-      >
-        {sign && (
-          <SignImage
-            sign={sign}
-            className="size-16 shrink-0 overflow-hidden rounded-sm"
-          />
-        )}
-        <div className="min-w-0">
-          <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-widest text-kenya-gold">
-            Sign ahead
-          </p>
-          <p className="m-0 mt-0.5 text-[15px] font-bold leading-snug">
-            {cue.name}
-          </p>
-          <p className="m-0 mt-0.5 text-[13px] leading-snug text-white/85">
-            {cue.means}
-          </p>
-        </div>
+    <div
+      key={control}
+      role="status"
+      data-msg="sign"
+      className="dr-rise flex w-full items-center gap-3 rounded-md border-2 border-white/25 bg-[#101114]/92 px-3 py-2.5 text-white shadow-[0_4px_0_rgba(0,0,0,0.45)]"
+    >
+      {sign && (
+        <SignImage
+          sign={sign}
+          className="size-11 shrink-0 overflow-hidden rounded-sm sm:size-16"
+        />
+      )}
+      <div className="min-w-0">
+        <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-widest text-kenya-gold">
+          Sign ahead
+        </p>
+        <p className="m-0 mt-0.5 text-[15px] font-bold leading-snug">
+          {cue.name}
+        </p>
+        {/* The first thing to go when the column runs out of room. */}
+        <p
+          data-fold="2"
+          className="m-0 mt-0.5 text-[13px] leading-snug text-white/85"
+        >
+          {cue.means}
+        </p>
       </div>
     </div>
   );
