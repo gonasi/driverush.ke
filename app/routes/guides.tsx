@@ -92,7 +92,6 @@ export default function Guides() {
       lede="Everything there is to read: the test, the board and the signs."
       checked={BOARD_CHECKED}
       byline={false}
-      showAd={false}
       lead={
         <div className="grid gap-8">
           {GROUPS.map((group) => (

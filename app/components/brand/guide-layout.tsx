@@ -11,7 +11,6 @@ import { SITE } from "~/lib/site";
 import { Rail } from "~/components/brand/rail";
 import { SiteFooter } from "~/components/brand/site-footer";
 import { SiteNav } from "~/components/brand/site-nav";
-import { InlineAd } from "~/components/brand/inline-ad";
 import { useHashOpens } from "~/components/brand/guide-fold";
 import { ScenePlate } from "~/components/brand/art/scenes";
 
@@ -32,7 +31,6 @@ export function GuideLayout({
   checked,
   dateLabel = "Checked",
   byline = true,
-  showAd = true,
   art,
   lead,
   children,
@@ -45,8 +43,6 @@ export function GuideLayout({
   dateLabel?: string;
   /** Who wrote it and when it was checked. Off on pages that are for doing. */
   byline?: boolean;
-  /** In-content ad after the body. Off for pages like privacy and about. */
-  showAd?: boolean;
   /** A scene from `art/scenes`, beside the lede on tablet and up. */
   art?: React.ReactNode;
   /** The thing to do on this page, shown above the reading. */
@@ -92,7 +88,6 @@ export function GuideLayout({
           {lead && <div className="mt-5">{lead}</div>}
 
           <article className="pt-4">{children}</article>
-          {showAd && <InlineAd />}
         </div>
       </main>
       <SiteFooter />

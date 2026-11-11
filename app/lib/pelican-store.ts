@@ -35,7 +35,6 @@ import {
 import { analytics } from "./analytics";
 import { missTip } from "./miss-tips";
 import { bumpPracticeStreak } from "./practice-streak";
-import { triggerAdAndAwaitClose, triggerAdFromNonReact } from "./ads/ad-engine";
 import {
   defaultScope,
   pickRound,
@@ -664,10 +663,6 @@ export const usePelicanStore = create<PelicanState>()(
               ? { knewFirstTry: tally.firstTry, missCount: runMissCount }
               : undefined,
           });
-          // Zustand store can't use React hooks — route the trigger through
-          // the engine singleton instead. Silent no-op if the AdProvider
-          // hasn't mounted yet (it has, by the time you can finish a run).
-          triggerAdFromNonReact("chapter_complete");
           // A finished chart run has nothing left to resume. Rounds and drills
           // never owned the save, so they leave it be.
           set({
@@ -678,13 +673,7 @@ export const usePelicanStore = create<PelicanState>()(
           return;
         }
 
-        // Mid-run: tick the seen counter, snapshot the run for resume, and
-        // *always* announce the inter-sign break point to the ad engine.
-        // The engine's active-session budget decides whether to actually
-        // fire — most calls block silently with `session_budget_not_met`.
-        // We commit the phase *before* potentially firing so that when the
-        // ad closes, resume() finds phase="between" and re-arms _armBetween
-        // cleanly — no special-case path needed in resume().
+        // Mid-run: tick the seen counter and snapshot the run for resume.
         const snapshotState = get();
         const nextSeen = snapshotState.runSeen + 1;
 
@@ -712,26 +701,6 @@ export const usePelicanStore = create<PelicanState>()(
               }
             : {}),
         });
-
-        // Rounds are short: their natural break is the end, so only a long
-        // whole-chart run can be interrupted between signs.
-        if (snapshotState.runScope.kind === "chart") {
-          const opened = triggerAdAndAwaitClose("gameplay_milestone", () => {
-            // resume() switches on phase and calls _armBetween() — gameplay
-            // picks up exactly where it left off. running=true flips back too.
-            get().resume();
-          });
-          if (opened) {
-            // pause() already does clearTimers + stopAllSfx + stopRegionAudio
-            // and flips running=false. The engine's subscription above will
-            // fire resume() when the user closes the ad.
-            get().pause();
-            return;
-          }
-          // Trigger was blocked (budget not met, premium, etc.) — fall through and
-          // arm the between phase like nothing happened. newNextMilestone has
-          // already been advanced, so we won't retry on the next sign.
-        }
 
         get()._armBetween();
       },

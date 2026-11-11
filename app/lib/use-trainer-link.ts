@@ -1,7 +1,6 @@
 import * as React from "react";
 import { useSearchParams } from "react-router";
 
-import { getAdEngineSingleton } from "./ads/ad-engine";
 import { parseTrainerLink, type RunScope } from "./trainer-rounds";
 
 /**
@@ -49,9 +48,6 @@ export function useTrainerLink(
 
   React.useEffect(() => {
     if (!go || !ready) return;
-    // An ad can open on arrival. Leave the ready card up rather than running the
-    // timer behind it.
-    if (getAdEngineSingleton()?.getSnapshot().isOpen) return;
     // A tick later, so the player's mount effects have settled. Its cleanup
     // pauses the run, and React re-runs effects on mount in development.
     const id = window.setTimeout(() => startRun(link ?? undefined), 0);

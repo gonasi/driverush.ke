@@ -3,7 +3,6 @@ import { useLocation } from "react-router";
 import ReactGA from "react-ga4";
 import { getPersistedUtms } from "./utm";
 import { getPostHog, initPostHog } from "./posthog";
-import type { AdBlockReason, AdSlotId, AdTriggerEvent } from "./ads/ad-types";
 
 /**
  * Two sinks, one taxonomy.
@@ -297,35 +296,4 @@ export const analytics = {
   /** Someone opened a shared link. `valid: false` means the payload was junk. */
   shareLandingViewed: (args: { kind: string; valid: boolean }) =>
     emit("share_landing_viewed", args),
-
-  // ----- ad orchestration -----
-  // Every decision the ad engine makes flows through here, including blocks.
-  // That gives us one place to look for "why didn't an ad show?" answers.
-
-  /** A controlled ad modal opened for a given event/slot/provider. */
-  adShown: (args: {
-    event: AdTriggerEvent;
-    slot: AdSlotId;
-    provider: string;
-  }) =>
-    emit("ad_shown", {
-      event: args.event,
-      slot: args.slot,
-      provider: args.provider,
-    }),
-
-  /** Modal closed via X / Continue / Escape. `dwellMs` measures attention. */
-  adClosed: (args: { slot: AdSlotId; dwellMs: number }) =>
-    emit("ad_closed", { slot: args.slot, dwell_ms: args.dwellMs }),
-
-  /** Provider couldn't paint an impression in time. */
-  adFailed: (args: { slot: AdSlotId; reason: string }) =>
-    emit("ad_failed", { slot: args.slot, reason: args.reason }),
-
-  /** Trigger arrived while a modal was already open — we suppressed it. */
-  adSkipped: (args: { slot: AdSlotId }) => emit("ad_skipped", args),
-
-  /** Engine refused a trigger. `reason` pinpoints which guard fired. */
-  adBlockedByRules: (args: { event: AdTriggerEvent; reason: AdBlockReason }) =>
-    emit("ad_blocked_by_rules", { event: args.event, reason: args.reason }),
 };

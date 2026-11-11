@@ -10,10 +10,10 @@ import { breadcrumbLd, graphLd, guideLd, pageMeta } from "~/lib/site";
 import { GuideLayout } from "~/components/brand/guide-layout";
 
 const PATH = "/privacy";
-const CHECKED = "2026-11-09";
+const CHECKED = "2026-11-11";
 const TITLE = "Privacy: what DriveRush stores and measures";
 const DESCRIPTION =
-  "DriveRush has no accounts. What stays in your browser, what our analytics and ads use, who else is involved, and how to ask us about your data.";
+  "DriveRush has no accounts. What stays in your browser, what our analytics use, who else is involved, and how to ask us about your data.";
 
 export function meta(_: Route.MetaArgs) {
   return [
@@ -45,7 +45,6 @@ export default function Privacy() {
       lede="No accounts. Here's what stays on your device and what we measure."
       checked={CHECKED}
       dateLabel="Updated"
-      showAd={false}
     >
       <Body />
     </GuideLayout>

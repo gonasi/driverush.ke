@@ -39,7 +39,6 @@ import {
 import { analytics } from "./analytics";
 import { missTip } from "./miss-tips";
 import { bumpPracticeStreak } from "./practice-streak";
-import { triggerAdAndAwaitClose, triggerAdFromNonReact } from "./ads/ad-engine";
 import {
   defaultScope,
   pickRound,
@@ -635,7 +634,6 @@ export const useSigns3DStore = create<Signs3DState>()(
               ? { knewFirstTry: tally.firstTry, missCount: runMissCount }
               : undefined,
           });
-          triggerAdFromNonReact("chapter_complete");
           set({
             phase: "complete",
             running: false,
@@ -667,18 +665,6 @@ export const useSigns3DStore = create<Signs3DState>()(
               }
             : {}),
         });
-
-        // Rounds are short: their natural break is the end, so only a long
-        // whole-chart run can be interrupted between signs.
-        if (snapshotState.runScope.kind === "chart") {
-          const opened = triggerAdAndAwaitClose("gameplay_milestone", () => {
-            get().resume();
-          });
-          if (opened) {
-            get().pause();
-            return;
-          }
-        }
 
         get()._armBetween();
       },

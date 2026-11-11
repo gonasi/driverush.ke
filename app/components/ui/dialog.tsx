@@ -39,7 +39,7 @@ function DialogContent({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
-  /** Tiny stamped label in the titlebar. Override per surface (e.g. AdModal). */
+  /** Tiny stamped label in the titlebar. Override per surface. */
   titlebarLabel?: string;
   /** Accessible name for the close button. Override for context-specific copy. */
   closeAriaLabel?: string;

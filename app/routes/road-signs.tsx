@@ -32,7 +32,6 @@ import { SiteNav } from "~/components/brand/site-nav";
 import { SignCheck } from "~/components/home/sign-check";
 import { GuideFold, useHashOpens } from "~/components/brand/guide-fold";
 import { SignTrainerList } from "~/components/brand/sign-trainer-list";
-import { InlineAd } from "~/components/brand/inline-ad";
 
 const PATH = "/road-signs";
 /** Classes the trainers don't drill, so the text reference is all there is. */
@@ -354,8 +353,6 @@ export default function RoadSigns() {
               </section>
             </GuideFold>
           </div>
-
-          <InlineAd />
         </div>
       </main>
       <SiteFooter />

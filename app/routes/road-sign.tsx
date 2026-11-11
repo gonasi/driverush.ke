@@ -35,7 +35,6 @@ import { SignCredit } from "~/components/brand/sign-credit";
 import { SignImage } from "~/components/brand/sign-image";
 import { SiteFooter } from "~/components/brand/site-footer";
 import { SiteNav } from "~/components/brand/site-nav";
-import { InlineAd } from "~/components/brand/inline-ad";
 
 const DESCRIPTION_LIMIT = 155;
 /** Cut at a word boundary so a search result never ends mid-word. */
@@ -258,10 +257,6 @@ export default function RoadSign({ loaderData }: Route.ComponentProps) {
               )}
             </Block>
           </section>
-
-          {/* Only signs with the full write-up carry an ad. The rest are short
-              and noindex, and an ad on a thin page reads as low value. */}
-          {extra && <InlineAd />}
 
           <section className="mt-10">
             <h2 className="m-0 mb-4 border-b-2 border-ink pb-3 font-display text-xl font-extrabold uppercase tracking-tight">

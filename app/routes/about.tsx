@@ -45,7 +45,6 @@ export default function About() {
       }
       lede="Who runs this site, what it isn't, and how we check what we publish."
       checked={CHECKED}
-      showAd={false}
     >
       <Body />
     </GuideLayout>

@@ -86,7 +86,6 @@ get wrong" report.
 | ----------------------------------------------------------------------------- | ------------------------------------------------------------- |
 | `partner_clicked`                                                             | Outbound click to a credited source (name + url)              |
 | `contact_clicked`                                                             | Footer phone/email tapped (`channel`, `location`)             |
-| `ad_shown` / `ad_closed` / `ad_failed` / `ad_skipped` / `ad_blocked_by_rules` | Every decision the ad engine makes — see `docs/ads-system.md` |
 
 ## Learner profile
 
@@ -137,9 +136,8 @@ PostHog retention on `pelican_started` OR `signs3d_started`, split by
 
 - `$rageclick` and `$dead_click` trends by URL.
 
-**Reach and money**
-`partner_clicked`, `contact_clicked`, `ad_shown` → `ad_closed` dwell, and
-`ad_blocked_by_rules` by `reason` (why ads didn't show).
+**Reach**
+`partner_clicked` and `contact_clicked`.
 
 **Error tracking**
 Watch the `$exception` issue list; the ones on `/road-signs/*` matter most because

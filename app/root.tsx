@@ -23,9 +23,6 @@ import { SITE, absUrl } from "~/lib/site";
 import { getPostHog, initAnalytics, usePageviews } from "~/lib/analytics";
 import { useLearnerAnalytics } from "~/lib/use-learner-analytics";
 import { useUtmCapture } from "~/lib/utm";
-import { AdProvider, RouteAdGate, useAdEngine } from "~/lib/ads/ad-context";
-import { AdModal } from "~/components/brand/ad-modal";
-import { AD_CLIENT, ADSENSE_LIVE, ADSENSE_SRC } from "~/lib/ads/ad-constants";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -85,11 +82,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   // main nav (see <AppBar>) — it used to float over every page, which got in
   // the way of the games on mobile.
   useThemeSync();
-  const { pathname } = useLocation();
-  // AdSense wants its code in the server-rendered <head> so the site review
-  // crawler sees it. It also powers Auto ads. Never on the internal tools.
-  const loadAdsense =
-    ADSENSE_LIVE && import.meta.env.PROD && !pathname.startsWith("/tools");
   return (
     // The theme init script writes `style="color-scheme: …"` on <html> before
     // React hydrates (so light/dark settles without a flash). That edit comes
@@ -100,12 +92,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         {/* Settle light/dark before first paint — no flash. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-        <meta name="google-adsense-account" content={AD_CLIENT} />
         <Meta />
         <Links />
-        {loadAdsense && (
-          <script async src={ADSENSE_SRC} crossOrigin="anonymous" />
-        )}
       </head>
       <body>
         <NavigationProgressBar />
@@ -130,14 +118,7 @@ export default function App() {
   // `entry.client.tsx`, before hydration.
   useLearnerAnalytics();
   return (
-    // <AdProvider> wraps the route tree so the engine + modal survive route
-    // transitions. <RouteAdGate /> reads each match's `handle.ads` and pushes
-    // the interruptible flag into the engine. <AdModal /> is a portalled
-    // sibling of the animated outlet — it doesn't unmount when the user
-    // navigates away mid-impression.
-    <AdProvider>
-      <RouteAdGate />
-      <AmbientAdTrigger />
+    <>
       {/* Keyed so each new page gets a fresh entrance. There's no exit, so a tap
           never waits on the old page, and the first load isn't animated. */}
       <div
@@ -147,26 +128,8 @@ export default function App() {
         <Outlet />
       </div>
       <TabBar />
-      <AdModal />
-    </AdProvider>
+    </>
   );
-}
-
-/**
- * Ambient ad trigger. Fires `route_change` on every SPA navigation. The
- * engine gates it by the active-session budget — most calls log
- * `session_budget_not_met` and do nothing; the call that lands after the
- * 5-min budget hits actually opens the modal. This is the "next action
- * fires the ad" mechanism for routes outside the game-specific trigger
- * sites (the trainers' `_toBetween`).
- */
-function AmbientAdTrigger() {
-  const location = useLocation();
-  const { triggerAd } = useAdEngine();
-  React.useEffect(() => {
-    triggerAd("route_change");
-  }, [location.pathname, triggerAd]);
-  return null;
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
