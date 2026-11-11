@@ -3,6 +3,7 @@
  * chart's data, so a sign added to `road-signs-pelican.json` gets a page and a
  * sitemap entry by itself, as long as it has a line in `SIGN_DETAILS`.
  */
+import { TITLE_SUFFIX } from "./site";
 import { SIGN_DETAILS } from "~/data/road-sign-details";
 import { SIGN_GUIDES, type SignGuide } from "~/data/road-sign-guides";
 import pelican from "~/data/road-signs-pelican.json";
@@ -21,6 +22,15 @@ export type SignPage = FocusRegion & {
 };
 
 export const CHART_SRC = pelican.imageSrc as string;
+
+/**
+ * Each sign in search also has a picture file of its own, so it can be found
+ * in image search. `scripts/build-sign-images.mjs` writes them, this size
+ * square, from the same crop the page draws.
+ */
+export const SIGN_IMAGE_SIZE = 512;
+export const signImagePath = (sign: { slug: string }) =>
+  `/assets/road-signs/signs/${sign.slug}.png`;
 
 function signSlug(name: string): string {
   return name
@@ -140,10 +150,16 @@ export function hasSign3D(sign: { code?: string }): boolean {
 export function relatedSigns(sign: SignPage, count = 6): SignPage[] {
   const sameClass = SIGN_PAGES.filter((s) => s.category === sign.category);
   const at = sameClass.findIndex((s) => s.slug === sign.slug);
-  return Array.from(
-    { length: Math.min(count, sameClass.length - 1) },
+  const following = Array.from(
+    { length: sameClass.length - 1 },
     (_, i) => sameClass[(at + i + 1) % sameClass.length],
   );
+  // Pages that are in search first, so links lead somewhere a search engine
+  // will keep. The order within each group stays the chart's.
+  return [
+    ...following.filter((s) => isSignConfirmed(s)),
+    ...following.filter((s) => !isSignConfirmed(s)),
+  ].slice(0, count);
 }
 
 /** How to read a whole class of signs, and what to call one in a sentence. */
@@ -182,3 +198,33 @@ export const SIGN_CLASS_GUIDE: Record<
     rule: "Additional panels are small rectangles fixed under a main sign. They add detail such as a distance, a direction or a time, and they never apply on their own.",
   },
 };
+
+/** Room for the title before " · DriveRush" makes it too long for a result. */
+const TITLE_ROOM = 60 - TITLE_SUFFIX.length;
+
+/** "Stop sign", without saying "sign" twice for a name that has it already. */
+export function signHeading(name: string): string {
+  return /\bsign$/i.test(name) ? name : `${name} sign`;
+}
+
+/**
+ * The everyday name for signs whose chart name is too long for a search
+ * result. The page itself keeps the chart name.
+ */
+const SHORT_NAMES: Record<string, string> = {
+  "No entry for vehicles exceeding height shown": "Height limit",
+  "No entry for vehicles exceeding weight shown": "Weight limit",
+  "No entry for vehicles exceeding weight shown on one axle":
+    "Axle weight limit",
+  "Overtaking of four-wheeled vehicles prohibited": "No overtaking",
+};
+
+/** The longest of these that fits in a search result. */
+export function signTitle(name: string): string {
+  const heading = signHeading(SHORT_NAMES[name] ?? name);
+  return (
+    [`${heading}: meaning in Kenya`, `${heading} in Kenya`, heading].find(
+      (title) => title.length <= TITLE_ROOM,
+    ) ?? heading
+  );
+}

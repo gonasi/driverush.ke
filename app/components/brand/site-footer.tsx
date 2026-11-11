@@ -13,6 +13,7 @@ import {
   BOARD_PATH,
 } from "~/lib/board-guides";
 import { SITE } from "~/lib/site";
+import { SIGN_CLASS_PAGES } from "~/lib/sign-class-pages";
 
 import { Logo } from "~/components/brand/logo";
 import { SignCredit } from "~/components/brand/sign-credit";
@@ -77,6 +78,10 @@ export function SiteFooter() {
               { label: "Pelican chart", href: "/road-signs/pelican" },
               { label: "3D signs", href: "/road-signs/3d" },
               { label: "All signs", href: "/road-signs" },
+              ...SIGN_CLASS_PAGES.map((page) => ({
+                label: page.name,
+                href: page.path,
+              })),
             ]}
           />
           <FooterCol

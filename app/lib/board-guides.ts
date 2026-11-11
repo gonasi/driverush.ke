@@ -24,7 +24,12 @@ export const levelHref = (id: string) => `${BOARD_PLAY_PATH}?level=${id}`;
 /** The date the board pages were last checked against their sources. */
 export const BOARD_CHECKED = "2026-11-11";
 
-export type BoardGuideId = "questions" | "roundabout" | "rules" | "parking";
+export type BoardGuideId =
+  | "diagram"
+  | "questions"
+  | "roundabout"
+  | "rules"
+  | "parking";
 
 export type BoardGuide = {
   id: BoardGuideId;
@@ -42,12 +47,22 @@ export type BoardGuide = {
 
 export const BOARD_GUIDES: readonly BoardGuide[] = [
   {
+    id: "diagram",
+    path: `${BOARD_PATH}/diagram`,
+    name: "Labelled diagram",
+    title: "Model Town Board diagram, labelled",
+    description:
+      "A labelled diagram of the Model Town Board: every road, lane number, line and parking bay, and how the lanes are numbered from the kerb.",
+    lede: "The whole board from above, with every part named, then the roundabout and the parking zone up close.",
+    blurb: "Every road, lane, line and bay on the board, named.",
+  },
+  {
     id: "questions",
     path: `${BOARD_PATH}/questions`,
     name: "Questions and answers",
     title: "Model Town Board questions and answers",
     description:
-      "Model Town Board questions with answers: which lane to use, the roundabout rules, the three route rules and parking. Each answer comes from the NTSA learner handbook.",
+      "Model Town Board questions with answers: which lane to use, the roundabout, the route rules and parking, each answer from the NTSA handbook.",
     lede: "The questions learners get asked on the board, with the rule behind each answer. Try each one before you open it.",
     blurb: "Lanes, the roundabout, routes and parking, each with its rule.",
   },
@@ -55,9 +70,9 @@ export const BOARD_GUIDES: readonly BoardGuide[] = [
     id: "roundabout",
     path: `${BOARD_PATH}/roundabout`,
     name: "Roundabout lanes",
-    title: "Model Town Board roundabout: which lane for which turn",
+    title: "Model Town Board roundabout: which lane to use",
     description:
-      "Which lane to use at the Model Town Board roundabout for left, straight, right and coming back, the five things you must not do on it, and who may go all the way round.",
+      "Which lane to use at the Model Town Board roundabout to turn left, go straight, turn right or come back, and the rules once you are on it.",
     lede: "Pick your lane before the roundabout, stay in it all the way round, and leave at your exit. Here is which lane does what.",
     blurb: "Which lane goes left, straight, right or all the way round.",
   },
@@ -65,9 +80,9 @@ export const BOARD_GUIDES: readonly BoardGuide[] = [
     id: "rules",
     path: `${BOARD_PATH}/rules`,
     name: "The rules",
-    title: "Model Town Board rules, explained",
+    title: "Model Town Board rules",
     description:
-      "The Model Town Board rules in one place: the three route rules, how lanes are numbered, continuous and broken lines, kerbs, stop and give way, and the roundabout.",
+      "The Model Town Board rules in one place: the three route rules, lane numbers, continuous and broken lines, kerbs, stop and give way.",
     lede: "Every rule on the board comes down to a few ideas: the right route, the right lane, and obeying what is painted and posted.",
     blurb: "The route rules, lane numbers, lines, kerbs, stop and give way.",
   },
@@ -75,9 +90,9 @@ export const BOARD_GUIDES: readonly BoardGuide[] = [
     id: "parking",
     path: `${BOARD_PATH}/parking`,
     name: "Parking",
-    title: "Parking on the Model Town Board: angle and flush parking",
+    title: "Model Town Board parking: angle and flush",
     description:
-      "How parking works on the Model Town Board: angle parking, flush parking, the controlled parking zone, and the route rule that says to avoid the parking area.",
+      "How to park on the Model Town Board: angle bays nose in and reverse out, flush boxes reverse in, and when you may use the parking zone.",
     lede: "The board has two kinds of parking, and a rule about when you may drive through the parking area at all.",
     blurb: "Angle and flush parking, and when to use the parking area.",
   },

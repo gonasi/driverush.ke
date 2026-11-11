@@ -36,7 +36,7 @@ const PELICAN_CODES = new Set(board.regions.map((r) => r.code ?? ""));
 export function meta(_: Route.MetaArgs) {
   return [
     ...pageMeta({
-      title: "Pelican chart: Kenya road signs trainer for the NTSA test",
+      title: "Pelican road signs chart: Kenya signs trainer",
       description:
         "Memorise Kenyan road signs on the Pelican chart. Name each sign before the answer shows, and the ones you miss come back sooner. Free, no signup.",
       path: PATH,
@@ -106,7 +106,8 @@ export default function PelicanSigns() {
           <header className="dr-rise border-b-2 border-ink pb-7">
             <SignCredit size="sm" />
             <h1 className="m-0 mt-3 font-display text-[clamp(40px,7vw,72px)] font-extrabold uppercase leading-[0.9] tracking-tighter">
-              Pelican <span className="italic text-rush">chart</span>
+              Pelican road signs{" "}
+              <span className="italic text-rush">chart</span>
             </h1>
             <p className="mt-4 max-w-2xl font-serif text-[clamp(16px,2.2vw,22px)] leading-tight text-ink-2">
               We zoom into one sign on the chart. Name it before the answer

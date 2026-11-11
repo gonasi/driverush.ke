@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import type { Route } from "./+types/road-signs";
 
 import { absUrl, breadcrumbLd, pageMeta, ROAD_SIGN_KEYWORDS } from "~/lib/site";
@@ -9,6 +10,13 @@ import {
   type SignShape,
   type SignTone,
 } from "~/data/road-signs-reference";
+import {
+  SIGN_PAGES,
+  isSignConfirmed,
+  signHeading,
+  signPagePath,
+} from "~/lib/road-sign-pages";
+import { SIGN_CLASS_PAGES } from "~/lib/sign-class-pages";
 import { cn } from "~/lib/utils";
 
 import { Badge } from "~/components/ui/badge";
@@ -35,7 +43,7 @@ const REFERENCE_ONLY = SIGN_CATEGORIES.filter((c) =>
 export function meta(_: Route.MetaArgs) {
   return [
     ...pageMeta({
-      title: `Kenya road signs and meanings: ${SIGN_COUNT} signs with pictures`,
+      title: "Kenya road signs and meanings, with pictures",
       description: `${SIGN_COUNT} Kenyan road signs with pictures and meanings: warning, priority, mandatory and prohibitory. Free trainers to memorise them, no signup.`,
       path: PATH,
       ogImage: ogCardPath("road-signs"),
@@ -55,12 +63,14 @@ export function meta(_: Route.MetaArgs) {
           ),
           {
             "@type": "ItemList",
-            name: "More Kenyan road signs and markings",
-            itemListElement: REFERENCE_ONLY.map((c, i) => ({
+            name: "Kenyan road signs and their meanings",
+            itemListElement: SIGN_PAGES.filter((sign) =>
+              isSignConfirmed(sign),
+            ).map((sign, i) => ({
               "@type": "ListItem",
               position: i + 1,
-              name: c.title,
-              url: absUrl(`${PATH}#${c.slug}`),
+              name: signHeading(sign.name!),
+              url: absUrl(signPagePath(sign)),
             })),
           },
         ],
@@ -138,7 +148,7 @@ export default function RoadSigns() {
               className="dr-rise m-0 font-display text-[clamp(36px,7vw,76px)] font-extrabold uppercase leading-[0.9] tracking-tighter"
             >
               Kenya road signs.{" "}
-              <span className="italic text-rush">All {SIGN_COUNT}.</span>
+              <span className="italic text-rush">{`All ${SIGN_COUNT}.`}</span>
             </h1>
             <p
               style={stagger(2)}
@@ -151,6 +161,29 @@ export default function RoadSigns() {
 
           <section className="mt-6" aria-label="Road-sign trainers">
             <SignTrainerList buttons />
+            <p className="m-0 mt-4 text-[14.5px] leading-snug text-ink-2">
+              Read them by class:{" "}
+              {SIGN_CLASS_PAGES.map((page, i) => (
+                <span key={page.path}>
+                  {i > 0 && (i === SIGN_CLASS_PAGES.length - 1 ? " and " : ", ")}
+                  <Link
+                    to={page.path}
+                    className="font-semibold text-ink underline decoration-rush decoration-2 underline-offset-4 hover:text-rush"
+                  >
+                    {page.name.toLowerCase()}
+                  </Link>
+                </span>
+              ))}
+              . Or{" "}
+              <a
+                href="/downloads/kenya-road-signs-chart.pdf"
+                download
+                className="font-semibold text-ink underline decoration-rush decoration-2 underline-offset-4 hover:text-rush"
+              >
+                download the chart as a PDF
+              </a>{" "}
+              to print.
+            </p>
             {/* The chart is the most forwarded thing on the site: a learner
                 sends it to the next person in the queue at NTSA. */}
             <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2.5">

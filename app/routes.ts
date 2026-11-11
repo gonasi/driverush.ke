@@ -31,6 +31,9 @@ export default [
     id: "legacy-board-levels",
   }),
   // The board's guides. One file, four routes: the path picks the guide.
+  route("model-town-board/diagram", "routes/board-guide.tsx", {
+    id: "board-guide-diagram",
+  }),
   route("model-town-board/questions", "routes/board-guide.tsx", {
     id: "board-guide-questions",
   }),

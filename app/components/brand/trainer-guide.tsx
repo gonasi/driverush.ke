@@ -44,7 +44,7 @@ export function TrainerGuide({
       className="mt-14 grid gap-10 border-t-2 border-ink pt-8 font-serif text-[17px] leading-relaxed text-ink-2"
     >
       <div>
-        <Heading>How {name} works</Heading>
+        <Heading>How the {name} trainer works</Heading>
         <ol className="m-0 grid list-none gap-4 p-0">
           {steps.map((step, i) => (
             <li key={step.title} className="grid grid-cols-[2rem_1fr] gap-3">

@@ -35,7 +35,7 @@ const CODES_3D = new Set(board.signs.map((s) => s.code ?? ""));
 export function meta(_: Route.MetaArgs) {
   return [
     ...pageMeta({
-      title: "3D road signs: spin Kenyan signs for the NTSA test",
+      title: "3D road signs: spin Kenyan signs in 3D",
       description:
         "Recognise Kenyan road signs in 3D from any angle. Name each one before the answer shows, and the ones you miss come back sooner. Free, no signup.",
       path: PATH,
@@ -105,7 +105,7 @@ export default function ThreeDSigns() {
           <header className="dr-rise border-b-2 border-ink pb-7">
             <SignCredit size="sm" />
             <h1 className="m-0 mt-3 font-display text-[clamp(40px,7vw,72px)] font-extrabold uppercase leading-[0.9] tracking-tighter">
-              3D <span className="italic text-rush">signs</span>
+              3D road <span className="italic text-rush">signs</span>
             </h1>
             <p className="mt-4 max-w-2xl font-serif text-[clamp(16px,2.2vw,22px)] leading-tight text-ink-2">
               One sign at a time, modelled on its post. Spin it and read it from

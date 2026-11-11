@@ -16,9 +16,9 @@ import { ChevronRightIcon } from "~/components/brand/icons";
 import { GuideLayout } from "~/components/brand/guide-layout";
 
 const PATH = "/guides";
-const TITLE = "Guides: the NTSA test, the Model Town Board and road signs";
+const TITLE = "Driving test guides for Kenya";
 const DESCRIPTION =
-  "Every DriveRush guide in one place: the NTSA test and its fees, driving schools, the Model Town Board's lanes, rules and parking, and Kenya's road signs by class.";
+  "Every DriveRush guide in one place: the NTSA test and fees, driving schools, the Model Town Board's lanes, rules and parking, and road signs by class.";
 
 type Entry = { to: string; title: string; blurb: string };
 

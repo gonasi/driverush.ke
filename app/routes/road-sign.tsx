@@ -16,11 +16,17 @@ import {
   SIGN_CLASS_GUIDE,
   signGuide,
   signPageByCode,
+  SIGN_IMAGE_SIZE,
+  signHeading,
+  signImagePath,
   signPageBySlug,
+  signTitle,
   signPagePath,
 } from "~/lib/road-sign-pages";
 import { signClassPage } from "~/lib/sign-class-pages";
-import { absUrl, breadcrumbLd, graphLd, pageMeta } from "~/lib/site";
+import { absUrl, breadcrumbLd, graphLd, pageMeta,
+  TITLE_SUFFIX,
+} from "~/lib/site";
 import { trainerHref } from "~/lib/trainer-rounds";
 
 import { Button } from "~/components/ui/button";
@@ -32,7 +38,6 @@ import { SiteNav } from "~/components/brand/site-nav";
 import { InlineAd } from "~/components/brand/inline-ad";
 
 const DESCRIPTION_LIMIT = 155;
-
 /** Cut at a word boundary so a search result never ends mid-word. */
 function clip(text: string, limit: number): string {
   if (text.length <= limit) return text;
@@ -49,7 +54,7 @@ export function meta({ data }: Route.MetaArgs) {
   const sign = signPageBySlug(data?.slug);
   if (!sign) {
     return [
-      { title: "Road sign not found · DriveRush Kenya" },
+      { title: `Road sign not found${TITLE_SUFFIX}` },
       { name: "robots", content: "noindex, follow" },
     ];
   }
@@ -58,7 +63,7 @@ export function meta({ data }: Route.MetaArgs) {
   const path = signPagePath(sign);
   return [
     ...pageMeta({
-      title: `${sign.name} sign in Kenya (${sign.code}): what it means`,
+      title: signTitle(sign.name!),
       description: clip(
         `${sign.name} (${sign.code}) is a Kenyan ${guide.singular}. ${sign.note}`,
         DESCRIPTION_LIMIT,
@@ -82,6 +87,17 @@ export function meta({ data }: Route.MetaArgs) {
         name: sign.name,
         termCode: sign.code,
         description: sign.note,
+        ...(isSignConfirmed(sign)
+          ? {
+              image: {
+                "@type": "ImageObject",
+                url: absUrl(signImagePath(sign)),
+                width: SIGN_IMAGE_SIZE,
+                height: SIGN_IMAGE_SIZE,
+                caption: `${signHeading(sign.name!)} in Kenya (${sign.code})`,
+              },
+            }
+          : {}),
         url: absUrl(path),
         inDefinedTermSet: {
           "@type": "DefinedTermSet",
@@ -127,17 +143,30 @@ export default function RoadSign({ loaderData }: Route.ComponentProps) {
           </nav>
 
           <header className="grid gap-5 sm:grid-cols-[minmax(0,240px)_1fr] sm:items-center sm:gap-8">
-            <SignImage
-              sign={sign}
-              label={`${sign.name} road sign (${sign.code})`}
-              className="aspect-square w-full max-w-[240px] border-2 border-ink"
-            />
+            {/* Signs in search have a picture file of their own, so they
+                can be found in image search. It is the same crop. */}
+            {isSignConfirmed(sign) ? (
+              <img
+                src={signImagePath(sign)}
+                alt={`${signHeading(sign.name!)}, Kenyan road sign ${sign.code}`}
+                width={SIGN_IMAGE_SIZE}
+                height={SIGN_IMAGE_SIZE}
+                fetchPriority="high"
+                className="block aspect-square w-full max-w-[240px] border border-ink/25 bg-white"
+              />
+            ) : (
+              <SignImage
+                sign={sign}
+                label={`${sign.name} road sign (${sign.code})`}
+                className="aspect-square w-full max-w-[240px] border border-ink/25"
+              />
+            )}
             <div className="grid justify-items-start gap-3">
               <p className="m-0 font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
                 Kenyan {guide.singular} · {sign.code}
               </p>
               <h1 className="m-0 font-display text-[clamp(30px,5.6vw,56px)] font-extrabold uppercase leading-[0.95] tracking-tighter">
-                {sign.name}
+                {signHeading(sign.name!)}
               </h1>
               <div className="mt-1 flex flex-wrap gap-2.5">
                 <Button variant="rush" asChild>

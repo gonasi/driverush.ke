@@ -85,6 +85,20 @@ export type BoardTableProps = {
   focus?: boolean;
   /** The board is painted and on screen. */
   onReady?: () => void;
+  /**
+   * More cars standing on the roads, each one of the pack's models. Only the
+   * still in `/tools/og` uses it, to show the cars off; the game leaves it out.
+   */
+  extraCars?: readonly ExtraCar[];
+};
+
+export type ExtraCar = {
+  car: BoardCarId;
+  paint: string;
+  plate: string;
+  x: number;
+  z: number;
+  heading: number;
 };
 
 const BOARD_W = BOUNDS.x1 - BOUNDS.x0;
@@ -752,6 +766,7 @@ function Scene({
   learning = false,
   focus = false,
   onReady,
+  extraCars,
   models,
 }: BoardTableProps & { models: CarSources }) {
   const gl = useThree((s) => s.gl);
@@ -860,6 +875,18 @@ function Scene({
     return group;
   }, [tier, models, layout]);
   React.useEffect(() => () => dispose(parked), [parked]);
+
+  const extras = React.useMemo(() => {
+    const group = new THREE.Group();
+    (extraCars ?? []).forEach((spot) => {
+      const extra = carOnTable(spot.paint, spot.plate, tier, models?.[spot.car]);
+      extra.position.set(spot.x, 0, spot.z);
+      extra.rotation.y = -spot.heading;
+      group.add(extra);
+    });
+    return group;
+  }, [tier, models, extraCars]);
+  React.useEffect(() => () => dispose(extras), [extras]);
 
   const goal = React.useMemo(() => {
     if (!challenge) return null;
@@ -1299,6 +1326,7 @@ function Scene({
 
       <primitive object={table.group} />
       <primitive object={parked} />
+      <primitive object={extras} />
 
       {goal && (
         <mesh position={[goal.x, 0.05, goal.z]} rotation={[-Math.PI / 2, 0, 0]}>

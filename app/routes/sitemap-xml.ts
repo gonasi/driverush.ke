@@ -19,6 +19,8 @@ import { SIGN_CLASS_PAGES } from "~/lib/sign-class-pages";
 import {
   isSignConfirmed,
   SIGN_PAGES,
+  signHeading,
+  signImagePath,
   signPagePath,
 } from "~/lib/road-sign-pages";
 
@@ -29,6 +31,8 @@ type Entry = {
   changefreq: "daily" | "weekly" | "monthly" | "yearly";
   priority: string;
   lastmod: string;
+  /** A picture on the page, for image search. */
+  image?: { loc: string; title: string };
 };
 
 /** The post that still works as a hub. These get crawled first. */
@@ -65,9 +69,13 @@ const STATIC_PAGES: Entry[] = [
  * are marked noindex until they're checked: see `CONFIRMED_CODES`.
  */
 function signEntries(): Entry[] {
-  return SIGN_PAGES.filter(isSignConfirmed).map((sign) =>
-    page(signPagePath(sign), "0.6"),
-  );
+  return SIGN_PAGES.filter(isSignConfirmed).map((sign) => ({
+    ...page(signPagePath(sign), "0.6"),
+    image: {
+      loc: signImagePath(sign),
+      title: `${signHeading(sign.name!)}, Kenyan road sign ${sign.code}`,
+    },
+  }));
 }
 
 function blogEntries(): Entry[] {
@@ -82,6 +90,13 @@ function blogEntries(): Entry[] {
   });
 }
 
+function escapeXml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 export function loader() {
   const entries = [...STATIC_PAGES, ...signEntries(), ...blogEntries()];
 
@@ -93,13 +108,19 @@ export function loader() {
         `    <lastmod>${p.lastmod}</lastmod>\n` +
         `    <changefreq>${p.changefreq}</changefreq>\n` +
         `    <priority>${p.priority}</priority>\n` +
+        (p.image
+          ? `    <image:image>\n` +
+            `      <image:loc>${absUrl(p.image.loc)}</image:loc>\n` +
+            `      <image:title>${escapeXml(p.image.title)}</image:title>\n` +
+            `    </image:image>\n`
+          : "") +
         `  </url>`,
     )
     .join("\n");
 
   const body =
     `<?xml version="1.0" encoding="UTF-8"?>\n` +
-    `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
+    `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n` +
     `${urls}\n` +
     `</urlset>\n`;
 

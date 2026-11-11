@@ -12,6 +12,8 @@ export type SignClassPage = {
   /** SERP and og title. */
   title: string;
   description: string;
+  /** The page's H1, with the words people search for. */
+  heading: string;
   /** Short name for breadcrumbs and links. */
   name: string;
   lede: string;
@@ -23,7 +25,8 @@ export const SIGN_CLASS_PAGES: SignClassPage[] = [
     category: "warning",
     path: "/road-signs/warning-signs",
     name: "Warning signs",
-    title: "Kenyan warning signs: what the red triangles mean",
+    title: "Warning road signs in Kenya: the red triangles",
+    heading: "Warning road signs in Kenya",
     description:
       "All 34 Kenyan warning signs in five groups, with the mirror-image pairs people mix up and how far ahead of a hazard each sign stands.",
     lede: "The red triangles, in five groups, with the pairs people read backwards and what to do when you see one.",
@@ -33,9 +36,10 @@ export const SIGN_CLASS_PAGES: SignClassPage[] = [
     category: "mandatory",
     path: "/road-signs/mandatory-signs",
     name: "Mandatory signs",
-    title: "Kenyan mandatory signs: what the blue circles mean",
+    title: "Mandatory road signs in Kenya: the blue circles",
+    heading: "Mandatory road signs in Kenya",
     description:
-      "The 10 Kenyan mandatory signs: blue circles that tell you what you must do. How to read the arrows, minimum speed, and the blue and red signs that share a picture.",
+      "The 10 Kenyan mandatory signs: blue circles that tell you what you must do, how to read the arrows, and the red signs with the same picture.",
     lede: "The blue circles that tell you what you must do, and how to tell them from the red signs with the same picture.",
     checked: "2026-11-10",
   },
@@ -43,7 +47,8 @@ export const SIGN_CLASS_PAGES: SignClassPage[] = [
     category: "prohibitory",
     path: "/road-signs/prohibitory-signs",
     name: "Prohibitory signs",
-    title: "Kenyan prohibitory signs: what the red rings mean",
+    title: "Prohibitory road signs in Kenya: the red rings",
+    heading: "Prohibitory road signs in Kenya",
     description:
       "The 33 Kenyan prohibitory signs in six groups: entry, size and weight, turns, speed, stopping and parking. How to read the numbers and the bars.",
     lede: "The red rings that tell you what you may not do, in six groups, with how to read the numbers and the bars.",

@@ -6,9 +6,11 @@
  * `app/guides/`. Each one opens with a way into the trainer.
  */
 import type * as React from "react";
+import { Link } from "react-router";
 
 import type { Route } from "./+types/board-guide";
 
+import DiagramBody from "~/guides/board-diagram.mdx";
 import ParkingBody from "~/guides/board-parking.mdx";
 import QuestionsBody from "~/guides/board-questions.mdx";
 import RoundaboutBody from "~/guides/board-roundabout.mdx";
@@ -33,6 +35,7 @@ import { BoardStartCard } from "~/components/board/board-start-card";
 import { GuideLayout } from "~/components/brand/guide-layout";
 
 const BODIES: Record<BoardGuideId, React.ComponentType> = {
+  diagram: DiagramBody,
   questions: QuestionsBody,
   roundabout: RoundaboutBody,
   rules: RulesBody,
@@ -82,7 +85,21 @@ export default function BoardGuide({ loaderData }: Route.ComponentProps) {
       title={guide.title}
       lede={guide.lede}
       checked={BOARD_CHECKED}
-      lead={<BoardStartCard />}
+      lead={
+        <>
+          <nav
+            aria-label="Breadcrumb"
+            className="mb-4 flex flex-wrap items-center gap-2 font-mono text-[10.5px] uppercase tracking-widest text-ink-3"
+          >
+            <Link to={BOARD_PATH} className="hover:text-ink hover:underline">
+              Model Town Board
+            </Link>
+            <span aria-hidden>/</span>
+            <span aria-current="page">{guide.name}</span>
+          </nav>
+          <BoardStartCard />
+        </>
+      }
     >
       <Body />
     </GuideLayout>

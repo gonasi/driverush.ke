@@ -23,6 +23,8 @@ import { LoadingPanel } from "~/components/brand/traffic-loader";
 
 export function meta(_: Route.MetaArgs) {
   return [
+    // No canonical: a page kept out of search should not also point
+    // somewhere else. Shared links still preview as the Board page.
     ...pageMeta({
       title: "Drive the Model Town Board",
       description:
@@ -32,7 +34,7 @@ export function meta(_: Route.MetaArgs) {
       extraKeywords: BOARD_KEYWORDS,
       ogImage: ogCardPath("board"),
       ogImageAlt: ogCardAlt("board"),
-    }),
+    }).filter((tag) => !("rel" in tag && tag.rel === "canonical")),
     { name: "robots", content: "noindex, follow" },
   ];
 }

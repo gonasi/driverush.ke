@@ -1,0 +1,48 @@
+import { Link } from "react-router";
+import { BoardPicture } from "~/components/board/board-picture";
+import { BoardFeatureList } from "~/components/board/board-feature-list";
+import { BoardGuideLinks } from "~/components/board/board-guide-links";
+
+This is the Model Town Board our simulator uses, laid out the way Kenyan driving schools paint it. Boards are not all identical, so have your school show you the one you will be tested on.
+
+<BoardPicture
+  alt="Labelled diagram of the whole Model Town Board from above, lying on its side. Numbers mark the dual carriageway, the gap in the central reserve, the roundabout, the three-lane road, the parking zone, the street, the two-way road, a pedestrian crossing and the flush parking."
+  caption="The whole board. The numbers match the list under it."
+/>
+
+## How the lanes are numbered
+
+Lanes are counted from the kerb. Lane 1 is beside the kerb, and the highest number is beside the middle of the road. The dual carriageway has four lanes each way, so lane 4 runs beside the central reserve. The three-lane road has three each way, so lane 3 runs beside its yellow centre line. The roundabout's lanes are counted the same way, from the outside in.
+
+The arrows painted in each lane show where that lane may go. The handbook sums them up as an option code: **2124** on the four-lane road and **215** on the three-lane road. <Link to="/model-town-board/roundabout">Which lane to use at the roundabout</Link> explains both.
+
+## The roundabout, up close
+
+<BoardPicture
+  part="roundabout"
+  alt="Close-up diagram of the Model Town Board roundabout: four lanes round a green island, with the four-lane dual carriageway coming in from above and below and the three-lane road from the sides. Lane arrows and lane numbers are painted on each approach."
+/>
+
+## The parking zone, up close
+
+<BoardPicture
+  part="parking"
+  alt="Close-up diagram of the parking zone on the Model Town Board: angle bays at 45 degrees on both sides of a two-way aisle, and flush parking boxes along the kerb of the two-way road."
+/>
+
+## Every part of the board
+
+<BoardFeatureList />
+
+## Drive it
+
+Every part above is on the <Link to="/model-town-board">Model Town Board simulator</Link>. The first unit of levels points the camera at each one and says what it asks of you, before you drive. It is free, with no signup.
+
+## More on the Model Town Board
+
+<BoardGuideLinks current="diagram" />
+
+## Sources
+
+- [Kenya Learner Driver Handbook](https://www.lunardrivingschool.com/wp-content/uploads/2023/09/KENYA-LEARNER-DRIVER-HANDBOOK-Light-Motor-Vehicle.pdf), compiled by NTSA, 2016, Unit 3: Model Town. We could not find it on NTSA's own site, so this copy is hosted by a driving school. Ask your school whether your test centre still follows it.
+- The layout follows a board painted by a Kenyan driving school, with proportions measured from a reference drawing of it.

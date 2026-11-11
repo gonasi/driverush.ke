@@ -22,17 +22,25 @@ import { useSearchParams } from "react-router";
 import type { Route } from "./+types/og";
 
 import pelican from "~/data/road-signs-pelican.json";
-import { challengeById } from "~/lib/board/challenges";
-import { dirOf, ringRadius } from "~/lib/board/geometry";
+import {
+  dirOf,
+  laneBearing,
+  lanePoint,
+  ringRadius,
+} from "~/lib/board/geometry";
 import type { Seat } from "~/lib/board/joystick";
 import { car as boardCar } from "~/lib/board/runtime";
 import { cam, panBy } from "~/lib/board/stage";
 import { regionSpriteStyle } from "~/lib/image-focus";
 import { signCrop } from "~/lib/sign-crops";
 import { OG_CARDS, OG_HEIGHT, OG_WIDTH, type OgCardId } from "~/lib/og-cards";
+import { SIGN_COUNT } from "~/lib/road-signs";
+import { SIGN_BRAND } from "~/lib/sign-credits";
 import { cn } from "~/lib/utils";
 
 import { Sign3DViewer } from "~/components/brand/sign-3d-viewer";
+import { SignImage } from "~/components/brand/sign-image";
+import { SIGN_IMAGE_SIZE, signPageBySlug } from "~/lib/road-sign-pages";
 
 export function meta(_: Route.MetaArgs) {
   return [
@@ -396,6 +404,15 @@ const BoardTable = React.lazy(() => import("~/components/board/board-table"));
  * Where the still looks, and where the car is in it. `?x=&z=&span=&at=` move
  * them, for trying a framing before settling on these.
  */
+/**
+ * The other two cars of the pack, beside the yellow saloon, so the picture
+ * shows every car a learner can pick. Lane and distance from the roundabout.
+ */
+const STILL_CARS = [
+  { car: "pickup", paint: "#2456b4", plate: "KDA 101B", lane: 1, along: 41 },
+  { car: "suv", paint: "#dfe3e8", plate: "KCB 442T", lane: 4, along: 39.5 },
+] as const;
+
 const STILL = {
   // The moment the game is about: four numbered lanes and the roundabout
   // ahead, and a lane to choose. Seen from behind the car, as on a phone.
@@ -470,7 +487,14 @@ function Board3D() {
       {mounted && (
         <React.Suspense fallback={null}>
           <BoardTable
-            challenge={challengeById("behind-red") ?? null}
+            challenge={null}
+            extraCars={STILL_CARS.map((spot) => ({
+              car: spot.car,
+              paint: spot.paint,
+              plate: spot.plate,
+              ...lanePoint("S", "approach", spot.lane, spot.along),
+              heading: laneBearing("S", "approach"),
+            }))}
             driving={false}
             attempt={0}
             tier="high"
@@ -482,6 +506,47 @@ function Board3D() {
           />
         </React.Suspense>
       )}
+    </div>
+  );
+}
+
+/**
+ * The road signs chart as a page to print. The chart is our own artwork; the
+ * Pelican Signs logo is used with their permission, credited the agreed way
+ * (`lib/sign-credits.ts`), never as a partner and never as the chart's author.
+ */
+function PrintableChart() {
+  return (
+    <div className="bg-white p-0 font-sans text-[#0e1014]">
+      <style>{`@page { size: A4 landscape; margin: 8mm; } html, body { background: #fff; }`}</style>
+      <div className="flex items-end justify-between gap-6 border-b-2 border-[#0e1014] pb-2">
+        <div>
+          <h1 className="m-0 font-display text-[22px] font-extrabold uppercase leading-none tracking-tight">
+            Kenya road signs chart
+          </h1>
+          <p className="m-0 mt-1 text-[11px]">
+            {SIGN_COUNT} signs with their meanings at driverush.ke/road-signs
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-[9px] uppercase tracking-widest">
+          Featuring
+          <img
+            src={SIGN_BRAND.logo}
+            alt={SIGN_BRAND.name}
+            className="h-7 w-auto border border-[#0e1014]"
+          />
+        </div>
+      </div>
+      <img
+        src="/assets/road-signs/road-signs.v2.svg"
+        alt="Kenya road signs chart"
+        className="mt-2 block h-auto w-full"
+      />
+      <p className="m-0 mt-1 text-[8px] text-[#5b6068]">
+        Free from DriveRush (driverush.ke). {SIGN_BRAND.name} name and logo used
+        with permission. Not affiliated with the NTSA. Practise the signs free at
+        driverush.ke/road-signs.
+      </p>
     </div>
   );
 }
@@ -502,6 +567,25 @@ const RENDERERS: Record<
 export default function OgStudio() {
   const [params] = useSearchParams();
   const requested = params.get("card") as keyof typeof RENDERERS | null;
+
+  // The printable chart: one A4 page, landscape, for
+  // `scripts/build-sign-images.mjs` to print to `public/downloads/`.
+  if (params.get("print") === "chart") return <PrintableChart />;
+
+  // One sign on its own, at `SIGN_IMAGE_SIZE` square, for
+  // `scripts/build-sign-images.mjs` to capture into a file per sign page.
+  const signSlug = params.get("sign");
+  const signPage = signSlug ? signPageBySlug(signSlug) : undefined;
+  if (signPage) {
+    return (
+      <div
+        className="fixed left-0 top-0 m-0 bg-white p-0"
+        style={{ width: SIGN_IMAGE_SIZE, height: SIGN_IMAGE_SIZE }}
+      >
+        <SignImage sign={signPage} className="size-full" />
+      </div>
+    );
+  }
 
   // Single-card mode: nothing but the card at its exact pixel size, pinned to
   // the top-left so a 1200×630 viewport screenshot is the card and only the

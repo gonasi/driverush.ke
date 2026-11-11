@@ -73,7 +73,7 @@ export default function RoadSignClass({ loaderData }: Route.ComponentProps) {
     <GuideLayout
       art={ART[page.category]}
       kicker={`Road signs · ${page.name}`}
-      title={page.name}
+      title={page.heading}
       lede={page.lede}
       checked={page.checked}
     >

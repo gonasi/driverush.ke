@@ -116,6 +116,9 @@ export const BOARD_KEYWORDS = [
   "Model Town Board practice",
   "Model Town Board online",
   "Model Town Board game",
+  "Model Town Board simulator",
+  "Model Town Board diagram",
+  "how to pass Model Town Board",
   "Model Town Board questions and answers",
   "Model Town Board rules",
   "Model Town Board roundabout",
@@ -154,7 +157,16 @@ export function absUrl(path: string): string {
 
 /** Join a keyword list (plus any extras) into a meta `keywords` string. */
 export function keywords(...extra: readonly string[]): string {
-  return [...extra, ...SITE.keywords].join(", ");
+  // Page terms lead; each term once, whatever its case.
+  const seen = new Set<string>();
+  return [...extra, ...SITE.keywords]
+    .filter((term) => {
+      const key = term.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .join(", ");
 }
 
 /** One crumb in a {@link breadcrumbLd} trail. `url` is a site-relative path. */
@@ -180,14 +192,15 @@ export function breadcrumbLd(crumbs: Crumb[]) {
 
 /**
  * Build a brand-consistent page title. We lead with the page-specific phrase
- * (the keyword the user typed in) and end with `· DriveRush Kenya`. Brand
- * suffix lets sitelinks and SERP titles recognise the entity even when the
- * lead phrase is generic ("Learn to drive online", "Driving schools in Kenya").
+ * (the keyword the user typed in) and end with `· DriveRush`. The suffix is
+ * kept short so the lead phrase fits in a search result (about 60
+ * characters); `title-lengths.test.ts` holds every page to that.
  */
+export const TITLE_SUFFIX = ` · ${SITE.name}`;
 export function pageTitle(lead: string): string {
   // Don't double-stamp if the caller already included the brand.
   if (/driverush/i.test(lead)) return lead;
-  return `${lead} · ${SITE.name} Kenya`;
+  return `${lead}${TITLE_SUFFIX}`;
 }
 
 /**
@@ -229,7 +242,7 @@ export function organizationLd() {
       addressCountry: "KE",
     },
     areaServed: { "@type": "Country", name: "Kenya" },
-    inLanguage: ["en", "sw"],
+    inLanguage: SITE.lang,
     knowsAbout: [
       "Model Town Board",
       "Kenyan road signs",
@@ -266,12 +279,18 @@ export function websiteLd() {
   };
 }
 
-/** Article JSON-LD for a permanent guide. `checked` is an ISO date. */
+/**
+ * Article JSON-LD for a permanent guide. `checked` is an ISO date. A page
+ * that is a tool first passes `type: "WebPage"`.
+ */
 export function guideLd(opts: {
   title: string;
   description: string;
   path: string;
   checked: string;
+  /** The page's own picture. Defaults to the site card. */
+  image?: string;
+  type?: "Article" | "WebPage";
 }) {
   const organization = {
     "@type": "Organization",
@@ -279,15 +298,16 @@ export function guideLd(opts: {
     url: SITE.url,
   };
   return {
-    "@type": "Article",
+    "@type": opts.type ?? "Article",
     headline: opts.title,
+    name: opts.title,
     description: opts.description,
     url: absUrl(opts.path),
     mainEntityOfPage: absUrl(opts.path),
     datePublished: opts.checked,
     dateModified: opts.checked,
     inLanguage: SITE.lang,
-    image: absUrl(SITE.ogImage),
+    image: absUrl(opts.image ?? SITE.ogImage),
     author: organization,
     publisher: {
       ...organization,
@@ -319,6 +339,39 @@ export function webAppLd(opts: {
     image: absUrl(opts.image ?? SITE.ogImage),
     offers: { "@type": "Offer", price: "0", priceCurrency: "KES" },
     publisher: { "@id": `${SITE.url}#organization` },
+  };
+}
+
+/**
+ * LearningResource JSON-LD: a course of lessons, for a page that teaches in
+ * steps. `teaches` lists what the learner comes away knowing.
+ */
+export function learningResourceLd(opts: {
+  name: string;
+  description: string;
+  path: string;
+  teaches: readonly string[];
+  lessons: number;
+  image?: string;
+}) {
+  return {
+    "@type": "LearningResource",
+    name: opts.name,
+    description: opts.description,
+    url: absUrl(opts.path),
+    learningResourceType: "Interactive simulation",
+    educationalLevel: "Beginner",
+    teaches: opts.teaches,
+    numberOfItems: opts.lessons,
+    inLanguage: SITE.lang,
+    isAccessibleForFree: true,
+    image: absUrl(opts.image ?? SITE.ogImage),
+    audience: {
+      "@type": "EducationalAudience",
+      educationalRole: "student",
+      audienceType: "Learner drivers in Kenya",
+    },
+    provider: { "@id": `${SITE.url}#organization` },
   };
 }
 
@@ -365,6 +418,13 @@ export function pageMeta(opts: {
   return [
     { title },
     { name: "description", content: opts.description },
+    // A route's meta replaces the root's, so the site-wide tags come with
+    // every page from here.
+    { name: "theme-color", content: SITE.themeColor },
+    { property: "og:site_name", content: SITE.name },
+    { property: "og:locale", content: SITE.locale },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
     {
       name: "keywords",
       content: keywords(...(opts.extraKeywords ?? [])),
