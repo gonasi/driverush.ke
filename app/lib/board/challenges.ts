@@ -19,6 +19,7 @@ import {
   type Side,
   type Turn,
 } from "./geometry";
+import type { BoardCarId } from "./cars";
 import { parkedCars } from "./parking-layouts";
 
 export type OtherCar = {
@@ -26,6 +27,10 @@ export type OtherCar = {
   z: number;
   heading: number;
   color: "red";
+  /** Its own paint, model and plate, where the cars on the table differ. */
+  paint?: string;
+  car?: BoardCarId;
+  plate?: string;
 };
 
 export type BoardGoal = {

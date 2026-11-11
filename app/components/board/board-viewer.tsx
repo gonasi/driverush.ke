@@ -13,7 +13,7 @@ import type { BoardQuality } from "~/lib/board-store";
 import { cn } from "~/lib/utils";
 
 import { LoadingPanel } from "~/components/brand/traffic-loader";
-import type { BoardTier } from "~/components/board/board-table";
+import type { BoardTier, ExtraCar } from "~/components/board/board-table";
 
 const BoardTable = React.lazy(() => import("~/components/board/board-table"));
 
@@ -46,6 +46,8 @@ export function BoardViewer({
   quality,
   seat,
   car,
+  paint,
+  extraCars,
   learning,
   focus,
   onUnsupported,
@@ -60,6 +62,10 @@ export function BoardViewer({
   seat: Seat;
   /** The car the learner drives. */
   car: BoardCarId;
+  /** Its paint, when it was picked from a line-up. */
+  paint?: string;
+  /** Cars standing on the table that nobody is driving. */
+  extraCars?: readonly ExtraCar[];
   /** Learn mode: no task on the table. */
   learning?: boolean;
   /** Stopped by the examiner: keep the view on the car. */
@@ -99,6 +105,8 @@ export function BoardViewer({
             tier={tier}
             seat={seat}
             car={car}
+            paint={paint}
+            extraCars={extraCars}
             learning={learning}
             focus={focus}
             onReady={() => {

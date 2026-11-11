@@ -79,6 +79,8 @@ export type LaneOption = {
   /** One per way through, for a list key. */
   id: string;
   turn: Turn;
+  /** The lane of the road out that this way through ends in. */
+  exitLane: number;
   label: string;
   /** The handbook's angle for it, such as "90°". */
   degrees: string;
@@ -130,6 +132,7 @@ export function laneOptions(arm: ArmId, lane: number): LaneOption[] {
       options.push({
         id: name,
         turn,
+        exitLane,
         label:
           outs.length > 1
             ? `${TURN_LABEL[turn]}, into lane ${exitLane}`

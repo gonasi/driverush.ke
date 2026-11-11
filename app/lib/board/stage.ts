@@ -78,6 +78,12 @@ export const cam = {
  */
 export const finish = { on: false, x: 0.5, y: 0.5, metres: 0 };
 
+/**
+ * Where each car that can be picked from a line-up is on the screen, as
+ * shares of its width and height. The scene fills it in every frame it draws.
+ */
+export const picks: { id: string; x: number; y: number }[] = [];
+
 /** How far along its route the playback has got, in metres. */
 export const play = { distance: 0 };
 

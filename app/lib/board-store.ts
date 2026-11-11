@@ -24,10 +24,18 @@ import {
   unitOf,
   type Level,
 } from "./board/curriculum";
+import type { ArmId } from "./board/geometry";
+import {
+  pickable,
+  queueCars,
+  queueChallenge,
+  type QueuePose,
+} from "./board/lane-queue";
 import { shuffleParkingLayout } from "./board/parking-layouts";
 import type { Fault, FaultId } from "./board/referee";
 import {
   beginChallenge,
+  car,
   elapsedSeconds,
   hasMoved,
   stopDriving,
@@ -82,6 +90,18 @@ export type BoardPhase =
  */
 export type BoardMode = "drive" | "learn" | "level";
 
+/**
+ * A lane options level in flight: every car of one road is on the table, and
+ * the learner drives them home one at a time (`board/lane-queue.ts`).
+ */
+export type LanesRun = {
+  arm: ArmId;
+  /** Where each car that has been driven home stopped, by car id. */
+  rest: Record<string, QueuePose>;
+  /** The car being driven now. */
+  picked: string | null;
+};
+
 type BoardState = {
   // ---- persisted ----
   settings: BoardSettings;
@@ -95,6 +115,8 @@ type BoardState = {
   mode: BoardMode;
   /** The level of the course that is open, when the game was opened on one. */
   level: string | null;
+  /** The line-up of a lane options level, while one is open. */
+  lanes: LanesRun | null;
   /** A hint was used on the task in front of the learner. */
   hinted: boolean;
   phase: BoardPhase;
@@ -134,6 +156,10 @@ type BoardState = {
   startLevel: (id: string) => void;
   /** The level's cards were read to the end, or its lanes all looked at. */
   completeLevel: () => void;
+  /** Take one car of a lane options level and drive it to its place. */
+  pickCar: (id: string) => void;
+  /** Give up on the car being driven: it goes back to its place in the line. */
+  putBack: () => void;
   /** A hint was shown. The task no longer counts as known without help. */
   hint: (kind: "next_step" | "show_me" | "after_fault") => void;
   /** Pause the task to watch the right way played back. */
@@ -167,6 +193,7 @@ const FRESH_RUN = {
   runFaultRules: [] as FaultId[],
   runStreak: 0,
   runBestStreak: 0,
+  lanes: null as LanesRun | null,
 };
 
 export function starsFor(faults: number): number {
@@ -196,9 +223,11 @@ export const useBoardStore = create<BoardState>()(
           runFaultRules: s.runFaultRules.includes(fault.id)
             ? s.runFaultRules
             : [...s.runFaultRules, fault.id],
-          progress: first
-            ? applyGrade(s.progress, challenge.id, "missed")
-            : s.progress,
+          // A car of a lane options level is a lesson, not a graded task.
+          progress:
+            first && !s.lanes
+              ? applyGrade(s.progress, challenge.id, "missed")
+              : s.progress,
         }));
         analytics.boardFaulted({
           challenge_id: challenge.id,
@@ -249,11 +278,42 @@ export const useBoardStore = create<BoardState>()(
         }));
       };
 
+      /** A car of a lane options level is home: it stays, and the line-up is back. */
+      const carHome = (run: LanesRun, id: string) => {
+        if (get().settings.sound) playSfx("correct");
+        buzz(BUZZ.tap);
+        const rest = {
+          ...run.rest,
+          [id]: { x: car.x, z: car.z, heading: car.heading },
+        };
+        stopDriving();
+        useStage.getState().clear();
+        forgetDriveZoom();
+        set({
+          mode: "level",
+          phase: "ready",
+          queue: [],
+          pos: 0,
+          fault: null,
+          notice: null,
+          lanes: { ...run, rest, picked: null },
+        });
+        if (queueCars(run.arm).every((one) => rest[one.id])) {
+          if (get().settings.sound) playSfx("complete");
+          get().completeLevel();
+        }
+      };
+
       const onGoal = () => {
         const { queue, pos, faults, taskFaults, tries, hinted, settings } =
           get();
         const challenge = queue[pos];
         if (!challenge) return;
+        const run = get().lanes;
+        if (run?.picked) {
+          carHome(run, run.picked);
+          return;
+        }
         if (settings.sound) playSfx("correct");
         buzz(BUZZ.tap);
         // Clean means alone and first time: no mistake on any attempt, no hint.
@@ -312,6 +372,32 @@ export const useBoardStore = create<BoardState>()(
           shuffleParkingLayout();
         }
         beginChallenge(challenge, { onFault, onSmall, onGoal });
+        // A car from a line-up is told its option: its line is on the table.
+        const run = get().lanes;
+        const picked = run?.picked
+          ? queueCars(run.arm).find((one) => one.id === run.picked)
+          : undefined;
+        if (picked) {
+          const points = picked.option.route.points;
+          let from = 0;
+          for (let i = 1; i < points.length; i += 1) {
+            const d = Math.hypot(points[i].x - car.x, points[i].z - car.z);
+            const best = Math.hypot(
+              points[from].x - car.x,
+              points[from].z - car.z,
+            );
+            if (d < best) from = i;
+            else if (d > best + 8) break;
+          }
+          useStage.getState().show([
+            {
+              id: picked.id,
+              points: points.slice(from),
+              color: picked.option.color,
+              width: 2.2,
+            },
+          ]);
+        }
         set((s) => ({
           phase: "driving",
           faults: 0,
@@ -469,6 +555,51 @@ export const useBoardStore = create<BoardState>()(
             mode: "level",
             level: level.id,
             hinted: false,
+            lanes:
+              level.kind === "lanes"
+                ? { arm: level.arm, rest: {}, picked: null }
+                : null,
+          });
+        },
+
+        pickCar: (id) => {
+          const { lanes, phase, settings } = get();
+          if (!lanes || lanes.picked || phase === "driving") return;
+          const cars = queueCars(lanes.arm);
+          const picked = pickable(cars, Object.keys(lanes.rest)).find(
+            (one) => one.id === id,
+          );
+          if (!picked) return;
+          if (settings.sound) warmSfx();
+          set({
+            mode: "drive",
+            queue: [queueChallenge(cars, picked, lanes.rest)],
+            pos: 0,
+            faults: 0,
+            taskFaults: 0,
+            tries: 1,
+            hinted: false,
+            fault: null,
+            notice: null,
+            lanes: { ...lanes, picked: id },
+          });
+          begin();
+        },
+
+        putBack: () => {
+          const { lanes } = get();
+          if (!lanes?.picked) return;
+          stopDriving();
+          useStage.getState().clear();
+          forgetDriveZoom();
+          set({
+            mode: "level",
+            phase: "ready",
+            queue: [],
+            pos: 0,
+            fault: null,
+            notice: null,
+            lanes: { ...lanes, picked: null },
           });
         },
 

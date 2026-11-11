@@ -18,6 +18,7 @@ import {
 } from "~/lib/board/challenges";
 import { BOUNDS, fullBoardSvg, placeOnPage } from "~/lib/board/full-board";
 import type { Seat } from "~/lib/board/joystick";
+import { pickable, queueCars } from "~/lib/board/lane-queue";
 import {
   ROUTE_COLOR,
   challengeRoute,
@@ -49,6 +50,7 @@ import { useParkingLayout } from "~/components/board/use-parking-layout";
 import { Icon } from "~/components/brand/icon";
 import { ShareButton } from "~/components/brand/share-button";
 import {
+  ChevronLeftIcon,
   CloseIcon,
   InfoIcon,
   PlayIcon,
@@ -62,6 +64,7 @@ import {
   BoardCameraPad,
   BoardZoomButtons,
 } from "~/components/board/board-camera";
+import { BoardCarPicks } from "~/components/board/board-car-picks";
 import { BoardControls } from "~/components/board/board-controls";
 import { BoardFaultTip } from "~/components/board/board-fault-tip";
 import { BoardFinishCue } from "~/components/board/board-finish-cue";
@@ -501,7 +504,14 @@ function HudColumn({ children }: { children: React.ReactNode }) {
  * A small mistake: the rule, a star gone, and the drive carries on. It takes
  * itself away once it has been read, so it leaves no gap in the column.
  */
-function StarLost({ notice }: { notice: { fault: Fault; n: number } }) {
+function StarLost({
+  notice,
+  lesson,
+}: {
+  notice: { fault: Fault; n: number };
+  /** A lesson has no stars to lose: only the rule is said. */
+  lesson?: boolean;
+}) {
   const [gone, setGone] = React.useState(false);
   React.useEffect(() => {
     setGone(false);
@@ -520,7 +530,8 @@ function StarLost({ notice }: { notice: { fault: Fault; n: number } }) {
       style={{ animationDuration: "3.6s" }}
     >
       <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-widest">
-        {tip.title} · 1 star lost
+        {tip.title}
+        {!lesson && " · 1 star lost"}
       </p>
       <p className="m-0 mt-1 text-[13.5px] font-semibold leading-snug">
         {tip.rule}
@@ -604,6 +615,9 @@ export function BoardGame() {
       notice: st.notice,
       lastStars: st.lastStars,
       attempt: st.attempt,
+      lanes: st.lanes,
+      pickCar: st.pickCar,
+      putBack: st.putBack,
       runClean: st.runClean,
       runFaulted: st.runFaulted,
       runFaultRules: st.runFaultRules,
@@ -696,6 +710,33 @@ export function BoardGame() {
   }, [seat, assist]);
 
   const challenge = s.queue[s.pos] ?? null;
+  // A lane options level: every car of one road is out, and one is driven at
+  // a time. The one being driven is the learner's car for now.
+  const lineUp = React.useMemo(
+    () => (s.lanes ? queueCars(s.lanes.arm) : null),
+    [s.lanes],
+  );
+  const pickedCar =
+    lineUp?.find((one) => one.id === s.lanes?.picked) ?? null;
+  const lanesRest = s.lanes?.rest;
+  const frontCars = React.useMemo(
+    () =>
+      lineUp && lanesRest ? pickable(lineUp, Object.keys(lanesRest)) : [],
+    [lineUp, lanesRest],
+  );
+  const standingCars = React.useMemo(
+    () =>
+      lineUp && lanesRest && !pickedCar
+        ? lineUp.map((one) => ({
+            car: one.car,
+            paint: one.paint,
+            plate: one.plate,
+            ...(lanesRest[one.id] ?? one.start),
+            pick: frontCars.includes(one) ? one.id : undefined,
+          }))
+        : undefined,
+    [lineUp, lanesRest, pickedCar, frontCars],
+  );
   // The level of the course the game was opened on, if it was.
   const level = levelById(s.level) ?? null;
   // Reading or watching: no task, no clock, no joystick.
@@ -797,7 +838,9 @@ export function BoardGame() {
           attempt={s.attempt}
           quality={s.settings.quality}
           seat={seat}
-          car={boardCar}
+          car={pickedCar?.car ?? boardCar}
+          paint={pickedCar?.paint}
+          extraCars={standingCars}
           learning={offClock}
           focus={s.phase === "fault"}
           onUnsupported={() => setUnsupported(true)}
@@ -848,6 +891,14 @@ export function BoardGame() {
         />
       )}
 
+      {!unsupported &&
+        painted &&
+        s.mode === "level" &&
+        s.lanes &&
+        !settingsOpen && (
+          <BoardCarPicks cars={frontCars} onPick={s.pickCar} />
+        )}
+
       {/* The examiner's task, top left. Status and the way out, top right. */}
       {!unsupported && painted && challenge && s.phase !== "complete" && (
         <div
@@ -874,7 +925,9 @@ export function BoardGame() {
                 onNextStep={() => s.hint("next_step")}
                 onShowMe={() => showTheWay("show_me")}
               >
-                {s.notice && <StarLost notice={s.notice} />}
+                {s.notice && (
+                  <StarLost notice={s.notice} lesson={pickedCar != null} />
+                )}
                 <BoardSignCue active />
               </TaskHint>
             </HudColumn>
@@ -922,6 +975,19 @@ export function BoardGame() {
                   <Icon icon={RefreshIcon} size={18} />
                   Restart
                 </button>
+                {pickedCar && (
+                  <button
+                    type="button"
+                    className={moreItem}
+                    onClick={() => {
+                      setMoreOpen(false);
+                      s.putBack();
+                    }}
+                  >
+                    <Icon icon={ChevronLeftIcon} size={18} />
+                    Put it back
+                  </button>
+                )}
                 <button
                   type="button"
                   className={moreItem}
@@ -939,15 +1005,21 @@ export function BoardGame() {
                 />
               </div>
             )}
-            <div
-              className={cn(
-                "flex items-center gap-2 rounded-md border-2 border-white/15 bg-[#101114]/85 px-2.5 py-1.5 font-mono text-[12px] font-bold",
-                sheetUp && "max-sm:hidden",
-              )}
-            >
-              <Clock running={s.phase === "driving" && !held} key={s.attempt} />
-              <Stars count={Math.max(1, 3 - s.faults)} />
-            </div>
+            {/* A car from a line-up is a lesson: no clock, no stars. */}
+            {!pickedCar && (
+              <div
+                className={cn(
+                  "flex items-center gap-2 rounded-md border-2 border-white/15 bg-[#101114]/85 px-2.5 py-1.5 font-mono text-[12px] font-bold",
+                  sheetUp && "max-sm:hidden",
+                )}
+              >
+                <Clock
+                  running={s.phase === "driving" && !held}
+                  key={s.attempt}
+                />
+                <Stars count={Math.max(1, 3 - s.faults)} />
+              </div>
+            )}
             {goalBox && (
               <div className={cn(sheetUp && "max-sm:hidden")}>
                 <Minimap
@@ -1117,10 +1189,10 @@ export function BoardGame() {
           </Button>
           <button
             type="button"
-            onClick={s.exit}
+            onClick={pickedCar ? s.putBack : s.exit}
             className="min-h-11 w-full text-center text-[13.5px] font-semibold text-ink-2 underline underline-offset-4 outline-none hover:text-ink focus-visible:text-ink"
           >
-            Close
+            {pickedCar ? "Back to the cars" : "Close"}
           </button>
         </BoardSheet>
       )}

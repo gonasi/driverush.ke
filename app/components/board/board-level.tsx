@@ -22,12 +22,12 @@ import { levelSlides } from "~/lib/board/curriculum-content";
 import { RING_R } from "~/lib/board/full-board";
 import { ARMS, OPTION_CODES, type ArmId } from "~/lib/board/geometry";
 import type { Seat } from "~/lib/board/joystick";
+import { pickable, queueCars } from "~/lib/board/lane-queue";
 import {
   APPROACHES,
   LESSONS,
   ROUTE_COLOR,
   ROUTE_RULES,
-  laneOptions,
   lessonPlan,
   lessonRoute,
 } from "~/lib/board/lessons";
@@ -66,18 +66,6 @@ const secondary =
   "inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md border-2 border-white/25 px-4 py-2.5 text-center font-mono text-[11px] font-bold uppercase tracking-widest text-white outline-none transition-colors hover:bg-white/10 focus-visible:border-white disabled:opacity-40";
 const iconButton =
   "inline-flex size-11 items-center justify-center rounded-md border-2 border-white/15 outline-none transition-colors hover:bg-white/15 focus-visible:border-white";
-
-/** The roundabout and the road into it, for looking at one road's lanes. */
-function approachBox(arm: ArmId) {
-  const out = ARMS[arm].out;
-  const reach = RING_R + 26;
-  return {
-    x0: Math.min(-RING_R - 4, out.x * reach),
-    x1: Math.max(RING_R + 4, out.x * reach),
-    z0: Math.min(-RING_R - 4, out.z * reach),
-    z1: Math.max(RING_R + 4, out.z * reach),
-  };
-}
 
 /** The way on from a finished level, said under whatever finished it. */
 export function LevelNext({
@@ -267,165 +255,154 @@ function SlidesLevel({
 
 // ---- the lanes of one road --------------------------------------------------------------
 
+/**
+ * What the camera holds while the cars wait. On a wide screen it is the
+ * line-up and the roundabout. On a phone that would make the cars too small to
+ * tap one from the next, so it is the line-up alone.
+ */
+function lineUpBox(arm: ArmId, close: boolean) {
+  const out = ARMS[arm].out;
+  const cars = queueCars(arm);
+  const back = Math.max(...cars.map((car) => car.along)) + 5;
+  if (close) {
+    const xs = cars.map((car) => car.start.x);
+    const zs = cars.map((car) => car.start.z);
+    const pad = 5;
+    return {
+      x0: Math.min(...xs) - pad,
+      x1: Math.max(...xs) + pad,
+      z0: Math.min(...zs) - pad,
+      z1: Math.max(...zs) + pad,
+    };
+  }
+  const reach = Math.max(RING_R + 26, back);
+  return {
+    x0: Math.min(-RING_R - 4, out.x * reach),
+    x1: Math.max(RING_R + 4, out.x * reach),
+    z0: Math.min(-RING_R - 4, out.z * reach),
+    z1: Math.max(RING_R + 4, out.z * reach),
+  };
+}
+
+/**
+ * Every car of one road is out on the table, one for each option of each
+ * lane. The learner takes the front car of a lane and drives it to its place;
+ * this is the list of them, and what is left to do.
+ */
 function LanesLevel({
   level,
   sideways,
   done,
-  onDone,
 }: {
   level: Level & { kind: "lanes" };
   sideways: boolean;
   done: boolean;
-  onDone: () => void;
 }) {
   const arm = level.arm;
   const lanes = ARMS[arm].lanes;
-  const route = useStage((s) => s.route);
-  const step = useStage((s) => s.step);
+  const rest = useBoardStore((s) => s.lanes?.rest);
+  const pickCar = useBoardStore((s) => s.pickCar);
   const show = useStage((s) => s.show);
-  const watch = useStage((s) => s.watch);
-  const clear = useStage((s) => s.clear);
-  const [lane, setLane] = React.useState(1);
-  const [seen, setSeen] = React.useState<readonly number[]>([1]);
-  const [color, setColor] = React.useState(ROUTE_COLOR);
-  const [finished, setFinished] = React.useState(false);
-  const options = React.useMemo(() => laneOptions(arm, lane), [arm, lane]);
+  const cars = React.useMemo(() => queueCars(arm), [arm]);
+  const home = React.useMemo(() => Object.keys(rest ?? {}), [rest]);
+  const front = React.useMemo(() => pickable(cars, home), [cars, home]);
   const road = APPROACHES.find((a) => a.arm === arm);
-  const allSeen = seen.length >= lanes;
+  const allHome = home.length >= cars.length;
 
   React.useEffect(() => {
-    if (route) {
-      show(routeLines(route, step, color));
-      return;
-    }
-    show(
-      options.map((option) => ({
-        id: option.id,
-        points: option.route.points,
-        color: option.color,
-        width: 2.2,
-      })),
-    );
-    flyTo(approachBox(arm), sideways);
-  }, [route, step, options, color, arm, sideways, show]);
-
-  if (route) {
-    return (
-      <div className="grid gap-3">
-        <button
-          type="button"
-          onClick={clear}
-          className="inline-flex min-h-11 items-center gap-1 self-start pr-4 font-mono text-[12px] font-bold uppercase tracking-widest text-white/80 outline-none hover:text-white focus-visible:underline"
-        >
-          <Icon icon={ChevronLeftIcon} size={14} />
-          Back to the lanes
-        </button>
-        <BoardPlayback className="rounded-md border-2 border-white/15 bg-white/5 p-3" />
-        <RouteSteps route={route} step={step} />
-      </div>
-    );
-  }
+    show([]);
+    const phone = window.matchMedia("(max-width: 639px)").matches;
+    flyTo(lineUpBox(arm, phone), sideways);
+  }, [arm, sideways, show]);
 
   return (
     <div className="grid gap-3">
       <p className="m-0 text-[13.5px] leading-snug text-white/80">
         {road?.road}, {lanes} lanes each way. Its option code is{" "}
         <strong className="font-mono text-white">{OPTION_CODES[lanes]}</strong>:
-        the number of options in each lane, counted from the kerb. Tap each lane
-        to see where it may go.
+        the number of options in each lane, counted from the kerb. There is one
+        car for each option. Take the front car of any lane and drive it to its
+        place.
       </p>
-      <div>
-        <p className={eyebrow}>In lane</p>
-        <div className="mt-1.5 flex gap-1">
-          {Array.from({ length: lanes }, (_, i) => i + 1).map((n) => (
-            <button
-              key={n}
-              type="button"
-              aria-pressed={lane === n}
-              onClick={() => {
-                setLane(n);
-                setSeen((had) => (had.includes(n) ? had : [...had, n]));
-              }}
-              className={cn(
-                chip,
-                "relative flex-1 text-center",
-                lane === n ? chipOn : chipOff,
-              )}
-            >
-              {n}
-              {seen.includes(n) && lane !== n && (
-                <span
-                  aria-hidden
-                  className="absolute right-1 top-1 size-1.5 rounded-full bg-kenya-green"
-                />
-              )}
-            </button>
-          ))}
-        </div>
-        <p
-          aria-live="polite"
-          className="m-0 mt-2 text-[14px] font-semibold leading-snug"
-        >
-          {laneRule(lanes, lane)}
-        </p>
-      </div>
-      <ul className="m-0 grid list-none gap-1.5 p-0">
-        {options.map((option) => (
-          <li key={option.id}>
-            <button
-              type="button"
-              className={cn(chip, chipOff, "flex w-full items-center gap-3")}
-              onClick={() => {
-                setColor(option.color);
-                watch(option.route);
-                analytics.boardLessonViewed({
-                  kind: "lane",
-                  lesson_id: `${arm}${lane}-${option.id}`,
-                });
-              }}
-            >
-              <span
-                aria-hidden
-                className="h-2.5 w-7 shrink-0 rounded-full"
-                style={{ background: option.color }}
-              />
-              <span className="flex-1">
-                {option.label}{" "}
-                <span className="font-mono text-[11px] text-white/55">
-                  {option.degrees}
-                </span>
-                {!option.confirmed && (
-                  <span className="mt-0.5 block text-[12px] font-semibold text-kenya-gold">
-                    {UNSURE_NOTE}
-                  </span>
-                )}
-              </span>
-              <Icon icon={PlayIcon} size={14} />
-            </button>
-          </li>
-        ))}
-      </ul>
+      <p aria-live="polite" className={eyebrow}>
+        {home.length} of {cars.length} cars home
+      </p>
+      {Array.from({ length: lanes }, (_, i) => i + 1).map((lane) => (
+        <section key={lane} aria-label={`Lane ${lane}`}>
+          <p className="m-0 text-[13px] font-semibold leading-snug text-white/80">
+            {laneRule(lanes, lane)}
+          </p>
+          <ul className="m-0 mt-1.5 grid list-none gap-1.5 p-0">
+            {cars
+              .filter((car) => car.lane === lane)
+              .map((car) => {
+                const isHome = home.includes(car.id);
+                const canTake = front.includes(car);
+                return (
+                  <li key={car.id}>
+                    <button
+                      type="button"
+                      disabled={!canTake}
+                      onClick={() => pickCar(car.id)}
+                      className={cn(
+                        chip,
+                        chipOff,
+                        "flex w-full items-center gap-3 disabled:hover:bg-white/5",
+                        !canTake && !isHome && "opacity-55",
+                      )}
+                    >
+                      <span
+                        aria-hidden
+                        className="h-4 w-7 shrink-0 rounded-[5px] border border-white/40"
+                        style={{ background: car.paint }}
+                      />
+                      <span className="flex-1">
+                        {car.option.label}{" "}
+                        <span className="font-mono text-[11px] text-white/55">
+                          {car.option.degrees}
+                        </span>
+                        {!car.option.confirmed && (
+                          <span className="mt-0.5 block text-[12px] font-semibold text-kenya-gold">
+                            {UNSURE_NOTE}
+                          </span>
+                        )}
+                      </span>
+                      {isHome ? (
+                        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-kenya-green text-kenya-green-foreground">
+                          <Icon icon={CheckIcon} size={12} />
+                          <span className="sr-only">Home</span>
+                        </span>
+                      ) : canTake ? (
+                        <span className="shrink-0 font-mono text-[11px] font-bold uppercase tracking-widest text-[#f6c416]">
+                          Drive
+                        </span>
+                      ) : (
+                        <span className="shrink-0 font-mono text-[10px] font-bold uppercase tracking-widest text-white/55">
+                          Waiting
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+          </ul>
+        </section>
+      ))}
 
-      {finished || done ? (
+      {allHome ? (
         <>
-          <DoneNote>Level {level.n} done.</DoneNote>
+          <DoneNote>Every car is home. Level {level.n} done.</DoneNote>
           <LevelNext level={level} />
         </>
       ) : (
-        <button
-          type="button"
-          className={primary}
-          disabled={!allSeen}
-          onClick={() => {
-            setFinished(true);
-            onDone();
-          }}
-        >
-          {allSeen
-            ? "Got it"
-            : `Look at every lane first (${seen.length} of ${lanes})`}
-          {allSeen && <Icon icon={CheckIcon} size={16} />}
-        </button>
+        done && (
+          <>
+            <p className="m-0 text-[13px] leading-snug text-white/70">
+              You have done this level before. Drive the cars again, or go on.
+            </p>
+            <LevelNext level={level} />
+          </>
+        )
       )}
     </div>
   );
@@ -628,12 +605,7 @@ export function BoardLevel({
               onDone={completeLevel}
             />
           ) : level.kind === "lanes" ? (
-            <LanesLevel
-              level={level}
-              sideways={sideways}
-              done={wasDone}
-              onDone={completeLevel}
-            />
+            <LanesLevel level={level} sideways={sideways} done={wasDone} />
           ) : level.kind === "watch" ? (
             <WatchLevel level={level} done={wasDone} onDone={completeLevel} />
           ) : null}

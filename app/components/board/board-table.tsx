@@ -42,6 +42,7 @@ import {
   cam,
   endLook,
   finish,
+  picks,
   setWake,
   useStage,
 } from "~/lib/board/stage";
@@ -76,6 +77,8 @@ export type BoardTableProps = {
   seat: Seat;
   /** The car the learner drives. */
   car: BoardCarId;
+  /** Its paint, when it is not the usual one: a car picked from a line-up. */
+  paint?: string;
   /** Learning, with no task on: the car only shows while a route plays. */
   learning?: boolean;
   /**
@@ -86,8 +89,9 @@ export type BoardTableProps = {
   /** The board is painted and on screen. */
   onReady?: () => void;
   /**
-   * More cars standing on the roads, each one of the pack's models. Only the
-   * still in `/tools/og` uses it, to show the cars off; the game leaves it out.
+   * More cars standing on the roads, each one of the pack's models: the cars
+   * shown off in the still in `/tools/og`, and the line-up of a lane options
+   * level while none of its cars is being driven.
    */
   extraCars?: readonly ExtraCar[];
 };
@@ -99,6 +103,8 @@ export type ExtraCar = {
   x: number;
   z: number;
   heading: number;
+  /** It can be picked: the scene says where it is on the screen (`picks`). */
+  pick?: string;
 };
 
 const BOARD_W = BOUNDS.x1 - BOUNDS.x0;
@@ -763,6 +769,7 @@ function Scene({
   tier,
   seat,
   car: driven,
+  paint,
   learning = false,
   focus = false,
   onReady,
@@ -835,20 +842,26 @@ function Scene({
   }, [gl, tier, table, invalidate]);
 
   const player = React.useMemo(
-    () => carOnTable(CAR_COLORS.player, "KDR 254U", tier, models?.[driven]),
-    [tier, models, driven],
+    () =>
+      carOnTable(
+        paint ?? CAR_COLORS.player,
+        "KDR 254U",
+        tier,
+        models?.[driven],
+      ),
+    [tier, models, driven, paint],
   );
   React.useEffect(() => () => dispose(player), [player]);
 
   const others = React.useMemo(
     () =>
-      (challenge?.otherCars ?? []).map((_, i) => {
+      (challenge?.otherCars ?? []).map((other, i) => {
         const beside = carsBeside(driven);
         return carOnTable(
-          CAR_COLORS.red,
-          "KCZ 718M",
+          other.paint ?? CAR_COLORS.red,
+          other.plate ?? "KCZ 718M",
           tier,
-          models?.[beside[i % beside.length]],
+          models?.[other.car ?? beside[i % beside.length]],
         );
       }),
     [challenge, tier, models, driven],
@@ -988,6 +1001,8 @@ function Scene({
     playing,
     learning,
     focus,
+    extraCars,
+    paint,
     invalidate,
   ]);
 
@@ -1287,6 +1302,22 @@ function Scene({
       finish.x = (probe.x + 1) / 2;
       finish.y = (1 - probe.y) / 2;
       finish.metres = Math.hypot(goal.x - car.x, goal.z - car.z);
+    }
+
+    // Where each car that can be picked is on the screen, for its button.
+    picks.length = 0;
+    if (!driving && extraCars) {
+      state.camera.updateMatrixWorld();
+      for (const spot of extraCars) {
+        if (!spot.pick) continue;
+        probe.set(spot.x, 1.2, spot.z).project(state.camera);
+        if (probe.z > 1) continue;
+        picks.push({
+          id: spot.pick,
+          x: (probe.x + 1) / 2,
+          y: (1 - probe.y) / 2,
+        });
+      }
     }
 
     // Still easing after the car has stopped: ask for another frame.
