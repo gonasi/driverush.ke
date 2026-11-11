@@ -6,6 +6,7 @@
  */
 import * as React from "react";
 
+import type { BoardCarId } from "~/lib/board/cars";
 import type { BoardChallenge } from "~/lib/board/challenges";
 import type { Seat } from "~/lib/board/joystick";
 import type { BoardQuality } from "~/lib/board-store";
@@ -44,6 +45,7 @@ export function BoardViewer({
   attempt,
   quality,
   seat,
+  car,
   learning,
   onUnsupported,
   className,
@@ -54,6 +56,8 @@ export function BoardViewer({
   quality: BoardQuality;
   /** The side of the table the learner stands at. */
   seat: Seat;
+  /** The car the learner drives. */
+  car: BoardCarId;
   /** Learn mode: no task on the table. */
   learning?: boolean;
   /** This device can't draw the board at all. */
@@ -88,6 +92,7 @@ export function BoardViewer({
             attempt={attempt}
             tier={tier}
             seat={seat}
+            car={car}
             learning={learning}
             onReady={() => setPainted(true)}
           />

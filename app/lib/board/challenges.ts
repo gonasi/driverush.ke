@@ -131,10 +131,19 @@ const ROUTE_TASKS: readonly RouteChallenge[] = [
   },
   {
     id: "park-flush",
-    lesson: "park-flush",
+    lesson: "park-flush-reverse",
     title: "Flush parking",
     prompt:
-      "Drive up the two-way road and park in the empty flush parking bay, inside the box.",
+      "Drive up the two-way road, past the empty flush parking bay. Stop, then reverse into the bay, inside the box.",
+    reverse: true,
+    otherCars: PARKED,
+  },
+  {
+    id: "leave-flush",
+    lesson: "leave-flush",
+    title: "Pull out of flush parking",
+    prompt:
+      "You are parked in the flush parking. Pull out forward and carry on up the two-way road. Stop in the green box.",
     reverse: true,
     otherCars: PARKED,
   },
@@ -143,7 +152,7 @@ const ROUTE_TASKS: readonly RouteChallenge[] = [
     lesson: "park-angle",
     title: "Angle parking",
     prompt:
-      "Take the street, turn into the parking aisle, and park nose in, in the bay with the green box.",
+      "Take the street, turn into the parking aisle, and park nose first in the bay with the green box.",
     reverse: true,
     otherCars: PARKED,
   },

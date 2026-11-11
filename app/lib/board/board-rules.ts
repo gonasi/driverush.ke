@@ -100,8 +100,8 @@ const RULES: Record<FaultId, { title: string; rule: string }> = {
     rule: "Follow the road the examiner asked for.",
   },
   wrong_lane: {
-    title: "Wrong lane at the roundabout",
-    rule: "Be in the lane for your turn before the lines turn continuous, and hold it.",
+    title: "Wrong lane for the turn",
+    rule: "Be in the lane for your turn before you reach it, and hold it.",
   },
   stop_line: {
     title: "You did not stop at the stop line",
@@ -148,7 +148,7 @@ function reasonFor(fault: Fault): string {
     case "off_route":
       return "You turned onto a road this task does not use. Stay on the road you were asked to take, and stop in the green box.";
     case "wrong_lane":
-      return "You came up to the roundabout, or went round it, in a lane that does not make this turn. Choose the lane further back, where the lines are broken, and stay in it until your exit.";
+      return "You came up to the turn in a lane that does not make it. At a junction, turn left from the lane by the kerb. At the roundabout, choose the lane further back, where the lines are broken, and stay in it until your exit.";
     case "stop_line":
       return "You drove over the stop line without stopping. A stop line means stop every time, look both ways, and go only when the road is clear.";
     case "bay_line":

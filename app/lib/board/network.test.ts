@@ -19,6 +19,7 @@ import {
   lessonRoute,
 } from "./lessons";
 import {
+  controlAhead,
   laneStart,
   network,
   planRoute,
@@ -169,9 +170,9 @@ describe("parking", () => {
     }
   });
 
-  it("reverses out of an angle bay it drove into", () => {
+  it("reverses out of an angle bay, then drives forward", () => {
     const route = routeTo(
-      place("Angle bay 3, left row, nose in").id,
+      place("Angle bay 3, left row").id,
       place("To the two-way road, top end").id,
     );
     expect(route.steps[0].gear).toBe("reverse");
@@ -179,29 +180,32 @@ describe("parking", () => {
     expect(route.steps[1].gear).toBe("forward");
   });
 
-  it("reverses into a bay from the far side of the aisle", () => {
-    const route = routeTo(
-      laneStart("N", 1),
-      place("Angle bay 3, left row, reversed in").id,
+  it("only ever enters an angle bay nose first", () => {
+    const into = net.edges.filter(
+      (e) => e.road === "angle_bay" && e.to.startsWith("bay:"),
     );
-    const lastStep = route.steps[route.steps.length - 1];
-    expect(lastStep.maneuver).toBe("park_reverse");
-    expect(lastStep.gear).toBe("reverse");
+    expect(into.length).toBe(14);
+    expect(into.every((e) => e.gear === "forward")).toBe(true);
   });
 
-  it("can reverse into flush parking", () => {
-    const bay = place("Flush parking bay 1");
-    const reverseIn = net.edges.filter(
-      (e) => e.to === bay.id && e.gear === "reverse",
-    );
-    expect(reverseIn).toHaveLength(1);
+  it("only ever enters flush parking in reverse, from past the bay", () => {
+    const into = net.edges.filter((e) => e.to.startsWith("flush:"));
+    expect(into.length).toBe(2);
+    expect(into.every((e) => e.gear === "reverse")).toBe(true);
+    const route = routeTo(laneStart("S", 4), place("Flush parking bay 1").id);
+    const last = route.steps[route.steps.length - 1];
+    expect(last.maneuver).toBe("park_reverse");
+  });
+
+  it("has no parking move left for a driving school to confirm", () => {
+    expect(net.edges.filter((e) => e.bay && !e.confirmed)).toEqual([]);
   });
 
   it("never throws the car about: it moves and turns smoothly, also in reverse", () => {
     const routes = [
       routeTo(
-        place("Angle bay 3, left row, nose in").id,
-        place("Angle bay 2, right row, reversed in").id,
+        place("Angle bay 3, left row").id,
+        place("To the two-way road, top end").id,
       ),
       routeTo(laneStart("S", 4), place("Flush parking bay 1").id),
       routeTo(
@@ -263,10 +267,9 @@ describe("what Learn mode teaches", () => {
         .steps.filter((s) => s.gear === "reverse")
         .map((s) => s.maneuver);
     expect(reversing("leave-angle-reverse")).toEqual(["leave_reverse"]);
-    expect(reversing("park-angle-reverse")).toEqual(["park_reverse"]);
     expect(reversing("park-flush-reverse")).toEqual(["park_reverse"]);
-    expect(reversing("park-flush")).toEqual([]);
     expect(reversing("park-angle")).toEqual([]);
+    expect(reversing("leave-flush")).toEqual([]);
   });
 
   it("knows the right way through every driving task, start line to green box", () => {
@@ -309,5 +312,38 @@ describe("what Learn mode teaches", () => {
       expect(box.z0).toBeLessThan(BOUNDS.z1);
       expect(feature.note).not.toMatch(/—/);
     }
+  });
+});
+
+describe("the sign for where the car is", () => {
+  const EAST = Math.PI / 2;
+  const WEST = -Math.PI / 2;
+  const NORTH = 0;
+  const SOUTH = Math.PI;
+
+  it("is the stop sign coming up to the stop line at the end of the street", () => {
+    expect(controlAhead(50, -102.975, EAST)).toBe("stop");
+    // the other side of the street runs away from that line
+    expect(controlAhead(50, -95.925, WEST)).toBeNull();
+  });
+
+  it("is give way where the street joins the dual carriageway", () => {
+    expect(controlAhead(30, -95.925, WEST)).toBe("give_way");
+  });
+
+  it("is the crossing on both sides of the two-way road", () => {
+    expect(controlAhead(65.675, -10, NORTH)).toBe("crossing");
+    expect(controlAhead(73.025, -34, SOUTH)).toBe("crossing");
+    // well short of it, nothing yet
+    expect(controlAhead(65.675, 40, NORTH)).toBeNull();
+  });
+
+  it("is nothing on the way up to the roundabout", () => {
+    expect(controlAhead(-8.4, 50, NORTH)).toBeNull();
+  });
+
+  it("is give way in a gap in the reserve, and not for driving past one", () => {
+    expect(controlAhead(-4.8, -66, NORTH)).toBeNull();
+    expect(controlAhead(0, -74.4, EAST)).toBe("give_way");
   });
 });

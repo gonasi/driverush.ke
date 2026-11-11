@@ -289,6 +289,8 @@ export type CarModel = THREE.Group & {
     wheels: THREE.Group[];
     /** The front pair. Turn each about its `y` to steer it. */
     steering: THREE.Group[];
+    /** The wheels' radius in metres, when it is not `WHEEL_RADIUS`. */
+    wheelRadius?: number;
   };
 };
 

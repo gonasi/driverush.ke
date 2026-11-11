@@ -7,7 +7,8 @@
 import type { CarInput, CarState } from "./car";
 import { isRouteTask, type BoardChallenge } from "./challenges";
 import { challengeRoute, taskParks, taskStart } from "./lessons";
-import type { Route } from "./network";
+import { bearingOf, wrapPi } from "./geometry";
+import { poseAt, type Route } from "./network";
 import {
   createAssist,
   stickToInput,
@@ -162,7 +163,31 @@ function manoeuvring(): boolean {
   if (!near) return false;
   HANDS_ON.seat = drive.seat;
   HANDS_ON.reverse = drive.reverse;
+  // Lane assist lets go, and parking assist takes over for the reversing.
+  HANDS_ON.guide = drive.assist ? reverseLine : undefined;
   return true;
+}
+
+/**
+ * The line a reversing car should follow, from where it is: the stretch of the
+ * task's route that is driven in reverse.
+ */
+function reverseLine(at: CarState): { heading: number; along: number } | null {
+  if (!taskRoute) return null;
+  const progress = routeRef.progress;
+  const step = taskRoute.steps.find(
+    (s) => s.gear === "reverse" && progress > s.from - 6 && progress < s.to,
+  );
+  if (!step) return null;
+  const from = Math.max(step.from, progress);
+  const aim = poseAt(taskRoute, Math.min(step.to, from + 2.6));
+  // reversing, the car travels the opposite way to the way it faces
+  const along = wrapPi(aim.heading + Math.PI);
+  const gap = Math.hypot(aim.x - at.x, aim.z - at.z);
+  return {
+    along,
+    heading: gap > 0.6 ? bearingOf(aim.x - at.x, aim.z - at.z) : along,
+  };
 }
 
 /** Advance the drive by one rendered frame. */

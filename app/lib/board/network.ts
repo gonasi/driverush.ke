@@ -776,11 +776,10 @@ function build(): Network {
   const isDressed = (p: Vec) =>
     dressed.some((spot) => Math.hypot(spot.x - p.x, spot.z - p.z) < 1.5);
 
-  // Angle bays: the lines lean so that the row on the left suits a car driving
-  // up the aisle and the row on the right suits a car driving down it. Driving
-  // in forward means reversing out. The other way is to reverse in from the far
-  // side of the aisle and drive out forward. Which one a school teaches is not
-  // confirmed, so both are here.
+  // Angle bays, as they are examined: park nose in, and to leave, reverse out
+  // and then drive forward. The lines lean so that the row on the left suits a
+  // car driving up the aisle and the row on the right suits a car driving down
+  // it.
   const depth = AISLE.x0 - PARK.x0;
   const rows = [
     {
@@ -789,12 +788,9 @@ function build(): Network {
       x: AISLE.x0 - depth / 2,
       shift: -depth / 2,
       nose: -Math.PI / 4,
-      nearLane: "aisle:north",
-      nearX: X_AISLE_NORTH,
-      farLane: "aisle:south",
-      farX: X_AISLE_SOUTH,
-      nearHeading: NORTH,
-      farHeading: SOUTH,
+      lane: "aisle:north",
+      laneX: X_AISLE_NORTH,
+      heading: NORTH,
       // a car driving up the aisle meets the bay from the south
       sign: 1,
     },
@@ -804,12 +800,9 @@ function build(): Network {
       x: AISLE.x1 + depth / 2,
       shift: depth / 2,
       nose: (Math.PI * 3) / 4,
-      nearLane: "aisle:south",
-      nearX: X_AISLE_SOUTH,
-      farLane: "aisle:north",
-      farX: X_AISLE_NORTH,
-      nearHeading: SOUTH,
-      farHeading: NORTH,
+      lane: "aisle:south",
+      laneX: X_AISLE_SOUTH,
+      heading: SOUTH,
       sign: -1,
     },
   ] as const;
@@ -821,93 +814,45 @@ function build(): Network {
         z: ROADS.BAY_FIRST - (k + 0.5) * ROADS.BAY_STEP + row.shift,
       };
       const bay = `bay:${row.name}${k + 1}`;
-      const label = `Angle bay ${k + 1}, ${row.label} row`;
-      const occupied = isDressed(centre);
-      const noseIn = node(`${bay}:nose`, centre, row.nose);
-      const tailIn = node(`${bay}:tail`, centre, wrapPi(row.nose + Math.PI));
-      places.push(
-        {
-          id: noseIn,
-          label: `${label}, nose in`,
-          group: "angle_bay",
-          starts: true,
-          ends: true,
-          occupied,
-        },
-        {
-          id: tailIn,
-          label: `${label}, reversed in`,
-          group: "angle_bay",
-          starts: true,
-          ends: true,
-          occupied,
-        },
-      );
+      const parked = node(`${bay}:nose`, centre, row.nose);
+      places.push({
+        id: parked,
+        label: `Angle bay ${k + 1}, ${row.label} row`,
+        group: "angle_bay",
+        starts: true,
+        ends: true,
+        occupied: isDressed(centre),
+      });
 
-      // where the bay's own line, carried back, crosses each lane of the aisle
-      const nearZ = centre.z + row.sign * (Math.abs(row.nearX - centre.x) + 5);
-      const farZ = centre.z + row.sign * (Math.abs(row.farX - centre.x) + 3);
-      const meta = {
-        road: "angle_bay",
-        parking: true,
-        bay,
-        confirmed: false,
-      } as const;
-
+      // where the bay's own line, carried back, crosses the lane beside it
+      const laneZ = centre.z + row.sign * (Math.abs(row.laneX - centre.x) + 5);
+      const meta = { road: "angle_bay", parking: true, bay } as const;
       const swingIn = curve(
-        { x: row.nearX, z: nearZ },
-        row.nearHeading,
+        { x: row.laneX, z: laneZ },
+        row.heading,
         centre,
         row.nose,
       );
-      const from = near(row.nearLane, { x: row.nearX, z: nearZ });
-      edge(from, noseIn, swingIn, {
+      const from = near(row.lane, { x: row.laneX, z: laneZ });
+      edge(from, parked, swingIn, {
         ...meta,
         maneuver: "park_forward",
         title: "Drive forward into the bay",
-        why: "The bay lines lean your way. Steer in early and stop with the whole car inside the lines.",
+        why: "An angle bay is parked in nose first. The lines lean your way, so steer in early and stop with the whole car inside them.",
       });
-      edge(noseIn, from, [...swingIn].reverse(), {
+      edge(parked, from, [...swingIn].reverse(), {
         ...meta,
         maneuver: "leave_reverse",
         gear: "reverse",
         title: "Reverse out of the bay",
-        why: "Look both ways down the aisle first. Reverse slowly until the car is straight in your lane, then stop and drive forward.",
+        why: "You leave an angle bay in reverse. Look both ways down the aisle, reverse slowly until the car is straight in your lane, then stop and drive forward.",
       });
-
-      const far = lanes.get(row.farLane) as LaneDef;
-      const farD = Math.abs(farZ - far.a.z);
-      if (
-        farD > 0.5 &&
-        farD < far.length - 0.5 &&
-        (farZ - far.a.z) * dirOf(far.heading).z > 0
-      ) {
-        const driveOut = curve(
-          centre,
-          wrapPi(row.nose + Math.PI),
-          { x: row.farX, z: farZ },
-          row.farHeading,
-        );
-        const to = near(row.farLane, { x: row.farX, z: farZ });
-        edge(tailIn, to, driveOut, {
-          ...meta,
-          maneuver: "leave_forward",
-          title: "Drive forward out of the bay",
-          why: "Give way to anything in the aisle. You cross the near lane to reach yours, so look both ways.",
-        });
-        edge(to, tailIn, [...driveOut].reverse(), {
-          ...meta,
-          maneuver: "park_reverse",
-          gear: "reverse",
-          title: "Reverse into the bay",
-          why: "Drive just past the bay and stop. Check behind and on both sides, then reverse slowly across the aisle and into the bay.",
-        });
-      }
     }
   }
 
-  // Flush parking: boxes painted at the kerb of the two-way road, on the side
-  // going north. Drive in forward, or pull up past the box and reverse in.
+  // Flush parking, as it is examined: boxes painted at the kerb of the two-way
+  // road, on the side going north. Drive forward past the box, then reverse
+  // into it. Pull out forward.
   const box = (FLUSH.z1 - FLUSH.z0) / FLUSH.bays;
   for (let k = 0; k < FLUSH.bays; k += 1) {
     const centre = {
@@ -924,33 +869,22 @@ function build(): Network {
       ends: true,
       occupied: isDressed(centre),
     });
-    const meta = { road: "flush_bay", bay, confirmed: false } as const;
-    const before = near("side:north", { x: X_NORTHBOUND, z: centre.z + 10 });
-    const after = near("side:north", { x: X_NORTHBOUND, z: centre.z - 9 });
+    const meta = { road: "flush_bay", bay } as const;
+    // far enough past the box that the car has room to come in straight
+    const after = near("side:north", { x: X_NORTHBOUND, z: centre.z - 13 });
     const pullOut = curve(centre, NORTH, nodes.get(after) as NetNode, NORTH);
-    edge(
-      before,
-      parked,
-      curve(nodes.get(before) as NetNode, NORTH, centre, NORTH),
-      {
-        ...meta,
-        maneuver: "park_forward",
-        title: "Drive forward into the flush parking bay",
-        why: "Flush parking is painted at the kerb. Slow down, steer in to the kerb and stop inside the box.",
-      },
-    );
     edge(after, parked, [...pullOut].reverse(), {
       ...meta,
       maneuver: "park_reverse",
       gear: "reverse",
       title: "Reverse into the flush parking bay",
-      why: "Drive just past the box and stop. Check behind you, then reverse slowly back in to the kerb until the car is inside the box.",
+      why: "Flush parking is reversed into. Drive just past the box and stop. Check behind you, then reverse slowly back in to the kerb until the car is inside the box.",
     });
     edge(parked, after, pullOut, {
       ...meta,
       maneuver: "leave_forward",
       title: "Pull out of the flush parking bay",
-      why: "Check behind you for traffic, then pull out into your lane.",
+      why: "Check behind you for traffic, then pull out forward into your lane.",
     });
   }
 
@@ -1466,4 +1400,74 @@ export function followFrom(node: string, reach = Infinity): NetEdge[] {
     gone += next.length;
     here = next.to;
   }
+}
+
+/** A sign shows from this far before its paint, in metres. */
+const CONTROL_AHEAD = 18;
+
+let controlled: NetEdge[] | null = null;
+
+/**
+ * The give way line, stop line or pedestrian crossing a car at this spot is
+ * coming up to, or is on, if there is one. It goes by where the car is and the
+ * way it faces, so it works anywhere on the board, in any task.
+ */
+export function controlAhead(
+  x: number,
+  z: number,
+  heading: number,
+): Control | null {
+  controlled ??= network().edges.filter((e) => e.control);
+  const net = network();
+  let best: { control: Control; gap: number } | null = null;
+  for (const e of controlled) {
+    const from = net.nodes.get(e.from);
+    if (!from || !e.control) continue;
+    // on the stretch itself: in the turn, or on the crossing
+    // A turn's last stretch lies along the lane it joins, where other cars
+    // drive by that are not turning at all, so that part does not count.
+    const upTo =
+      e.maneuver === "follow"
+        ? e.points.length
+        : Math.ceil(e.points.length * 0.55);
+    let on = Infinity;
+    for (let i = 1; i < upTo; i += 1) {
+      const p = e.points[i];
+      const q = e.points[i - 1];
+      // only a car going the way the turn goes is making the turn
+      const way = bearingOf(p.x - q.x, p.z - q.z);
+      if (Math.abs(wrapPi(heading - way)) > (40 * Math.PI) / 180) continue;
+      on = Math.min(on, Math.hypot(p.x - x, p.z - z));
+    }
+    // a crossing is two points a few metres apart: measure to the line between
+    if (e.maneuver === "follow") {
+      const a = e.points[0];
+      const b = e.points[e.points.length - 1];
+      const dx = b.x - a.x;
+      const dz = b.z - a.z;
+      const t = Math.min(
+        1,
+        Math.max(0, ((x - a.x) * dx + (z - a.z) * dz) / (dx * dx + dz * dz)),
+      );
+      on = Math.hypot(a.x + dx * t - x, a.z + dz * t - z);
+    }
+    let gap = on < 2 ? 0 : Infinity;
+    // coming up to it along its own lane, facing the right way. Turning back
+    // through the reserve only counts once the car is in the gap.
+    if (gap > 0 && e.maneuver !== "u_turn") {
+      const dir = dirOf(from.heading);
+      const ahead = (from.x - x) * dir.x + (from.z - z) * dir.z;
+      const aside = Math.abs((from.x - x) * -dir.z + (from.z - z) * dir.x);
+      if (
+        ahead >= 0 &&
+        ahead < CONTROL_AHEAD &&
+        aside < 2.4 &&
+        Math.abs(wrapPi(heading - from.heading)) < Math.PI / 3
+      ) {
+        gap = ahead;
+      }
+    }
+    if (gap < (best?.gap ?? Infinity)) best = { control: e.control, gap };
+  }
+  return best?.control ?? null;
 }

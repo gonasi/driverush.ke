@@ -17,9 +17,13 @@ to date when an asset or an agreement changes. No personal contact details here.
 - **Missing:** the 3D model for M.5 (Pass to the left). `M_5.glb` was an exact copy of the M.7 bicycle, so it was deleted and M.5 is out of the 3D trainer until it's re-exported. Add it back in `app/data/road-signs-3d.json` or `/tools/sign-3d`. The chart trainer still has M.5.
 
 ## Model Town Board
-- **Made by:** the DriveRush team's own code. Nothing on the board is downloaded or bought.
+- **Made by:** the DriveRush team's own code, except the cars (below).
 - **The board** (roads, markings, kerbs, the parking zone, the stopping box) is drawn by `app/lib/board/full-board.ts`. Its layout follows the boards Kenyan driving schools paint, and its proportions were measured off a reference drawing of one. No artwork was copied from either.
-- **The cars** are modelled in code in `app/components/board/car-model.ts`. The table, its wood and the floor are drawn in code in `app/components/board/board-table.tsx`.
+- **The cars** (saloon, SUV, pickup) come from the "LowPoly_Cars_01" model pack, added on 2026-11-11. The owner states the pack is free for commercial use.
+  - **Source and licence:** _to fill in: where the pack was downloaded and where its licence terms are kept_
+  - **In the repository:** only the three converted models in `public/assets/board/cars/`, cut from the pack and recoloured by `scripts/build-board-cars.mjs`. The pack's own files (OBJ, FBX, Blender file, textures) are not in the repository.
+  - **Fallback:** if a model can't be fetched, the board draws the saloon modelled in our own code in `app/components/board/car-model.ts`.
+- The table, its wood and the floor are drawn in code in `app/components/board/board-table.tsx`.
 - **Removed on 2026-11-11:** the cars and trees from Kenney's "Racing Pack" (CC0), used by the earlier 2D game. They are no longer in the repository.
 
 ## Voice clips

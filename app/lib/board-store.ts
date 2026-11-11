@@ -19,6 +19,7 @@ import {
 } from "./board/challenges";
 import type { Fault, FaultId } from "./board/referee";
 import { beginChallenge, elapsedSeconds, stopDriving } from "./board/runtime";
+import type { BoardCarSetting } from "./board/cars";
 import type { Seat } from "./board/joystick";
 import { fitTable, releaseCamera, useStage } from "./board/stage";
 import { applyGrade, type SignProgress } from "./pelican-progress";
@@ -37,6 +38,8 @@ export type BoardSettings = {
   seat?: Seat;
   /** Hold the lane the car is in. On unless switched off. */
   assist?: boolean;
+  /** Which car to drive. Left out, or "random", is a different one each visit. */
+  car?: BoardCarSetting;
 };
 export const DEFAULT_BOARD_SETTINGS: BoardSettings = {
   sound: true,

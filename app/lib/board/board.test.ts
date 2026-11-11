@@ -823,6 +823,11 @@ type RouteFollow = {
   runStopLines?: boolean;
   /** Metres to hold to the side of the route, to be in the wrong lane. */
   aside?: number;
+  /**
+   * Reversing, hold the knob this many degrees off the line the whole way,
+   * the way a thumb does, instead of steering along it.
+   */
+  sloppyReverse?: number;
 };
 
 /**
@@ -865,6 +870,18 @@ function routeFollower(
       }
     }
 
+    // changing gear: come to a stop where the reverse begins
+    const here0 = poseAt(route, progress);
+    if (!here0.reversing && car.speed > 0.05) {
+      const turnAround = route.steps.find(
+        (step) => step.gear === "reverse" && step.from > progress,
+      );
+      if (turnAround && turnAround.from - progress - stopping < 0.4) {
+        letGo();
+        return;
+      }
+    }
+
     const end = route.length - (parks ? 0 : 6);
     if (progress + stopping >= end - (parks ? 0.15 : 0)) {
       letGo();
@@ -882,6 +899,12 @@ function routeFollower(
         side.z - Math.cos(left) * options.aside - car.z,
       );
     }
+    if (here.reversing && options.sloppyReverse != null) {
+      // roughly the way the reverse goes, and no better than that
+      const step = route.steps[here.step];
+      const middle = poseAt(route, (step.from + step.to) / 2);
+      bearing = middle.heading + Math.PI + options.sloppyReverse * DEG;
+    }
     point(bearing, here.reversing ? 0.6 : 0.7);
   };
 }
@@ -896,6 +919,23 @@ describe("tasks away from the roundabout", () => {
         expect(result.fault, challenge.id).toBeUndefined();
         expect(result.small, challenge.id).toEqual([]);
         expect(result.goal, challenge.id).toBe(true);
+      });
+    }
+  }
+
+  for (const id of ["leave-angle", "park-flush"]) {
+    for (const off of [-22, 22]) {
+      it(`parking assist steers the reverse in "${id}" with the knob ${off} degrees out`, () => {
+        const challenge = ROUTE_TASKS.find((c) => c.id === id)!;
+        const route = challengeRoute(challenge)!;
+        const result = play(
+          challenge,
+          routeFollower(challenge, route, { sloppyReverse: off }),
+          240,
+        );
+        expect(result.fault, id).toBeUndefined();
+        expect(result.small, id).toEqual([]);
+        expect(result.goal, id).toBe(true);
       });
     }
   }
@@ -922,11 +962,25 @@ describe("tasks away from the roundabout", () => {
     expect(result.fault?.id).toMatch(/wrong_lane|off_route|centre_line|wrong_way/);
   });
 
+  it("turning into the street from the second lane ends the attempt", () => {
+    const challenge = ROUTE_TASKS.find((c) => c.id === "down-the-street")!;
+    const route = challengeRoute(challenge)!;
+    // one lane to the right of the route: lane 2, where the route is in lane 1
+    const result = play(
+      challenge,
+      routeFollower(challenge, route, { aside: -3.6 }),
+      240,
+    );
+    expect(result.fault).toMatchObject({ id: "wrong_lane", serious: true });
+  });
+
   it("driving off down another road ends the attempt", () => {
     const challenge = ROUTE_TASKS.find((c) => c.id === "down-the-street")!;
     // straight on down the dual carriageway, past the street
+    // It never left lane 3 for the turn, and then it missed the turn.
     const result = play(challenge, () => point(Math.PI, 0.8), 120);
-    expect(result.fault).toMatchObject({ id: "off_route", serious: true });
+    expect(result.fault?.id).toMatch(/wrong_lane|off_route/);
+    expect(result.fault?.serious).toBe(true);
   });
 
   it("the car only reverses in a task that has a reverse gear", () => {

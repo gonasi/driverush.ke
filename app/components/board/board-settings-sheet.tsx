@@ -1,9 +1,14 @@
 /**
- * The board's settings: which side of the table you stand at, lane assist and
- * sound. Opened from the gear button while driving.
+ * The board's settings: which side of the table you stand at, which car you
+ * drive, lane assist and sound. Opened from the gear button while driving.
  */
 import * as React from "react";
 
+import {
+  BOARD_CARS,
+  type BoardCarId,
+  type BoardCarSetting,
+} from "~/lib/board/cars";
 import { fullBoardSvg } from "~/lib/board/full-board";
 import type { Seat } from "~/lib/board/joystick";
 import { useBoardStore } from "~/lib/board-store";
@@ -31,6 +36,19 @@ const SEAT_LABEL: Record<Seat, string> = {
 /** The board, small, as it lies on the table: the bottom side nearest. */
 const TABLE = fullBoardSvg({ numbers: false });
 
+const CAR_CHOICES: { value: BoardCarSetting; label: string }[] = [
+  { value: "random", label: "Surprise me" },
+  ...BOARD_CARS.map((car) => ({ value: car.id, label: car.label })),
+];
+const CAR_LABEL = Object.fromEntries(
+  BOARD_CARS.map((car) => [car.id, car.label]),
+) as Record<BoardCarId, string>;
+
+const CHOICE =
+  "min-h-11 min-w-[5.5rem] border-2 border-ink px-3 py-2 font-display text-[13px] font-extrabold uppercase tracking-wider outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ink";
+const CHOICE_ON = "bg-kenya-gold text-kenya-gold-foreground shadow-stamp";
+const CHOICE_OFF = "bg-surface text-ink hover:bg-paper-3";
+
 function SeatButton({
   seat,
   current,
@@ -48,13 +66,7 @@ function SeatButton({
       type="button"
       aria-pressed={active}
       onClick={() => onPick(seat)}
-      className={cn(
-        "min-h-11 min-w-[5.5rem] border-2 border-ink px-3 py-2 font-display text-[13px] font-extrabold uppercase tracking-wider outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ink",
-        active
-          ? "bg-kenya-gold text-kenya-gold-foreground shadow-stamp"
-          : "bg-surface text-ink hover:bg-paper-3",
-        className,
-      )}
+      className={cn(CHOICE, active ? CHOICE_ON : CHOICE_OFF, className)}
     >
       {SEAT_LABEL[seat]}
     </button>
@@ -65,15 +77,19 @@ export function BoardSettingsSheet({
   open,
   onOpenChange,
   seat,
+  car,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Where the learner stands now, chosen or not. */
   seat: Seat;
+  /** The car on the table now, chosen or drawn for this visit. */
+  car: BoardCarId;
 }) {
   const settings = useBoardStore((s) => s.settings);
   const setSetting = useBoardStore((s) => s.setSetting);
   const pick = (next: Seat) => setSetting({ seat: next });
+  const carChoice = settings.car ?? "random";
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -124,10 +140,36 @@ export function BoardSettingsSheet({
             </p>
           </SettingSection>
 
+          <SettingSection
+            title="Your car"
+            description={`Now: ${CAR_LABEL[car]}`}
+          >
+            <div className="grid grid-cols-2 gap-2.5">
+              {CAR_CHOICES.map((choice) => (
+                <button
+                  key={choice.value}
+                  type="button"
+                  aria-pressed={choice.value === carChoice}
+                  onClick={() => setSetting({ car: choice.value })}
+                  className={cn(
+                    CHOICE,
+                    choice.value === carChoice ? CHOICE_ON : CHOICE_OFF,
+                  )}
+                >
+                  {choice.label}
+                </button>
+              ))}
+            </div>
+            <p className="m-0 text-[12.5px] leading-snug text-ink-2">
+              The cars only look different. They are the same size and drive
+              the same way. Surprise me picks one each time you visit.
+            </p>
+          </SettingSection>
+
           <SettingSection title="Driving">
             <ToggleRow
               label="Lane assist"
-              description="Holds the car in the lane you are following. Point the stick at another lane or an exit and it lets go."
+              description="Holds the car in the lane you are following, and steers it into or out of a parking bay when you reverse. Point the stick somewhere else and it lets go."
               icon={RoadIcon}
               checked={settings.assist ?? true}
               onCheckedChange={(assist) => setSetting({ assist })}

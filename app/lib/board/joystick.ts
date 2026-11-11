@@ -43,6 +43,12 @@ export type DriveOptions = {
    * the car backs up with its tail going where the knob points.
    */
   reverse?: boolean;
+  /**
+   * Parking assist. While the car is reversing into or out of a bay, this says
+   * which way the line into the bay runs from where the car is, and where on
+   * it to aim the tail. Null when there is no such line here.
+   */
+  guide?: (car: CarState) => { heading: number; along: number } | null;
 };
 
 /** What the assist remembers between steps. */
@@ -80,6 +86,8 @@ const REVERSE_DWELL = 0.35;
 const STEP = 1 / 60;
 /** A lane away from the roundabout is held within this of its middle, metres. */
 const ROAD_LANE_REACH = 2.4;
+/** Reversing, a thumb is less sure: the parking assist holds over a wider cone. */
+const REVERSE_CONE = (50 * Math.PI) / 180;
 
 /** The assist holds while the knob is within this of the lane's direction. */
 export const ROAD_CONE = (30 * Math.PI) / 180;
@@ -215,8 +223,16 @@ export function stickToInput(
   if (options.reverse) {
     const reversing = car.speed < -0.05;
     const behind = Math.abs(wrapPi(knob - car.heading));
+    // Parking assist: the line into the bay from here, if the car is at one.
+    const line = options.guide?.(car) ?? null;
+    const alongLine =
+      line != null && Math.abs(wrapPi(knob - line.along)) < REVERSE_CONE;
     // Once backing up, the knob only has to stay in the half behind the car.
-    if (behind > (reversing ? Math.PI / 2 : PULL_BACK)) {
+    // At a bay, pointing down the line into it is asking for reverse too.
+    if (
+      behind > (reversing ? Math.PI / 2 : PULL_BACK) ||
+      (alongLine && car.speed < 0.3 && behind > Math.PI / 2)
+    ) {
       if (car.speed > 0.3) {
         input.steer = 0;
         input.throttle = 0;
@@ -232,7 +248,18 @@ export function stickToInput(
       }
       // The tail goes where the knob points, so the nose faces away from it.
       // Backing up, the wheel works the other way round.
-      const off = wrapPi(knob + Math.PI - car.heading);
+      // Parking assist: while the knob points roughly along the line into the
+      // bay, the tail is steered down the middle of it.
+      let tail = knob;
+      if (line) {
+        const away = Math.abs(wrapPi(knob - line.along));
+        const hold = Math.max(
+          0,
+          Math.min(1, (REVERSE_CONE + CONE_EDGE - away) / (2 * CONE_EDGE)),
+        );
+        tail = knob + hold * wrapPi(line.heading - knob);
+      }
+      const off = wrapPi(tail + Math.PI - car.heading);
       const reach = (push - STICK_DEADZONE) / (1 - STICK_DEADZONE);
       input.steer = Math.max(-1, Math.min(1, -off * STEER_GAIN));
       input.throttle = -Math.max(0.25, reach);

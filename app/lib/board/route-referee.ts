@@ -5,7 +5,8 @@
  * the line `network.ts` found for it.
  *
  * It ends the attempt when the car leaves the route, is in the wrong lane at
- * the roundabout, drives against the traffic, or runs a stop line. It passes
+ * the roundabout or coming up to a junction turn, drives against the traffic,
+ * or runs a stop line. It passes
  * the task when the car stops in the green box, or in the bay, straight.
  *
  * Give way lines and pedestrian crossings are not enforced: there is no other
@@ -47,6 +48,8 @@ export function createRouteRef(): RouteRefState {
 const LANE_STRICT = 3;
 const ROAD_LOOSE = 6;
 const OFF_GRACE = 1;
+/** This far before a junction turn, the car should be in the lane for it. */
+const TURN_APPROACH = 12;
 const WRONG_WAY_ANGLE = (115 * Math.PI) / 180;
 const WRONG_WAY_GRACE = 0.8;
 const MOVING = 0.5;
@@ -58,10 +61,16 @@ const STOP_BEFORE = 9;
 const STOP_AFTER = 2;
 /** Past the line by this much without having stopped: the line was run. */
 const STOP_RUN = 4.5;
-/** In the bay: this close to its middle, and this straight. */
-const BAY_REACH = 1.1;
-const BAY_ANGLE = (22 * Math.PI) / 180;
-const BAY_NEAR = 3.2;
+/**
+ * In the bay: how far the middle of the car may be from the middle of the bay,
+ * along it and across it, and how straight it has to sit. A flush bay is long
+ * and narrow; an angle bay is short and wide.
+ */
+const BAY_FIT = {
+  flush_bay: { along: 3, across: 0.6, angle: (14 * Math.PI) / 180 },
+  angle_bay: { along: 1.4, across: 1.1, angle: (20 * Math.PI) / 180 },
+} as const;
+const BAY_NEAR = 4;
 const ASKEW_GRACE = 1.4;
 
 const BUMPS: Partial<Record<Contact, SmallFaultId>> = {
@@ -77,8 +86,16 @@ const BUMPS: Partial<Record<Contact, SmallFaultId>> = {
  */
 function nearest(route: Route, car: CarState, from: number) {
   let best = { distance: from, gap: Infinity, heading: 0 };
+  // Where a route goes forward and then back over the same ground, as it does
+  // at a bay, the way the car is moving says which of the two it is on.
+  const moving = car.speed < -0.05 ? "reverse" : car.speed > 0.05 ? "forward" : null;
   for (let i = 0; i < route.points.length - 1; i += 1) {
     if (route.at[i + 1] < from - 12 || route.at[i] > from + 30) continue;
+    if (moving) {
+      const middle = (route.at[i] + route.at[i + 1]) / 2;
+      const step = route.steps.find((s) => middle < s.to);
+      if (step && step.gear !== moving) continue;
+    }
     const a = route.points[i];
     const b = route.points[i + 1];
     const dx = b.x - a.x;
@@ -138,15 +155,26 @@ export function routeRefStep(
   const speed = Math.abs(car.speed);
 
   // off the route, or in the wrong lane where the lane is the whole point
+  // The lane matters at the roundabout, and at a junction: in the turn itself
+  // and on the last stretch up to it, where the car should already be in the
+  // lane the turn is made from.
+  const isTurn = (s: typeof step) =>
+    s.maneuver === "turn_left" || s.maneuver === "turn_right";
+  const next = route.steps[index + 1];
   const strict =
     step.maneuver === "hold_lane" ||
     step.maneuver === "ring" ||
-    step.maneuver === "exit";
+    step.maneuver === "exit" ||
+    isTurn(step) ||
+    (next != null && isTurn(next) && at.distance > next.from - TURN_APPROACH);
   ref.offTime = at.gap > (strict ? LANE_STRICT : ROAD_LOOSE) ? ref.offTime + dt : 0;
   if (ref.offTime > OFF_GRACE) {
-    const fault: Fault = strict
-      ? { id: "wrong_lane", serious: true }
-      : { id: "off_route", serious: true };
+    // In the turn itself, the car has gone somewhere else. Before it, or at
+    // the roundabout, it is in the wrong lane.
+    const fault: Fault =
+      strict && !isTurn(step)
+        ? { id: "wrong_lane", serious: true }
+        : { id: "off_route", serious: true };
     result.fault = fault;
     return result;
   }
@@ -177,8 +205,17 @@ export function routeRefStep(
     const end = route.points[route.points.length - 1];
     const facing = route.headings[route.headings.length - 1];
     const gap = Math.hypot(car.x - end.x, car.z - end.z);
-    const straight = Math.abs(wrapPi(car.heading - facing)) < BAY_ANGLE;
-    const parked = gap < BAY_REACH && straight;
+    const last = route.steps[route.steps.length - 1];
+    const fit = BAY_FIT[last?.road === "flush_bay" ? "flush_bay" : "angle_bay"];
+    // where the car is in the bay's own frame: along the way it faces, and across
+    const fx = Math.sin(facing);
+    const fz = -Math.cos(facing);
+    const along = (car.x - end.x) * fx + (car.z - end.z) * fz;
+    const across = (car.x - end.x) * -fz + (car.z - end.z) * fx;
+    const parked =
+      Math.abs(along) < fit.along &&
+      Math.abs(across) < fit.across &&
+      Math.abs(wrapPi(car.heading - facing)) < fit.angle;
     ref.goalTime = parked && still ? ref.goalTime + dt : 0;
     if (ref.goalTime >= GOAL_HOLD) {
       result.goal = true;

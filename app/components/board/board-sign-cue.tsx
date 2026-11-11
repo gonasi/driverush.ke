@@ -1,17 +1,16 @@
 /**
  * The road sign for the paint ahead, shown while it matters. As the car comes
- * up to a give way line, a stop line or a pedestrian crossing on its task's
- * route, the sign and what it means appear, and they stay until the car has
- * gone by.
+ * up to a give way line, a stop line or a pedestrian crossing, anywhere on the
+ * board and in any task, the sign and what it means appear, and they stay
+ * until the car has gone by. Nothing is enforced by it: it tells the learner
+ * what ought to happen where they are.
  *
  * It reads the car a few times a second, not every frame: a sign does not need
  * to be quicker than that, and the drive stays out of React.
  */
 import * as React from "react";
 
-import type { BoardChallenge } from "~/lib/board/challenges";
-import { challengeRoute } from "~/lib/board/lessons";
-import { distanceNear, type Control } from "~/lib/board/network";
+import { controlAhead, type Control } from "~/lib/board/network";
 import { car } from "~/lib/board/runtime";
 import { signPageBySlug } from "~/lib/road-sign-pages";
 
@@ -37,31 +36,9 @@ const CUES: Record<Control, { slug: string; name: string; means: string }> = {
   },
 };
 
-/** The sign shows from this far before the paint, in metres. */
-const AHEAD = 18;
-/** Further from the route than this, the car is not coming up to it at all. */
-const NEARBY = 7;
-
-function cueFor(challenge: BoardChallenge): Control | null {
-  const route = challengeRoute(challenge);
-  if (!route) return null;
-  const at = distanceNear(route, car);
-  const here = route.points.reduce(
-    (best, p) => Math.min(best, Math.hypot(p.x - car.x, p.z - car.z)),
-    Infinity,
-  );
-  if (here > NEARBY) return null;
-  const step = route.steps.find(
-    (s) => s.control && at > s.from - AHEAD && at < s.to,
-  );
-  return step?.control ?? null;
-}
-
 export function BoardSignCue({
-  challenge,
   active,
 }: {
-  challenge: BoardChallenge;
   /** The learner is driving. */
   active: boolean;
 }) {
@@ -71,11 +48,11 @@ export function BoardSignCue({
       setControl(null);
       return;
     }
-    const read = () => setControl(cueFor(challenge));
+    const read = () => setControl(controlAhead(car.x, car.z, car.heading));
     read();
     const id = window.setInterval(read, 200);
     return () => window.clearInterval(id);
-  }, [active, challenge]);
+  }, [active]);
 
   if (!control) return null;
   const cue = CUES[control];

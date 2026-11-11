@@ -12,11 +12,14 @@
  * The table is built once, by hand; only the cars and the camera move.
  */
 import * as React from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 
+import { BOARD_CARS, carsBeside, type BoardCarId } from "~/lib/board/cars";
 import { isRouteTask, type BoardChallenge } from "~/lib/board/challenges";
 import {
   BOUNDS,
@@ -40,6 +43,7 @@ import {
   chevronTexture,
   disposeRibbons,
 } from "~/components/board/route-ribbon";
+import { SHARED, carFromGltf } from "~/components/board/car-glb";
 import {
   WHEEL_RADIUS,
   buildCar,
@@ -56,6 +60,8 @@ export type BoardTableProps = {
   attempt: number;
   tier: BoardTier;
   seat: Seat;
+  /** The car the learner drives. */
+  car: BoardCarId;
   /** Learning, with no task on: the car only shows while a route plays. */
   learning?: boolean;
   /** The board is painted and on screen. */
@@ -517,7 +523,8 @@ function dispose(root: THREE.Object3D) {
   root.traverse((node) => {
     const mesh = node as THREE.Mesh;
     if (!mesh.isMesh) return;
-    mesh.geometry.dispose();
+    // A downloaded car's shapes belong to the loader, which keeps them.
+    if (!mesh.geometry.userData[SHARED]) mesh.geometry.dispose();
     const materials = Array.isArray(mesh.material)
       ? mesh.material
       : [mesh.material];
@@ -533,14 +540,32 @@ function dispose(root: THREE.Object3D) {
 
 let blob: THREE.CanvasTexture | null = null;
 
-/** A car with a soft shadow under it, ready to be placed on the table. */
-function carOnTable(paint: string, plate: string, tier: BoardTier) {
+/** The downloaded car models, by id. `null` when they could not be fetched. */
+type CarSources = Record<BoardCarId, THREE.Object3D> | null;
+
+const CAR_URLS = BOARD_CARS.map((entry) => entry.src);
+const withMeshopt = (loader: GLTFLoader) => {
+  loader.setMeshoptDecoder(MeshoptDecoder);
+};
+
+/**
+ * A car with a soft shadow under it, ready to be placed on the table. With a
+ * downloaded model it is that car; with none it is the one built in code.
+ */
+function carOnTable(
+  paint: string,
+  plate: string,
+  tier: BoardTier,
+  source?: THREE.Object3D,
+) {
   const holder = new THREE.Group();
-  const model = buildCar({
+  const options = {
     paint: new THREE.Color(paint).getHex(),
-    plate,
     simple: tier === "low",
-  });
+  };
+  const model = source
+    ? carFromGltf(source, options)
+    : buildCar({ ...options, plate });
   if (tier === "low") {
     model.traverse((node) => {
       node.castShadow = false;
@@ -579,7 +604,8 @@ const MAX_STEER_SHOWN = 0.45;
 /** Roll a car's wheels as if it had just travelled `distance` metres forward. */
 function rollWheels(holder: THREE.Object3D, distance: number) {
   const model = holder.userData.model as CarModel;
-  const turn = Math.min(distance / WHEEL_RADIUS, MAX_ROLL);
+  const radius = model.userData.wheelRadius ?? WHEEL_RADIUS;
+  const turn = Math.min(distance / radius, MAX_ROLL);
   // The nose points down -z, so rolling forward turns the top of the wheel that way.
   for (const wheel of model.userData.wheels) wheel.rotation.x -= turn;
 }
@@ -637,9 +663,11 @@ function Scene({
   attempt,
   tier,
   seat,
+  car: driven,
   learning = false,
   onReady,
-}: BoardTableProps) {
+  models,
+}: BoardTableProps & { models: CarSources }) {
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
   const invalidate = useThree((s) => s.invalidate);
@@ -706,17 +734,23 @@ function Scene({
   }, [gl, tier, table, invalidate]);
 
   const player = React.useMemo(
-    () => carOnTable(CAR_COLORS.player, "KDR 254U", tier),
-    [tier],
+    () => carOnTable(CAR_COLORS.player, "KDR 254U", tier, models?.[driven]),
+    [tier, models, driven],
   );
   React.useEffect(() => () => dispose(player), [player]);
 
   const others = React.useMemo(
     () =>
-      (challenge?.otherCars ?? []).map(() =>
-        carOnTable(CAR_COLORS.red, "KCZ 718M", tier),
-      ),
-    [challenge, tier],
+      (challenge?.otherCars ?? []).map((_, i) => {
+        const beside = carsBeside(driven);
+        return carOnTable(
+          CAR_COLORS.red,
+          "KCZ 718M",
+          tier,
+          models?.[beside[i % beside.length]],
+        );
+      }),
+    [challenge, tier, models, driven],
   );
   React.useEffect(() => () => others.forEach(dispose), [others]);
 
@@ -729,13 +763,14 @@ function Scene({
         PARKED_PAINTS[i % PARKED_PAINTS.length],
         PARKED_PLATES[i % PARKED_PLATES.length],
         tier,
+        models?.[BOARD_CARS[i % BOARD_CARS.length].id],
       );
       parkedCar.position.set(spot.x, 0, spot.z);
       parkedCar.rotation.y = -spot.heading;
       group.add(parkedCar);
     });
     return group;
-  }, [tier]);
+  }, [tier, models]);
   React.useEffect(() => () => dispose(parked), [parked]);
 
   const goal = React.useMemo(() => {
@@ -950,6 +985,7 @@ function Scene({
     // The learner has hold of the camera: it goes where they slide it and as
     // close as they pinch it. It still never turns.
     const spanOf = (d: number) => 2 * d * Math.tan(halfH);
+    cam.aspect = aspect;
     cam.max = spanOf(whole);
     const free = cam.free && !driving;
     if (free) {
@@ -965,8 +1001,11 @@ function Scene({
       // matters sits above it.
       const depth =
         (2 * r.dist * Math.tan(halfV)) / Math.sin(lerp(TILT_OUT, TILT_IN, near));
-      goalX = cam.x - away.x * cam.lift * depth;
-      goalZ = cam.z - away.z * cam.lift * depth;
+      // and a panel down the left: look a little to the left, so it sits in
+      // the middle of what is left of the screen
+      const across = spanOf(r.dist) * cam.side;
+      goalX = cam.x - away.x * cam.lift * depth - -away.z * across;
+      goalZ = cam.z - away.z * cam.lift * depth - away.x * across;
     } else {
       cam.free = false;
       r.dist = distance;
@@ -1071,6 +1110,33 @@ function Scene({
   );
 }
 
+/** Fetches the car models, then draws the scene with them. */
+function SceneWithCars(props: BoardTableProps) {
+  const loaded = useLoader(GLTFLoader, CAR_URLS, withMeshopt);
+  const models = React.useMemo(() => {
+    const byId = {} as Record<BoardCarId, THREE.Object3D>;
+    BOARD_CARS.forEach((entry, i) => {
+      byId[entry.id] = loaded[i].scene;
+    });
+    return byId;
+  }, [loaded]);
+  return <Scene {...props} models={models} />;
+}
+
+/** If the models can't be fetched, the board carries on with the built car. */
+class CarsFallback extends React.Component<
+  { fallback: React.ReactNode; children: React.ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
 export default function BoardTable(props: BoardTableProps) {
   const high = props.tier === "high";
   const playing = useStage((s) => s.playing);
@@ -1087,7 +1153,11 @@ export default function BoardTable(props: BoardTableProps) {
       }}
       style={{ touchAction: "none" }}
     >
-      <Scene {...props} />
+      <CarsFallback fallback={<Scene {...props} models={null} />}>
+        <React.Suspense fallback={null}>
+          <SceneWithCars {...props} />
+        </React.Suspense>
+      </CarsFallback>
     </Canvas>
   );
 }

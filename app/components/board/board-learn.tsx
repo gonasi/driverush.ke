@@ -111,12 +111,15 @@ export function BoardLearn({
     const tall = window.matchMedia("(max-width: 639px)");
     const update = () => {
       cam.lift = tall.matches ? 0.24 : 0;
+      // beside it on a wide screen: the panel is 23.5rem wide
+      cam.side = tall.matches ? 0 : Math.min(0.3, 188 / window.innerWidth);
     };
     update();
     tall.addEventListener("change", update);
     return () => {
       tall.removeEventListener("change", update);
       cam.lift = 0;
+      cam.side = 0;
     };
   }, []);
 

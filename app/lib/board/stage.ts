@@ -42,6 +42,13 @@ export const cam = {
    * table in view. For when a panel covers the bottom of the screen.
    */
   lift: 0,
+  /**
+   * The same, sideways: how far to the right of the middle to hold it, as a
+   * share of the screen's width. For a panel down the left of a wide screen.
+   */
+  side: 0,
+  /** The screen's width over its height. The scene keeps it up to date. */
+  aspect: 1,
   min: 16,
   max: 240,
 };
@@ -54,6 +61,9 @@ let wake: () => void = () => {};
 export function setWake(fn: () => void): void {
   wake = fn;
 }
+
+/** How much the slant of the view squashes depth on the table. */
+const SLANT = 0.72;
 
 const clamp = (v: number, lo: number, hi: number) =>
   Math.min(hi, Math.max(lo, v));
@@ -92,8 +102,11 @@ export function flyTo(box: Box, sideways = false): void {
   cam.z = (box.z0 + box.z1) / 2;
   const across = sideways ? box.z1 - box.z0 : box.x1 - box.x0;
   const deep = sideways ? box.x1 - box.x0 : box.z1 - box.z0;
-  // what is deep on the table is squashed on the screen, so it needs less room
-  cam.span = clamp(Math.max(across, deep * 1.1) * 1.25, cam.min, cam.max);
+  // It has to fit across the screen and up it, in the part no panel covers.
+  // The table is seen at a slant, so what is deep on it is squashed.
+  const wide = across / Math.max(0.3, 1 - 2 * cam.side);
+  const tall = (deep * SLANT * cam.aspect) / Math.max(0.3, 1 - 2 * cam.lift);
+  cam.span = clamp(Math.max(wide, tall) * 1.2, cam.min, cam.max);
   wake();
 }
 

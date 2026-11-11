@@ -8,6 +8,7 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 import { useShallow } from "zustand/react/shallow";
 
+import { resolveCar } from "~/lib/board/cars";
 import { faultRule, faultTip } from "~/lib/board/board-rules";
 import {
   BOARD_CHALLENGES,
@@ -439,6 +440,9 @@ export function BoardPlayer({
   const defaultSeat = useDefaultSeat();
   const seat = s.settings.seat ?? defaultSeat;
   const assist = s.settings.assist ?? true;
+  // Drawn once a visit, so a random car stays the same from task to task.
+  const [carRoll] = React.useState(() => Math.random());
+  const boardCar = resolveCar(s.settings.car, carRoll);
   React.useEffect(() => {
     drive.seat = seat;
     drive.assist = assist;
@@ -502,6 +506,7 @@ export function BoardPlayer({
           attempt={s.attempt}
           quality={s.settings.quality}
           seat={seat}
+          car={boardCar}
           learning={s.mode === "learn"}
           onUnsupported={() => setUnsupported(true)}
           className="absolute inset-0"
@@ -568,7 +573,7 @@ export function BoardPlayer({
               </button>
               <button
                 type="button"
-                aria-label="Board settings: where you stand, lane assist, sound"
+                aria-label="Board settings: where you stand, your car, lane assist, sound"
                 onClick={() => setSettingsOpen(true)}
                 className="inline-flex size-11 items-center justify-center rounded-md border-2 border-white/15 bg-[#101114]/85 outline-none transition-colors hover:bg-white/15 focus-visible:border-white"
               >
@@ -622,6 +627,7 @@ export function BoardPlayer({
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
         seat={seat}
+        car={boardCar}
       />
 
       {/* Stopped by the referee: the rule, and another go. */}
