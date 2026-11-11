@@ -11,7 +11,11 @@
  */
 import { absUrl } from "~/lib/site";
 import { getAllPosts } from "~/lib/blog";
-import { BOARD_GUIDES, BOARD_PATH } from "~/lib/board-guides";
+import {
+  BOARD_GUIDES,
+  BOARD_LEVELS_PATH,
+  BOARD_PATH,
+} from "~/lib/board-guides";
 import { SIGN_CLASS_PAGES } from "~/lib/sign-class-pages";
 import {
   isSignConfirmed,
@@ -43,6 +47,7 @@ const STATIC_PAGES: Entry[] = [
   page("/", "1.0", "weekly"),
   // The Model Town Board is what most learners come for.
   page(BOARD_PATH, "1.0", "weekly"),
+  page(BOARD_LEVELS_PATH, "0.9", "weekly"),
   ...BOARD_GUIDES.map((guide) => page(guide.path, "0.8")),
   page("/road-signs", "0.9", "weekly"),
   page("/ntsa-test", "0.9"),

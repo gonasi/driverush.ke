@@ -1,7 +1,8 @@
 /**
- * `/model-town-board/play`: the board game and nothing else. Arriving starts a
- * round. `?task=<id>` starts one task, and `?learn=1` opens the board to learn
- * it. Leaving the game goes back to the Model Town Board page.
+ * `/model-town-board/play`: the board game and nothing else. `?level=<id>`
+ * opens one level of the course, `?task=<id>` starts one task, `?learn=1`
+ * opens the board to explore, and with none of them it is a round of mixed
+ * tasks. Leaving the game goes back to the Model Town Board page.
  *
  * Search engines are pointed at that page, not this one: there is nothing here
  * to read.
@@ -41,13 +42,15 @@ export default function BoardPlay() {
   const open = useBoardStore((s) => s.overlayOpen);
   const learn = params.get("learn") === "1";
   const task = params.get("task");
+  const level = params.get("level");
   /** The game has been open on this visit, so closing it means leaving. */
   const wasOpen = React.useRef(false);
 
   React.useEffect(() => {
     const store = useBoardStore.getState();
     if (!store.overlayOpen) {
-      if (learn) store.learn();
+      if (level) store.startLevel(level);
+      else if (learn) store.learn();
       // A task that doesn't exist (an old or mistyped link) is a round.
       else store.start(task && challengeById(task) ? [task] : undefined);
     }
@@ -55,7 +58,7 @@ export default function BoardPlay() {
       wasOpen.current = false;
       useBoardStore.getState().exit();
     };
-  }, [learn, task]);
+  }, [learn, task, level]);
 
   React.useEffect(() => {
     if (open) wasOpen.current = true;

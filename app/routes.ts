@@ -26,6 +26,8 @@ export default [
   route("model-town-board", "routes/model-town-board.tsx"),
   // The game alone, with no page under it. Every way into driving links here.
   route("model-town-board/play", "routes/board-play.tsx"),
+  // The board course: every unit and level, each linking into the game.
+  route("model-town-board/levels", "routes/board-levels.tsx"),
   // The board's guides. One file, four routes: the path picks the guide.
   route("model-town-board/questions", "routes/board-guide.tsx", {
     id: "board-guide-questions",

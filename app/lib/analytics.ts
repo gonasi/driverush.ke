@@ -241,6 +241,22 @@ export const analytics = {
     lesson_id: string;
   }) => emit("board_lesson_viewed", args),
 
+  /** A level of the board course was opened, from the list or from Continue. */
+  boardLevelStarted: (args: {
+    level: string;
+    number: number;
+    kind: "slides" | "lanes" | "watch" | "drive";
+    unit: string;
+  }) => emit("board_level_started", args),
+
+  /** A level was finished: read or watched for the first time, or passed. */
+  boardLevelCompleted: (args: {
+    level: string;
+    number: number;
+    kind: "slides" | "lanes" | "watch" | "drive";
+    unit: string;
+  }) => emit("board_level_completed", args),
+
   /** A hint was used on a driving task. */
   boardHintUsed: (args: {
     challenge_id: string;

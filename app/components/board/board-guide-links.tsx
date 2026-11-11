@@ -7,6 +7,7 @@ import { Link } from "react-router";
 
 import {
   BOARD_GUIDES,
+  BOARD_LEVELS_PATH,
   BOARD_PATH,
   type BoardGuideId,
 } from "~/lib/board-guides";
@@ -15,7 +16,7 @@ export function BoardGuideLinks({
   current,
 }: {
   /** The page this block is on, left out of the list. */
-  current?: BoardGuideId | "trainer";
+  current?: BoardGuideId | "trainer" | "levels";
 }) {
   const links = [
     ...(current === "trainer"
@@ -25,6 +26,15 @@ export function BoardGuideLinks({
             to: BOARD_PATH,
             title: "Drive the Model Town Board",
             blurb: "The free trainer: a board on a table, and a car you drive.",
+          },
+        ]),
+    ...(current === "levels"
+      ? []
+      : [
+          {
+            to: BOARD_LEVELS_PATH,
+            title: "Model Town Board levels",
+            blurb: "The board, the lanes and the rules first. Then you drive.",
           },
         ]),
     ...BOARD_GUIDES.filter((guide) => guide.id !== current).map((guide) => ({

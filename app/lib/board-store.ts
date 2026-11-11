@@ -18,6 +18,12 @@ import {
   isRouteTask,
   type BoardChallenge,
 } from "./board/challenges";
+import {
+  learnedKey,
+  levelById,
+  unitOf,
+  type Level,
+} from "./board/curriculum";
 import { shuffleParkingLayout } from "./board/parking-layouts";
 import type { Fault, FaultId } from "./board/referee";
 import {
@@ -68,8 +74,11 @@ export type BoardPhase =
   | "passed"
   | "complete";
 
-/** Driving the tasks, or learning the board with no task on. */
-export type BoardMode = "drive" | "learn";
+/**
+ * Driving the tasks, learning the board with no task on, or a level of the
+ * course that is read or watched and not driven.
+ */
+export type BoardMode = "drive" | "learn" | "level";
 
 type BoardState = {
   // ---- persisted ----
@@ -82,6 +91,8 @@ type BoardState = {
   // ---- transient ----
   overlayOpen: boolean;
   mode: BoardMode;
+  /** The level of the course that is open, when the game was opened on one. */
+  level: string | null;
   /** A hint was used on the task in front of the learner. */
   hinted: boolean;
   phase: BoardPhase;
@@ -117,6 +128,10 @@ type BoardState = {
   exit: () => void;
   /** Open the board to learn it: no task, no clock. */
   learn: () => void;
+  /** Open one level of the course: its cards, its playback or its task. */
+  startLevel: (id: string) => void;
+  /** The level's cards were read to the end, or its lanes all looked at. */
+  completeLevel: () => void;
   /** A hint was shown. The task no longer counts as known without help. */
   hint: (kind: "next_step" | "show_me" | "after_fault") => void;
   /** Pause the task to watch the right way played back. */
@@ -270,7 +285,18 @@ export const useBoardStore = create<BoardState>()(
           tries,
           seconds: Math.round(elapsedSeconds()),
         });
+        const level = levelById(get().level);
+        if (level?.kind === "drive") levelCompleted(level);
       };
+
+      const levelCompleted = (level: Level) =>
+        level.kind !== "mock" &&
+        analytics.boardLevelCompleted({
+          level: level.id,
+          number: level.n,
+          kind: level.kind,
+          unit: unitOf(level).id,
+        });
 
       const begin = () => {
         const { queue, pos } = get();
@@ -300,6 +326,7 @@ export const useBoardStore = create<BoardState>()(
 
         overlayOpen: false,
         mode: "drive",
+        level: null,
         hinted: false,
         phase: "ready",
         attempt: 0,
@@ -317,6 +344,7 @@ export const useBoardStore = create<BoardState>()(
             queue,
             overlayOpen: true,
             mode: "drive",
+            level: null,
             hinted: false,
           });
           analytics.boardStarted({
@@ -387,6 +415,7 @@ export const useBoardStore = create<BoardState>()(
             overlayOpen: false,
             phase: "ready",
             mode: "drive",
+            level: null,
             hinted: false,
           });
         },
@@ -401,9 +430,54 @@ export const useBoardStore = create<BoardState>()(
             overlayOpen: true,
             phase: "ready",
             mode: "learn",
+            level: null,
             hinted: false,
           });
           analytics.boardLearnOpened();
+        },
+
+        startLevel: (id) => {
+          const level = levelById(id);
+          // A level that doesn't exist (an old or mistyped link) is a round.
+          if (!level || level.kind === "mock") {
+            get().start();
+            return;
+          }
+          analytics.boardLevelStarted({
+            level: level.id,
+            number: level.n,
+            kind: level.kind,
+            unit: unitOf(level).id,
+          });
+          if (level.kind === "drive") {
+            get().start([level.challenge]);
+            set({ level: level.id });
+            return;
+          }
+          stopDriving();
+          useStage.getState().clear();
+          forgetDriveZoom();
+          fitTable();
+          set({
+            ...FRESH_RUN,
+            overlayOpen: true,
+            phase: "ready",
+            mode: "level",
+            level: level.id,
+            hinted: false,
+          });
+        },
+
+        completeLevel: () => {
+          const level = levelById(get().level);
+          if (!level || level.kind === "drive" || level.kind === "mock") return;
+          const key = level.kind === "watch" ? level.lesson : learnedKey(level);
+          const first = !get().learned?.includes(key);
+          get().markLearned(key);
+          if (first) {
+            bumpPracticeStreak();
+            levelCompleted(level);
+          }
         },
 
         hint: (kind) => {

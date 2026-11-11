@@ -8,7 +8,11 @@ import { PhoneIcon, MailIcon } from "~/components/brand/icons";
 
 import { analytics } from "~/lib/analytics";
 import { SIGN_BRAND, SIGN_SOURCE } from "~/lib/sign-credits";
-import { BOARD_GUIDES, BOARD_PATH } from "~/lib/board-guides";
+import {
+  BOARD_GUIDES,
+  BOARD_LEVELS_PATH,
+  BOARD_PATH,
+} from "~/lib/board-guides";
 import { SITE } from "~/lib/site";
 
 import { Logo } from "~/components/brand/logo";
@@ -78,10 +82,13 @@ export function SiteFooter() {
           />
           <FooterCol
             heading="Model Town Board"
-            items={BOARD_GUIDES.map((guide) => ({
-              label: guide.name,
-              href: guide.path,
-            }))}
+            items={[
+              { label: "Levels", href: BOARD_LEVELS_PATH },
+              ...BOARD_GUIDES.map((guide) => ({
+                label: guide.name,
+                href: guide.path,
+              })),
+            ]}
           />
           <FooterCol
             heading="Guides"

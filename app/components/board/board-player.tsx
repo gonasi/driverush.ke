@@ -6,6 +6,7 @@
  */
 import * as React from "react";
 import { createPortal } from "react-dom";
+import { Link } from "react-router";
 import { useShallow } from "zustand/react/shallow";
 
 import { resolveCar } from "~/lib/board/cars";
@@ -34,6 +35,12 @@ import {
 import type { Fault } from "~/lib/board/referee";
 import { peekAt, useStage } from "~/lib/board/stage";
 import { BOARD_CHALLENGE_IDS, useBoardStore } from "~/lib/board-store";
+import { BOARD_LEVELS_PATH, levelHref } from "~/lib/board-guides";
+import {
+  COURSE_LEVELS,
+  levelAfter,
+  levelById,
+} from "~/lib/board/curriculum";
 import { signCounts } from "~/lib/pelican-progress";
 import { cn } from "~/lib/utils";
 
@@ -59,6 +66,7 @@ import { BoardFaultTip } from "~/components/board/board-fault-tip";
 import { BoardFinishCue } from "~/components/board/board-finish-cue";
 import { BoardFps } from "~/components/board/board-fps";
 import { BoardLearn } from "~/components/board/board-learn";
+import { BoardLevel } from "~/components/board/board-level";
 import { BoardPlayback, routeLines } from "~/components/board/board-playback";
 import { BoardSettingsSheet } from "~/components/board/board-settings-sheet";
 import { BoardSheet } from "~/components/board/board-sheet";
@@ -570,6 +578,7 @@ export function BoardGame() {
       progress: st.progress,
       overlayOpen: st.overlayOpen,
       mode: st.mode,
+      level: st.level,
       phase: st.phase,
       queue: st.queue,
       pos: st.pos,
@@ -592,6 +601,7 @@ export function BoardGame() {
       next: st.next,
       exit: st.exit,
       learn: st.learn,
+      startLevel: st.startLevel,
       hint: st.hint,
       watch: st.watch,
       resume: st.resume,
@@ -665,6 +675,11 @@ export function BoardGame() {
   }, [seat, assist]);
 
   const challenge = s.queue[s.pos] ?? null;
+  // The level of the course the game was opened on, if it was.
+  const level = levelById(s.level) ?? null;
+  // Reading or watching: no task, no clock, no joystick.
+  const offClock = s.mode !== "drive";
+  const nextUp = level ? levelAfter(level) : undefined;
   // A popup is over the bottom of the screen. On a phone the clock and the
   // minimap step aside for it, so the zoom buttons stay clear above it.
   const sheetUp = s.phase !== "driving";
@@ -685,7 +700,8 @@ export function BoardGame() {
       if (e.key === "Escape") askRef.current();
       if (e.key === "Enter") {
         if (store.phase === "fault") store.retry();
-        if (store.phase === "passed") store.next();
+        // A level's pass card has links on it, not a next task.
+        if (store.phase === "passed" && !store.level) store.next();
         if (store.phase === "watch") store.resume();
       }
     };
@@ -751,7 +767,7 @@ export function BoardGame() {
           quality={s.settings.quality}
           seat={seat}
           car={boardCar}
-          learning={s.mode === "learn"}
+          learning={offClock}
           focus={s.phase === "fault"}
           onUnsupported={() => setUnsupported(true)}
           onPainted={() => setPainted(true)}
@@ -767,9 +783,9 @@ export function BoardGame() {
           seat={seat}
           driving={s.phase === "driving"}
           // In a drive the zoom buttons stand under the minimap instead.
-          buttons={s.mode === "learn"}
+          buttons={offClock}
           buttonsClassName={
-            s.mode === "learn"
+            offClock
               ? "top-[max(0.75rem,env(safe-area-inset-top))] sm:top-5"
               : undefined
           }
@@ -778,6 +794,14 @@ export function BoardGame() {
 
       {!unsupported && s.mode === "learn" && (
         <BoardLearn seat={seat} onSettings={() => setSettingsOpen(true)} />
+      )}
+      {!unsupported && s.mode === "level" && level && (
+        <BoardLevel
+          key={level.id}
+          level={level}
+          seat={seat}
+          onSettings={() => setSettingsOpen(true)}
+        />
       )}
 
       {/* The examiner's task, top left. Status and the way out, top right. */}
@@ -792,7 +816,11 @@ export function BoardGame() {
             <HudColumn>
               <TaskCard
                 key={`${challenge.id}-${s.attempt}`}
-                place={`Task ${s.pos + 1} of ${s.queue.length}`}
+                place={
+                  level
+                    ? `Level ${level.n} of ${COURSE_LEVELS.length}`
+                    : `Task ${s.pos + 1} of ${s.queue.length}`
+                }
                 title={challenge.title}
                 prompt={challenge.prompt}
               />
@@ -1009,25 +1037,56 @@ export function BoardGame() {
           </h2>
           <p className="m-0 text-[13.5px] leading-snug text-ink-2">
             {s.taskFaults > 0
-              ? `You got there with ${s.taskFaults} ${s.taskFaults === 1 ? "mistake" : "mistakes"}. It will come back in a later round.`
+              ? `You got there with ${s.taskFaults} ${s.taskFaults === 1 ? "mistake" : "mistakes"}. ${level ? "Drive it again for all three stars, or carry on." : "It will come back in a later round."}`
               : s.hinted
-                ? "You got there with help. It will come back in a later round, to do on your own."
+                ? level
+                  ? "You got there with help. Try it again on your own, or carry on."
+                  : "You got there with help. It will come back in a later round, to do on your own."
                 : taskParks(challenge)
                   ? "In the bay, inside the lines and straight."
                   : isRouteTask(challenge)
                     ? "Right way, right lane, and you stopped in the box."
                     : "Right lane, right exit, and you stopped in the box."}
           </p>
-          <div className="flex gap-2">
+          {level && nextUp && (
             <Button
+              asChild
               variant="rush"
               size="lg"
-              className="flex-1"
-              onClick={s.next}
-              autoFocus
+              className="h-auto min-h-12 w-full whitespace-normal py-2 text-center leading-snug"
             >
-              {last ? "See how you did" : "Next task"}
+              <Link to={levelHref(nextUp.id)}>
+                Next: level {nextUp.n}, {nextUp.title}
+              </Link>
             </Button>
+          )}
+          <div className="flex gap-2">
+            {level ? (
+              <>
+                <Button
+                  variant="paper"
+                  size="lg"
+                  className="flex-1"
+                  onClick={() => s.startLevel(level.id)}
+                >
+                  <Icon icon={RefreshIcon} size={16} />
+                  Again
+                </Button>
+                <Button asChild variant="paper" size="lg" className="flex-1">
+                  <Link to={BOARD_LEVELS_PATH}>All levels</Link>
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="rush"
+                size="lg"
+                className="flex-1"
+                onClick={s.next}
+                autoFocus
+              >
+                {last ? "See how you did" : "Next task"}
+              </Button>
+            )}
             {/* A clean pass is the moment worth sending to someone. */}
             {s.taskFaults === 0 && !s.hinted && (
               <ShareButton
