@@ -409,8 +409,8 @@ const BoardTable = React.lazy(() => import("~/components/board/board-table"));
  * shows every car a learner can pick. Lane and distance from the roundabout.
  */
 const STILL_CARS = [
-  { car: "pickup", paint: "#2456b4", plate: "KDA 101B", lane: 1, along: 41 },
-  { car: "suv", paint: "#dfe3e8", plate: "KCB 442T", lane: 4, along: 39.5 },
+  { car: "pickup", paint: "#c8102e", plate: "KDA 101B", lane: 1, along: 41 },
+  { car: "suv", paint: "#1e8449", plate: "KCB 442T", lane: 4, along: 39.5 },
 ] as const;
 
 const STILL = {
