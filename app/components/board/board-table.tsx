@@ -612,6 +612,9 @@ function Scene({
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
   const invalidate = useThree((s) => s.invalidate);
+  const setDpr = useThree((s) => s.setDpr);
+  // How the first stretch of driving ran, to catch a phone that can't keep up.
+  const pace = React.useRef({ frames: 0, total: 0, done: tier === "low" });
 
   const table = React.useMemo(() => buildTable(tier), [tier]);
   React.useEffect(() => () => dispose(table.group), [table]);
@@ -742,7 +745,23 @@ function Scene({
 
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.1);
-    if (driving) tick(dt);
+    if (driving) {
+      tick(dt);
+      // Under about 26 frames a second, give up the sharp picture and the
+      // shadows, once. Smooth driving matters more than either.
+      const p = pace.current;
+      if (!p.done) {
+        p.frames += 1;
+        p.total += delta;
+        if (p.frames >= 90) {
+          p.done = true;
+          if (p.total / p.frames > 1 / 26) {
+            setDpr(1);
+            if (sun.current) sun.current.castShadow = false;
+          }
+        }
+      }
+    }
 
     player.position.set(car.x, 0, car.z);
     player.rotation.y = -car.heading;
