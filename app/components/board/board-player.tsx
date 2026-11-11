@@ -28,6 +28,7 @@ import {
   ROUTE_COLOR,
   challengeRoute,
   taskGoalBox,
+  taskParks,
 } from "~/lib/board/lessons";
 import { distanceNear, poseAt, stepPoints } from "~/lib/board/network";
 import { car, drive, elapsedSeconds } from "~/lib/board/runtime";
@@ -51,6 +52,7 @@ import { Progress } from "~/components/ui/progress";
 import { BoardCameraPad } from "~/components/board/board-camera";
 import { BoardControls } from "~/components/board/board-controls";
 import { BoardFaultTip } from "~/components/board/board-fault-tip";
+import { BoardFps } from "~/components/board/board-fps";
 import { BoardLearn } from "~/components/board/board-learn";
 import {
   BoardPlayback,
@@ -513,6 +515,8 @@ export function BoardPlayer({
         />
       )}
 
+      <BoardFps />
+
       {/* Off the clock the learner can slide and zoom the view. */}
       {!unsupported && s.phase !== "driving" && s.phase !== "complete" && (
         <BoardCameraPad
@@ -618,7 +622,7 @@ export function BoardPlayer({
       )}
 
       {!unsupported && s.mode === "drive" && challenge && (
-        <BoardSignCue challenge={challenge} active={s.phase === "driving"} />
+        <BoardSignCue active={s.phase === "driving"} />
       )}
       {!unsupported && s.mode === "drive" && (
         <BoardControls active={s.phase === "driving" && !settingsOpen} />
@@ -691,7 +695,11 @@ export function BoardPlayer({
               </h2>
               <p className="m-0 text-[13.5px] leading-snug text-ink-2">
                 {s.faults === 0
-                  ? "Right lane, right exit, and you stopped in the box."
+                  ? taskParks(challenge)
+                    ? "In the bay, inside the lines and straight."
+                    : isRouteTask(challenge)
+                      ? "Right way, right lane, and you stopped in the box."
+                      : "Right lane, right exit, and you stopped in the box."
                   : `You got there with ${s.faults} ${s.faults === 1 ? "mistake" : "mistakes"}. It will come back in a later round.`}
               </p>
               <Button variant="rush" size="lg" onClick={s.next} autoFocus>
