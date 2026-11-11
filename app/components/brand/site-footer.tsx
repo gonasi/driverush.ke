@@ -4,13 +4,11 @@
  */
 import { Link } from "react-router";
 import { Icon } from "~/components/brand/icon";
-import {
-  PhoneIcon,
-  MailIcon,
-} from "~/components/brand/icons";
+import { PhoneIcon, MailIcon } from "~/components/brand/icons";
 
 import { analytics } from "~/lib/analytics";
 import { SIGN_BRAND, SIGN_SOURCE } from "~/lib/sign-credits";
+import { BOARD_GUIDES, BOARD_PATH } from "~/lib/board-guides";
 import { SITE } from "~/lib/site";
 
 import { Logo } from "~/components/brand/logo";
@@ -25,12 +23,12 @@ export function SiteFooter() {
   return (
     <footer className="border-t-4 border-double border-ink bg-ink py-12 text-paper">
       <Container>
-        <div className="grid gap-6 border-b border-paper/20 pb-7 sm:grid-cols-3 md:grid-cols-[2fr_1fr_1fr_1fr]">
-          <div className="sm:col-span-3 md:col-span-1">
+        <div className="grid gap-6 border-b border-paper/20 pb-7 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr]">
+          <div className="sm:col-span-2 lg:col-span-1">
             <Logo variant="plain" height={64} themed="on-ink" />
             <p className="mt-4 max-w-sm font-serif text-base leading-snug opacity-80">
-              Memorise Kenyan road signs for the NTSA test, on the Pelican chart
-              or in 3D.
+              Practise the Model Town Board and memorise Kenyan road signs for
+              the NTSA test.
             </p>
 
             <h3 className="m-0 mb-3 mt-6 font-display text-xs font-extrabold uppercase tracking-widest">
@@ -48,10 +46,7 @@ export function SiteFooter() {
                   }
                   className="inline-flex items-center gap-2 font-mono text-xs tracking-wide opacity-85 hover:underline"
                 >
-                  <Icon
-                    icon={PhoneIcon}
-                    size={14}
-                  />
+                  <Icon icon={PhoneIcon} size={14} />
                   {SITE.contact.phoneDisplay}
                 </a>
               </li>
@@ -66,10 +61,7 @@ export function SiteFooter() {
                   }
                   className="inline-flex items-center gap-2 break-all font-mono text-xs tracking-wide opacity-85 hover:underline"
                 >
-                  <Icon
-                    icon={MailIcon}
-                    size={14}
-                  />
+                  <Icon icon={MailIcon} size={14} />
                   {SITE.contact.email}
                 </a>
               </li>
@@ -78,16 +70,23 @@ export function SiteFooter() {
           <FooterCol
             heading="Train"
             items={[
+              { label: "Model Town Board", href: BOARD_PATH },
               { label: "Pelican chart", href: "/road-signs/pelican" },
               { label: "3D signs", href: "/road-signs/3d" },
               { label: "All signs", href: "/road-signs" },
             ]}
           />
           <FooterCol
+            heading="Model Town Board"
+            items={BOARD_GUIDES.map((guide) => ({
+              label: guide.name,
+              href: guide.path,
+            }))}
+          />
+          <FooterCol
             heading="Guides"
             items={[
               { label: "NTSA test", href: "/ntsa-test" },
-              { label: "Model Town Board", href: "/model-town-board" },
               { label: "Driving schools", href: "/driving-schools-kenya" },
               { label: "Blog", href: "/blogs" },
             ]}

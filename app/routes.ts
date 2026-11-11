@@ -24,6 +24,19 @@ export default [
   // One page per sign. The trainers and class guides above take priority.
   route("road-signs/:slug", "routes/road-sign.tsx"),
   route("model-town-board", "routes/model-town-board.tsx"),
+  // The board's guides. One file, four routes: the path picks the guide.
+  route("model-town-board/questions", "routes/board-guide.tsx", {
+    id: "board-guide-questions",
+  }),
+  route("model-town-board/roundabout", "routes/board-guide.tsx", {
+    id: "board-guide-roundabout",
+  }),
+  route("model-town-board/rules", "routes/board-guide.tsx", {
+    id: "board-guide-rules",
+  }),
+  route("model-town-board/parking", "routes/board-guide.tsx", {
+    id: "board-guide-parking",
+  }),
 
   // Permanent guides. MDX bodies live in `app/guides/`.
   route("ntsa-test", "routes/ntsa-test.tsx"),

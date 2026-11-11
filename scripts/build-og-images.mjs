@@ -44,6 +44,7 @@ const HEIGHT = 630;
  */
 const CARDS = [
   { id: "default", settleMs: 2500, minBytes: 20_000 },
+  { id: "board", settleMs: 3500, minBytes: 20_000 },
   { id: "pelican", settleMs: 3500, minBytes: 20_000 },
   // WebGL through SwiftShader plus three GLB loads: this one needs room.
   { id: "signs3d", settleMs: 20000, minBytes: 50_000 },

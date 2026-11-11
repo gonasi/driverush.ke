@@ -23,6 +23,7 @@ export const OG_HEIGHT = 630;
 
 export type OgCardId =
   | "default"
+  | "board"
   | "pelican"
   | "signs3d"
   | "road-signs";
@@ -39,7 +40,12 @@ export const OG_CARDS: OgCard[] = [
   {
     id: "default",
     blurb: "Site-wide fallback for any page without its own card.",
-    alt: "DriveRush: memorise Kenyan road signs on the Pelican chart or in 3D",
+    alt: "DriveRush: practise the Model Town Board and memorise Kenyan road signs",
+  },
+  {
+    id: "board",
+    blurb: "The home page and the Model Town Board pages.",
+    alt: "The Model Town Board from above: lanes meeting at a roundabout, with the parking zone and the two-way road beside it",
   },
   {
     id: "pelican",
@@ -68,4 +74,5 @@ export function ogCardAlt(id: OgCardId): string {
   return OG_CARDS.find((c) => c.id === id)?.alt ?? SITE_CARD_ALT;
 }
 
-const SITE_CARD_ALT = "DriveRush: memorise Kenyan road signs";
+const SITE_CARD_ALT =
+  "DriveRush: practise the Model Town Board and memorise Kenyan road signs";

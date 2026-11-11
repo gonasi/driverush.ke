@@ -3,27 +3,40 @@
  * comes first (one tap into driving), and the guide stays in the server's HTML
  * for the learners who arrive searching for how the board works.
  */
-import * as React from "react";
-import { useSearchParams } from "react-router";
-
 import type { Route } from "./+types/model-town-board";
 
 import Body from "~/guides/model-town-board.mdx";
-import { useBoardStore } from "~/lib/board-store";
-import { breadcrumbLd, graphLd, guideLd, pageMeta } from "~/lib/site";
+import { BOARD_CHECKED, BOARD_PATH } from "~/lib/board-guides";
+import { ogCardAlt, ogCardPath } from "~/lib/og-cards";
+import {
+  BOARD_KEYWORDS,
+  breadcrumbLd,
+  graphLd,
+  guideLd,
+  pageMeta,
+  webAppLd,
+} from "~/lib/site";
 
 import { BoardPlayer } from "~/components/board/board-player";
+import { useBoardPage } from "~/components/board/use-board-page";
 import { GuideLayout } from "~/components/brand/guide-layout";
 
-const PATH = "/model-town-board";
-const CHECKED = "2026-11-10";
-const TITLE = "Model Town Board Kenya: free practice trainer and guide";
+const PATH = BOARD_PATH;
+const CHECKED = BOARD_CHECKED;
+const TITLE = "Model Town Board Kenya: practise it online, free";
 const DESCRIPTION =
-  "Drive the Model Town Board's roundabout and learn which lane to use for each turn, the roundabout rules and the three route rules. Free, no signup.";
+  "Practise the Model Town Board online, free. Drive it on a table like a driving school's, and learn the lanes, the roundabout rules and the route rules. No signup.";
 
 export function meta(_: Route.MetaArgs) {
   return [
-    ...pageMeta({ title: TITLE, description: DESCRIPTION, path: PATH }),
+    ...pageMeta({
+      title: TITLE,
+      description: DESCRIPTION,
+      path: PATH,
+      extraKeywords: BOARD_KEYWORDS,
+      ogImage: ogCardPath("board"),
+      ogImageAlt: ogCardAlt("board"),
+    }),
     graphLd(
       breadcrumbLd([
         { name: "Home", url: "/" },
@@ -35,31 +48,19 @@ export function meta(_: Route.MetaArgs) {
         path: PATH,
         checked: CHECKED,
       }),
+      webAppLd({
+        name: "Model Town Board trainer",
+        description:
+          "A free trainer for the Model Town Board used in Kenyan driving schools. You drive a car on the board and are told which rule you broke.",
+        path: PATH,
+        image: ogCardPath("board"),
+      }),
     ),
   ];
 }
 
 export default function ModelTownBoard() {
-  const [params, setParams] = useSearchParams();
-  const go = params.get("go") === "1";
-
-  // `?go=1` drops the learner straight into a round. The param is cleared so a
-  // reload or a shared link doesn't start one again.
-  React.useEffect(() => {
-    if (!go) return;
-    setParams(
-      (prev) => {
-        const next = new URLSearchParams(prev);
-        next.delete("go");
-        return next;
-      },
-      { replace: true },
-    );
-    useBoardStore.getState().start();
-  }, [go, setParams]);
-
-  // Leaving the page mid-drive closes the board.
-  React.useEffect(() => () => useBoardStore.getState().exit(), []);
+  useBoardPage();
 
   return (
     <GuideLayout

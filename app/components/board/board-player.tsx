@@ -176,7 +176,14 @@ function Minimap({
   );
 }
 
-export function BoardPlayer({ className }: { className?: string }) {
+export function BoardPlayer({
+  className,
+  posterClassName = "aspect-[4/3] sm:aspect-video",
+}: {
+  className?: string;
+  /** The still board's shape. The home page keeps it shallow on a wide screen. */
+  posterClassName?: string;
+}) {
   const s = useBoardStore(
     useShallow((st) => ({
       settings: st.settings,
@@ -471,7 +478,10 @@ export function BoardPlayer({ className }: { className?: string }) {
           type="button"
           onClick={() => s.start()}
           aria-label="Start driving the Model Town Board"
-          className="group relative block aspect-[4/3] w-full overflow-hidden outline-none sm:aspect-video"
+          className={cn(
+            "group relative block w-full overflow-hidden outline-none",
+            posterClassName,
+          )}
           style={{ backgroundColor: COLORS.grass }}
         >
           <span

@@ -22,6 +22,7 @@ import { useSearchParams } from "react-router";
 import type { Route } from "./+types/og";
 
 import pelican from "~/data/road-signs-pelican.json";
+import { fullBoardSvg } from "~/lib/board/full-board";
 import { regionSpriteStyle } from "~/lib/image-focus";
 import { signCrop } from "~/lib/sign-crops";
 import { OG_CARDS, OG_HEIGHT, OG_WIDTH, type OgCardId } from "~/lib/og-cards";
@@ -146,14 +147,14 @@ function DefaultCard() {
     >
       <div className="flex w-full items-center justify-between gap-10">
         <div className="max-w-[620px]">
-          <h1 className="m-0 font-display text-[64px] font-extrabold uppercase leading-[0.9] tracking-tight">
-            Memorise Kenya's{" "}
+          <h1 className="m-0 font-display text-[60px] font-extrabold uppercase leading-[0.9] tracking-tight">
+            Drive the board.{" "}
             <em className="font-serif font-normal normal-case italic text-rush">
-              road signs
+              Memorise the signs.
             </em>
           </h1>
           <p className="mt-5 font-serif text-[24px] leading-snug text-ink-2">
-            On the Pelican chart, or spun in 3D.
+            The Model Town Board and Kenya's road signs, for your NTSA test.
           </p>
         </div>
         <div className="grid shrink-0 grid-cols-2 gap-3">
@@ -165,6 +166,43 @@ function DefaultCard() {
             />
           ))}
         </div>
+      </div>
+    </Card>
+  );
+}
+
+/** The whole board, lying the way it does on a wide screen. */
+const BOARD_ART = fullBoardSvg({ seen: "east", cover: true });
+
+function BoardCard() {
+  return (
+    <Card
+      id="board"
+      className="bg-ink"
+      header={
+        <>
+          <Wordmark tone="paper" />
+          <Stamp>Free · No signup</Stamp>
+        </>
+      }
+    >
+      <div className="flex w-full items-center gap-10">
+        <div className="max-w-[440px] shrink-0">
+          <h1 className="m-0 font-display text-[62px] font-extrabold uppercase leading-[0.9] tracking-tight text-paper">
+            Model Town Board.{" "}
+            <em className="font-serif font-normal normal-case italic text-rush">
+              Drive it.
+            </em>
+          </h1>
+          <p className="mt-4 font-serif text-[23px] leading-snug text-paper/75">
+            Pick your lane, take the roundabout, stop where the examiner asks.
+          </p>
+        </div>
+        <div
+          aria-hidden
+          className="h-[390px] flex-1 overflow-hidden border-2 border-paper [&>svg]:block [&>svg]:size-full"
+          dangerouslySetInnerHTML={{ __html: BOARD_ART }}
+        />
       </div>
     </Card>
   );
@@ -351,6 +389,7 @@ function Poster3D() {
 const RENDERERS: Record<OgCardId | "poster-3d", () => React.JSX.Element> = {
   "poster-3d": Poster3D,
   default: DefaultCard,
+  board: BoardCard,
   pelican: PelicanCard,
   signs3d: Signs3DCard,
   "road-signs": RoadSignsCard,

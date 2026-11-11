@@ -47,12 +47,12 @@ export const SITE = {
   ogImageWidth: 1200,
   ogImageHeight: 630,
   ogImageAlt:
-    "DriveRush: memorise Kenyan road signs on the Pelican chart or in 3D",
+    "DriveRush: practise the Model Town Board and memorise Kenyan road signs",
   themeColor: "#E11D2E", // rush red
   /** Tagline used in title templates and as the default description suffix. */
-  tagline: "Kenya road signs practice for the NTSA test",
+  tagline: "Model Town Board and road signs practice for the NTSA test",
   description:
-    "DriveRush helps you memorise Kenyan road signs for the NTSA test. Train on the Pelican chart or spin the signs in 3D. Free, no signup.",
+    "DriveRush lets you practise the Model Town Board and memorise Kenyan road signs for the NTSA test. Drive the board, then train on the Pelican chart or in 3D. Free, no signup.",
   keywords: [
     // Brand — surface us on direct queries
     "DriveRush",
@@ -60,6 +60,12 @@ export const SITE = {
     "DriveRush.ke",
     "Drive Rush",
     "drive rush kenya",
+    // The Model Town Board
+    "Model Town Board",
+    "Model Town Board Kenya",
+    "NTSA Model Town Board",
+    "Model Town Board practice",
+    "Model Town Board online",
     // Road signs
     "road signs Kenya",
     "Kenyan road signs",
@@ -98,6 +104,26 @@ export const GONASI = {
   /** Logo for placement over light backgrounds (`bg-paper`, `bg-paper-3`). */
   logoOnLight: "/assets/gonasi/logo-on-light.jpg",
 } as const;
+
+/**
+ * Model Town Board keywords, appended to {@link SITE.keywords} on the board's
+ * pages so the board's own terms lead.
+ */
+export const BOARD_KEYWORDS = [
+  "Model Town Board",
+  "Model Town Board Kenya",
+  "NTSA Model Town Board",
+  "Model Town Board practice",
+  "Model Town Board online",
+  "Model Town Board game",
+  "Model Town Board questions and answers",
+  "Model Town Board rules",
+  "Model Town Board roundabout",
+  "Model Town Board parking",
+  "Model Town Board lanes",
+  "Model Town Board test",
+  "driving school Model Town Board",
+] as const;
 
 /**
  * Road-signs section keywords — appended to {@link SITE.keywords} on the
@@ -205,6 +231,7 @@ export function organizationLd() {
     areaServed: { "@type": "Country", name: "Kenya" },
     inLanguage: ["en", "sw"],
     knowsAbout: [
+      "Model Town Board",
       "Kenyan road signs",
       "Highway code Kenya",
       "NTSA road signs test",
@@ -266,6 +293,32 @@ export function guideLd(opts: {
       ...organization,
       logo: { "@type": "ImageObject", url: absUrl(SITE.logo) },
     },
+  };
+}
+
+/**
+ * WebApplication JSON-LD for a trainer that runs in the browser and costs
+ * nothing. Sits beside the page's Article node.
+ */
+export function webAppLd(opts: {
+  name: string;
+  description: string;
+  path: string;
+  image?: string;
+}) {
+  return {
+    "@type": "WebApplication",
+    name: opts.name,
+    description: opts.description,
+    url: absUrl(opts.path),
+    applicationCategory: "EducationalApplication",
+    operatingSystem: "Any",
+    browserRequirements: "Requires JavaScript and WebGL",
+    inLanguage: SITE.lang,
+    isAccessibleForFree: true,
+    image: absUrl(opts.image ?? SITE.ogImage),
+    offers: { "@type": "Offer", price: "0", priceCurrency: "KES" },
+    publisher: { "@id": `${SITE.url}#organization` },
   };
 }
 

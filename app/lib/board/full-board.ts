@@ -756,6 +756,10 @@ export type FullBoardOptions = {
   seen?: BoardSide;
   /** Fill its box and crop, instead of fitting inside it. */
   cover?: boolean;
+  /** Show only this part of the board. Left out, the whole board. */
+  view?: Box;
+  /** Numbered discs for pointing things out in a caption. */
+  marks?: { x: number; z: number; label: string }[];
   /** The green box the task ends in, on the way out of the roundabout. */
   goal?: {
     arm: ArmId;
@@ -767,6 +771,38 @@ export type FullBoardOptions = {
   };
   cars?: { x: number; z: number; heading: number; color: string }[];
 };
+
+/** Parts of the board worth a picture of their own. */
+export const BOARD_VIEWS = {
+  roundabout: {
+    x0: -RING_R - 24,
+    x1: RING_R + 24,
+    z0: -RING_R - 24,
+    z1: RING_R + 24,
+  },
+  parking: {
+    x0: WIDE - 4,
+    x1: BOUNDS.x1,
+    z0: STREET.z0 - 6,
+    z1: NARROW + 4,
+  },
+} as const satisfies Record<string, Box>;
+
+/** Where the features a caption points out are, for the whole-board picture. */
+export const BOARD_LANDMARKS = {
+  dualCarriageway: { x: -(RESERVE + 2 * LANE), z: -104 },
+  uTurnGap: { x: 0, z: -(U_TURNS[0] + RESERVE_GAP / 2) },
+  roundabout: { x: 0, z: 0 },
+  threeLaneRoad: { x: -40, z: 0 },
+  parking: { x: (AISLE.x0 + AISLE.x1) / 2, z: (PARK.z0 + PARK.z1) / 2 },
+  street: { x: (AISLE.x1 + SIDE.x0) / 2, z: STREET.mid },
+  twoWayRoad: { x: SIDE.mid, z: 34 },
+  crossing: { x: SIDE.mid, z: CROSSINGS[1] },
+  flushParking: {
+    x: (SIDE.x0 + FLUSH.x1) / 2 + 3,
+    z: (FLUSH.z0 + FLUSH.z1) / 2,
+  },
+} as const;
 
 /** The learner's car and the other car, wherever they are drawn. */
 export const CAR_COLORS = { player: "#e89a00", red: "#b8141b" } as const;
@@ -798,17 +834,28 @@ export function fullBoardSvg(options: FullBoardOptions = {}): string {
   const h = z1 - z0;
   const side = options.seen ?? "south";
   const sideways = side === "east" || side === "west";
-  const across = sideways ? h : w;
-  const down = sideways ? w : h;
+  const v = options.view ?? BOUNDS;
+  const vw = v.x1 - v.x0;
+  const vh = v.z1 - v.z0;
+  const across = sideways ? vh : vw;
+  const down = sideways ? vw : vh;
   const size = options.width
     ? ` width="${options.width}" height="${Math.round((options.width * down) / across)}"`
     : "";
   const viewBox = {
-    south: `${x0} ${z0} ${w} ${h}`,
-    east: `${-z1} ${x0} ${h} ${w}`,
-    north: `${-x1} ${-z1} ${w} ${h}`,
-    west: `${z0} ${-x1} ${h} ${w}`,
+    south: `${n(v.x0)} ${n(v.z0)} ${n(vw)} ${n(vh)}`,
+    east: `${n(-v.z1)} ${n(v.x0)} ${n(vh)} ${n(vw)}`,
+    north: `${n(-v.x1)} ${n(-v.z1)} ${n(vw)} ${n(vh)}`,
+    west: `${n(v.z0)} ${n(-v.x1)} ${n(vh)} ${n(vw)}`,
   }[side];
+  // Marks stay upright whichever way the board is turned.
+  const markSize = Math.max(2.6, Math.min(vw, vh) / 34);
+  const marks = (options.marks ?? [])
+    .map(
+      (mark) =>
+        `<g transform="translate(${n(mark.x)} ${n(mark.z)}) rotate(${-TURN[side]})"><circle r="${n(markSize)}" fill="${C.yellow}" stroke="${C.kerbBlack}" stroke-width="${n(markSize * 0.14)}"/><text y="${n(markSize * 0.38)}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="${n(markSize * 1.15)}" fill="${C.kerbBlack}">${mark.label}</text></g>`,
+    )
+    .join("");
 
   const tarmac = [
     `<circle r="${RING_R}"/>`,
@@ -992,6 +1039,7 @@ export function fullBoardSvg(options: FullBoardOptions = {}): string {
         ),
       )
       .join(""),
+    marks,
     `</g>`,
     `</svg>`,
   ].join("");

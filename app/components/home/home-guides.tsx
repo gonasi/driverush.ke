@@ -1,13 +1,25 @@
 /**
- * Below the trainers: what DriveRush is, in words, and the way into each guide.
+ * Below the trainers: what DriveRush is, in words, and the way into each guide,
+ * the Model Town Board's first.
  * Most people never scroll this far and don't need to. It's for anyone who came
  * with a question, and for search engines reading what the site covers.
  */
 import { Link } from "react-router";
 
+import { BOARD_GUIDES, BOARD_PATH } from "~/lib/board-guides";
 import { SIGN_COUNT } from "~/lib/road-signs";
 
 const GUIDES = [
+  {
+    to: BOARD_PATH,
+    title: "The Model Town Board",
+    blurb: "Drive the board, then read the lane, roundabout and route rules.",
+  },
+  ...BOARD_GUIDES.map((guide) => ({
+    to: guide.path,
+    title: `Model Town Board: ${guide.name.toLowerCase()}`,
+    blurb: guide.blurb,
+  })),
   {
     to: "/road-signs",
     title: "Road signs and meanings",
@@ -17,11 +29,6 @@ const GUIDES = [
     to: "/ntsa-test",
     title: "The NTSA test",
     blurb: "The steps, what NTSA charges, and practice questions with answers.",
-  },
-  {
-    to: "/model-town-board",
-    title: "The Model Town Board",
-    blurb: "Drive the roundabout, then read the lane and route rules.",
   },
   {
     to: "/driving-schools-kenya",
@@ -43,9 +50,10 @@ export function HomeGuides() {
         Getting your licence in Kenya
       </h2>
       <p className="m-0 mt-4 max-w-2xl font-serif text-[17px] leading-snug text-ink-2">
-        DriveRush is a free site for memorising Kenyan road signs for your NTSA
-        test, with no signup. We also explain the rest of the road to your
-        licence, with sources and dates so you can check what you read.
+        DriveRush is a free site for practising the Model Town Board and
+        memorising Kenyan road signs for your NTSA test, with no signup. We also
+        explain the rest of the road to your licence, with sources and dates so
+        you can check what you read.
       </p>
       <ul className="m-0 mt-5 grid list-none gap-3 p-0 sm:grid-cols-2">
         {GUIDES.map((guide) => (

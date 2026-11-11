@@ -158,7 +158,7 @@ const FALLBACK: ResolvedShare = {
   kind: "unknown",
   headline: "Someone sent you DriveRush",
   detail:
-    "Memorise Kenyan road signs for the NTSA test, on the Pelican chart or in 3D. Free, no signup.",
+    "Practise the Model Town Board and memorise Kenyan road signs for the NTSA test. Free, no signup.",
   ctaHref: "/#try-now",
   ctaLabel: "Start training",
 };
@@ -203,7 +203,7 @@ export function shareLandingMeta(resolved: ResolvedShare) {
   return {
     title: resolved.valid
       ? `${resolved.headline} · DriveRush`
-      : "DriveRush: memorise Kenyan road signs for free",
+      : "DriveRush: practise the Model Town Board and road signs for free",
     description: resolved.detail,
   };
 }

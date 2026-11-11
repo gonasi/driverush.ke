@@ -11,6 +11,7 @@
  */
 import { absUrl } from "~/lib/site";
 import { getAllPosts } from "~/lib/blog";
+import { BOARD_GUIDES, BOARD_PATH } from "~/lib/board-guides";
 import { SIGN_CLASS_PAGES } from "~/lib/sign-class-pages";
 import {
   isSignConfirmed,
@@ -18,7 +19,7 @@ import {
   signPagePath,
 } from "~/lib/road-sign-pages";
 
-const STATIC_LAST_MODIFIED = "2026-11-05";
+const STATIC_LAST_MODIFIED = "2026-11-11";
 
 type Entry = {
   path: string;
@@ -40,9 +41,11 @@ function page(
 
 const STATIC_PAGES: Entry[] = [
   page("/", "1.0", "weekly"),
+  // The Model Town Board is what most learners come for.
+  page(BOARD_PATH, "1.0", "weekly"),
+  ...BOARD_GUIDES.map((guide) => page(guide.path, "0.8")),
   page("/road-signs", "0.9", "weekly"),
   page("/ntsa-test", "0.9"),
-  page("/model-town-board", "0.9"),
   page("/driving-schools-kenya", "0.9"),
   ...SIGN_CLASS_PAGES.map((p) => page(p.path, "0.8")),
   page("/road-signs/pelican", "0.7", "weekly"),

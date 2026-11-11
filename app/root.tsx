@@ -182,7 +182,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
     message = error.status === 404 ? "Road closed." : "Something broke.";
     details =
       error.status === 404
-        ? "There is no page at this address. The signs are still open."
+        ? "There is no page at this address. The board and the signs are still open."
         : error.statusText || details;
   } else if (import.meta.env.DEV && error && error instanceof Error) {
     details = error.message;
@@ -200,7 +200,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
         </h1>
         <p className="m-0 font-serif text-lg leading-snug text-ink-2">{details}</p>
         <Button variant="rush" size="lg" asChild className="mt-2 w-fit">
-          <Link to="/road-signs">Go to the road signs</Link>
+          <Link to="/model-town-board">Go to the Model Town Board</Link>
         </Button>
       </div>
       {stack && (

@@ -13,7 +13,7 @@ const PATH = "/about";
 const CHECKED = "2026-11-05";
 const TITLE = "About DriveRush: who we are and how we check facts";
 const DESCRIPTION =
-  "DriveRush is a free Kenyan site for memorising road signs for the NTSA test, built in Nairobi by Gonasi. It isn't affiliated with the NTSA.";
+  "DriveRush is a free Kenyan site for practising the Model Town Board and memorising road signs for the NTSA test, built in Nairobi by Gonasi. It isn't affiliated with the NTSA.";
 
 export function meta(_: Route.MetaArgs) {
   return [

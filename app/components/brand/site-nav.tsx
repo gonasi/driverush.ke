@@ -1,14 +1,11 @@
 /**
- * Shared top navigation. The site does one thing, so the nav is that thing: the
- * two sign trainers, the full list of signs, and the Model Town Board trainer,
- * marked as new. Blog lives in the footer and the mobile menu.
+ * Shared top navigation: the things you can train on, most wanted first. The
+ * Model Town Board leads, then the two sign trainers and the full list of
+ * signs. Blog lives in the footer and the mobile menu.
  */
 import { Link, useLocation } from "react-router";
 import { Icon } from "~/components/brand/icon";
-import {
-  ArrowRightIcon,
-  MenuIcon,
-} from "~/components/brand/icons";
+import { ArrowRightIcon, MenuIcon } from "~/components/brand/icons";
 
 import { isNavLinkActive } from "~/lib/nav";
 
@@ -27,21 +24,13 @@ import { Logo } from "~/components/brand/logo";
 import { PoweredByGonasi } from "~/components/brand/powered-by-gonasi";
 
 export const NAV_LINKS = [
+  // The board is what most learners come for, so it leads.
+  { label: "Model Town Board", short: "Board", href: "/model-town-board" },
   { label: "Pelican chart", href: "/road-signs/pelican" },
   { label: "3D signs", href: "/road-signs/3d" },
   // Exact match: the trainers live under this path and have their own items.
   { label: "All signs", href: "/road-signs", exact: true },
 ];
-
-const BOARD_HREF = "/model-town-board";
-
-function NewBadge() {
-  return (
-    <span className="ml-1.5 border border-ink bg-kenya-green px-1 py-px font-mono text-[9px] font-bold uppercase leading-none tracking-wider text-kenya-green-foreground">
-      New
-    </span>
-  );
-}
 
 export function SiteNav() {
   const { pathname, search } = useLocation();
@@ -64,16 +53,18 @@ export function SiteNav() {
                   : isNavLinkActive(l.href, pathname, search)
               }
             >
-              <Link to={l.href}>{l.label}</Link>
+              <Link to={l.href}>
+                {l.short ? (
+                  <>
+                    <span className="lg:hidden">{l.short}</span>
+                    <span className="hidden lg:inline">{l.label}</span>
+                  </>
+                ) : (
+                  l.label
+                )}
+              </Link>
             </AppBarLink>
           ))}
-          <AppBarLink asChild active={pathname === BOARD_HREF}>
-            <Link to={BOARD_HREF}>
-              <span className="lg:hidden">Board</span>
-              <span className="hidden lg:inline">Model Town Board</span>
-              <NewBadge />
-            </Link>
-          </AppBarLink>
         </>
       }
       trailing={
@@ -81,11 +72,7 @@ export function SiteNav() {
           <Button variant="rush" size="sm" asChild>
             <Link to="/#try-now">
               Start
-              <Icon
-                icon={ArrowRightIcon}
-                size={14}
-                className="dr-arrow"
-              />
+              <Icon icon={ArrowRightIcon} size={14} className="dr-arrow" />
             </Link>
           </Button>
 
@@ -97,10 +84,7 @@ export function SiteNav() {
                 aria-label="Open menu"
                 className="md:hidden"
               >
-                <Icon
-                  icon={MenuIcon}
-                  size={16}
-                />
+                <Icon icon={MenuIcon} size={16} />
               </Button>
             </SheetTrigger>
             <SheetContent side="right">
@@ -119,15 +103,6 @@ export function SiteNav() {
                       </Link>
                     </SheetClose>
                   ))}
-                  <SheetClose asChild>
-                    <Link
-                      to={BOARD_HREF}
-                      className="flex items-center justify-between gap-3 border-2 border-ink bg-surface px-4 py-3 font-display text-[13px] font-bold uppercase tracking-wider text-ink hover:bg-paper-3"
-                    >
-                      Model Town Board
-                      <NewBadge />
-                    </Link>
-                  </SheetClose>
                   <SheetClose asChild>
                     <Link
                       to="/blogs"
