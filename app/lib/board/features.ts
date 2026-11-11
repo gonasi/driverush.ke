@@ -35,14 +35,14 @@ export const BOARD_FEATURES: readonly BoardFeature[] = [
   {
     id: "roundabout",
     name: "Roundabout",
-    note: "Go round it clockwise, keeping left. No stopping, waiting, parking, overtaking or changing lanes on it. Choose your lane before you reach it.",
+    note: "Go round it clockwise, keeping left. Give way to traffic already on it, coming from your right. No stopping, waiting, parking, overtaking or changing lanes on it. Choose your lane before you reach it.",
     box: around(0, 0, RING_R + 6),
     sign: { to: "/road-signs/roundabout-ahead", label: "Roundabout ahead" },
   },
   {
     id: "island",
     name: "Traffic island",
-    note: "The green circle in the middle of the roundabout. You go round it and never over it. Only lane 4, the lane beside it, may go all the way round.",
+    note: "The green circle in the middle of the roundabout. You go round it and never over it. Only the lane beside it, lane 4, may go all the way round.",
     box: around(0, 0, 13),
   },
   {
@@ -54,7 +54,7 @@ export const BOARD_FEATURES: readonly BoardFeature[] = [
   {
     id: "lane-arrows",
     name: "Lane arrows",
-    note: "The arrow painted in a lane shows where that lane may go. On the four-lane road, lane 1 goes straight or left, lane 2 straight only, lane 3 straight or right, and lane 4 right, back or round.",
+    note: "The arrow painted in a lane shows where that lane may go. The four-lane road is 2124: lane 1 has two options (straight or left), lane 2 one (straight), lane 3 two (straight or right) and lane 4 four (right, back, left the long way round, or straight after going round). The three-lane road is 215.",
     box: { x0: -WIDE - 3, x1: 3, z0: RING_R - 2, z1: SOLID_TO + 2 },
   },
   {
@@ -66,7 +66,7 @@ export const BOARD_FEATURES: readonly BoardFeature[] = [
   {
     id: "broken-lines",
     name: "Broken white lines",
-    note: "Further back the lines between lanes are broken. This is where you may change lanes, so this is where you choose the lane for your turn.",
+    note: "Further back the lines between lanes are broken. This is where you may change lanes, so this is where you choose the lane for your turn. Check your mirrors and signal for 3 seconds before you move across.",
     box: { x0: -WIDE - 3, x1: 3, z0: SOLID_TO - 2, z1: SOLID_TO + 28 },
   },
   {
@@ -95,19 +95,19 @@ export const BOARD_FEATURES: readonly BoardFeature[] = [
   {
     id: "three-lane-road",
     name: "Three-lane road",
-    note: "Three lanes each way with a continuous yellow line down the middle. A continuous yellow centre line means stay on your side: no crossing it to turn or overtake.",
+    note: "Three lanes each way with a continuous yellow line down the middle. A continuous yellow centre line means stay on your side: no crossing it to turn or overtake. Its option code at the roundabout is 215.",
     box: { x0: -58, x1: -RING_R + 2, z0: -NARROW - 8, z1: NARROW + 8 },
   },
   {
     id: "yellow-kerb",
     name: "Yellow kerb",
-    note: "The kerbs at the junctions and round the island are painted yellow so they stand out. Stay off every kerb: no driving, stopping or parking on it.",
+    note: "The kerbs at the junctions and round the island are painted yellow so they stand out. Stay off every kerb. A yellow kerb means no stopping, parking or waiting beside it.",
     box: { x0: 6, x1: 38, z0: 2, z1: 34 },
   },
   {
     id: "two-way-road",
     name: "Two-way road",
-    note: "One lane each way with a yellow line between them. Keep left of the line. Traffic on the other side is coming toward you.",
+    note: "One lane each way with a yellow line between them. Keep left of the line. Where the yellow line is continuous, stay on your side. Where it is broken, you may overtake or turn across it if the road is clear.",
     box: { x0: SIDE.x0 - 10, x1: SIDE.x1 + 2, z0: 12, z1: 62 },
     sign: {
       to: "/road-signs/two-way-traffic-ahead",
@@ -117,7 +117,7 @@ export const BOARD_FEATURES: readonly BoardFeature[] = [
   {
     id: "crossing",
     name: "Pedestrian crossing",
-    note: "The white bars across the two-way road. Slow down as you reach one and be ready to stop. People on the crossing go first.",
+    note: "The white bars across the two-way road. Slow down as you reach one and be ready to stop before it. People on the crossing go first. No stopping, parking or waiting on it.",
     box: around(BOARD_LANDMARKS.crossing.x, CROSSINGS[1], 14),
     sign: {
       to: "/road-signs/pedestrian-crossing",
@@ -133,7 +133,7 @@ export const BOARD_FEATURES: readonly BoardFeature[] = [
   {
     id: "stop-line",
     name: "Stop line",
-    note: "A thick continuous white line across your side of the road. You must stop at it every time, even when nothing is coming, and go only when the road is clear.",
+    note: "A thick continuous white line across your side of the road. You must stop at it every time, even when nothing is coming. Look right, left, then right again, and go only when the road is clear.",
     box: around(SIDE.x0 - 2, STREET.mid, 12),
     sign: { to: "/road-signs/stop", label: "Stop" },
   },
@@ -147,7 +147,7 @@ export const BOARD_FEATURES: readonly BoardFeature[] = [
   {
     id: "angle-parking",
     name: "Angle parking",
-    note: "The controlled parking zone: bays painted at an angle on both sides of a two-way aisle. Park with the whole car inside the lines. Only drive through here when no other correct route gets you there.",
+    note: "The controlled parking zone, also called ample parking: bays painted at 45 degrees on both sides of a two-way aisle. It is for small cars, not buses or heavy vehicles. Take the farthest free bay, drive in forwards and reverse out, with the whole car inside the lines. Only drive through here when no other correct route gets you there.",
     box: {
       x0: PARK.x0 - 6,
       x1: PARK.x1 + 6,
@@ -164,7 +164,7 @@ export const BOARD_FEATURES: readonly BoardFeature[] = [
   {
     id: "flush-parking",
     name: "Flush parking",
-    note: "Boxes painted along the kerb of the two-way road, in line with the traffic. You park beside the kerb, inside one box, facing the way the traffic goes.",
+    note: "Boxes painted along the kerb of the two-way road, in line with the traffic. Also called flash, parallel or uncontrolled parking. Any vehicle may use it except a trailer or a tractor, for a short stop. Take the farthest free box, reverse in and drive out forwards.",
     box: {
       x0: SIDE.x0 - 8,
       x1: SIDE.x1 + 2,

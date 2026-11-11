@@ -1,5 +1,5 @@
 /**
- * "How many can you name?" A ten-sign check on the homepage, for anyone who
+ * "How many can you name?" A ten-sign check on the road signs page, for anyone who
  * wants to find out where they stand before committing to a trainer. Distractors
  * come from the same class so the choice is a real one. The result hands the
  * signs you missed straight to a trainer.
@@ -62,7 +62,12 @@ function drillLink(trainer: string, signs: FocusRegion[]): string {
   });
 }
 
-export function SignCheck() {
+export function SignCheck({
+  className = "mx-auto w-full max-w-4xl px-5 pb-10 sm:px-9",
+}: {
+  /** The page's own width and padding, where it already has a column. */
+  className?: string;
+}) {
   const [deck, setDeck] = React.useState<FocusRegion[] | null>(null);
   const [position, setPosition] = React.useState(0);
   const [question, setQuestion] = React.useState<Question | null>(null);
@@ -122,7 +127,7 @@ export function SignCheck() {
     <section
       id="sign-check"
       aria-label="Road-sign check"
-      className="dr-reveal mx-auto w-full max-w-4xl scroll-mt-20 px-5 pb-10 sm:px-9"
+      className={cn("dr-reveal scroll-mt-20", className)}
     >
       <div className="dr-rise" style={stagger(5)}>
         {finished && deck ? (

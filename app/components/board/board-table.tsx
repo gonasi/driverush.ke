@@ -28,13 +28,13 @@ import {
   ISLAND_R,
   fullBoardSvg,
   kerbHighlights,
-  parkedSpots,
   reserves,
   type Box,
 } from "~/lib/board/full-board";
 import { dirOf } from "~/lib/board/geometry";
 import { STICK_DEADZONE, type Seat } from "~/lib/board/joystick";
 import { taskGoalBox } from "~/lib/board/lessons";
+import { parkedCars } from "~/lib/board/parking-layouts";
 import { car, shown, stick, tick, view } from "~/lib/board/runtime";
 import { advance, cam, finish, setWake, useStage } from "~/lib/board/stage";
 
@@ -44,6 +44,7 @@ import {
   disposeRibbons,
 } from "~/components/board/route-ribbon";
 import { SHARED, carFromGltf } from "~/components/board/car-glb";
+import { useParkingLayout } from "~/components/board/use-parking-layout";
 import {
   WHEEL_RADIUS,
   buildCar,
@@ -822,11 +823,13 @@ function Scene({
   );
   React.useEffect(() => () => others.forEach(dispose), [others]);
 
-  // Cars standing in the parking zone, to show what it is for.
+  // Cars standing in the parking zone, to show what it is for. They are moved
+  // about between attempts, and the green box of a parking task with them.
+  const layout = useParkingLayout();
   const parked = React.useMemo(() => {
     const group = new THREE.Group();
     if (tier !== "high") return group;
-    parkedSpots().forEach((spot, i) => {
+    parkedCars(layout).forEach((spot, i) => {
       const parkedCar = carOnTable(
         PARKED_PAINTS[i % PARKED_PAINTS.length],
         PARKED_PLATES[i % PARKED_PLATES.length],
@@ -838,7 +841,7 @@ function Scene({
       group.add(parkedCar);
     });
     return group;
-  }, [tier, models]);
+  }, [tier, models, layout]);
   React.useEffect(() => () => dispose(parked), [parked]);
 
   const goal = React.useMemo(() => {
@@ -850,7 +853,8 @@ function Scene({
       w: box.x1 - box.x0 - 0.6,
       h: box.z1 - box.z0,
     };
-  }, [challenge]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the box moves with the parked cars
+  }, [challenge, layout]);
   const goalMaterial = React.useRef<THREE.MeshBasicMaterial>(null);
   const fence = React.useMemo(() => {
     if (!goal) return null;

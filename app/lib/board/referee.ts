@@ -14,9 +14,9 @@ import {
   ARMS,
   EXIT_CLEAR,
   RING_LANES,
-  SOLID_ZONE,
   TAU,
   allowedTurns,
+  exitLanes,
   laneBearing,
   locate,
   turnBetween,
@@ -24,6 +24,7 @@ import {
   type ArmId,
   type Turn,
 } from "./geometry";
+import { createLineState, lineStep, type LineState } from "./lines";
 import type { Contact } from "./physics";
 
 export type SmallFaultId =
@@ -33,6 +34,8 @@ export type SmallFaultId =
   | "solid_line"
   | "roundabout_lane_change"
   | "roundabout_stop"
+  | "exit_lane"
+  | "crossing_stop"
   | "bay_line";
 export type SeriousFaultId =
   | "wrong_exit"
@@ -88,14 +91,14 @@ export type RefState = {
   goalTime: number;
   lastApproach: { arm: ArmId; lane: number } | null;
   ring: RingVisit | null;
-  /** The lane the car held when it reached the continuous lines. */
-  zoneLane: number | null;
-  /** How long the car has been in a different lane from `zoneLane`. */
-  zoneDrift: number;
+  /** Which side of each continuous line the car is on. */
+  lines: LineState;
   /** Seconds until each kind of bump can cost a star again. */
   cooldown: Partial<Record<SmallFaultId, number>>;
   /** How long the car has been on a road the task doesn't use. */
   offRoute: number;
+  /** The lanes the car may leave the roundabout in, while that is being judged. */
+  leaving: { lanes: number[]; from: number; drift: number } | null;
 };
 
 export function createRef(): RefState {
@@ -105,10 +108,10 @@ export function createRef(): RefState {
     goalTime: 0,
     lastApproach: null,
     ring: null,
-    zoneLane: null,
-    zoneDrift: 0,
+    lines: createLineState(),
     cooldown: {},
     offRoute: 0,
+    leaving: null,
   };
 }
 
@@ -126,6 +129,8 @@ const LINE_GRACE = 0.3;
 const BUMP_COOLDOWN = 1.5;
 /** Clipping the mouth of a side road is forgiven. Driving down it is not. */
 const OFF_ROUTE_GRACE = 1;
+/** The lane a car leaves the roundabout in is judged over this many metres. */
+const LEAVING_REACH = 9;
 /** This far beyond the green box, the car has plainly driven past it. */
 const PAST_BOX = 12;
 
@@ -163,6 +168,15 @@ export function refStep(
     }
   }
 
+  // Continuous lines: white costs a star, yellow ends the attempt.
+  for (const color of lineStep(ref.lines, car)) {
+    if (color === "yellow") {
+      result.fault = { id: "centre_line", serious: true };
+      return result;
+    }
+    result.small.push(small("solid_line"));
+  }
+
   const loc = locate(car.x, car.z);
   // Kerbs are solid, so this is only a car squeezed half onto one.
   if (loc.kind === "off") return result;
@@ -193,7 +207,6 @@ export function refStep(
       };
       ref.stopTime = 0;
     }
-    ref.zoneLane = null;
     const visit = ref.ring;
 
     // Clockwise means the car's heading sits a quarter turn past its bearing.
@@ -277,8 +290,32 @@ export function refStep(
           serious: true,
           turn,
           asked: challenge.turn,
+          lanes: ARMS[challenge.start.arm].lanes,
         };
         return result;
+      }
+      // A lane change on the roundabout has already cost its star.
+      if (!visit.warnedLane) {
+        ref.leaving = {
+          lanes: exitLanes(lanes, visit.entryLane, turn, ARMS[loc.arm].lanes),
+          from: visit.entryLane,
+          drift: 0,
+        };
+      }
+    }
+  }
+
+  // Leaving in the wrong lane is one of the handbook's three common mistakes.
+  if (ref.leaving) {
+    if (loc.side !== "exit" || loc.along > EXIT_CLEAR + LEAVING_REACH) {
+      ref.leaving = null;
+    } else if (ref.leaving.lanes.includes(loc.lane)) {
+      ref.leaving.drift = 0;
+    } else {
+      ref.leaving.drift += dt;
+      if (ref.leaving.drift > LINE_GRACE) {
+        result.small.push({ ...small("exit_lane"), lane: ref.leaving.from });
+        ref.leaving = null;
       }
     }
   }
@@ -298,20 +335,6 @@ export function refStep(
 
   if (loc.side === "approach" && !against) {
     ref.lastApproach = { arm: loc.arm, lane: loc.lane };
-
-    // Close to the roundabout the lane lines are continuous: no lane changes.
-    if (loc.along < SOLID_ZONE) {
-      if (ref.zoneLane == null) ref.zoneLane = loc.lane;
-      ref.zoneDrift = loc.lane === ref.zoneLane ? 0 : ref.zoneDrift + dt;
-      if (ref.zoneDrift > LINE_GRACE) {
-        ref.zoneLane = loc.lane;
-        ref.zoneDrift = 0;
-        result.small.push(small("solid_line"));
-      }
-    } else {
-      ref.zoneLane = null;
-      ref.zoneDrift = 0;
-    }
   }
 
   const goal = challenge.goal;

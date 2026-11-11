@@ -71,6 +71,8 @@ const BAY_COUNT = 8;
 const FLUSH = { x1: 65.1, z0: -62.6, z1: -40.6, bays: 2 } as const;
 /** Pedestrian crossings on the two-way road. */
 const CROSSINGS = [-81.1, -22.1] as const;
+/** Half the depth of a crossing's white bars, along the road. */
+const CROSSING_HALF = 3.6;
 /** Corner radii: a road junction, a corner of the parking zone, a mouth of its aisle. */
 const R_ROAD = 2.5;
 const R_BLOCK = 1.2;
@@ -89,6 +91,7 @@ export const ROADS = {
   AISLE,
   FLUSH,
   CROSSINGS,
+  CROSSING_HALF,
   BAY_FIRST,
   BAY_STEP,
   BAY_COUNT,
@@ -592,6 +595,52 @@ function armLine(arm: Arm, offset: number, from: number, to: number): string {
 
 type ArmPaint = { broken: string; solid: string; ticks: string; marks: string };
 
+/** A painted line that may not be crossed, as two ends on the table. */
+export type ContinuousLine = {
+  ax: number;
+  az: number;
+  bx: number;
+  bz: number;
+  /** White between lanes going the same way, yellow between the two ways. */
+  color: "white" | "yellow";
+};
+
+/**
+ * Every continuous line on the board, as the referee needs them: the white
+ * lane lines close to the roundabout on all four roads, and the yellow centre
+ * lines of the three-lane road, the two-way road and the street. The broken
+ * stretches are left out, so this is exactly the paint that may not be
+ * crossed. It is worked out from the same numbers as the paint in
+ * `fullBoardSvg`, below: change one and change the other.
+ */
+export function continuousLines(): ContinuousLine[] {
+  const lines: ContinuousLine[] = [];
+  const add = (a: Point, b: Point, color: ContinuousLine["color"]) =>
+    lines.push({ ax: a.x, az: a.z, bx: b.x, bz: b.z, color });
+  for (const arm of ARM_LIST) {
+    const solidTo = Math.min(SOLID_TO, armEnd(arm));
+    for (const side of [-1, 1]) {
+      for (let k = 1; k < arm.lanes; k += 1) {
+        const offset = side * (arm.reserve + k * LANE);
+        const from = Math.sqrt(RING_R ** 2 - offset ** 2);
+        add(armPoint(arm, offset, from), armPoint(arm, offset, solidTo), "white");
+      }
+    }
+  }
+  const { x0, z0, z1 } = BOUNDS;
+  // the three-lane road, either side of the roundabout
+  add({ x: x0, z: 0 }, { x: -RING_R, z: 0 }, "yellow");
+  add({ x: RING_R, z: 0 }, { x: SIDE.x0 - R_BLOCK, z: 0 }, "yellow");
+  // the two-way road, broken across the mouth of each road that joins it
+  add({ x: SIDE.mid, z: z0 }, { x: SIDE.mid, z: STREET.z0 }, "yellow");
+  add({ x: SIDE.mid, z: STREET.z1 }, { x: SIDE.mid, z: -NARROW }, "yellow");
+  add({ x: SIDE.mid, z: NARROW }, { x: SIDE.mid, z: z1 }, "yellow");
+  // the street, broken opposite the parking aisle
+  add({ x: WIDE + R_BLOCK, z: STREET.mid }, { x: AISLE.x0, z: STREET.mid }, "yellow");
+  add({ x: AISLE.x1, z: STREET.mid }, { x: SIDE.x0 - R_BLOCK, z: STREET.mid }, "yellow");
+  return lines;
+}
+
 /**
  * Where a road's lane lines stop: the frame, except on the road to the right,
  * which ends at its stop line.
@@ -686,7 +735,7 @@ function armPaint(arm: Arm, numbers: boolean, white: string): ArmPaint {
 }
 
 /** A zebra crossing over the two-way road: six bars, kerb to kerb. */
-const CROSSING_HALF = 3.6;
+
 function crossing(z: number): string {
   const bars: string[] = [];
   const pitch = (SIDE.x1 - SIDE.x0 - 1) / 6;
@@ -1090,8 +1139,19 @@ export function fullBoardSvg(options: FullBoardOptions = {}): string {
   ].join("");
 }
 
-/** Parking bays a car can be drawn in, for dressing the board. */
-export function parkedSpots(): { x: number; z: number; heading: number }[] {
+/** The bays with a car standing in them, counted from 1. */
+export type ParkedBays = {
+  /** The row on the right of the aisle. Bay 1 is its far end, by the three-lane road. */
+  right: readonly number[];
+  left: readonly number[];
+  /** Flush parking boxes. Box 1 is the far one for a car driving north. */
+  flush: readonly number[];
+};
+
+/** Where a car stands in each of the given bays, for dressing the board. */
+export function parkedSpots(
+  bays: ParkedBays,
+): { x: number; z: number; heading: number }[] {
   const depth = AISLE.x0 - PARK.x0;
   // the middle of bay `k` in each row, between two leaning lines
   const left = (k: number) => ({
@@ -1104,15 +1164,15 @@ export function parkedSpots(): { x: number; z: number; heading: number }[] {
     z: BAY_FIRST - (k + 0.5) * BAY_STEP + depth / 2,
     heading: (Math.PI * 3) / 4,
   });
+  const box = (FLUSH.z1 - FLUSH.z0) / FLUSH.bays;
   return [
-    right(1),
-    right(4),
-    left(5),
-    {
+    ...bays.right.map((n) => right(n - 1)),
+    ...bays.left.map((n) => left(n - 1)),
+    ...bays.flush.map((n) => ({
       x: (SIDE.x0 + FLUSH.x1) / 2,
-      z: FLUSH.z1 - (FLUSH.z1 - FLUSH.z0) / FLUSH.bays / 2,
+      z: FLUSH.z0 + (n - 0.5) * box,
       heading: 0,
-    },
+    })),
   ];
 }
 

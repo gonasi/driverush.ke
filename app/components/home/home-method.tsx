@@ -9,15 +9,15 @@ import { Link } from "react-router";
 const POINTS = [
   {
     title: "Name it before you see it",
-    body: "Reading a sign with its name only asks you to agree. Pulling the name from memory is the skill the test needs, and the effort is what makes it stick.",
+    body: "Pulling the name from memory is the skill the test needs, and the effort makes it stick.",
   },
   {
     title: "Misses come back sooner",
-    body: "Each sign has its own review schedule: one day, then two, four, eight. Miss one and it returns in the same run. A sign counts as known only after you've recalled it on two different days.",
+    body: "Miss a sign and it returns in the same run. It counts as known after two different days.",
   },
   {
     title: "See it like on the road",
-    body: "The chart shows the system: triangles warn, red rings forbid, blue circles order. In 3D you read each sign from an angle, the way you meet it from the driver's seat.",
+    body: "The chart shows the system. In 3D you read each sign from an angle, as from the driver's seat.",
   },
 ];
 

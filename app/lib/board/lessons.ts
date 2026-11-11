@@ -9,6 +9,7 @@ import {
   ARMS,
   allowedTurns,
   armForTurn,
+  exitLanes,
   laneBearing,
   lanePoint,
   lanesForTurn,
@@ -22,11 +23,14 @@ import {
   network,
   planRoute,
   poseAt,
+  roundaboutWay,
   routeOf,
   trimRoute,
   type Maneuver,
+  type Plan,
   type Route,
 } from "./network";
+import { parkingLayout, targetBays } from "./parking-layouts";
 
 // ---- where each lane can take you ---------------------------------------------------
 
@@ -55,9 +59,29 @@ export const APPROACHES: readonly { arm: ArmId; label: string; road: string }[] 
     { arm: "E", label: "Right", road: "Three-lane road" },
   ];
 
+/**
+ * The handbook's angle for each turn. Left and right are both 90°. The
+ * innermost lane reaches the left exit and the straight-on exit the long way
+ * round, which the handbook counts as 270° and 360°.
+ */
+export const TURN_DEGREES: Record<Turn, number> = {
+  straight: 0,
+  right: 90,
+  back: 180,
+  left: 90,
+};
+const LONG_WAY_DEGREES: Partial<Record<Turn, number>> = {
+  left: 270,
+  straight: 360,
+};
+
 export type LaneOption = {
+  /** One per way through, for a list key. */
+  id: string;
   turn: Turn;
   label: string;
+  /** The handbook's angle for it, such as "90°". */
+  degrees: string;
   color: string;
   route: Route;
   confirmed: boolean;
@@ -73,33 +97,51 @@ export function laneOptions(arm: ArmId, lane: number): LaneOption[] {
   const net = network();
   const lead = followFrom(laneNode(arm, "approach", lane, "start"));
   const options: LaneOption[] = [];
-  for (const turn of allowedTurns(ARMS[arm].lanes, lane)) {
-    const name = `rb:${arm}${lane}:${turn}`;
-    const through = ["hold_lane", "ring", "exit"].map((maneuver) =>
-      net.edges.find(
-        (e) =>
-          e.maneuver === maneuver &&
-          (e.to === `${name}:on` ||
-            e.from === `${name}:on` ||
-            e.from === `${name}:off`) &&
-          (maneuver !== "ring" || e.to === `${name}:off`),
-      ),
-    );
-    if (through.some((e) => !e)) continue;
-    const last = through[2];
-    if (!last) continue;
-    const route = routeOf([
-      ...lead,
-      ...(through as NonNullable<(typeof through)[number]>[]),
-      ...followFrom(last.to, 26),
-    ]);
-    options.push({
-      turn,
-      label: TURN_LABEL[turn],
-      color: TURN_COLOR[turn],
-      route,
-      confirmed: route.confirmed,
-    });
+  const lanes = ARMS[arm].lanes;
+  for (const turn of allowedTurns(lanes, lane)) {
+    const outs = exitLanes(lanes, lane, turn, ARMS[armForTurn(arm, turn)].lanes);
+    for (const exitLane of outs) {
+      const name = roundaboutWay(arm, lane, turn, exitLane);
+      const through = ["hold_lane", "ring", "exit"].map((maneuver) =>
+        net.edges.find(
+          (e) =>
+            e.maneuver === maneuver &&
+            (e.to === `${name}:on` ||
+              e.from === `${name}:on` ||
+              e.from === `${name}:off`) &&
+            (maneuver !== "ring" || e.to === `${name}:off`),
+        ),
+      );
+      if (through.some((e) => !e)) continue;
+      const last = through[2];
+      if (!last) continue;
+      const route = routeOf([
+        ...lead,
+        ...(through as NonNullable<(typeof through)[number]>[]),
+        ...followFrom(last.to, 26),
+      ]);
+      // The innermost lane reaches the left and straight-on exits the long
+      // way round, which the handbook counts as 270° and 360°.
+      const inner = lane === lanes && lane > 2;
+      const longWay =
+        inner && (turn === "left" || (turn === "straight" && lanes === 4));
+      const degrees =
+        (longWay ? LONG_WAY_DEGREES[turn] : undefined) ?? TURN_DEGREES[turn];
+      options.push({
+        id: name,
+        turn,
+        label:
+          outs.length > 1
+            ? `${TURN_LABEL[turn]}, into lane ${exitLane}`
+            : longWay
+              ? `${TURN_LABEL[turn]}, the long way round`
+              : TURN_LABEL[turn],
+        degrees: `${degrees}°`,
+        color: TURN_COLOR[turn],
+        route,
+        confirmed: route.confirmed,
+      });
+    }
   }
   // left first, then straight, right, back: the order of the exits
   const order: Turn[] = ["left", "straight", "right", "back"];
@@ -124,6 +166,23 @@ export type Lesson = {
   /** How the route has to end, where there is more than one way. */
   arrive?: Maneuver;
 };
+
+/**
+ * A parking lesson ends or starts in the farthest free bay, which depends on
+ * where the parked cars are standing.
+ */
+const ANGLE_BAY = "@angle";
+const FLUSH_BAY = "@flush";
+
+function placeLabel(label: string): string {
+  if (label === ANGLE_BAY) return targetBays().angle;
+  if (label === FLUSH_BAY) return targetBays().flush;
+  return label;
+}
+
+/** Routes that depend on the parked cars are kept per layout. */
+const layoutKey = (id: string, parking: boolean) =>
+  parking ? `${id}|${parkingLayout().id}` : id;
 
 const DUAL_BOTTOM = "the dual carriageway, bottom end";
 const DUAL_TOP = "the dual carriageway, top end";
@@ -154,9 +213,18 @@ export const LESSONS: readonly Lesson[] = [
     id: "wrong-lane",
     group: "routes",
     level: "Easy",
-    title: "In the wrong lane for the turn",
-    ask: "You are in lane 2 and you are asked to turn left.",
+    title: "In the wrong lane, with room to move",
+    ask: "You are in lane 2, back where the lines are broken, and you are asked to turn left.",
     from: `From ${DUAL_BOTTOM}, lane 2`,
+    to: `To ${THREE_LEFT}, lane 1`,
+  },
+  {
+    id: "long-way-round",
+    group: "routes",
+    level: "Hard",
+    title: "Rule 2: the long way round",
+    ask: "You are in lane 2 at the continuous lines and you are asked to turn left. Lane 2 only goes straight, so the short way is blocked.",
+    from: `At the continuous lines on ${DUAL_BOTTOM}, lane 2`,
     to: `To ${THREE_LEFT}, lane 1`,
   },
   {
@@ -218,9 +286,9 @@ export const LESSONS: readonly Lesson[] = [
     group: "parking",
     level: "Easy",
     title: "Drive into an angle bay",
-    ask: "From the top of the dual carriageway, park in the angle parking, nose first.",
+    ask: "From the top of the dual carriageway, park in the angle parking, nose first, in the farthest free bay.",
     from: `From ${DUAL_TOP}, lane 1`,
-    to: "Angle bay 3, right row",
+    to: ANGLE_BAY,
   },
   {
     id: "leave-angle-reverse",
@@ -228,7 +296,7 @@ export const LESSONS: readonly Lesson[] = [
     level: "Medium",
     title: "Reverse out of an angle bay",
     ask: "You are parked nose in. Leave the parking area for the two-way road.",
-    from: "Angle bay 3, right row",
+    from: ANGLE_BAY,
     to: `To ${TWO_WAY_TOP}`,
   },
   {
@@ -236,9 +304,9 @@ export const LESSONS: readonly Lesson[] = [
     group: "parking",
     level: "Medium",
     title: "Reverse into flush parking",
-    ask: "From the bottom of the two-way road, drive past the empty flush parking bay and reverse into it.",
+    ask: "From the bottom of the two-way road, drive past the farthest free flush parking box and reverse into it.",
     from: `From ${TWO_WAY_BOTTOM}`,
-    to: "Flush parking bay 1",
+    to: FLUSH_BAY,
   },
   {
     id: "leave-flush",
@@ -246,23 +314,49 @@ export const LESSONS: readonly Lesson[] = [
     level: "Easy",
     title: "Pull out of flush parking",
     ask: "You are in the flush parking. Carry on up the two-way road.",
-    from: "Flush parking bay 1",
+    from: FLUSH_BAY,
     to: `To ${TWO_WAY_TOP}`,
   },
 ];
 
-const lessonCache = new Map<string, Route | null>();
+const lessonCache = new Map<string, Plan | null>();
+
+/** The route for a lesson, with the route rule that picked it. */
+export function lessonPlan(lesson: Lesson): Plan | null {
+  const key = layoutKey(lesson.id, lesson.group === "parking");
+  if (lessonCache.has(key)) return lessonCache.get(key) ?? null;
+  const places = network().places;
+  const from = places.find((p) => p.label === placeLabel(lesson.from));
+  const to = places.find((p) => p.label === placeLabel(lesson.to));
+  const plan = from && to ? planRoute(from.id, to.id, lesson.arrive) : null;
+  lessonCache.set(key, plan);
+  return plan;
+}
 
 export function lessonRoute(lesson: Lesson): Route | null {
-  if (lessonCache.has(lesson.id)) return lessonCache.get(lesson.id) ?? null;
-  const places = network().places;
-  const from = places.find((p) => p.label === lesson.from);
-  const to = places.find((p) => p.label === lesson.to);
-  const route =
-    from && to ? planRoute(from.id, to.id, lesson.arrive).route : null;
-  lessonCache.set(lesson.id, route);
-  return route;
+  return lessonPlan(lesson)?.route ?? null;
 }
+
+/** The handbook's three route rules, in the order they are tried. */
+export const ROUTE_RULES: Record<Plan["rule"], { name: string; says: string }> =
+  {
+    shortest: {
+      name: "Rule 1",
+      says: "The shortest correct route, without using the parking area.",
+    },
+    longest: {
+      name: "Rule 2",
+      says: "The longest correct route. A continuous line blocks the short way from this lane, so you go the long way round, still without using the parking area.",
+    },
+    last_resort: {
+      name: "Rule 3",
+      says: "The parking area, only because there is no other route.",
+    },
+    parking: {
+      name: "Parking",
+      says: "This route starts or ends in the parking area, so it has to use it.",
+    },
+  };
 
 // ---- the right way through a driving task ---------------------------------------------
 
@@ -274,9 +368,10 @@ export const ROAD_BOX = 12;
 
 /** The line a task should be driven along, from its start line to its green box. */
 export function challengeRoute(challenge: BoardChallenge): Route | null {
-  if (taskCache.has(challenge.id)) return taskCache.get(challenge.id) ?? null;
   if (isRouteTask(challenge)) {
     const lesson = LESSONS.find((l) => l.id === challenge.lesson);
+    const key = layoutKey(challenge.id, lesson?.group === "parking");
+    if (taskCache.has(key)) return taskCache.get(key) ?? null;
     const whole = lesson ? lessonRoute(lesson) : null;
     // A road's end is the frame of the board: start a car's length in from
     // it, and stop short of it.
@@ -288,9 +383,10 @@ export function challengeRoute(challenge: BoardChallenge): Route | null {
             lesson.to.startsWith("To ") ? whole.length - STOP_SHORT : whole.length,
           )
         : null;
-    taskCache.set(challenge.id, route);
+    taskCache.set(key, route);
     return route;
   }
+  if (taskCache.has(challenge.id)) return taskCache.get(challenge.id) ?? null;
   const { start, goal, turn } = challenge;
   const from = laneNode(start.arm, "approach", start.lane, "start");
   let to: string;

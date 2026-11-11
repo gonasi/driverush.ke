@@ -1,7 +1,8 @@
 /**
- * `/model-town-board`: the board trainer, with the guide under it. The product
- * comes first (one tap into driving), and the guide stays in the server's HTML
- * for the learners who arrive searching for how the board works.
+ * `/model-town-board`: the way into the board game, with the guide under it.
+ * The game is one tap away, on its own page (`/model-town-board/play`), and
+ * the guide stays in the server's HTML for the learners who arrive searching
+ * for how the board works.
  */
 import type { Route } from "./+types/model-town-board";
 
@@ -17,7 +18,7 @@ import {
   webAppLd,
 } from "~/lib/site";
 
-import { BoardPlayer } from "~/components/board/board-player";
+import { BoardLobby } from "~/components/board/board-lobby";
 import { useBoardPage } from "~/components/board/use-board-page";
 import { GuideLayout } from "~/components/brand/guide-layout";
 
@@ -72,7 +73,7 @@ export default function ModelTownBoard() {
       }
       lede="Pick your lane, take the roundabout, and stop where the examiner asks. Break a lane rule and you're told which one. Free, no signup."
       checked={CHECKED}
-      lead={<BoardPlayer />}
+      lead={<BoardLobby />}
     >
       <Body />
     </GuideLayout>

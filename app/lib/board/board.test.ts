@@ -1,5 +1,5 @@
 import Matter from "matter-js";
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { faultTip } from "./board-rules";
 import { CAR } from "./car";
@@ -13,11 +13,13 @@ import { BOUNDS, U_TURN_GAPS, onTarmac } from "./full-board";
 import {
   ARMS,
   ISLAND_R,
+  OPTION_CODES,
   SOLID_ZONE,
   allowedTurns,
   armForTurn,
   armHalfWidth,
   bearingOf,
+  exitLanes,
   laneBearing,
   lanePoint,
   lanesForTurn,
@@ -32,6 +34,14 @@ import { SEATS, stickBearing, type Seat } from "./joystick";
 import { lanePath, turnBackPath } from "./lane-paths";
 import { challengeRoute, taskParks } from "./lessons";
 import { distanceNear, poseAt, type Route } from "./network";
+import {
+  PARKING_LAYOUTS,
+  parkedCars,
+  parkingLayout,
+  setParkingLayout,
+  shuffleParkingLayout,
+  targetBays,
+} from "./parking-layouts";
 import { createPhysics, physicsStep } from "./physics";
 import type { Fault } from "./referee";
 import {
@@ -162,14 +172,18 @@ function follower(
     if (
       wantLane != null &&
       loc.kind === "arm" &&
-      loc.arm === "S" &&
+      loc.arm === challenge.start.arm &&
       loc.side === "approach" &&
       loc.lane !== wantLane &&
       loc.along > SOLID_ZONE + 2
     ) {
       // A lane change is a firm push across. On the road north from the
       // south, lane 1 is to the left, the west.
-      point((loc.lane > wantLane ? -45 : 45) * DEG, options.push);
+      point(
+        laneBearing(loc.arm, "approach") +
+          (loc.lane > wantLane ? -45 : 45) * DEG,
+        options.push,
+      );
       return;
     }
 
@@ -210,16 +224,29 @@ function follower(
   };
 }
 
+/** A route's line from where it has reached `lane`. */
+function fromLane(points: Vec[], lane: number): Vec[] {
+  const at = points.findIndex((p) => {
+    const loc = locate(p.x, p.z);
+    return loc.kind === "arm" && loc.lane === lane;
+  });
+  return points.slice(Math.max(0, at));
+}
+
 /** Drive a task properly, getting into `lane` first. */
 function proper(
   challenge: TurnChallenge,
   lane: number,
   options: Follow = {},
 ): Outcome {
+  // A task from the three-lane road is driven along its own route, which
+  // has the lane change and the lane to leave in.
   const path =
     challenge.id === "turn-back"
       ? turnBackPath(lane)
-      : lanePath("S", lane, challenge.turn);
+      : challenge.start.arm === "S"
+        ? lanePath("S", lane, challenge.turn)
+        : fromLane(challengeRoute(challenge)?.points ?? [], lane);
   return play(challenge, follower(challenge, path, options));
 }
 
@@ -234,6 +261,8 @@ const SHIPPED_LANES: Record<string, number> = {
   back: 4,
   "turn-back": 2,
   "behind-red": 1,
+  "three-lane-right": 3,
+  "three-lane-back": 3,
 };
 
 beforeAll(() => loadPhysics());
@@ -329,6 +358,22 @@ describe("the board's geometry", () => {
     expect(lanesForTurn(4, "left")).toEqual([1, 4]);
     expect(lanesForTurn(4, "right")).toEqual([3, 4]);
     expect(lanesForTurn(4, "back")).toEqual([4]);
+    expect(OPTION_CODES[4]).toBe("2124");
+  });
+
+  it("follows the three-lane table, 215", () => {
+    expect(allowedTurns(3, 1)).toEqual(["straight", "left"]);
+    expect(allowedTurns(3, 2)).toEqual(["straight"]);
+    expect([...allowedTurns(3, 3)].sort()).toEqual(
+      ["back", "left", "right", "straight"].sort(),
+    );
+    expect(OPTION_CODES[3]).toBe("215");
+    // lane 3's five options: right may enter lane 3 or lane 4
+    expect(exitLanes(3, 3, "right", 4)).toEqual([3, 4]);
+    expect(exitLanes(3, 3, "back", 3)).toEqual([3]);
+    expect(exitLanes(3, 3, "left", 4)).toEqual([3]);
+    expect(exitLanes(4, 4, "right", 3)).toEqual([3]);
+    expect(exitLanes(4, 2, "straight", 4)).toEqual([2]);
   });
 });
 
@@ -647,7 +692,8 @@ describe("serious mistakes end the attempt", () => {
     });
     const tip = faultTip(result.fault!);
     expect(tip.reason).toContain("Lane 2 only goes straight");
-    expect(tip.reason).toContain("lane 1 or 4");
+    expect(tip.reason).toContain("approach in lane 1.");
+    expect(tip.reason).toContain("Lane 4 can also do it, the long way round");
   });
 
   it("lane 1 turning right", () => {
@@ -795,6 +841,21 @@ describe("small mistakes cost a star and the drive goes on", () => {
     expect(result.goal).toBe(true);
   });
 
+  it("leaving the roundabout in a different lane", () => {
+    drive.assist = false;
+    const challenge = task("straight", 2);
+    // Comes round in lane 2 and steers out into lane 3 of the road north.
+    const path = [
+      ...lanePath("S", 2, "straight").filter((p) => p.z > -14),
+      ...lanePath("S", 3, "straight").filter((p) => p.z <= -24),
+    ];
+    const result = play(challenge, follower(challenge, path));
+    expect(result.small.map((f) => f.id)).toEqual(["exit_lane"]);
+    expect(result.small[0]).toMatchObject({ lane: 2, serious: false });
+    expect(faultTip(result.small[0]).reason).toContain("lane 2");
+    expect(result.goal).toBe(true);
+  });
+
   it("stopping on the roundabout", () => {
     const challenge = task("straight", 2);
     const onward = follower(challenge, lanePath("S", 2, "straight"));
@@ -908,6 +969,99 @@ function routeFollower(
     point(bearing, here.reversing ? 0.6 : 0.7);
   };
 }
+
+describe("the parked cars move, and the bay to take with them", () => {
+  const PARKING_TASKS = ROUTE_TASKS.filter((c) => c.otherCars.length > 0);
+  afterEach(() => setParkingLayout(PARKING_LAYOUTS[0].id));
+
+  it("always dresses the board with the same number of cars", () => {
+    for (const layout of PARKING_LAYOUTS) {
+      expect(layout.right.length + layout.left.length, layout.id).toBe(3);
+      expect(layout.flush.length, layout.id).toBe(1);
+      expect(parkedCars(layout).length).toBe(4);
+    }
+  });
+
+  it("sends the learner to the farthest free bay", () => {
+    const seen = new Set<number>();
+    for (const layout of PARKING_LAYOUTS) {
+      const target = targetBays(layout);
+      seen.add(target.angleBay);
+      expect(layout.right).not.toContain(target.angleBay);
+      // every bay beyond it, toward the far end, is taken
+      for (let n = 1; n < target.angleBay; n += 1) {
+        expect(layout.right, layout.id).toContain(n);
+      }
+      expect(layout.flush).not.toContain(target.flushBay);
+    }
+    expect(seen.size).toBe(PARKING_LAYOUTS.length);
+  });
+
+  it("never deals the layout that is already showing", () => {
+    for (let i = 0; i < 20; i += 1) {
+      const before = parkingLayout().id;
+      shuffleParkingLayout();
+      expect(parkingLayout().id).not.toBe(before);
+    }
+  });
+
+  for (const layout of PARKING_LAYOUTS.slice(1)) {
+    for (const task of PARKING_TASKS) {
+      it(`passes "${task.title}" with the cars laid out "${layout.id}"`, () => {
+        setParkingLayout(layout.id);
+        const route = challengeRoute(task)!;
+        const end = route.points[route.points.length - 1];
+        const start = route.points[0];
+        // no parked car stands where the task starts or ends
+        for (const other of task.otherCars) {
+          expect(Math.hypot(other.x - end.x, other.z - end.z)).toBeGreaterThan(3);
+          expect(Math.hypot(other.x - start.x, other.z - start.z)).toBeGreaterThan(3);
+        }
+        const result = play(task, routeFollower(task, route), 240);
+        expect(result.fault, task.id).toBeUndefined();
+        expect(result.small, task.id).toEqual([]);
+        expect(result.goal, task.id).toBe(true);
+      });
+    }
+  }
+});
+
+describe("no stopping on a pedestrian crossing", () => {
+  const task = ROUTE_TASKS.find((c) => c.id === "park-flush")!;
+  const CROSSING_Z = -22.1;
+
+  /** Drive the task, waiting `seconds` once the car is `ahead` metres short of the crossing's middle. */
+  function waitingAt(ahead: number, seconds: number) {
+    const route = challengeRoute(task)!;
+    const onward = routeFollower(task, route);
+    let waited = 0;
+    return play(
+      task,
+      () => {
+        if (car.z - CROSSING_Z < ahead && waited < seconds) {
+          letGo();
+          if (Math.abs(car.speed) < 0.05) waited += STEP;
+          return;
+        }
+        onward();
+      },
+      300,
+    );
+  }
+
+  it("costs a star for standing on it", () => {
+    const result = waitingAt(2.5, 4);
+    expect(result.small.map((f) => f.id)).toEqual(["crossing_stop"]);
+    expect(faultTip(result.small[0]).rule).toContain("pedestrian crossing");
+    expect(result.goal).toBe(true);
+  });
+
+  it("costs nothing for stopping short of it", () => {
+    const result = waitingAt(14, 4);
+    expect(result.small).toEqual([]);
+    expect(result.goal).toBe(true);
+  });
+});
 
 describe("tasks away from the roundabout", () => {
   for (const assist of [true, false]) {

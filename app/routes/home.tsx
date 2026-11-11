@@ -1,9 +1,9 @@
 /**
- * DriveRush home. The Model Town Board comes first, because it is what most
- * learners are after: the hero is the board itself, one tap from driving. The
- * road signs are second: both sign trainers side by side, a ten-sign check for
- * anyone who wants to test themselves first, and a short section on why the
- * method works.
+ * DriveRush home. One thing to do first: the Model Town Board, which is what
+ * most learners are after, as a picture and a Start driving button that opens
+ * the game on its own page. One other choice under it: the road signs, with
+ * both trainers side by side. Then why the method works, and the guides, kept
+ * short. The ten-sign check lives on the road signs page.
  */
 import type { Route } from "./+types/home";
 
@@ -17,7 +17,6 @@ import {
   websiteLd,
 } from "~/lib/site";
 
-import { useBoardPage } from "~/components/board/use-board-page";
 import { Rail } from "~/components/brand/rail";
 import { SiteFooter } from "~/components/brand/site-footer";
 import { SiteNav } from "~/components/brand/site-nav";
@@ -25,7 +24,6 @@ import { HomeGuides } from "~/components/home/home-guides";
 import { HomeHero } from "~/components/home/home-hero";
 import { HomeMethod } from "~/components/home/home-method";
 import { HomeSigns } from "~/components/home/home-signs";
-import { SignCheck } from "~/components/home/sign-check";
 
 export function meta(_: Route.MetaArgs) {
   return [
@@ -54,7 +52,6 @@ function stripContext<T extends { "@context"?: unknown }>(
 }
 
 export default function Home() {
-  useBoardPage();
   return (
     <>
       <SiteNav />
@@ -62,7 +59,6 @@ export default function Home() {
         <Rail />
         <HomeHero />
         <HomeSigns />
-        <SignCheck />
         <HomeMethod />
         <HomeGuides />
       </main>

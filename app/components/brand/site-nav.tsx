@@ -7,6 +7,7 @@ import { Link, useLocation } from "react-router";
 import { Icon } from "~/components/brand/icon";
 import { ArrowRightIcon, MenuIcon } from "~/components/brand/icons";
 
+import { BOARD_PLAY_PATH } from "~/lib/board-guides";
 import { isNavLinkActive } from "~/lib/nav";
 
 import { Button } from "~/components/ui/button";
@@ -70,7 +71,7 @@ export function SiteNav() {
       trailing={
         <>
           <Button variant="rush" size="sm" asChild>
-            <Link to="/#try-now">
+            <Link to={BOARD_PLAY_PATH}>
               Start
               <Icon icon={ArrowRightIcon} size={14} className="dr-arrow" />
             </Link>

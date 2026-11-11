@@ -3,6 +3,7 @@ import * as React from "react";
 import type { Route as PageRoute } from "./+types/board-network";
 
 import { fullBoardSvg, type FullBoardOptions } from "~/lib/board/full-board";
+import { parkedCars } from "~/lib/board/parking-layouts";
 import {
   network,
   planRoute,
@@ -96,6 +97,16 @@ const selectClass =
 
 export default function BoardNetworkTool() {
   const net = React.useMemo(() => network(), []);
+  /** True for a bay the board is dressed with a parked car in just now. */
+  const occupied = (id: string) => {
+    const node = net.nodes.get(id);
+    return Boolean(
+      node &&
+        parkedCars().some(
+          (spot) => Math.hypot(spot.x - node.x, spot.z - node.z) < 1.5,
+        ),
+    );
+  };
   const starts = net.places.filter((p) => p.starts);
   const ends = net.places.filter((p) => p.ends);
 
@@ -131,6 +142,15 @@ export default function BoardNetworkTool() {
           arrow: true,
         });
       }
+      if (plan.blocked) {
+        lines.push({
+          points: plan.blocked.points,
+          color: SHORTCUT_COLOR,
+          width: 0.7,
+          dashed: true,
+          arrow: true,
+        });
+      }
       lines.push(...routeLines(plan.route, active));
     } else {
       for (const edge of net.edges) {
@@ -158,7 +178,7 @@ export default function BoardNetworkTool() {
         edge.maneuver === "hold_lane" ||
         edge.maneuver === "ring" ||
         edge.maneuver === "exit"
-          ? "Lane 3 of the three-lane road, at the roundabout"
+          ? "Lane 4 going straight on: once right round first, or not"
           : edge.title;
       const group = groups.get(title);
       if (group) group.count += 1;
@@ -207,7 +227,7 @@ export default function BoardNetworkTool() {
                 {starts.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.label.replace(/^From /, "")}
-                    {p.occupied ? " (a car is parked here)" : ""}
+                    {occupied(p.id) ? " (a car is parked here)" : ""}
                   </option>
                 ))}
               </select>
@@ -223,7 +243,7 @@ export default function BoardNetworkTool() {
                 {ends.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.label.replace(/^To /, "")}
-                    {p.occupied ? " (a car is parked here)" : ""}
+                    {occupied(p.id) ? " (a car is parked here)" : ""}
                   </option>
                 ))}
               </select>
@@ -254,9 +274,13 @@ export default function BoardNetworkTool() {
                 <p className="m-0 text-[13.5px] leading-relaxed text-ink-2">
                   {Math.round(route.length)} m.{" "}
                   {plan.rule === "shortest" &&
-                    "The shortest correct route, avoiding the parking area."}
+                    "Rule 1: the shortest correct route, avoiding the parking area."}
+                  {plan.rule === "longest" &&
+                    "Rule 2: the longest correct route. A continuous line blocks the short way from this lane."}
                   {plan.rule === "last_resort" &&
-                    "Through the parking area, as a last resort: nothing else gets there."}
+                    "Rule 3: through the parking area, as a last resort. Nothing else gets there."}
+                  {plan.blocked &&
+                    ` The pink dashed line is the short way from another lane, ${Math.round(route.length - plan.blocked.length)} m shorter, but a continuous line is in the way.`}
                   {plan.rule === "parking" &&
                     "Starts or ends in the parking area, so it has to use it."}
                   {plan.shortcut &&

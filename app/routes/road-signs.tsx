@@ -22,6 +22,7 @@ import { SignCard } from "~/components/brand/sign-card";
 import { SignClassList } from "~/components/brand/sign-class-list";
 import { SiteFooter } from "~/components/brand/site-footer";
 import { SiteNav } from "~/components/brand/site-nav";
+import { SignCheck } from "~/components/home/sign-check";
 import { TrainerCards } from "~/components/home/trainer-cards";
 import { InlineAd } from "~/components/brand/inline-ad";
 
@@ -171,6 +172,9 @@ export default function RoadSigns() {
               </a>
             </div>
           </section>
+
+          {/* Not sure where you stand? Ten signs, before picking a trainer. */}
+          <SignCheck className="mt-10" />
 
           {/* Pinstripe break — product above, reference below. */}
           <Rail className="my-14" id="reference" />

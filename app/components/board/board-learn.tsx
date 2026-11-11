@@ -10,6 +10,7 @@ import { Link } from "react-router";
 
 import { analytics } from "~/lib/analytics";
 import { RULES_SOURCE, laneRule } from "~/lib/board/board-rules";
+import { OPTION_CODES } from "~/lib/board/geometry";
 import { BOARD_FEATURES } from "~/lib/board/features";
 import { RING_R } from "~/lib/board/full-board";
 import { ARMS, type ArmId } from "~/lib/board/geometry";
@@ -18,10 +19,13 @@ import {
   APPROACHES,
   LESSONS,
   ROUTE_COLOR,
+  ROUTE_RULES,
   laneOptions,
+  lessonPlan,
   lessonRoute,
   type Lesson,
 } from "~/lib/board/lessons";
+import { shuffleParkingLayout } from "~/lib/board/parking-layouts";
 import { cam, fitTable, flyTo, useStage } from "~/lib/board/stage";
 import { useBoardStore } from "~/lib/board-store";
 import { cn } from "~/lib/utils";
@@ -35,6 +39,7 @@ import {
   PlayIcon,
   SettingsIcon,
 } from "~/components/brand/icons";
+import { useParkingLayout } from "~/components/board/use-parking-layout";
 import {
   BoardPlayback,
   StepTags,
@@ -58,6 +63,8 @@ type Showing = {
   title: string;
   ask: string;
   color: string;
+  /** The route rule that picked a route, said under its heading. */
+  rule?: string;
 };
 
 const chip =
@@ -103,6 +110,8 @@ export function BoardLearn({
   const [lane, setLane] = React.useState(1);
   const [feature, setFeature] = React.useState<string | null>(null);
   const [showing, setShowing] = React.useState<Showing | null>(null);
+  // lesson routes are worked out again when the parked cars move
+  useParkingLayout();
   const sideways = seat === "east" || seat === "west";
 
   // On a phone the panel covers the bottom of the screen, so the camera holds
@@ -133,7 +142,7 @@ export function BoardLearn({
     } else if (tab === "lanes") {
       show(
         options.map((option) => ({
-          id: option.turn,
+          id: option.id,
           points: option.route.points,
           color: option.color,
           width: 2.2,
@@ -172,12 +181,17 @@ export function BoardLearn({
   const pickTab = (next: Tab) => {
     clear();
     setShowing(null);
+    // The parked cars stand somewhere new each time, so the farthest free
+    // bay is not always the same one.
+    if (next === "parking") shuffleParkingLayout();
     setTab(next);
   };
 
   const lessonRow = (lesson: Lesson) => {
     const line = lessonRoute(lesson);
     if (!line) return null;
+    const picked = lesson.group === "routes" ? lessonPlan(lesson)?.rule : null;
+    const rule = picked ? ROUTE_RULES[picked] : null;
     const done = learned?.includes(lesson.id);
     return (
       <li key={lesson.id}>
@@ -192,6 +206,7 @@ export function BoardLearn({
                 title: lesson.title,
                 ask: lesson.ask,
                 color: ROUTE_COLOR,
+                rule: rule ? `${rule.name}. ${rule.says}` : undefined,
               },
               line,
             )
@@ -210,7 +225,8 @@ export function BoardLearn({
           <span className="min-w-0 flex-1">
             <span className="block">{lesson.title}</span>
             <span className="mt-0.5 block font-mono text-[10px] font-bold uppercase tracking-widest text-white/55">
-              {lesson.level} · {line.steps.length} steps
+              {lesson.level} · {rule ? `${rule.name} · ` : ""}
+              {line.steps.length} steps
               {line.steps.some((s) => s.gear === "reverse") && " · reversing"}
             </span>
           </span>
@@ -289,6 +305,11 @@ export function BoardLearn({
                 <p className="m-0 mt-1 text-[13.5px] leading-snug text-white/75">
                   {showing.ask}
                 </p>
+                {showing.rule && (
+                  <p className="m-0 mt-1.5 text-[13px] font-semibold leading-snug text-kenya-gold">
+                    {showing.rule}
+                  </p>
+                )}
               </div>
               <BoardPlayback className="rounded-md border-2 border-white/15 bg-white/5 p-3" />
               <ol className="m-0 grid list-none gap-1 p-0">
@@ -350,7 +371,11 @@ export function BoardLearn({
                 </div>
                 <p className="m-0 mt-1.5 text-[12.5px] text-white/65">
                   {APPROACHES.find((a) => a.arm === arm)?.road},{" "}
-                  {ARMS[arm].lanes} lanes each way
+                  {ARMS[arm].lanes} lanes each way. Option code{" "}
+                  <strong className="font-mono text-white">
+                    {OPTION_CODES[ARMS[arm].lanes]}
+                  </strong>
+                  : the number of options in each lane, from the kerb.
                 </p>
               </div>
               <div>
@@ -378,12 +403,14 @@ export function BoardLearn({
                   {laneRule(ARMS[arm].lanes, lane)}
                 </p>
                 <p className="m-0 mt-1 text-[12.5px] leading-snug text-white/65">
-                  Lane 1 is by the kerb. Tap a turn to watch it driven.
+                  Lane 1 is by the kerb. Change lanes only where the lines are
+                  broken: mirrors, signal for 3 seconds, then move. Tap a turn
+                  to watch it driven.
                 </p>
               </div>
               <ul className="m-0 grid list-none gap-1.5 p-0">
                 {options.map((option) => (
-                  <li key={option.turn}>
+                  <li key={option.id}>
                     <button
                       type="button"
                       className={cn(
@@ -395,7 +422,7 @@ export function BoardLearn({
                         play(
                           {
                             kind: "lane",
-                            id: `${arm}${lane}-${option.turn}`,
+                            id: `${arm}${lane}-${option.id}`,
                             title: `Lane ${lane}: ${option.label.toLowerCase()}`,
                             ask: laneRule(ARMS[arm].lanes, lane),
                             color: option.color,
@@ -410,7 +437,10 @@ export function BoardLearn({
                         style={{ background: option.color }}
                       />
                       <span className="flex-1">
-                        {option.label}
+                        {option.label}{" "}
+                        <span className="font-mono text-[11px] text-white/55">
+                          {option.degrees}
+                        </span>
                         {!option.confirmed && (
                           <span className="mt-0.5 block text-[12px] font-semibold text-kenya-gold">
                             {UNSURE_NOTE}
@@ -476,7 +506,7 @@ export function BoardLearn({
             <div className="grid gap-3">
               <p className="m-0 text-[14px] leading-snug text-white/80">
                 {tab === "routes"
-                  ? "Take the shortest correct route that avoids the parking area. Tap a route to watch it driven, a step at a time."
+                  ? "Rule 1: take the shortest correct route. Rule 2: if a continuous line blocks it, take the longest correct route. Rule 3: use the parking area only when there is no other route. Tap a route to watch it driven, a step at a time."
                   : "Parking and leaving a bay, forward and in reverse. Tap one to watch it, a step at a time."}
               </p>
               <ul className="m-0 grid list-none gap-1.5 p-0">

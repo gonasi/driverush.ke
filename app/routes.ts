@@ -24,6 +24,8 @@ export default [
   // One page per sign. The trainers and class guides above take priority.
   route("road-signs/:slug", "routes/road-sign.tsx"),
   route("model-town-board", "routes/model-town-board.tsx"),
+  // The game alone, with no page under it. Every way into driving links here.
+  route("model-town-board/play", "routes/board-play.tsx"),
   // The board's guides. One file, four routes: the path picks the guide.
   route("model-town-board/questions", "routes/board-guide.tsx", {
     id: "board-guide-questions",

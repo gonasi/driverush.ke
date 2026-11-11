@@ -1,50 +1,29 @@
 /**
- * What any page that hosts the board trainer needs: `?go=1` in the address
- * starts a round straight away (links from elsewhere on the site use it),
- * `?learn=1` opens the board to learn it, and
- * leaving the page mid-drive closes the board.
+ * The board game used to open over this page, started by `?go=1` in the
+ * address. It has its own page now. Links that are already out there (in the
+ * guides, and in messages people have shared) still say `?go=1`, `&task=<id>`
+ * or `?learn=1`, so this sends them on to the play page.
  */
 import * as React from "react";
-import { useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 
-import { useBoardStore } from "~/lib/board-store";
+import { BOARD_PLAY_PATH } from "~/lib/board-guides";
 
 export function useBoardPage(): void {
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
   const go = params.get("go") === "1";
+  const learn = params.get("learn") === "1";
   const task = params.get("task");
 
-  // The param is cleared so a reload or a shared link doesn't start a round
-  // again.
   React.useEffect(() => {
-    if (!go) return;
-    setParams(
-      (prev) => {
-        const next = new URLSearchParams(prev);
-        next.delete("go");
-        next.delete("task");
-        return next;
-      },
-      { replace: true },
-    );
-    // `&task=<id>` starts on one task, for a link to it.
-    useBoardStore.getState().start(task ? [task] : undefined);
-  }, [go, task, setParams]);
-
-  // `?learn=1` opens the board to learn it, the same way.
-  const learn = params.get("learn") === "1";
-  React.useEffect(() => {
-    if (!learn) return;
-    setParams(
-      (prev) => {
-        const next = new URLSearchParams(prev);
-        next.delete("learn");
-        return next;
-      },
-      { replace: true },
-    );
-    useBoardStore.getState().learn();
-  }, [learn, setParams]);
-
-  React.useEffect(() => () => useBoardStore.getState().exit(), []);
+    if (!go && !learn) return;
+    const next = new URLSearchParams();
+    if (learn) next.set("learn", "1");
+    else if (task) next.set("task", task);
+    const query = next.toString();
+    navigate(query ? `${BOARD_PLAY_PATH}?${query}` : BOARD_PLAY_PATH, {
+      replace: true,
+    });
+  }, [go, learn, task, navigate]);
 }

@@ -20,11 +20,13 @@ import type { OgCardId } from "./og-cards";
 import { SITE } from "./site";
 import { addUtm, UTM_CHANNELS, type UtmChannel } from "./utm";
 
-export type ShareKind = "pelican" | "signs3d" | "page";
+export type ShareKind = "pelican" | "signs3d" | "board" | "page";
 
 export type SharePayload =
   | { kind: "pelican"; total: number; firstTry: number }
   | { kind: "signs3d"; total: number; firstTry: number }
+  /** Board tasks driven, and how many of them clean on the first try. */
+  | { kind: "board"; total: number; firstTry: number }
   /** Evergreen page: shared as its own URL, no `/s` hop. */
   | { kind: "page"; path: string; title: string; text: string };
 
@@ -62,6 +64,30 @@ export function buildShareLink(payload: SharePayload): ShareLink {
         url: `${BASE}/s?${params}`,
         title: `I recalled ${total} Kenyan ${what}, ${firstTry} on the first try`,
         text: "Free road-sign practice on DriveRush. See how many you get cold.",
+      };
+    }
+    case "board": {
+      const { total, firstTry } = payload;
+      const params = new URLSearchParams({
+        k: "board",
+        t: String(total),
+        f: String(firstTry),
+      });
+      const tasks =
+        total === 1
+          ? "a Model Town Board task"
+          : `${total} Model Town Board tasks`;
+      const how =
+        firstTry === total
+          ? "clean on the first try"
+          : firstTry === 0
+            ? ""
+            : `${firstTry} clean on the first try`;
+      return {
+        kind: "board",
+        url: `${BASE}/s?${params}`,
+        title: how ? `I drove ${tasks}, ${how}` : `I drove ${tasks}`,
+        text: "Free Model Town Board practice on DriveRush. See how many you drive clean.",
       };
     }
     case "page":
@@ -135,6 +161,7 @@ export function taggedShareUrl(url: string, channel: string): string {
 export const SHARE_OG_CARD: Record<ShareKind | "unknown", OgCardId> = {
   pelican: "pelican",
   signs3d: "signs3d",
+  board: "board",
   page: "default",
   unknown: "default",
 };
@@ -192,6 +219,23 @@ export function resolveShare(params: URLSearchParams): ResolvedShare {
         detail: `${firstTry} of ${total} on the first try. Train on the Pelican chart or in 3D, free and no signup.`,
         ctaHref: kind === "pelican" ? "/road-signs/pelican" : "/road-signs/3d",
         ctaLabel: "Try the sign trainer",
+      };
+    }
+    case "board": {
+      const total = int(params.get("t"), 500);
+      const firstTry = int(params.get("f"), 500);
+      if (total == null || total === 0 || firstTry == null || firstTry > total)
+        break;
+      return {
+        valid: true,
+        kind: "board",
+        headline:
+          total === 1
+            ? "They drove a Model Town Board task"
+            : `They drove ${total} Model Town Board tasks`,
+        detail: `${firstTry} of ${total} clean on the first try. Drive the board yourself: pick your lane, take the roundabout, and get told which rule you broke. Free, no signup.`,
+        ctaHref: "/model-town-board/play",
+        ctaLabel: "Drive the board",
       };
     }
   }

@@ -43,6 +43,12 @@ const HEIGHT = 630;
  * catches it and we retry rather than shipping a blank preview.
  */
 const CARDS = [
+  // The 3D still of the board game. It comes first because the board's social
+  // card below shows it. After capturing it, compress it and build again
+  // before capturing "board":
+  //   sips -s format jpeg -s formatOptions 70 -Z 1200 public/og/board-3d.png \
+  //     --out public/assets/board/poster.jpg && rm public/og/board-3d.png
+  { id: "board-3d", settleMs: 25000, minBytes: 200_000 },
   { id: "default", settleMs: 2500, minBytes: 20_000 },
   { id: "board", settleMs: 3500, minBytes: 20_000 },
   { id: "pelican", settleMs: 3500, minBytes: 20_000 },

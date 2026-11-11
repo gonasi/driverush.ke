@@ -22,7 +22,11 @@ import { useSearchParams } from "react-router";
 import type { Route } from "./+types/og";
 
 import pelican from "~/data/road-signs-pelican.json";
-import { fullBoardSvg } from "~/lib/board/full-board";
+import { challengeById } from "~/lib/board/challenges";
+import { dirOf, ringRadius } from "~/lib/board/geometry";
+import type { Seat } from "~/lib/board/joystick";
+import { car as boardCar } from "~/lib/board/runtime";
+import { cam, panBy } from "~/lib/board/stage";
 import { regionSpriteStyle } from "~/lib/image-focus";
 import { signCrop } from "~/lib/sign-crops";
 import { OG_CARDS, OG_HEIGHT, OG_WIDTH, type OgCardId } from "~/lib/og-cards";
@@ -171,8 +175,8 @@ function DefaultCard() {
   );
 }
 
-/** The whole board, lying the way it does on a wide screen. */
-const BOARD_ART = fullBoardSvg({ seen: "east", cover: true });
+/** The 3D still of the table, captured from `?card=board-3d` below. */
+const BOARD_STILL = "/assets/board/poster.jpg";
 
 function BoardCard() {
   return (
@@ -198,10 +202,10 @@ function BoardCard() {
             Pick your lane, take the roundabout, stop where the examiner asks.
           </p>
         </div>
-        <div
-          aria-hidden
-          className="h-[390px] flex-1 overflow-hidden border-2 border-paper [&>svg]:block [&>svg]:size-full"
-          dangerouslySetInnerHTML={{ __html: BOARD_ART }}
+        <img
+          src={BOARD_STILL}
+          alt=""
+          className="h-[390px] min-w-0 flex-1 border-2 border-paper object-cover"
         />
       </div>
     </Card>
@@ -386,8 +390,106 @@ function Poster3D() {
   );
 }
 
-const RENDERERS: Record<OgCardId | "poster-3d", () => React.JSX.Element> = {
+const BoardTable = React.lazy(() => import("~/components/board/board-table"));
+
+/**
+ * Where the still looks, and where the car is in it. `?x=&z=&span=&at=` move
+ * them, for trying a framing before settling on these.
+ */
+const STILL = {
+  // The moment the game is about: four numbered lanes and the roundabout
+  // ahead, and a lane to choose. Seen from behind the car, as on a phone.
+  seat: "south",
+  x: -5,
+  z: 31,
+  span: 40,
+  car: { x: -8.4, z: 38, heading: 8 },
+  steer: 0.25,
+  // on the roundabout instead, with `?at=<degrees>`
+  bearing: 205,
+  lane: 2,
+};
+
+/**
+ * Not a social card either: the picture of the board game, shown wherever
+ * there is a way into it (`board-thumb.tsx`), and inside the board's social
+ * card above. It is the game's own table, at its best quality, with the
+ * yellow car coming up to the roundabout. Captured by the same script, then
+ * compressed into `public/assets/board/poster.jpg`.
+ */
+function Board3D() {
+  const [params] = useSearchParams();
+  const num = (key: string, fallback: number) => {
+    const raw = Number(params.get(key));
+    return params.get(key) !== null && Number.isFinite(raw) ? raw : fallback;
+  };
+  const x = num("x", STILL.x);
+  const z = num("z", STILL.z);
+  const span = num("span", STILL.span);
+  const bearing = (num("at", STILL.bearing) * Math.PI) / 180;
+  const seat = (params.get("seat") ?? STILL.seat) as Seat;
+  // `carx`, `carz` and `carh` (degrees) stand the car somewhere else, and
+  // `at` puts it on the roundabout.
+  const onRing = params.get("at") !== null;
+  const carX = onRing ? null : num("carx", STILL.car.x);
+  const carZ = num("carz", STILL.car.z);
+  const carH = (num("carh", STILL.car.heading) * Math.PI) / 180;
+  const steer = num("steer", STILL.steer);
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
+
+  /** Stand the car in its place and hold the camera on the framing. */
+  const pose = React.useCallback(() => {
+    const r = ringRadius(STILL.lane);
+    const out = dirOf(bearing);
+    boardCar.x = carX ?? out.x * r;
+    boardCar.z = carX === null ? out.z * r : carZ;
+    // clockwise: a quarter turn on from where it is on the ring
+    boardCar.heading = carX === null ? bearing + Math.PI / 2 : carH;
+    boardCar.speed = 0;
+    boardCar.steer = steer;
+    cam.free = true;
+    cam.follow = false;
+    cam.lift = 0;
+    cam.side = 0;
+    cam.x = x;
+    cam.z = z;
+    cam.span = span;
+    // asks the scene for a frame, and leaves the view where it is
+    panBy(0, 0);
+  }, [x, z, span, bearing, carX, carZ, carH, steer]);
+  React.useEffect(() => {
+    if (mounted) pose();
+  }, [mounted, pose]);
+
+  return (
+    <div
+      style={{ width: OG_WIDTH, height: OG_HEIGHT }}
+      className="bg-[#4f4c47]"
+    >
+      {mounted && (
+        <React.Suspense fallback={null}>
+          <BoardTable
+            challenge={challengeById("behind-red") ?? null}
+            driving={false}
+            attempt={0}
+            tier="high"
+            seat={seat}
+            car="saloon"
+            onReady={pose}
+          />
+        </React.Suspense>
+      )}
+    </div>
+  );
+}
+
+const RENDERERS: Record<
+  OgCardId | "poster-3d" | "board-3d",
+  () => React.JSX.Element
+> = {
   "poster-3d": Poster3D,
+  "board-3d": Board3D,
   default: DefaultCard,
   board: BoardCard,
   pelican: PelicanCard,

@@ -16,6 +16,7 @@ import {
   LESSONS,
   challengeRoute,
   laneOptions,
+  lessonPlan,
   lessonRoute,
 } from "./lessons";
 import {
@@ -94,8 +95,15 @@ describe("finding the way", () => {
     for (const from of roadStarts) {
       for (const to of roadEnds) {
         const plan = planRoute(from.id, to.id);
-        expect(plan.route, `${from.label} ${to.label}`).not.toBeNull();
-        expect(plan.rule).toBe("shortest");
+        // A car held in its lane by the continuous lines takes the long way
+        // round under rule 2, and from some lanes there is no way at all.
+        if (!from.label.startsWith("From ")) {
+          if (!plan.route) continue;
+          expect(["shortest", "longest"]).toContain(plan.rule);
+        } else {
+          expect(plan.route, `${from.label} ${to.label}`).not.toBeNull();
+          expect(plan.rule).toBe("shortest");
+        }
         expect(plan.route?.throughParking).toBe(false);
         expect(plan.route?.edges.some((e) => e.bay)).toBe(false);
       }
@@ -155,7 +163,7 @@ describe("finding the way", () => {
 });
 
 describe("parking", () => {
-  const free = net.places.filter((p) => p.group !== "road" && !p.occupied);
+  const free = net.places.filter((p) => p.group !== "road");
 
   it("can drive to every free bay and away again", () => {
     for (const bay of free) {
@@ -236,9 +244,10 @@ describe("what Learn mode teaches", () => {
     for (const { arm } of APPROACHES) {
       for (let lane = 1; lane <= ARMS[arm].lanes; lane += 1) {
         const options = laneOptions(arm, lane);
-        expect(options.map((o) => o.turn).sort()).toEqual(
+        expect([...new Set(options.map((o) => o.turn))].sort()).toEqual(
           [...allowedTurns(ARMS[arm].lanes, lane)].sort(),
         );
+        expect(new Set(options.map((o) => o.id)).size).toBe(options.length);
         for (const option of options) {
           expect(option.route.edges.some((e) => e.maneuver === "lane_change"))
             .toBe(false);
@@ -247,6 +256,49 @@ describe("what Learn mode teaches", () => {
           );
         }
       }
+    }
+  });
+
+  it("counts the options the way the codes do: 2124 and 215", () => {
+    const count = (arm: "S" | "W") =>
+      Array.from(
+        { length: ARMS[arm].lanes },
+        (_, i) => laneOptions(arm, i + 1).length,
+      ).join("");
+    expect(count("S")).toBe("2124");
+    expect(count("W")).toBe("215");
+    const three = laneOptions("W", 3);
+    expect(three.map((o) => o.label)).toEqual(
+      expect.arrayContaining([
+        "Turn right, into lane 3",
+        "Turn right, into lane 4",
+      ]),
+    );
+    expect(three.every((o) => o.confirmed)).toBe(true);
+    const four = laneOptions("S", 4);
+    expect(four.find((o) => o.turn === "straight")?.degrees).toBe("360°");
+    expect(four.find((o) => o.turn === "left")?.degrees).toBe("270°");
+    expect(laneOptions("S", 1).find((o) => o.turn === "left")?.degrees).toBe(
+      "90°",
+    );
+  });
+
+  it("takes the long way round when a continuous line blocks the short way", () => {
+    const lesson = LESSONS.find((l) => l.id === "long-way-round")!;
+    const plan = lessonPlan(lesson)!;
+    expect(plan.rule).toBe("longest");
+    expect(plan.blocked).not.toBeNull();
+    expect(plan.blocked!.length).toBeLessThan(plan.route!.length);
+    expect(plan.route!.throughParking).toBe(false);
+    const moves = plan.route!.steps.map((s) => s.maneuver);
+    expect(moves).toContain("u_turn");
+    expect(moves.filter((m) => m === "ring").length).toBe(2);
+    // with room to change lanes, the same turn is rule 1
+    const easy = LESSONS.find((l) => l.id === "wrong-lane")!;
+    expect(lessonPlan(easy)!.rule).toBe("shortest");
+    for (const other of LESSONS) {
+      if (other.id === lesson.id || other.group !== "routes") continue;
+      expect(lessonPlan(other)!.rule, other.id).toBe("shortest");
     }
   });
 

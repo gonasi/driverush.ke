@@ -9,13 +9,16 @@
  * or runs a stop line. It passes
  * the task when the car stops in the green box, or in the bay, straight.
  *
- * Give way lines and pedestrian crossings are not enforced: there is no other
- * traffic on the board yet to give way to.
+ * Giving way, at a give way line or to people on a crossing, is not enforced:
+ * there is no other traffic on the board yet to give way to. Standing still
+ * where no car may stop is: on a pedestrian crossing, or on the roundabout.
  */
 import type { CarState } from "./car";
-import { wrapPi } from "./geometry";
+import { ROADS } from "./full-board";
+import { locate, wrapPi } from "./geometry";
 import { ROAD_BOX } from "./lessons";
 import type { Route } from "./network";
+import { createLineState, lineStep, type LineState } from "./lines";
 import type { Contact } from "./physics";
 import type { Fault, RefResult, SmallFaultId } from "./referee";
 
@@ -31,7 +34,13 @@ export type RouteRefState = {
   askewTold: boolean;
   /** Stop lines the car has stopped at, by the step that starts at them. */
   stopped: Set<number>;
+  /** How long the car has stood on a crossing or on the roundabout. */
+  standing: number;
+  /** Where it was told off for standing, so each place costs one star. */
+  stoodAt: Set<string>;
   cooldown: Partial<Record<SmallFaultId, number>>;
+  /** Which side of each continuous line the car is on. */
+  lines: LineState;
 };
 
 export function createRouteRef(): RouteRefState {
@@ -43,7 +52,10 @@ export function createRouteRef(): RouteRefState {
     askewTime: 0,
     askewTold: false,
     stopped: new Set(),
+    standing: 0,
+    stoodAt: new Set(),
     cooldown: {},
+    lines: createLineState(),
   };
 }
 
@@ -74,6 +86,20 @@ const BAY_FIT = {
   angle_bay: { along: 1.4, across: 1.1, angle: (20 * Math.PI) / 180 },
 } as const;
 const BAY_NEAR = 4;
+/** Standing this long where no car may stop costs a star. */
+const STANDING_GRACE = 2.5;
+/** The middle of the car this near the middle of a crossing is on its bars. */
+const ON_CROSSING = ROADS.CROSSING_HALF - 0.4;
+
+/** The place the car is in where it may not stop, if it is in one. */
+function noStopping(car: CarState): string | null {
+  if (car.x >= ROADS.SIDE.x0 && car.x <= ROADS.SIDE.x1) {
+    for (const z of ROADS.CROSSINGS) {
+      if (Math.abs(car.z - z) < ON_CROSSING) return `crossing:${z}`;
+    }
+  }
+  return locate(car.x, car.z).kind === "ring" ? "ring" : null;
+}
 const ASKEW_GRACE = 1.4;
 
 const BUMPS: Partial<Record<Contact, SmallFaultId>> = {
@@ -148,6 +174,15 @@ export function routeRefStep(
     }
   }
 
+  // Continuous lines: white costs a star, yellow ends the attempt.
+  for (const color of lineStep(ref.lines, car)) {
+    if (color === "yellow") {
+      result.fault = { id: "centre_line", serious: true };
+      return result;
+    }
+    result.small.push({ id: "solid_line", serious: false });
+  }
+
   const at = nearest(route, car, ref.progress);
   ref.progress = at.distance;
   const index = Math.max(
@@ -188,6 +223,17 @@ export function routeRefStep(
   if (ref.wrongWayTime > WRONG_WAY_GRACE) {
     result.fault = { id: "wrong_way", serious: true };
     return result;
+  }
+
+  // no stopping, parking or waiting on a crossing or on the roundabout
+  const where = noStopping(car);
+  ref.standing = where && speed < STOPPED ? ref.standing + dt : 0;
+  if (where && ref.standing > STANDING_GRACE && !ref.stoodAt.has(where)) {
+    ref.stoodAt.add(where);
+    result.small.push({
+      id: where === "ring" ? "roundabout_stop" : "crossing_stop",
+      serious: false,
+    });
   }
 
   // stop lines: a full stop before the line, every time

@@ -33,6 +33,17 @@
         "start"
       ],
       "port": 5190
+    },
+    {
+      "name": "built-alt",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "PORT=5191",
+        "npm",
+        "run",
+        "start"
+      ],
+      "port": 5191
     }
   ]
 }

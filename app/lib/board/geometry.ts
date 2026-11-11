@@ -207,11 +207,11 @@ export function armForTurn(entry: ArmId, turn: Turn): ArmId {
 const ALL_TURNS: readonly Turn[] = ["right", "back", "left", "straight"];
 
 /**
- * What each approach lane may do, from the handbook (Unit 3, page 13). On the
- * four-lane road: lane 1 straight or left, lane 2 straight only, lane 3 straight
- * or right, lane 4 anything. The three-lane road is "2, 1, 5": lane 3 takes the
- * rest. A driving school still has to confirm lane 3 there, so no challenge
- * starts on the three-lane road yet.
+ * What each approach lane may do, from the handbook (Unit 3) and the option
+ * codes driving schools teach. The four-lane road is "2124": lane 1 straight or
+ * left, lane 2 straight only, lane 3 straight or right, lane 4 right, back,
+ * left the long way round, or straight after going round. The three-lane road
+ * is "215": lanes 1 and 2 the same, and lane 3 takes the rest.
  */
 export function allowedTurns(lanes: number, lane: number): readonly Turn[] {
   if (lane <= 1) return ["straight", "left"];
@@ -227,4 +227,26 @@ export function lanesForTurn(lanes: number, turn: Turn): number[] {
     if (allowedTurns(lanes, lane).includes(turn)) out.push(lane);
   }
   return out;
+}
+
+/** The option code for a road: how many options each lane has, kerb lane first. */
+export const OPTION_CODES: Record<number, string> = { 4: "2124", 3: "215" };
+
+/**
+ * The lanes a car may leave the roundabout in. It leaves in the lane with the
+ * number it came round in, or the innermost lane where the road out has fewer.
+ * The handbook gives lane 3 of the three-lane road one more: turning right onto
+ * the four-lane road it may enter lane 3 or lane 4.
+ */
+export function exitLanes(
+  entryLanes: number,
+  entryLane: number,
+  turn: Turn,
+  outLanes: number,
+): number[] {
+  const same = Math.min(entryLane, outLanes);
+  if (entryLanes === 3 && entryLane === 3 && turn === "right" && outLanes === 4) {
+    return [same, 4];
+  }
+  return [same];
 }

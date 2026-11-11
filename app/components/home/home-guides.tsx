@@ -49,25 +49,21 @@ export function HomeGuides() {
       >
         Getting your licence in Kenya
       </h2>
-      <p className="m-0 mt-4 max-w-2xl font-serif text-[17px] leading-snug text-ink-2">
+      <p className="m-0 mt-4 max-w-2xl font-serif text-[16px] leading-snug text-ink-2">
         DriveRush is a free site for practising the Model Town Board and
-        memorising Kenyan road signs for your NTSA test, with no signup. We also
-        explain the rest of the road to your licence, with sources and dates so
-        you can check what you read.
+        memorising Kenyan road signs for your NTSA test, with no signup.
       </p>
-      <ul className="m-0 mt-5 grid list-none gap-3 p-0 sm:grid-cols-2">
+      {/* One line each: this is a way out for the few who scroll this far,
+          and it should not look like more things to choose from. */}
+      <ul className="m-0 mt-5 grid list-none gap-x-8 p-0 sm:grid-cols-2">
         {GUIDES.map((guide) => (
-          <li key={guide.to}>
+          <li key={guide.to} className="border-b border-ink/15">
             <Link
               to={guide.to}
-              className="grid h-full gap-1 border-2 border-ink bg-paper-3 p-4 outline-none transition-colors hover:bg-surface focus-visible:bg-surface"
+              title={guide.blurb}
+              className="flex min-h-11 items-center font-sans text-[14.5px] font-bold text-ink outline-none hover:text-rush focus-visible:text-rush"
             >
-              <span className="font-display text-[14px] font-extrabold uppercase leading-tight tracking-[0.02em] text-ink">
-                {guide.title}
-              </span>
-              <span className="text-[14px] leading-snug text-ink-2">
-                {guide.blurb}
-              </span>
+              {guide.title}
             </Link>
           </li>
         ))}

@@ -10,6 +10,8 @@
  */
 
 export const BOARD_PATH = "/model-town-board";
+/** The game on its own: nothing but the table. Every way in links here. */
+export const BOARD_PLAY_PATH = `${BOARD_PATH}/play`;
 
 /** The date the board pages were last checked against their sources. */
 export const BOARD_CHECKED = "2026-11-11";

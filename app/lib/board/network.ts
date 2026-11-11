@@ -22,7 +22,6 @@ import {
   ROADS,
   SOLID_TO,
   U_TURN_GAPS,
-  parkedSpots,
   type Box,
 } from "./full-board";
 import {
@@ -32,6 +31,7 @@ import {
   armForTurn,
   bearingOf,
   dirOf,
+  exitLanes,
   lanePoint,
   locate,
   wrapPi,
@@ -110,8 +110,6 @@ export type Place = {
   group: "road" | "angle_bay" | "flush_bay";
   starts: boolean;
   ends: boolean;
-  /** A bay the board dresses with a parked car. */
-  occupied?: boolean;
 };
 
 /** A straight lane away from the roundabout, for lane assist to hold. */
@@ -203,11 +201,26 @@ const FOLLOW: Record<Road, (lane?: number) => { title: string; why: string }> =
   };
 
 const CONTROL_WHY: Record<Control, string> = {
-  stop: "Stop at the stop line first, even when the road is clear. Go when it is safe.",
+  stop: "Stop at the stop line first, even when the road is clear. Look right, left, then right again, and go when it is safe.",
   give_way:
     "Give way at the broken line. Traffic on the road you are joining goes first.",
-  crossing: "Slow down and be ready to stop. People on the crossing go first.",
+  crossing:
+    "Slow down and be ready to stop before it. People on the crossing go first. Never stop on the crossing itself.",
 };
+
+const GIVE_WAY_RING =
+  "Give way to traffic already on the roundabout, coming from your right.";
+
+/** The name of one way through the roundabout, shared by its three edges. */
+export function roundaboutWay(
+  entry: ArmId,
+  lane: number,
+  turn: Turn,
+  exitLane: number,
+): string {
+  const usual = Math.min(lane, ARMS[armForTurn(entry, turn)].lanes);
+  return `rb:${entry}${lane}:${turn}${exitLane === usual ? "" : `:${exitLane}`}`;
+}
 
 const EXIT_TITLE: Record<Turn, string> = {
   left: "Take the first exit, to the left",
@@ -484,7 +497,7 @@ function build(): Network {
                 road,
                 lane: to,
                 title: `Move from lane ${n} to lane ${to}`,
-                why: "The lane lines are broken here, so you may change lanes. Do it before they turn continuous near the roundabout.",
+                why: "The lane lines are broken here, so you may change lanes. Check your mirrors, signal for 3 seconds, then move across. Do it before the lines turn continuous near the roundabout.",
               },
             );
           }
@@ -493,66 +506,82 @@ function build(): Network {
     }
   }
 
-  // the roundabout: one way through for each turn a lane may make
+  // the roundabout: one way through for each turn a lane may make, and for
+  // each lane it may leave in
   for (const entry of ARM_ORDER) {
     const arm = ARMS[entry];
     for (let n = 1; n <= arm.lanes; n += 1) {
       for (const way of allowedTurns(arm.lanes, n)) {
         const exit = armForTurn(entry, way);
-        const exitLane = Math.min(n, ARMS[exit].lanes);
-        // softened once more, so the car comes onto the roundabout and off
-        // it in a curve and not at a corner
-        const path = soften([
-          ...lanePath(entry, n, way, SOLID_TO, EXIT_FROM),
-          lanePoint(exit, "exit", exitLane, EXIT_FROM),
-        ]);
-        const onRing = path.map((p) => locate(p.x, p.z).kind === "ring");
-        const i1 = onRing.indexOf(true);
-        const i2 = onRing.lastIndexOf(true);
-        const confirmed = !(arm.lanes === 3 && n === 3);
-        const name = `rb:${entry}${n}:${way}`;
-        const joined = node(
-          `${name}:on`,
-          path[i1],
-          bearingOf(path[i1].x - path[i1 - 1].x, path[i1].z - path[i1 - 1].z),
-        );
-        const left = node(
-          `${name}:off`,
-          path[i2],
-          bearingOf(path[i2 + 1].x - path[i2].x, path[i2 + 1].z - path[i2].z),
-        );
-        edge(
-          last(laneId(entry, "approach", n)),
-          joined,
-          path.slice(0, i1 + 1),
-          {
-            maneuver: "hold_lane",
-            road: armRoad(entry),
+        const outs = exitLanes(arm.lanes, n, way, ARMS[exit].lanes);
+        for (const exitLane of outs) {
+          // softened once more, so the car comes onto the roundabout and off
+          // it in a curve and not at a corner
+          const path = soften([
+            ...lanePath(
+              entry,
+              n,
+              way,
+              SOLID_TO,
+              // the other lane out is steered for as the car leaves the ring
+              exitLane === outs[0] ? EXIT_FROM : EXIT_FROM - 8,
+            ),
+            lanePoint(exit, "exit", exitLane, EXIT_FROM),
+          ]);
+          const onRing = path.map((p) => locate(p.x, p.z).kind === "ring");
+          const i1 = onRing.indexOf(true);
+          const i2 = onRing.lastIndexOf(true);
+          const name = roundaboutWay(entry, n, way, exitLane);
+          const joined = node(
+            `${name}:on`,
+            path[i1],
+            bearingOf(path[i1].x - path[i1 - 1].x, path[i1].z - path[i1 - 1].z),
+          );
+          const left = node(
+            `${name}:off`,
+            path[i2],
+            bearingOf(path[i2 + 1].x - path[i2].x, path[i2 + 1].z - path[i2].z),
+          );
+          const longWay =
+            n === arm.lanes &&
+            (way === "left" || (way === "straight" && arm.lanes === 4));
+          edge(
+            last(laneId(entry, "approach", n)),
+            joined,
+            path.slice(0, i1 + 1),
+            {
+              maneuver: "hold_lane",
+              road: armRoad(entry),
+              lane: n,
+              title: `Hold lane ${n} into the roundabout`,
+              why: `The lane lines are continuous now, so no changing lanes. ${laneRule(arm.lanes, n)} ${GIVE_WAY_RING}`,
+            },
+          );
+          edge(joined, left, path.slice(i1, i2 + 1), {
+            maneuver: "ring",
+            road: "roundabout",
             lane: n,
-            confirmed,
-            title: `Hold lane ${n} into the roundabout`,
-            why: `The lane lines are continuous now, so no changing lanes. ${laneRule(arm.lanes, n)}`,
-          },
-        );
-        edge(joined, left, path.slice(i1, i2 + 1), {
-          maneuver: "ring",
-          road: "roundabout",
-          lane: n,
-          confirmed,
-          title: `Go round clockwise in lane ${n}`,
-          why: `No stopping and no changing lanes on the roundabout. Lane ${n} on the road is lane ${n} on the roundabout, counting from the outside.`,
-        });
-        edge(left, onArm(exit, "exit", exitLane, EXIT_FROM), path.slice(i2), {
-          maneuver: "exit",
-          road: armRoad(exit),
-          lane: exitLane,
-          confirmed,
-          title: EXIT_TITLE[way],
-          why:
-            way === "back"
-              ? `Only the innermost lane may go all the way round. Leave in lane ${exitLane}.`
-              : `Left is the first exit, straight on the second, right the third. Leave in lane ${exitLane}.`,
-        });
+            title: `Go round clockwise in lane ${n}`,
+            why: `No stopping and no changing lanes on the roundabout. Lane ${n} on the road is lane ${n} on the roundabout, counting from the outside.`,
+          });
+          const shift =
+            arm.lanes === 3 && n === 3 && way === "left"
+              ? " Then move to lane 4 where the line is broken."
+              : "";
+          edge(left, onArm(exit, "exit", exitLane, EXIT_FROM), path.slice(i2), {
+            maneuver: "exit",
+            road: armRoad(exit),
+            lane: exitLane,
+            // Whether the innermost lane must go once right round before it
+            // leaves straight on is for a driving school to say.
+            confirmed: !(longWay && way === "straight"),
+            title: EXIT_TITLE[way],
+            why:
+              way === "back"
+                ? `Only the innermost lane may go all the way round. Signal left and leave in lane ${exitLane}.`
+                : `Left is the first exit, straight on the second, right the third. Signal left as you leave, in lane ${exitLane}.${shift}`,
+          });
+        }
       }
     }
   }
@@ -564,7 +593,6 @@ function build(): Network {
       maneuver: "u_turn",
       road: "dual",
       lane: inner,
-      confirmed: false,
       control: "give_way",
       title: "Turn back through the gap in the central reserve",
       why: `Be in lane ${inner}, beside the reserve, before the gap. Give way to traffic on the other side, then come round into the lane beside the reserve.`,
@@ -772,10 +800,6 @@ function build(): Network {
 
   // ---- parking ----
 
-  const dressed = parkedSpots();
-  const isDressed = (p: Vec) =>
-    dressed.some((spot) => Math.hypot(spot.x - p.x, spot.z - p.z) < 1.5);
-
   // Angle bays, as they are examined: park nose in, and to leave, reverse out
   // and then drive forward. The lines lean so that the row on the left suits a
   // car driving up the aisle and the row on the right suits a car driving down
@@ -821,7 +845,6 @@ function build(): Network {
         group: "angle_bay",
         starts: true,
         ends: true,
-        occupied: isDressed(centre),
       });
 
       // where the bay's own line, carried back, crosses the lane beside it
@@ -837,15 +860,15 @@ function build(): Network {
       edge(from, parked, swingIn, {
         ...meta,
         maneuver: "park_forward",
-        title: "Drive forward into the bay",
-        why: "An angle bay is parked in nose first. The lines lean your way, so steer in early and stop with the whole car inside them.",
+        title: "Drive forward into the farthest free bay",
+        why: "Angle parking is for small cars, and it is filled from the far end. An angle bay is parked in nose first. The lines lean your way, so steer in early and stop with the whole car inside them.",
       });
       edge(parked, from, [...swingIn].reverse(), {
         ...meta,
         maneuver: "leave_reverse",
         gear: "reverse",
         title: "Reverse out of the bay",
-        why: "You leave an angle bay in reverse. Look both ways down the aisle, reverse slowly until the car is straight in your lane, then stop and drive forward.",
+        why: "You leave an angle bay in reverse. Look both ways down the aisle and give way to traffic coming from your right. Reverse slowly until the car is straight in your lane, then stop and drive forward.",
       });
     }
   }
@@ -867,7 +890,6 @@ function build(): Network {
       group: "flush_bay",
       starts: true,
       ends: true,
-      occupied: isDressed(centre),
     });
     const meta = { road: "flush_bay", bay } as const;
     // far enough past the box that the car has room to come in straight
@@ -877,14 +899,14 @@ function build(): Network {
       ...meta,
       maneuver: "park_reverse",
       gear: "reverse",
-      title: "Reverse into the flush parking bay",
-      why: "Flush parking is reversed into. Drive just past the box and stop. Check behind you, then reverse slowly back in to the kerb until the car is inside the box.",
+      title: "Reverse into the farthest free flush parking box",
+      why: "Flush parking takes any vehicle except a trailer or a tractor, and it is filled from the far end. It is reversed into. Drive just past the box and stop. Check behind you, then reverse slowly back in to the kerb until the car is inside the box.",
     });
     edge(parked, after, pullOut, {
       ...meta,
       maneuver: "leave_forward",
       title: "Pull out of the flush parking bay",
-      why: "Check behind you for traffic, then pull out forward into your lane.",
+      why: "You leave flush parking forwards. Check behind you for traffic, signal, then pull out into your lane.",
     });
   }
 
@@ -941,6 +963,19 @@ function build(): Network {
           ends: true,
         },
       );
+    }
+  }
+  // and where the lane lines turn continuous before the roundabout, which is
+  // where a car in the wrong lane has to take the long way round
+  for (const id of ARM_ORDER) {
+    for (let n = 1; n <= ARMS[id].lanes; n += 1) {
+      places.push({
+        id: last(laneId(id, "approach", n)),
+        label: `At the continuous lines on ${ROAD_NAME[armRoad(id)]}, ${compass[id]} end, lane ${n}`,
+        group: "road",
+        starts: true,
+        ends: false,
+      });
     }
   }
   places.push(
@@ -1206,25 +1241,52 @@ export type Plan = {
   /** The route to take, or null when there is no way there. */
   route: Route | null;
   /**
-   * Which of the handbook's route rules picked it: the shortest correct route
-   * that avoids the parking area, or the parking area as a last resort. A
-   * route that starts or ends in the parking area has to use it.
+   * Which of the handbook's route rules picked it. Rule 1 is the shortest
+   * correct route that avoids the parking area. Rule 2 is the longest correct
+   * route: the way round when a continuous line blocks the short way from the
+   * lane the car is in. Rule 3 is the parking area as a last resort. A route
+   * that starts or ends in the parking area has to use it.
    */
-  rule: "shortest" | "last_resort" | "parking";
+  rule: "shortest" | "longest" | "last_resort" | "parking";
   /**
    * A shorter way that cuts through the parking area, when there is one. It is
    * the wrong answer, and worth showing as such.
    */
   shortcut: Route | null;
+  /**
+   * Under rule 2, the short way the car could have taken from another lane. A
+   * continuous line stands between the car and it.
+   */
+  blocked: Route | null;
 };
 
 const inParking = (id: string) =>
   id.startsWith("bay:") || id.startsWith("aisle:");
 
+/** The long way has to be this much longer before it counts as rule 2. */
+const LONG_WAY = 20;
+
+const lengthOfEdges = (edges: NetEdge[]) =>
+  edges.reduce((sum, e) => sum + e.length, 0);
+
+/** The same spot on a road, in each of its other lanes. */
+function besideOf(id: string): string[] {
+  const m = /^([SWNE]):(in|out):(\d+)@(.+)$/.exec(id);
+  if (!m) return [];
+  const nodes = network().nodes;
+  const out: string[] = [];
+  for (let n = 1; n <= ARMS[m[1] as ArmId].lanes; n += 1) {
+    const other = `${m[1]}:${m[2]}:${n}@${m[4]}`;
+    if (n !== Number(m[3]) && nodes.has(other)) out.push(other);
+  }
+  return out;
+}
+
 /**
  * The way from one place to another, by the handbook's route rules: the
- * shortest correct route avoiding the parking area, and the parking area only
- * when nothing else gets there.
+ * shortest correct route avoiding the parking area, the longest correct route
+ * when a continuous line blocks the short one, and the parking area only when
+ * nothing else gets there.
  */
 export function planRoute(
   from: string,
@@ -1238,6 +1300,7 @@ export function planRoute(
       route: edges ? routeOf(edges) : null,
       rule: "parking",
       shortcut: null,
+      blocked: null,
     };
   }
   const clear = shortest(from, to, false, arrive);
@@ -1247,15 +1310,32 @@ export function planRoute(
       route: through ? routeOf(through) : null,
       rule: "last_resort",
       shortcut: null,
+      blocked: null,
     };
   }
   const route = routeOf(clear);
   const cut = through ? routeOf(through) : null;
+  // Rule 2 is for a car the continuous lines hold in its lane: its first move
+  // is into the roundabout, and another lane would have got there sooner.
+  const held =
+    clear.find((e) => e.maneuver !== "follow")?.maneuver === "hold_lane";
+  let short: NetEdge[] | null = null;
+  for (const other of held ? besideOf(from) : []) {
+    const way = shortest(other, to, false, arrive);
+    if (way && (!short || lengthOfEdges(way) < lengthOfEdges(short))) {
+      short = way;
+    }
+  }
+  const blocked =
+    short && lengthOfEdges(short) < route.length - LONG_WAY
+      ? routeOf(short)
+      : null;
   return {
     route,
-    rule: "shortest",
+    rule: blocked ? "longest" : "shortest",
     shortcut:
       cut && cut.throughParking && cut.length < route.length - 1 ? cut : null,
+    blocked,
   };
 }
 

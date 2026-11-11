@@ -1,17 +1,17 @@
 /**
  * What the examiner asks for. There are two kinds of task.
  *
- * A turn task starts on the four-lane road, because that is the approach the
- * handbook spells out lane by lane. The start lane is often the wrong one for
- * the turn, so choosing a lane is part of it.
+ * A turn task starts on a road into the roundabout: the four-lane road (option
+ * code 2124) or the three-lane road (215). The start lane is often the wrong
+ * one for the turn, so choosing a lane is part of it.
  *
  * A route task goes somewhere else on the board: down the street, onto the
  * two-way road, into a parking bay or out of one. It is one of the lessons in
  * `lessons.ts`, driven by the learner instead of watched, and the referee
  * checks the drive against that lesson's route.
  */
-import { parkedSpots } from "./full-board";
 import {
+  ARMS,
   armForTurn,
   laneBearing,
   lanePoint,
@@ -19,6 +19,7 @@ import {
   type Side,
   type Turn,
 } from "./geometry";
+import { parkedCars } from "./parking-layouts";
 
 export type OtherCar = {
   x: number;
@@ -79,14 +80,22 @@ function turnChallenge(
   prompt: string,
   startLane: number,
   turn: Turn,
+  /** The road it starts on, and the one lane it must end in, when that matters. */
+  from: ArmId = "S",
+  endLane?: number,
 ): TurnChallenge {
   return {
     id,
     title,
     prompt,
-    start: { arm: "S", lane: startLane, along: START_ALONG },
+    // the three-lane road is shorter: start a little in from the frame
+    start: {
+      arm: from,
+      lane: startLane,
+      along: Math.min(START_ALONG, ARMS[from].length - 8),
+    },
     turn,
-    goal: { arm: armForTurn("S", turn), ...BOX },
+    goal: { arm: armForTurn(from, turn), lane: endLane, ...BOX },
     otherCars: [],
   };
 }
@@ -95,11 +104,26 @@ const RED_ALONG = 46;
 const redArm = armForTurn("S", "left");
 const redAt = lanePoint(redArm, "exit", 1, RED_ALONG);
 
-/** The cars standing in the parking bays. Solid, in the tasks that go there. */
-const PARKED: OtherCar[] = parkedSpots().map((spot) => ({
-  ...spot,
-  color: "red",
-}));
+/**
+ * The cars standing in the parking bays. Solid, in the tasks that go there.
+ * They are read each time, because the bays they stand in change from one
+ * attempt to the next (`parking-layouts.ts`).
+ */
+const parked = {
+  get otherCars(): OtherCar[] {
+    return parkedCars().map((spot) => ({ ...spot, color: "red" as const }));
+  },
+};
+
+/** A parking task: its cars follow the layout, and it has a reverse gear. */
+function parkingTask(
+  task: Omit<RouteChallenge, "otherCars" | "reverse">,
+): RouteChallenge {
+  return Object.defineProperty({ ...task, reverse: true }, "otherCars", {
+    enumerable: true,
+    get: () => parked.otherCars,
+  }) as RouteChallenge;
+}
 
 const ROUTE_TASKS: readonly RouteChallenge[] = [
   {
@@ -130,41 +154,42 @@ const ROUTE_TASKS: readonly RouteChallenge[] = [
     otherCars: [],
   },
   {
+    id: "long-way-round",
+    lesson: "long-way-round",
+    title: "The long way round",
+    prompt:
+      "You are in lane 2 at the continuous lines, and you are asked to turn left. Lane 2 only goes straight. Take the longest correct route: go straight, turn back through the gap in the central reserve, then turn right at the roundabout. Stop in the green box.",
+    reverse: false,
+    otherCars: [],
+  },
+  parkingTask({
     id: "park-flush",
     lesson: "park-flush-reverse",
     title: "Flush parking",
     prompt:
-      "Drive up the two-way road, past the empty flush parking bay. Stop, then reverse into the bay, inside the box.",
-    reverse: true,
-    otherCars: PARKED,
-  },
-  {
+      "Drive up the two-way road, past the farthest free flush parking box. Stop, then reverse into it, inside the box.",
+  }),
+  parkingTask({
     id: "leave-flush",
     lesson: "leave-flush",
     title: "Pull out of flush parking",
     prompt:
       "You are parked in the flush parking. Pull out forward and carry on up the two-way road. Stop in the green box.",
-    reverse: true,
-    otherCars: PARKED,
-  },
-  {
+  }),
+  parkingTask({
     id: "park-angle",
     lesson: "park-angle",
     title: "Angle parking",
     prompt:
-      "Take the street, turn into the parking aisle, and park nose first in the bay with the green box.",
-    reverse: true,
-    otherCars: PARKED,
-  },
-  {
+      "Take the street, turn into the parking aisle, and park nose first in the farthest free bay on your left. It has the green box.",
+  }),
+  parkingTask({
     id: "leave-angle",
     lesson: "leave-angle-reverse",
     title: "Reverse out of the bay",
     prompt:
       "Reverse out of the bay: stop, pull the joystick back and hold it. Then leave by the three-lane road, stop at the stop line and turn left. Stop in the green box.",
-    reverse: true,
-    otherCars: PARKED,
-  },
+  }),
 ];
 
 export const BOARD_CHALLENGES: readonly BoardChallenge[] = [
@@ -229,6 +254,24 @@ export const BOARD_CHALLENGES: readonly BoardChallenge[] = [
       },
     ],
   },
+  turnChallenge(
+    "three-lane-right",
+    "Right from the three-lane road",
+    "You are on the three-lane road. Turn right at the roundabout and stop in the green box, in lane 4.",
+    2,
+    "right",
+    "W",
+    4,
+  ),
+  turnChallenge(
+    "three-lane-back",
+    "Come back on the three-lane road",
+    "You are on the three-lane road. Go round the roundabout and come back down this road. Stop in the green box, in lane 3.",
+    2,
+    "back",
+    "W",
+    3,
+  ),
   ...ROUTE_TASKS,
 ];
 

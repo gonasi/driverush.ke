@@ -15,8 +15,10 @@ import { analytics } from "./analytics";
 import {
   BOARD_CHALLENGES,
   BOARD_ROUND_SIZE,
+  isRouteTask,
   type BoardChallenge,
 } from "./board/challenges";
+import { shuffleParkingLayout } from "./board/parking-layouts";
 import type { Fault, FaultId } from "./board/referee";
 import {
   beginChallenge,
@@ -276,6 +278,11 @@ export const useBoardStore = create<BoardState>()(
         if (!challenge) return;
         useStage.getState().clear();
         releaseCamera();
+        // The parked cars stand somewhere new each attempt, so the farthest
+        // free bay has to be looked for.
+        if (isRouteTask(challenge) && challenge.otherCars.length > 0) {
+          shuffleParkingLayout();
+        }
         beginChallenge(challenge, { onFault, onSmall, onGoal });
         set((s) => ({
           phase: "driving",

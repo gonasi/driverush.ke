@@ -1,7 +1,7 @@
 /**
- * The Model Town Board trainer on its page. Before a run it is a still picture
- * of the board (in the server's HTML) with one Start button. Start opens a
- * fullscreen overlay with the table, the examiner's task and the joystick.
+ * The Model Town Board game: the table, the examiner's task and the joystick,
+ * filling the screen. It lives on the play page (`routes/board-play.tsx`).
+ * The way in, with its picture and buttons, is `board-lobby.tsx`.
  * The store (`board-store.ts`) owns the run; this is the shell.
  */
 import * as React from "react";
@@ -15,14 +15,7 @@ import {
   isRouteTask,
   type BoardChallenge,
 } from "~/lib/board/challenges";
-import {
-  BOUNDS,
-  CAR_COLORS,
-  COLORS,
-  fullBoardSvg,
-  placeOnPage,
-} from "~/lib/board/full-board";
-import { laneBearing, lanePoint } from "~/lib/board/geometry";
+import { BOUNDS, fullBoardSvg, placeOnPage } from "~/lib/board/full-board";
 import type { Seat } from "~/lib/board/joystick";
 import {
   ROUTE_COLOR,
@@ -44,18 +37,19 @@ import { BOARD_CHALLENGE_IDS, useBoardStore } from "~/lib/board-store";
 import { signCounts } from "~/lib/pelican-progress";
 import { cn } from "~/lib/utils";
 
+import { useParkingLayout } from "~/components/board/use-parking-layout";
+
 import { Icon } from "~/components/brand/icon";
+import { ShareButton } from "~/components/brand/share-button";
 import {
   CloseIcon,
   InfoIcon,
-  LearnerIcon,
   PlayIcon,
   RefreshIcon,
   SettingsIcon,
   StarIcon,
 } from "~/components/brand/icons";
 import { Button } from "~/components/ui/button";
-import { Progress } from "~/components/ui/progress";
 import {
   BoardCameraPad,
   BoardZoomButtons,
@@ -80,48 +74,6 @@ const TrainerResultCard = React.lazy(() =>
 );
 
 const POOL = BOARD_CHALLENGES.length;
-
-/** The tasks by what they practise, for choosing one to drive. */
-const TASK_GROUPS = [
-  {
-    title: "At the roundabout",
-    tasks: BOARD_CHALLENGES.filter((c) => !isRouteTask(c)),
-  },
-  {
-    title: "Routes",
-    tasks: BOARD_CHALLENGES.filter(
-      (c) => isRouteTask(c) && !/^(park|leave)-/.test(c.id),
-    ),
-  },
-  {
-    title: "Parking",
-    tasks: BOARD_CHALLENGES.filter(
-      (c) => isRouteTask(c) && /^(park|leave)-/.test(c.id),
-    ),
-  },
-].filter((group) => group.tasks.length > 0);
-
-/**
- * The still board, lying the way it does on a wide screen: the yellow car on
- * its start line, the red car parked.
- */
-const POSTER = (() => {
-  const start = lanePoint("S", "approach", 2, 50);
-  const red = BOARD_CHALLENGES.find((c) => c.otherCars.length > 0)
-    ?.otherCars[0];
-  return fullBoardSvg({
-    seen: "east",
-    cover: true,
-    cars: [
-      {
-        ...start,
-        heading: laneBearing("S", "approach"),
-        color: CAR_COLORS.player,
-      },
-      ...(red ? [{ ...red, color: CAR_COLORS.red }] : []),
-    ],
-  });
-})();
 
 /**
  * Where the learner stands until they choose: at the bottom on a tall screen,
@@ -606,14 +558,12 @@ function WatchCard({
   );
 }
 
-export function BoardPlayer({
-  className,
-  posterClassName = "aspect-[4/3] sm:aspect-video",
-}: {
-  className?: string;
-  /** The still board's shape. The home page keeps it shallow on a wide screen. */
-  posterClassName?: string;
-}) {
+/**
+ * The game itself: the table, the examiner's task and the joystick, filling
+ * the screen. It draws nothing until the store has a round or a lesson open,
+ * which the play page starts.
+ */
+export function BoardGame() {
   const s = useBoardStore(
     useShallow((st) => ({
       settings: st.settings,
@@ -654,7 +604,6 @@ export function BoardPlayer({
   const [wrongStep, setWrongStep] = React.useState<number | null>(null);
   // Asked before a drive that is under way is thrown away.
   const [leaving, setLeaving] = React.useState(false);
-  const [picking, setPicking] = React.useState(false);
   // The board is drawn. Until then only the loader shows: no task, no joystick.
   const [painted, setPainted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
@@ -721,8 +670,6 @@ export function BoardPlayer({
   const sheetUp = s.phase !== "driving";
   const reverseTask =
     challenge != null && isRouteTask(challenge) && challenge.reverse;
-  const counts = signCounts(mounted ? s.progress : {}, BOARD_CHALLENGE_IDS);
-  const started = counts.known + counts.learning > 0;
   const last = s.pos >= s.queue.length - 1;
 
   // Lock the page behind the overlay, and give the keyboard its shortcuts.
@@ -749,6 +696,8 @@ export function BoardPlayer({
     };
   }, [s.overlayOpen]);
 
+  // The green box of a parking task moves with the parked cars.
+  const layout = useParkingLayout();
   const minimap = React.useMemo(
     () =>
       challenge
@@ -758,12 +707,14 @@ export function BoardPlayer({
             numbers: false,
           })
         : "",
-    [challenge, seat],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- see `layout`
+    [challenge, seat, layout],
   );
 
   const goalBox = React.useMemo(
     () => (challenge ? taskGoalBox(challenge) : null),
-    [challenge],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- see `layout`
+    [challenge, layout],
   );
   /** Back the view off to show the car and the finish together. */
   const peek = () => {
@@ -1067,9 +1018,24 @@ export function BoardPlayer({
                     ? "Right way, right lane, and you stopped in the box."
                     : "Right lane, right exit, and you stopped in the box."}
           </p>
-          <Button variant="rush" size="lg" onClick={s.next} autoFocus>
-            {last ? "See how you did" : "Next task"}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="rush"
+              size="lg"
+              className="flex-1"
+              onClick={s.next}
+              autoFocus
+            >
+              {last ? "See how you did" : "Next task"}
+            </Button>
+            {/* A clean pass is the moment worth sending to someone. */}
+            {s.taskFaults === 0 && !s.hinted && (
+              <ShareButton
+                surface="board_task_passed"
+                payload={{ kind: "board", total: 1, firstTry: 1 }}
+              />
+            )}
+          </div>
         </BoardSheet>
       )}
 
@@ -1113,6 +1079,14 @@ export function BoardPlayer({
               to: "/road-signs/pelican",
               label: "Learn the signs on the board",
             }}
+            share={{
+              surface: "board_complete",
+              payload: {
+                kind: "board",
+                total: s.queue.length,
+                firstTry: s.runClean.length,
+              },
+            }}
             onDrill={() => s.start(s.runFaulted)}
             onNext={() => s.start()}
             onResetMastery={s.resetProgress}
@@ -1123,140 +1097,5 @@ export function BoardPlayer({
     </div>
   );
 
-  return (
-    <>
-      <div className={cn("border-2 border-ink", className)}>
-        <button
-          type="button"
-          onClick={() => s.start()}
-          aria-label="Start driving the Model Town Board"
-          className={cn(
-            "group relative block w-full overflow-hidden outline-none",
-            posterClassName,
-          )}
-          style={{ backgroundColor: COLORS.grass }}
-        >
-          <span
-            role="img"
-            aria-label="The Model Town Board from above: a four-lane dual carriageway and a three-lane road meet at a roundabout, with each lane numbered from the kerb. Beside them are the parking zone, a street, and a two-way road with pedestrian crossings."
-            className="block size-full [&>svg]:block [&>svg]:size-full"
-            dangerouslySetInnerHTML={{ __html: POSTER }}
-          />
-          <span className="absolute inset-0 flex items-center justify-center bg-ink/0 transition-colors duration-200 group-hover:bg-ink/15 group-focus-visible:bg-ink/15">
-            <span className="flex size-16 items-center justify-center rounded-full border-2 border-ink bg-rush text-white shadow-stamp">
-              <Icon icon={PlayIcon} size={26} />
-            </span>
-          </span>
-        </button>
-        <div className="grid gap-3 border-t-2 border-ink bg-surface p-4">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Button
-              variant="rush"
-              size="lg"
-              className="w-full"
-              onClick={() => s.start()}
-            >
-              <Icon icon={PlayIcon} size={18} />
-              {started ? "Keep driving" : "Start driving"}
-            </Button>
-            <Button
-              variant="ink"
-              size="lg"
-              className="w-full"
-              onClick={s.learn}
-            >
-              <Icon icon={LearnerIcon} size={18} />
-              Learn the board
-            </Button>
-          </div>
-          <div>
-            <button
-              type="button"
-              aria-expanded={picking}
-              aria-controls="board-task-list"
-              onClick={() => setPicking((v) => !v)}
-              className="flex min-h-11 w-full items-center justify-between gap-3 border-2 border-ink bg-paper-2 px-3.5 py-2 text-left font-mono text-[11px] font-bold uppercase tracking-widest text-ink outline-none transition-colors hover:bg-paper-3 focus-visible:bg-paper-3"
-            >
-              Choose a task
-              <span aria-hidden className="text-[15px] leading-none">
-                {picking ? "−" : "+"}
-              </span>
-            </button>
-            {picking && (
-              <div id="board-task-list" className="dr-rise mt-3 grid gap-4">
-                {TASK_GROUPS.map((group) => (
-                  <section key={group.title} aria-label={group.title}>
-                    <h3 className="m-0 mb-1.5 font-mono text-[10px] font-bold uppercase tracking-widest text-ink-3">
-                      {group.title}
-                    </h3>
-                    <ul className="m-0 grid list-none gap-1.5 p-0 sm:grid-cols-2">
-                      {group.tasks.map((task) => {
-                        const best = mounted ? (s.bestStars[task.id] ?? 0) : 0;
-                        return (
-                          <li key={task.id}>
-                            <button
-                              type="button"
-                              onClick={() => s.start([task.id])}
-                              className="flex min-h-11 w-full items-center justify-between gap-3 border-2 border-ink bg-surface px-3 py-2 text-left text-[13.5px] font-semibold leading-snug text-ink outline-none transition-colors hover:bg-paper-2 focus-visible:bg-paper-2"
-                            >
-                              {task.title}
-                              <span
-                                role="img"
-                                aria-label={
-                                  best > 0
-                                    ? `Best: ${best} of 3 stars`
-                                    : "Not driven yet"
-                                }
-                                className="inline-flex shrink-0 gap-0.5"
-                              >
-                                {[1, 2, 3].map((n) => (
-                                  <Icon
-                                    key={n}
-                                    icon={StarIcon}
-                                    size={14}
-                                    className={
-                                      n <= best
-                                        ? "text-kenya-gold"
-                                        : "text-ink/20"
-                                    }
-                                  />
-                                ))}
-                              </span>
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </section>
-                ))}
-              </div>
-            )}
-          </div>
-          {started ? (
-            <div>
-              <div className="mb-1.5 flex items-center justify-between gap-2 font-mono text-[10px] uppercase tracking-widest text-ink-3">
-                <span>
-                  {counts.known} known · {counts.learning} learning
-                </span>
-                <span className="tabular-nums">of {POOL} tasks</span>
-              </div>
-              <Progress
-                value={(counts.known / POOL) * 100}
-                tone="green"
-                showTicks={false}
-                aria-label="Board tasks known"
-                className="h-3"
-              />
-            </div>
-          ) : (
-            <p className="m-0 text-center font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
-              {POOL} tasks to drive · every lane, route and parking move to
-              watch
-            </p>
-          )}
-        </div>
-      </div>
-      {mounted && s.overlayOpen && createPortal(overlay, document.body)}
-    </>
-  );
+  return mounted && s.overlayOpen ? createPortal(overlay, document.body) : null;
 }

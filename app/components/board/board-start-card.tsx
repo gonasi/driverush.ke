@@ -1,21 +1,19 @@
 /**
  * The way into the trainer from a board guide: a still of the board and one
- * button. `?go=1` starts a round as soon as the trainer's page opens.
+ * button, which opens the game on its own page.
  */
 import { Link } from "react-router";
 
-import { BOARD_PATH } from "~/lib/board-guides";
-import { fullBoardSvg } from "~/lib/board/full-board";
+import { BOARD_PLAY_PATH } from "~/lib/board-guides";
 
+import { BoardThumb } from "~/components/board/board-thumb";
 import { Icon } from "~/components/brand/icon";
 import { PlayIcon } from "~/components/brand/icons";
-
-const POSTER = fullBoardSvg({ seen: "east", cover: true, numbers: false });
 
 export function BoardStartCard() {
   return (
     <Link
-      to={`${BOARD_PATH}?go=1`}
+      to={BOARD_PLAY_PATH}
       className="group grid border-2 border-ink bg-surface shadow-stamp outline-none transition-colors hover:bg-paper-3 focus-visible:bg-paper-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,260px)]"
     >
       <span className="grid content-center gap-2 p-4 sm:p-5">
@@ -31,11 +29,9 @@ export function BoardStartCard() {
           Start driving
         </span>
       </span>
-      <span
-        role="img"
-        aria-label="The Model Town Board from above"
-        className="order-first block aspect-[5/2] overflow-hidden border-b-2 border-ink sm:order-none sm:aspect-auto sm:border-b-0 sm:border-l-2 [&>svg]:block [&>svg]:size-full"
-        dangerouslySetInnerHTML={{ __html: POSTER }}
+      <BoardThumb
+        line={null}
+        className="order-first aspect-[5/2] border-b-2 border-ink sm:order-none sm:aspect-auto sm:border-b-0 sm:border-l-2"
       />
     </Link>
   );
