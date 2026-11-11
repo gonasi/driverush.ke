@@ -35,7 +35,12 @@ import {
 } from "~/lib/board/runtime";
 import type { Fault } from "~/lib/board/referee";
 import { peekAt, useStage } from "~/lib/board/stage";
-import { BOARD_CHALLENGE_IDS, useBoardStore } from "~/lib/board-store";
+import { LevelCheer } from "~/components/board/board-cheer";
+import {
+  BOARD_CHALLENGE_IDS,
+  useBoardStore,
+  type BoardNotice,
+} from "~/lib/board-store";
 import { BOARD_LEVELS_PATH, levelHref } from "~/lib/board-guides";
 import {
   COURSE_LEVELS,
@@ -229,12 +234,15 @@ function TaskHint({
   attempt,
   onNextStep,
   onShowMe,
+  bare,
   children,
 }: {
   challenge: BoardChallenge;
   attempt: number;
   onNextStep: () => void;
   onShowMe: () => void;
+  /** No Hint button: the first drive has nothing to be shown. */
+  bare?: boolean;
   /** What stands between the buttons and the tip: a lost star, a sign ahead. */
   children?: React.ReactNode;
 }) {
@@ -286,7 +294,9 @@ function TaskHint({
 
   return (
     <>
-      <div className="pointer-events-auto flex flex-wrap gap-1.5">
+      <div
+        className={cn("pointer-events-auto flex flex-wrap gap-1.5", bare && "hidden")}
+      >
         <button
           type="button"
           aria-expanded={open}
@@ -508,7 +518,7 @@ function StarLost({
   notice,
   lesson,
 }: {
-  notice: { fault: Fault; n: number };
+  notice: BoardNotice;
   /** A lesson has no stars to lose: only the rule is said. */
   lesson?: boolean;
 }) {
@@ -530,7 +540,7 @@ function StarLost({
       style={{ animationDuration: "3.6s" }}
     >
       <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-widest">
-        {tip.title}
+        {notice.back ? `Back a bit · ${tip.title}` : tip.title}
         {!lesson && " · 1 star lost"}
       </p>
       <p className="m-0 mt-1 text-[13.5px] font-semibold leading-snug">
@@ -575,6 +585,35 @@ function WatchCard({
         Try it yourself
       </Button>
     </BoardSheet>
+  );
+}
+
+/**
+ * The car has stood still for a while, away from the green box: the way to
+ * start again is offered here, so nobody has to find it in the menu.
+ */
+function StuckChip({ onRestart }: { onRestart: () => void }) {
+  const [stuck, setStuck] = React.useState(false);
+  React.useEffect(() => {
+    let still = 0;
+    const timer = window.setInterval(() => {
+      still = hasMoved() && Math.abs(car.speed) < 0.2 ? still + 0.5 : 0;
+      setStuck(still >= 5);
+    }, 500);
+    return () => window.clearInterval(timer);
+  }, []);
+  if (!stuck) return null;
+  return (
+    <div className="dr-rise pointer-events-none absolute inset-x-0 bottom-[calc(13.5rem+env(safe-area-inset-bottom))] z-30 flex justify-center px-3">
+      <button
+        type="button"
+        onClick={onRestart}
+        className="pointer-events-auto inline-flex min-h-11 items-center gap-2 rounded-md border-2 border-[#17181b] bg-[#f6c416] px-4 text-[14px] font-bold text-[#17181b] outline-none focus-visible:ring-2 focus-visible:ring-white"
+      >
+        <Icon icon={RefreshIcon} size={16} />
+        Stuck? Start again
+      </button>
+    </div>
   );
 }
 
@@ -739,6 +778,11 @@ export function BoardGame() {
   );
   // The level of the course the game was opened on, if it was.
   const level = levelById(s.level) ?? null;
+  // The first drive: nothing graded, so no clock, no stars and no hints.
+  const warmup = level?.kind === "warmup";
+  // A lesson car or an Easy level: a miss is "not quite", not an examiner.
+  const kindly =
+    pickedCar != null || (level?.kind === "drive" && level.difficulty === "Easy");
   // Reading or watching: no task, no clock, no joystick.
   const offClock = s.mode !== "drive";
   const nextUp = level ? levelAfter(level) : undefined;
@@ -823,10 +867,13 @@ export function BoardGame() {
       {unsupported ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
           <p className="m-0 max-w-sm text-[15px] leading-snug">
-            This phone or browser can't draw the game board. The guide below the
-            trainer still has the lane rules, and the sign trainers work
-            everywhere.
+            This phone or browser can't draw the game board. The guides still
+            have every lane rule, and the sign trainers work everywhere.
           </p>
+          <Button asChild variant="rush">
+            {/* a full page load: it leaves the game behind cleanly */}
+            <a href="/guides">Read the guides</a>
+          </Button>
           <Button variant="paper" onClick={s.exit}>
             Close
           </Button>
@@ -843,6 +890,9 @@ export function BoardGame() {
           extraCars={standingCars}
           learning={offClock}
           focus={s.phase === "fault"}
+          // The first go at a task opens on where it ends. A retry does not,
+          // and nor does a lesson car, whose line is already on the table.
+          sweep={s.tries === 1 && !warmup && !pickedCar && s.mode === "drive"}
           onUnsupported={() => setUnsupported(true)}
           onPainted={() => setPainted(true)}
           className="absolute inset-0"
@@ -924,9 +974,13 @@ export function BoardGame() {
                 attempt={s.attempt}
                 onNextStep={() => s.hint("next_step")}
                 onShowMe={() => showTheWay("show_me")}
+                bare={warmup}
               >
                 {s.notice && (
-                  <StarLost notice={s.notice} lesson={pickedCar != null} />
+                  <StarLost
+                    notice={s.notice}
+                    lesson={pickedCar != null || warmup}
+                  />
                 )}
                 <BoardSignCue active />
               </TaskHint>
@@ -1006,7 +1060,7 @@ export function BoardGame() {
               </div>
             )}
             {/* A car from a line-up is a lesson: no clock, no stars. */}
-            {!pickedCar && (
+            {!pickedCar && !warmup && (
               <div
                 className={cn(
                   "flex items-center gap-2 rounded-md border-2 border-white/15 bg-[#101114]/85 px-2.5 py-1.5 font-mono text-[12px] font-bold",
@@ -1042,6 +1096,7 @@ export function BoardGame() {
       {!unsupported &&
         painted &&
         coaching &&
+        !warmup &&
         s.mode === "drive" &&
         s.phase === "driving" &&
         !held && (
@@ -1093,7 +1148,7 @@ export function BoardGame() {
         <BoardControls
           active={s.phase === "driving" && !held}
           reverse={reverseTask}
-          quietHint={coaching}
+          quietHint={coaching && !warmup}
           note={
             reverseTask
               ? "To reverse: stop, pull the joystick back and hold it. The back of the car goes where you point."
@@ -1101,6 +1156,14 @@ export function BoardGame() {
           }
         />
       )}
+      {!unsupported &&
+        painted &&
+        s.mode === "drive" &&
+        s.phase === "driving" &&
+        !held &&
+        !(coaching && !warmup) && (
+          <StuckChip key={s.attempt} onRestart={s.restart} />
+        )}
       <BoardSettingsSheet
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
@@ -1146,7 +1209,7 @@ export function BoardGame() {
       {s.phase === "fault" && s.fault && (
         <BoardSheet
           tone="fault"
-          strip="The examiner stopped you"
+          strip={kindly ? "Not quite" : "The examiner stopped you"}
           role="alertdialog"
           aria-labelledby="board-fault-title"
         >
@@ -1194,6 +1257,15 @@ export function BoardGame() {
           >
             {pickedCar ? "Back to the cars" : "Close"}
           </button>
+          {level && !pickedCar && (
+            <Link
+              to={BOARD_LEVELS_PATH}
+              replace
+              className="-mt-2 flex min-h-11 w-full items-center justify-center text-[13.5px] font-semibold text-ink-2 underline underline-offset-4 outline-none hover:text-ink focus-visible:text-ink"
+            >
+              All levels
+            </Link>
+          )}
         </BoardSheet>
       )}
 
@@ -1206,14 +1278,20 @@ export function BoardGame() {
           tone="pass"
           role="status"
           strip={
-            <>
-              Passed
-              <Stars count={s.lastStars} />
-            </>
+            warmup ? (
+              "Done"
+            ) : (
+              <>
+                Passed
+                <Stars count={s.lastStars} />
+              </>
+            )
           }
         >
           <h2 className="m-0 font-display text-[clamp(22px,5.5vw,28px)] font-extrabold uppercase leading-none tracking-tight">
-            {s.taskFaults === 0
+            {warmup
+              ? "You can drive it."
+              : s.taskFaults === 0
               ? s.hinted
                 ? "Passed, with a hint."
                 : "Clean, first try."
@@ -1222,7 +1300,9 @@ export function BoardGame() {
                 : challenge.title}
           </h2>
           <p className="m-0 text-[13.5px] leading-snug text-ink-2">
-            {s.taskFaults > 0
+            {warmup
+              ? "Push to go, let go to stop. That is all the control there is. Now learn the board you will drive on."
+              : s.taskFaults > 0
               ? `You got there with ${s.taskFaults} ${s.taskFaults === 1 ? "mistake" : "mistakes"}. ${level ? "Drive it again for all three stars, or carry on." : "It will come back in a later round."}`
               : s.hinted
                 ? level
@@ -1234,6 +1314,7 @@ export function BoardGame() {
                     ? "Right way, right lane, and you stopped in the box."
                     : "Right lane, right exit, and you stopped in the box."}
           </p>
+          {level && <LevelCheer level={level} className="text-ink" />}
           {level && nextUp && (
             <Button
               asChild
@@ -1276,7 +1357,7 @@ export function BoardGame() {
               </Button>
             )}
             {/* A clean pass is the moment worth sending to someone. */}
-            {s.taskFaults === 0 && !s.hinted && (
+            {s.taskFaults === 0 && !s.hinted && !warmup && (
               <ShareButton
                 surface="board_task_passed"
                 payload={{ kind: "board", total: 1, firstTry: 1 }}

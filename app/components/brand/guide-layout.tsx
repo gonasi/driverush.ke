@@ -28,6 +28,7 @@ export function GuideLayout({
   kicker,
   title,
   lede,
+  ledeFirstOnly,
   checked,
   dateLabel = "Checked",
   byline = true,
@@ -38,6 +39,11 @@ export function GuideLayout({
   kicker: string;
   title: React.ReactNode;
   lede: string;
+  /**
+   * The lede is a pitch for a first visit: a learner who has started the
+   * board course is not shown it again (`course-label.css`).
+   */
+  ledeFirstOnly?: boolean;
   /** ISO date the facts on the page were last checked. */
   checked: string;
   dateLabel?: string;
@@ -75,7 +81,10 @@ export function GuideLayout({
               {title}
             </h1>
             <div className="mt-4 sm:grid sm:grid-cols-[1fr_minmax(0,240px)] sm:items-end sm:gap-6">
-              <p className="m-0 font-serif text-[clamp(17px,2.2vw,21px)] leading-snug text-ink-2">
+              <p
+                data-first-only={ledeFirstOnly ? "" : undefined}
+                className="m-0 font-serif text-[clamp(17px,2.2vw,21px)] leading-snug text-ink-2"
+              >
                 {lede}
               </p>
               {/* Phones skip the art so the trainers stay near the top. */}

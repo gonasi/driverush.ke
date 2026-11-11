@@ -1,8 +1,9 @@
 /**
  * Watches a free drive and says what each mistake costs. Small ones (bumping a
- * kerb, drifting over a continuous line) lose a star and the drive goes on.
- * Serious ones (the wrong exit, driving against the traffic) end the attempt,
- * the way an examiner would stop you.
+ * kerb, standing on the roundabout) lose a star and the drive goes on. Serious
+ * ones (the wrong exit, driving against the traffic, and every breach of lane
+ * discipline: over a continuous line, changing lanes on the roundabout, leaving
+ * it in the wrong lane) end the attempt, the way an examiner would stop you.
  *
  * Pure: give it the car, what it has just touched and the time step, and get
  * back any mistakes or a pass. Every check has some slack (a distance or a
@@ -13,7 +14,10 @@ import type { TurnChallenge } from "./challenges";
 import {
   ARMS,
   EXIT_CLEAR,
+  LANE_W,
   RING_LANES,
+  RING_LANE_W,
+  RING_OUTER_R,
   TAU,
   allowedTurns,
   exitLanes,
@@ -31,10 +35,7 @@ export type SmallFaultId =
   | "kerb"
   | "central_reserve"
   | "island"
-  | "solid_line"
-  | "roundabout_lane_change"
   | "roundabout_stop"
-  | "exit_lane"
   | "crossing_stop"
   | "bay_line";
 export type SeriousFaultId =
@@ -47,7 +48,22 @@ export type SeriousFaultId =
   | "past_end"
   | "off_route"
   | "wrong_lane"
-  | "stop_line";
+  | "stop_line"
+  | "solid_line"
+  | "roundabout_lane_change"
+  | "exit_lane"
+  | "u_turn_lane";
+
+/**
+ * Lane discipline. These end an attempt, but the no-fail first drive only
+ * shows the rule and lets the learner carry on.
+ */
+export const LANE_FAULTS: ReadonlySet<FaultId> = new Set<FaultId>([
+  "solid_line",
+  "roundabout_lane_change",
+  "exit_lane",
+  "u_turn_lane",
+]);
 export type FaultId = SmallFaultId | SeriousFaultId;
 
 export type Fault = {
@@ -77,12 +93,22 @@ export const COLLISION: Fault = { id: "collision", serious: true };
 type RingVisit = {
   entryArm: ArmId;
   entryLane: number;
-  /** Radians travelled clockwise in each ring lane. Index 0 is unused. */
-  arc: number[];
   total: number;
   lastBearing: number | null;
-  warnedLane: boolean;
   warnedStop: boolean;
+  /** The car has reached the ring lane with its approach lane's number. */
+  joined: boolean;
+  /** It has moved out of that lane again, toward an exit. */
+  left: boolean;
+  /** Radians travelled outside its own lane, on the way in and on the way out. */
+  joinArc: number;
+  leaveArc: number;
+  /** The nearest the island it got while joining, or the furthest out while leaving. */
+  reach: number;
+  /** Seconds it has sat over the edge of its lane. */
+  astray: number;
+  /** The lane change has been reported. */
+  told: boolean;
 };
 
 export type RefState = {
@@ -99,6 +125,12 @@ export type RefState = {
   offRoute: number;
   /** The lanes the car may leave the roundabout in, while that is being judged. */
   leaving: { lanes: number[]; from: number; drift: number } | null;
+  /** The road lane the car is driving along, and for how long it has been. */
+  lane: { arm: ArmId; side: string; lane: number; time: number } | null;
+  /** The last road lane it was settled in. */
+  settled: { arm: ArmId; lane: number } | null;
+  /** Turning back through a gap in the reserve, until it is straight again. */
+  turning: { told: boolean } | null;
 };
 
 export function createRef(): RefState {
@@ -112,6 +144,9 @@ export function createRef(): RefState {
     cooldown: {},
     offRoute: 0,
     leaving: null,
+    lane: null,
+    settled: null,
+    turning: null,
   };
 }
 
@@ -120,8 +155,19 @@ const WRONG_WAY_ANGLE = (115 * Math.PI) / 180;
 const MOVING = 0.5;
 const STOPPED = 0.2;
 const ROUNDABOUT_STOP_GRACE = 2.5;
-/** Crossing lanes to get in or out takes a few degrees. Staying takes more. */
-const SETTLED_ARC = (40 * Math.PI) / 180;
+/**
+ * Crossing the outer lanes to reach your own, or to leave from it, takes this
+ * much of the circle at most. Riding along in one of them takes more.
+ */
+const JOIN_ARC = (35 * Math.PI) / 180;
+const LEAVE_ARC = (35 * Math.PI) / 180;
+/** The middle of the car this far over a lane's edge is out of the lane. */
+const LANE_OVER = 0.5;
+/** On the way in or out, drifting back this far the other way is a weave. */
+const TURNED_BACK = 1;
+/** Driving along a road lane: within this of its direction, for this long. */
+const ALONG_LANE = (30 * Math.PI) / 180;
+const SETTLE = 0.5;
 const GOAL_HOLD = 0.35;
 /** A lane change counts once the car has sat in the new lane this long. */
 const LINE_GRACE = 0.3;
@@ -133,6 +179,44 @@ const OFF_ROUTE_GRACE = 1;
 const LEAVING_REACH = 9;
 /** This far beyond the green box, the car has plainly driven past it. */
 const PAST_BOX = 12;
+
+/**
+ * Has the car changed lanes on the roundabout? It should cross the outer lanes
+ * to the one with its approach lane's number, stay there, and cross them again
+ * only to leave.
+ */
+function changedRingLane(
+  visit: RingVisit,
+  r: number,
+  step: number,
+  dt: number,
+): boolean {
+  const outer = RING_OUTER_R - (visit.entryLane - 1) * RING_LANE_W;
+  const inner = outer - RING_LANE_W;
+  if (!visit.joined) {
+    if (r <= outer) {
+      visit.joined = true;
+      return false;
+    }
+    visit.joinArc += step;
+    visit.reach = Math.min(visit.reach, r);
+    return visit.joinArc > JOIN_ARC || r > visit.reach + TURNED_BACK;
+  }
+  if (!visit.left) {
+    // Further in than its own lane is never part of joining or leaving.
+    const inside = visit.entryLane < RING_LANES && r < inner - LANE_OVER;
+    const outside = r > outer + LANE_OVER;
+    visit.astray = inside || outside ? visit.astray + dt : 0;
+    if (visit.astray <= LINE_GRACE) return false;
+    if (inside) return true;
+    visit.left = true;
+    visit.reach = r;
+    return false;
+  }
+  visit.leaveArc += step;
+  visit.reach = Math.max(visit.reach, r);
+  return visit.leaveArc > LEAVE_ARC || r < visit.reach - TURNED_BACK;
+}
 
 const BUMPS: Partial<Record<Contact, SmallFaultId>> = {
   kerb: "kerb",
@@ -168,13 +252,13 @@ export function refStep(
     }
   }
 
-  // Continuous lines: white costs a star, yellow ends the attempt.
-  for (const color of lineStep(ref.lines, car)) {
-    if (color === "yellow") {
-      result.fault = { id: "centre_line", serious: true };
-      return result;
-    }
-    result.small.push(small("solid_line"));
+  // Continuous lines, crossed or driven along: white or yellow, the attempt ends.
+  for (const color of lineStep(ref.lines, car, dt)) {
+    result.fault = {
+      id: color === "yellow" ? "centre_line" : "solid_line",
+      serious: true,
+    };
+    return result;
   }
 
   const loc = locate(car.x, car.z);
@@ -199,11 +283,16 @@ export function refStep(
       ref.ring = {
         entryArm: ref.lastApproach.arm,
         entryLane: ref.lastApproach.lane,
-        arc: new Array(RING_LANES + 1).fill(0),
         total: 0,
         lastBearing: null,
-        warnedLane: false,
         warnedStop: false,
+        joined: false,
+        left: false,
+        joinArc: 0,
+        leaveArc: 0,
+        reach: Infinity,
+        astray: 0,
+        told: false,
       };
       ref.stopTime = 0;
     }
@@ -226,26 +315,21 @@ export function refStep(
     }
 
     if (visit) {
+      let step = 0;
       if (visit.lastBearing != null) {
-        const step = wrapPi(loc.bearing - visit.lastBearing);
-        if (step > 0) {
-          visit.arc[loc.lane] += step;
-          visit.total += step;
-        }
+        step = Math.max(0, wrapPi(loc.bearing - visit.lastBearing));
+        visit.total += step;
       }
       visit.lastBearing = loc.bearing;
 
-      if (!visit.warnedLane) {
-        for (let lane = 1; lane <= RING_LANES; lane += 1) {
-          if (lane !== visit.entryLane && visit.arc[lane] > SETTLED_ARC) {
-            visit.warnedLane = true;
-            result.small.push({
-              ...small("roundabout_lane_change"),
-              lane: visit.entryLane,
-            });
-            break;
-          }
-        }
+      if (!visit.told && changedRingLane(visit, loc.r, step, dt)) {
+        visit.told = true;
+        result.fault = {
+          id: "roundabout_lane_change",
+          serious: true,
+          lane: visit.entryLane,
+        };
+        return result;
       }
 
       // Only the innermost lane may go all the way round.
@@ -294,8 +378,8 @@ export function refStep(
         };
         return result;
       }
-      // A lane change on the roundabout has already cost its star.
-      if (!visit.warnedLane) {
+      // A lane change on the roundabout has been dealt with already.
+      if (!visit.told) {
         ref.leaving = {
           lanes: exitLanes(lanes, visit.entryLane, turn, ARMS[loc.arm].lanes),
           from: visit.entryLane,
@@ -314,15 +398,70 @@ export function refStep(
     } else {
       ref.leaving.drift += dt;
       if (ref.leaving.drift > LINE_GRACE) {
-        result.small.push({ ...small("exit_lane"), lane: ref.leaving.from });
+        result.fault = {
+          id: "exit_lane",
+          serious: true,
+          lane: ref.leaving.from,
+        };
         ref.leaving = null;
+        return result;
       }
     }
   }
 
-  const against =
-    Math.abs(wrapPi(car.heading - laneBearing(loc.arm, loc.side))) >
-    WRONG_WAY_ANGLE;
+  // Turning back through a gap in the reserve: from the lane beside it, into
+  // the lane beside it on the other side.
+  const road = ARMS[loc.arm];
+  const off = Math.abs(wrapPi(car.heading - laneBearing(loc.arm, loc.side)));
+  const fromAxis = Math.abs(car.x * road.out.z - car.z * road.out.x);
+  const inGap = fromAxis < road.medianHalf;
+  if (inGap) {
+    if (!ref.turning) {
+      ref.turning = { told: false };
+      if (
+        ref.settled &&
+        ref.settled.arm === loc.arm &&
+        ref.settled.lane !== road.lanes
+      ) {
+        ref.turning.told = true;
+        result.fault = { id: "u_turn_lane", serious: true, lane: road.lanes };
+        return result;
+      }
+    }
+    ref.lane = null;
+  } else {
+    const same =
+      ref.lane != null &&
+      ref.lane.arm === loc.arm &&
+      ref.lane.side === loc.side &&
+      ref.lane.lane === loc.lane;
+    if (off < ALONG_LANE) {
+      ref.lane = {
+        arm: loc.arm,
+        side: loc.side,
+        lane: loc.lane,
+        time: same ? ref.lane!.time + dt : 0,
+      };
+      if (ref.lane.time > SETTLE) {
+        ref.settled = { arm: loc.arm, lane: loc.lane };
+        ref.turning = null;
+      }
+    } else {
+      ref.lane = null;
+    }
+    // Still swinging round, and already past the lane beside the reserve.
+    if (
+      ref.turning &&
+      !ref.turning.told &&
+      fromAxis > road.medianHalf + LANE_W + LANE_OVER
+    ) {
+      ref.turning.told = true;
+      result.fault = { id: "u_turn_lane", serious: true, lane: road.lanes };
+      return result;
+    }
+  }
+
+  const against = off > WRONG_WAY_ANGLE;
   ref.wrongWayTime = against && moving ? ref.wrongWayTime + dt : 0;
   if (ref.wrongWayTime > WRONG_WAY_GRACE) {
     // With no central reserve in the way, this is a crossed centre line.

@@ -172,7 +172,7 @@ describe("the referees", () => {
     });
   });
 
-  it("a turn task: a lane change after the roundabout costs a star", () => {
+  it("a turn task: a lane change after the roundabout ends the attempt", () => {
     const task: TurnChallenge = {
       id: "test",
       title: "test",
@@ -187,8 +187,6 @@ describe("the referees", () => {
     const b = lanePoint("N", "exit", 3, 30);
     expect(refStep(ref, task, at(a.x, a.z), [], 1 / 60).small).toEqual([]);
     const after = refStep(ref, task, at(b.x, b.z), [], 1 / 60);
-    expect(after.fault).toBeUndefined();
-    expect(after.small.map((f) => f.id)).toEqual(["solid_line"]);
-    expect(after.small[0].serious).toBe(false);
+    expect(after.fault).toMatchObject({ id: "solid_line", serious: true });
   });
 });

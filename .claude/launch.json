@@ -44,6 +44,17 @@
         "start"
       ],
       "port": 5191
+    },
+    {
+      "name": "built-3",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "PORT=5197",
+        "npm",
+        "run",
+        "start"
+      ],
+      "port": 5197
     }
   ]
 }

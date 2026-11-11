@@ -35,18 +35,37 @@ import { dirOf } from "~/lib/board/geometry";
 import { STICK_DEADZONE, type Seat } from "~/lib/board/joystick";
 import { taskGoalBox } from "~/lib/board/lessons";
 import { parkedCars } from "~/lib/board/parking-layouts";
-import { car, shown, stick, tick, view } from "~/lib/board/runtime";
+import {
+  car,
+  hasMoved,
+  shown,
+  stick,
+  tick,
+  view,
+} from "~/lib/board/runtime";
 import {
   advance,
   asDriveSpan,
   cam,
   endLook,
   finish,
+  marks,
   picks,
   setWake,
   useStage,
 } from "~/lib/board/stage";
 
+import {
+  newPace,
+  paceFrame,
+  pixelRatio as pixelRatioAt,
+  rungAt,
+  saveRung,
+  stepDown,
+  type BoardTier,
+} from "~/lib/board/quality";
+
+import { buildBoardPaint, type BoardPaint } from "~/components/board/board-paint";
 import {
   buildRibbon,
   chevronTexture,
@@ -60,7 +79,7 @@ import {
   type CarModel,
 } from "~/components/board/car-model";
 
-export type BoardTier = "low" | "high";
+export type { BoardTier };
 
 export type BoardTableProps = {
   challenge: BoardChallenge | null;
@@ -69,6 +88,11 @@ export type BoardTableProps = {
   /** Changes on every fresh attempt, so the view snaps back to the start. */
   attempt: number;
   tier: BoardTier;
+  /**
+   * The step of the quality ladder to start on (`LADDER` in `quality.ts`):
+   * where this device settled last time. Left out, the top.
+   */
+  startRung?: number;
   /**
    * Draw at exactly this many pixels per CSS pixel. Only the still in
    * `/tools/og` sets it, to capture a sharp picture; the game leaves it out.
@@ -86,6 +110,11 @@ export type BoardTableProps = {
    * over the bottom of the screen, so the learner sees where it went wrong.
    */
   focus?: boolean;
+  /**
+   * Open this attempt with a look at the finish, then slide back to the car,
+   * so the learner has seen where the task ends before setting off.
+   */
+  sweep?: boolean;
   /** The board is painted and on screen. */
   onReady?: () => void;
   /**
@@ -118,6 +147,26 @@ const MARGIN = 6;
 const ROOM = "#4f4c47";
 const VFOV = 32;
 const DEG = Math.PI / 180;
+
+/** Where the sun stands from the spot it is aimed at: over the left shoulder. */
+const SUN_OFFSET = new THREE.Vector3(-150, 210, 120);
+/** The light's own left-to-right and bottom-to-top, for lining its shadows up. */
+const SUN_RIGHT = new THREE.Vector3()
+  .crossVectors(new THREE.Vector3(0, 1, 0), SUN_OFFSET)
+  .normalize();
+const SUN_UP = new THREE.Vector3()
+  .crossVectors(SUN_OFFSET, SUN_RIGHT)
+  .normalize();
+/** Half the width of the shadow picture when it covers the whole table. */
+const SHADOW_REACH = Math.max(BOARD_W, BOARD_H) / 2 + 40;
+/**
+ * The sizes the shadow picture is fitted to, in metres from its middle. The
+ * closer the view, the less ground the same picture covers and the sharper a
+ * car's shadow is. Fixed steps, so the shadows don't crawl as the view zooms.
+ */
+const SHADOW_STEPS = [28, 40, 56, 80, 112];
+/** How much of the sun's slant the painted floor shadow is shifted by. */
+const FLOOR_SHADOW_SHIFT = (62 / SUN_OFFSET.y) * 0.6;
 
 // ---- small drawing helpers ------------------------------------------------------
 
@@ -248,6 +297,35 @@ function blobTexture() {
   ctx.fillRect(0, 0, 64, 64);
   return textureOf(canvas);
 }
+
+/**
+ * The table's shadow on the floor: dark under the table, fading out well
+ * beyond it. Painted once, so the sun's own shadows can be spent on the board.
+ */
+function floorShadowTexture() {
+  const size = 96;
+  const canvas = canvasOf(size, size);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return textureOf(canvas);
+  const image = ctx.createImageData(size, size);
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const px = Math.abs(((x + 0.5) / size) * 2 - 1);
+      const pz = Math.abs(((y + 0.5) / size) * 2 - 1);
+      const d = Math.hypot(
+        Math.max(0, px - FLOOR_SHADOW_CORE),
+        Math.max(0, pz - FLOOR_SHADOW_CORE),
+      );
+      const t = Math.min(1, d / (1 - FLOOR_SHADOW_CORE));
+      const fade = 1 - t * t * (3 - 2 * t);
+      image.data[(y * size + x) * 4 + 3] = Math.round(255 * fade);
+    }
+  }
+  ctx.putImageData(image, 0, 0);
+  return textureOf(canvas);
+}
+/** How much of the floor shadow, from its middle, is fully dark. */
+const FLOOR_SHADOW_CORE = 0.5;
 
 /**
  * Give the flat drawing some tooth: fine grain like flock and tarmac, and
@@ -384,7 +462,11 @@ function disc(radius: number) {
 
 type Table = {
   group: THREE.Group;
-  /** The board's top. Its picture arrives a moment after the table. */
+  /**
+   * The board's top as one plain sheet. It is hidden once the paint is laid
+   * over it as shapes, and wears the drawing as a picture if that fails.
+   */
+  top: THREE.Mesh;
   surface: THREE.MeshStandardMaterial;
 };
 
@@ -416,6 +498,9 @@ function buildTable(tier: BoardTier): Table {
   );
   floor.rotation.x = -Math.PI / 2;
   floor.castShadow = false;
+  // The sun's shadow picture is fitted to the part of the board in view, which
+  // the floor is mostly outside. The table's shadow on it is painted instead.
+  floor.receiveShadow = false;
 
   // The table: a varnished top, an apron under it and four tapered legs.
   const hx = BOARD_W / 2 + FRAME + MARGIN;
@@ -428,13 +513,36 @@ function buildTable(tier: BoardTier): Table {
     roughness: 0.42,
     envMapIntensity: 0.8,
   });
+  // Nothing under the board's frame throws a shadow on anything but the
+  // floor, so none of it is drawn into the shadow picture.
   put(
     new RoundedBoxGeometry(hx * 2, 5, hz * 2, 3, 1.3),
     varnished,
     CX,
     -2.52,
     CZ,
+  ).castShadow = false;
+  const under = new THREE.Mesh(
+    new THREE.PlaneGeometry(
+      (hx * 2) / FLOOR_SHADOW_CORE,
+      (hz * 2) / FLOOR_SHADOW_CORE,
+    ),
+    new THREE.MeshBasicMaterial({
+      color: "#000000",
+      map: floorShadowTexture(),
+      transparent: true,
+      opacity: 0.5,
+      depthWrite: false,
+    }),
   );
+  under.rotation.x = -Math.PI / 2;
+  // Thrown a little way off by the sun, as the cars' shadows are.
+  under.position.set(
+    CX - SUN_OFFSET.x * FLOOR_SHADOW_SHIFT,
+    -61.8,
+    CZ - SUN_OFFSET.z * FLOOR_SHADOW_SHIFT,
+  );
+  group.add(under);
   const legWood = new THREE.MeshStandardMaterial({
     map: woodTexture("#8f5a2c", "#3a1f0b", 5, 23),
     roughness: 0.5,
@@ -446,13 +554,25 @@ function buildTable(tier: BoardTier): Table {
     [-(hx - 11), 0, 2.6, hz * 2 - 26],
   ];
   for (const [x, z, w, d] of aprons) {
-    put(new THREE.BoxGeometry(w, 11, d), legWood, CX + x, -10.5, CZ + z);
+    put(
+      new THREE.BoxGeometry(w, 11, d),
+      legWood,
+      CX + x,
+      -10.5,
+      CZ + z,
+    ).castShadow = false;
   }
   const leg = new THREE.CylinderGeometry(4.4, 3, 57, 4, 1);
   leg.rotateY(Math.PI / 4);
   for (const sx of [-1, 1]) {
     for (const sz of [-1, 1]) {
-      put(leg, legWood, CX + sx * (hx - 11), -33.5, CZ + sz * (hz - 11));
+      put(
+        leg,
+        legWood,
+        CX + sx * (hx - 11),
+        -33.5,
+        CZ + sz * (hz - 11),
+      ).castShadow = false;
     }
   }
 
@@ -554,7 +674,7 @@ function buildTable(tier: BoardTier): Table {
   put(raise(disc(ISLAND_R), 0.3), kerb);
   put(raise(disc(ISLAND_R - 0.5), 0.34), green);
 
-  return { group, surface };
+  return { group, top, surface };
 }
 
 /** Free everything a built object holds on the graphics card. */
@@ -724,6 +844,8 @@ const SPAN_PART = 64;
 const MOVING = 0.8;
 /** How long after stopping before it backs off, so a pause doesn't pump it. */
 const LINGER = 2;
+/** How far in the view waits on a phone before the car first moves, 0 to 1. */
+const START_CLOSE = 0.55;
 /** The joystick's pad and the task card, in pixels: the car is held between them. */
 const PAD_PX = 232;
 const HUD_PX = 150;
@@ -760,7 +882,15 @@ type Rig = {
   returning: boolean;
   /** How closed in the view is drawn, 0 to 1: it sets the slant. */
   near: number;
+  /** Seconds left of the opening look at the finish. */
+  intro: number;
 };
+
+/** The opening look rests on the finish this long, then slides to the car. */
+const SWEEP_HOLD = 0.6;
+const SWEEP_MOVE = 1.2;
+/** A finish this close to the car is already in view: no look is needed. */
+const SWEEP_FROM = 25;
 
 function Scene({
   challenge,
@@ -772,16 +902,26 @@ function Scene({
   paint,
   learning = false,
   focus = false,
+  sweep = false,
   onReady,
   extraCars,
   models,
-}: BoardTableProps & { models: CarSources }) {
+  shadow,
+  onSlow,
+}: BoardTableProps & {
+  models: CarSources;
+  /** The shadow picture's size, or 0 for none: the ladder's say. */
+  shadow: number;
+  /** The drive has been running slowly: go down a step. */
+  onSlow: () => void;
+}) {
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
   const invalidate = useThree((s) => s.invalidate);
-  const setDpr = useThree((s) => s.setDpr);
-  // How the first stretch of driving ran, to catch a phone that can't keep up.
-  const pace = React.useRef({ frames: 0, total: 0, done: tier === "low" });
+  // How the drive is running, to catch a phone that can't keep up.
+  const pace = React.useRef(newPace());
+  const slow = React.useRef(onSlow);
+  slow.current = onSlow;
 
   const table = React.useMemo(() => buildTable(tier), [tier]);
   React.useEffect(() => () => dispose(table.group), [table]);
@@ -808,36 +948,64 @@ function Scene({
   React.useEffect(() => {
     let alive = true;
     let painted: THREE.CanvasTexture | null = null;
-    const limit = gl.capabilities.maxTextureSize;
-    const wanted = tier === "high" ? 2048 : 1280;
-    // The board is taller than wide, so the height is what must fit.
-    const width = Math.min(wanted, Math.floor((limit * BOARD_W) / BOARD_H));
-    paintBoard(width)
-      .then((texture) => {
-        if (!alive) {
-          texture.dispose();
-          return;
-        }
-        painted = texture;
-        texture.anisotropy = Math.min(
-          tier === "high" ? 8 : 2,
-          gl.capabilities.getMaxAnisotropy(),
-        );
-        table.surface.map = texture;
-        table.surface.color.set("#ffffff");
-        table.surface.needsUpdate = true;
-      })
-      .catch(() => {
-        // The table still draws, with a plain black top. Better than nothing.
-      })
-      .finally(() => {
-        if (!alive) return;
-        invalidate();
-        ready.current?.();
-      });
+    let shapes: BoardPaint | null = null;
+    const done = () => {
+      if (!alive) return;
+      invalidate();
+      ready.current?.();
+    };
+    const sharpest = gl.capabilities.getMaxAnisotropy();
+
+    // The paint as shapes, sharp at any distance. `?paint=picture` asks for
+    // the old stretched picture instead, to set the two side by side.
+    const asPicture =
+      new URLSearchParams(window.location.search).get("paint") === "picture";
+    if (!asPicture) {
+      try {
+        shapes = buildBoardPaint({
+          shadows: tier === "high",
+          anisotropy: Math.min(tier === "high" ? 8 : 4, sharpest),
+        });
+        table.group.add(shapes.group);
+        table.top.visible = false;
+      } catch {
+        shapes = null;
+      }
+    }
+
+    if (shapes) {
+      done();
+    } else {
+      // The drawing could not be read as shapes: wear it as a picture.
+      const limit = gl.capabilities.maxTextureSize;
+      const wanted = tier === "high" ? 2048 : 1280;
+      // The board is taller than wide, so the height is what must fit.
+      const width = Math.min(wanted, Math.floor((limit * BOARD_W) / BOARD_H));
+      paintBoard(width)
+        .then((texture) => {
+          if (!alive) {
+            texture.dispose();
+            return;
+          }
+          painted = texture;
+          texture.anisotropy = Math.min(tier === "high" ? 8 : 2, sharpest);
+          table.surface.map = texture;
+          table.surface.color.set("#ffffff");
+          table.surface.needsUpdate = true;
+        })
+        .catch(() => {
+          // The table still draws, with a plain black top. Better than nothing.
+        })
+        .finally(done);
+    }
     return () => {
       alive = false;
       painted?.dispose();
+      if (shapes) {
+        table.group.remove(shapes.group);
+        shapes.dispose();
+        table.top.visible = true;
+      }
     };
   }, [gl, tier, table, invalidate]);
 
@@ -932,7 +1100,8 @@ function Scene({
   );
   const probe = React.useMemo(() => new THREE.Vector3(), []);
 
-  // The light points at the middle of the board, which is not the origin.
+  // The light points at the middle of the board, which is not the origin,
+  // until the view says which part of the board its shadows are wanted on.
   const sun = React.useRef<THREE.DirectionalLight>(null);
   React.useEffect(() => {
     const light = sun.current;
@@ -941,6 +1110,21 @@ function Scene({
     light.target.updateMatrixWorld();
     invalidate();
   }, [invalidate]);
+  // A step down the ladder: a smaller shadow picture, or none. The old one is
+  // thrown away so the next frame makes one of the new size.
+  React.useEffect(() => {
+    const light = sun.current;
+    if (!light) return;
+    light.castShadow = shadow > 0;
+    if (shadow > 0 && light.shadow.mapSize.x !== shadow) {
+      light.shadow.mapSize.set(shadow, shadow);
+      light.shadow.map?.dispose();
+      light.shadow.map = null;
+    }
+    // Fit it afresh on the next frame.
+    light.shadow.camera.right = 0;
+    invalidate();
+  }, [shadow, invalidate]);
 
   // ---- routes painted on the table, and a part of it lit up ----
   const lines = useStage((s) => s.lines);
@@ -983,7 +1167,12 @@ function Scene({
     hold: 0,
     returning: false,
     near: 0,
+    intro: 0,
   });
+  const calm = React.useMemo(
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    [],
+  );
   const holdStrip = React.useRef<THREE.Group>(null);
   const holdMaterial = React.useRef<THREE.MeshBasicMaterial>(null);
 
@@ -1010,20 +1199,9 @@ function Scene({
     const dt = Math.min(delta, 0.1);
     if (driving) {
       tick(dt);
-      // Under about 26 frames a second, give up the sharp picture and the
-      // shadows, once. Smooth driving matters more than either.
-      const p = pace.current;
-      if (!p.done) {
-        p.frames += 1;
-        p.total += delta;
-        if (p.frames >= 90) {
-          p.done = true;
-          if (p.total / p.frames > 1 / 26) {
-            setDpr(1);
-            if (sun.current) sun.current.castShadow = false;
-          }
-        }
-      }
+      // A drive that stays under about 26 frames a second goes down a step:
+      // shadows first, sharpness last. Smooth driving matters more than either.
+      if (paceFrame(pace.current, delta)) slow.current();
     }
 
     // A route being played back moves the car itself, so the minimap and the
@@ -1098,9 +1276,14 @@ function Scene({
     const busy =
       moving || (driving && Math.hypot(stick.x, stick.y) > STICK_DEADZONE);
     r.linger = busy ? LINGER : Math.max(0, r.linger - dt);
-    const wantIn = focus || (driving && (busy || r.linger > 0)) ? 1 : 0;
+    // On a phone, before the car has set off, the view waits part-way in: far
+    // enough out to see the road ahead, close enough to see which car is
+    // yours. Backed right off, the car is a few pixels long.
+    const waiting = driving && !hasMoved() && aspect < 1 ? START_CLOSE : 0;
+    const wantIn =
+      focus || (driving && (busy || r.linger > 0)) ? 1 : waiting;
     if (fresh) {
-      r.zoom = 0;
+      r.zoom = waiting;
       r.look = 1;
       r.tight = 0;
       r.hold = 0;
@@ -1179,6 +1362,28 @@ function Scene({
     let distance = lerp(farOut, nearIn, close);
     let goalX = lerp(outX, inX, close);
     let goalZ = lerp(outZ, inZ, close);
+    // The opening look: on a screen that shows only part of the table, the
+    // view starts on the finish and slides back to the car. A push of the
+    // stick ends it at once.
+    if (fresh) {
+      r.intro =
+        sweep &&
+        !calm &&
+        goal !== null &&
+        wide < 1 &&
+        Math.hypot(goal.x - car.x, goal.z - car.z) > SWEEP_FROM
+          ? SWEEP_HOLD + SWEEP_MOVE
+          : 0;
+    } else if (busy || focus) {
+      r.intro = 0;
+    } else if (driving) {
+      r.intro = Math.max(0, r.intro - dt);
+    }
+    if (r.intro > 0 && goal) {
+      const t = ease(clamp(r.intro / SWEEP_MOVE, 0, 1));
+      goalX = lerp(goalX, goal.x, t);
+      goalZ = lerp(goalZ, goal.z, t);
+    }
     let near = close;
     const k = fresh ? 1 : 1 - Math.exp(-dt * 4);
 
@@ -1277,6 +1482,46 @@ function Scene({
     );
     state.camera.lookAt(sx, lookY, sz);
 
+    // The sun's shadows are spent on the part of the board in view: closed in
+    // on a car, the same shadow picture covers a fifth of the ground it does
+    // for the whole table, so the car's shadow has a clean edge.
+    const light = sun.current;
+    if (light?.castShadow) {
+      const groundAcross = 2 * r.dist * Math.tan(halfH);
+      const groundDeep = (2 * r.dist * Math.tan(halfV)) / Math.sin(tiltNow);
+      const want = 0.575 * Math.hypot(groundAcross, groundDeep) + 6;
+      const half = SHADOW_STEPS.find((s) => s >= want) ?? SHADOW_REACH;
+      // Backed right off it is the whole table, about its middle.
+      const room = SHADOW_REACH - half;
+      const px = clamp(r.x, CX - room, CX + room);
+      const pz = clamp(r.z, CZ - room, CZ + room);
+      // Moved in whole pixels of the shadow picture, so edges don't shimmer
+      // as the view slides.
+      const texel = (2 * half) / light.shadow.mapSize.x;
+      const u = px * SUN_RIGHT.x + pz * SUN_RIGHT.z;
+      const v = px * SUN_UP.x + pz * SUN_UP.z;
+      const du = Math.round(u / texel) * texel - u;
+      const dv = Math.round(v / texel) * texel - v;
+      light.target.position.set(
+        px + SUN_RIGHT.x * du + SUN_UP.x * dv,
+        SUN_UP.y * dv,
+        pz + SUN_RIGHT.z * du + SUN_UP.z * dv,
+      );
+      light.position.copy(light.target.position).add(SUN_OFFSET);
+      light.target.updateMatrixWorld();
+      const lens = light.shadow.camera;
+      if (lens.right !== half) {
+        lens.left = -half;
+        lens.right = half;
+        lens.top = half;
+        lens.bottom = -half;
+        lens.updateProjectionMatrix();
+        // Enough to stop the surface shading itself, and no more: about a
+        // pixel of the shadow picture.
+        light.shadow.normalBias = Math.max(0.03, 0.83 * texel);
+      }
+    }
+
     // The lane that lane assist is holding, lit a little way ahead of the car.
     // It fades when the stick points somewhere else: the learner has the wheel.
     r.hold += ((driving ? view.hold : 0) - r.hold) * (1 - Math.exp(-dt * 8));
@@ -1319,6 +1564,19 @@ function Scene({
         });
       }
     }
+    // And each place a learner is asked to find, for its pin.
+    if (!driving && marks.length > 0) {
+      state.camera.updateMatrixWorld();
+      for (const mark of marks) {
+        probe.set(mark.x, 0.4, mark.z).project(state.camera);
+        if (probe.z > 1) continue;
+        picks.push({
+          id: mark.id,
+          x: (probe.x + 1) / 2,
+          y: (1 - probe.y) / 2,
+        });
+      }
+    }
 
     // Still easing after the car has stopped: ask for another frame.
     const settled =
@@ -1327,8 +1585,6 @@ function Scene({
       Math.hypot(goalX - r.x, goalZ - r.z) < 0.03;
     if (!driving && !settled) invalidate();
   });
-
-  const reach = Math.max(BOARD_W, BOARD_H) / 2 + 40;
 
   return (
     <>
@@ -1340,19 +1596,12 @@ function Scene({
       {/* Sun through a window: one warm light from over the left shoulder. */}
       <directionalLight
         ref={sun}
-        position={[CX - 150, 210, CZ + 120]}
+        position={[CX + SUN_OFFSET.x, SUN_OFFSET.y, CZ + SUN_OFFSET.z]}
         intensity={tier === "high" ? 3.1 : 2.3}
         color="#fff0d6"
-        castShadow={tier === "high"}
-        shadow-mapSize={[2048, 2048]}
-        shadow-camera-left={-reach}
-        shadow-camera-right={reach}
-        shadow-camera-top={reach}
-        shadow-camera-bottom={-reach}
         shadow-camera-near={30}
         shadow-camera-far={760}
         shadow-bias={-0.0004}
-        shadow-normalBias={0.12}
       />
 
       <primitive object={table.group} />
@@ -1415,8 +1664,10 @@ function Scene({
   );
 }
 
+type SceneProps = BoardTableProps & { shadow: number; onSlow: () => void };
+
 /** Fetches the car models, then draws the scene with them. */
-function SceneWithCars(props: BoardTableProps) {
+function SceneWithCars(props: SceneProps) {
   const loaded = useLoader(GLTFLoader, CAR_URLS, withMeshopt);
   const models = React.useMemo(() => {
     const byId = {} as Record<BoardCarId, THREE.Object3D>;
@@ -1442,25 +1693,50 @@ class CarsFallback extends React.Component<
   }
 }
 
+/** The screen the scene is drawn on. The table fills the window, or nearly. */
+function screenNow() {
+  return {
+    native: window.devicePixelRatio || 1,
+    width: window.innerWidth,
+    height: window.innerHeight,
+  };
+}
+
 export default function BoardTable(props: BoardTableProps) {
-  const high = props.tier === "high";
+  const { tier } = props;
+  const high = tier === "high";
   const playing = useStage((s) => s.playing);
+  // Where the device stands on the quality ladder. It starts where it settled
+  // last time, only ever goes down, and starts again if the picture is changed.
+  const first = props.startRung ?? 0;
+  const [held, setHeld] = React.useState({ tier, rung: first });
+  const rung = held.tier === tier ? held.rung : first;
+  const step = rungAt(tier, rung);
+  const onSlow = React.useCallback(() => {
+    const next = stepDown(tier, rung, screenNow());
+    if (next === rung) return;
+    saveRung(tier, next);
+    setHeld({ tier, rung: next });
+  }, [tier, rung]);
+  const scene = { ...props, shadow: high ? step.shadow : 0, onSlow };
   return (
     <Canvas
       shadows={high ? "soft" : false}
-      dpr={props.pixelRatio ?? (high ? [1, 1.75] : 1)}
+      dpr={props.pixelRatio ?? pixelRatioAt(step, screenNow())}
       frameloop={props.driving || playing ? "always" : "demand"}
       camera={{ fov: VFOV, near: 4, far: 2600, position: [CX, 240, CZ + 260] }}
       gl={{
-        antialias: high,
+        // Smoothed edges on every device: on a phone's chip it costs little,
+        // and it can't be switched on once the scene is running.
+        antialias: true,
         alpha: false,
         powerPreference: "high-performance",
       }}
       style={{ touchAction: "none" }}
     >
-      <CarsFallback fallback={<Scene {...props} models={null} />}>
+      <CarsFallback fallback={<Scene {...scene} models={null} />}>
         <React.Suspense fallback={null}>
-          <SceneWithCars {...props} />
+          <SceneWithCars {...scene} />
         </React.Suspense>
       </CarsFallback>
     </Canvas>

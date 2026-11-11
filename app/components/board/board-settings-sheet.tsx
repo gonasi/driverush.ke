@@ -191,8 +191,9 @@ export function BoardSettingsSheet({
               ))}
             </div>
             <p className="m-0 text-[12.5px] leading-snug text-ink-2">
-              Smooth drops the shadows and the fine detail, for a phone that
-              stutters. Sharp keeps them. Auto picks for your phone.
+              Auto draws the board as sharp as your phone can, and eases off
+              only if the drive stutters. Smooth is the lightest picture. Sharp
+              starts again from the fullest.
             </p>
           </SettingSection>
 

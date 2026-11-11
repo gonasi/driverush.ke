@@ -5,7 +5,7 @@
  * written in one place. Only the game loads this file.
  */
 import type { Level, SlideRef } from "./curriculum";
-import { BOARD_FEATURES, type BoardFeature } from "./features";
+import { BOARD_FEATURES, featurePin, type BoardFeature } from "./features";
 import type { Box } from "./full-board";
 import { ROUTE_RULES } from "./lessons";
 
@@ -29,6 +29,34 @@ export function resolveSlide(ref: SlideRef): Slide | null {
     return { title: rule.name, note: rule.says, box };
   }
   return { title: ref.title, note: ref.note, box };
+}
+
+/** One thing a learner can be asked to find on the table after a deck. */
+export type FindSpot = { id: string; name: string; x: number; z: number };
+
+/** Pins closer than this cannot be told apart by a thumb, metres. */
+export const FIND_APART = 10;
+
+/**
+ * The things a deck can ask the learner to find: the painted features it
+ * showed, each with a pin. Empty when the deck has fewer than two, or when two
+ * of them sit too close together to tap one from the other.
+ */
+export function findSpots(level: Level): FindSpot[] {
+  if (level.kind !== "slides") return [];
+  const spots = level.slides.flatMap((ref) => {
+    if (!("feature" in ref)) return [];
+    const f = feature(ref.feature);
+    return f ? [{ id: f.id, name: f.name, ...featurePin(f) }] : [];
+  });
+  if (spots.length < 2) return [];
+  for (let a = 0; a < spots.length; a += 1) {
+    for (let b = a + 1; b < spots.length; b += 1) {
+      const gap = Math.hypot(spots[a].x - spots[b].x, spots[a].z - spots[b].z);
+      if (gap < FIND_APART) return [];
+    }
+  }
+  return spots;
 }
 
 export function levelSlides(level: Level): Slide[] {

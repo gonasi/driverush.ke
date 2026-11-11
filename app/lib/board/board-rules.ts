@@ -76,11 +76,11 @@ const RULES: Record<FaultId, { title: string; rule: string }> = {
   },
   solid_line: {
     title: "Over a continuous white line",
-    rule: "A continuous white line means no changing lanes. Change where the lines are broken.",
+    rule: "A continuous white line means no changing lanes, and no driving on it. Change where the lines are broken.",
   },
   roundabout_lane_change: {
     title: "Lane change on the roundabout",
-    rule: "No changing lanes on the roundabout.",
+    rule: "No changing lanes on the roundabout. Go round in the lane you came in.",
   },
   roundabout_stop: {
     title: "Keep moving",
@@ -130,6 +130,10 @@ const RULES: Record<FaultId, { title: string; rule: string }> = {
     title: "Wrong lane leaving the roundabout",
     rule: "Leave the roundabout in the lane you came round in.",
   },
+  u_turn_lane: {
+    title: "Wrong lane to turn back",
+    rule: "Turn back from the lane beside the central reserve, into the lane beside it.",
+  },
   crossing_stop: {
     title: "Stopped on the crossing",
     rule: "No stopping, parking or waiting on a pedestrian crossing.",
@@ -149,9 +153,9 @@ function reasonFor(fault: Fault): string {
     case "island":
       return "You drove into the island in the middle of the roundabout. Turn with the road and go round it clockwise, staying in your lane.";
     case "solid_line":
-      return "You crossed a continuous white line between two lanes. Near the roundabout the lane lines are continuous, on the way in and on the way out, which means no changing lanes there. Change lanes further from it, where the lines are broken.";
+      return "You crossed a continuous white line between two lanes, or drove along on top of it. Near the roundabout the lane lines are continuous, on the way in and on the way out. That means stay in your lane there. Change lanes further from the roundabout, where the lines are broken.";
     case "roundabout_lane_change":
-      return `You moved to a different lane inside the roundabout. Choose your lane before you enter and stay in it until your exit. Lane ${fault.lane ?? 1} on the road is lane ${fault.lane ?? 1} on the roundabout, counting from the outside.`;
+      return `You moved out of your lane inside the roundabout. Choose your lane before you enter, go round in it, and leave it only at your exit. Lane ${fault.lane ?? 1} on the road is lane ${fault.lane ?? 1} on the roundabout, counting from the outside.`;
     case "roundabout_stop":
       return "There is no stopping or waiting on the roundabout. Keep moving until you've taken your exit.";
     case "wrong_exit": {
@@ -180,6 +184,8 @@ function reasonFor(fault: Fault): string {
       return "You drove over the stop line without stopping. A stop line means stop every time, look both ways, and go only when the road is clear.";
     case "exit_lane":
       return `You came round in lane ${fault.lane ?? 1} but left the roundabout in a different lane. Leaving in the wrong lane is one of the three common mistakes. Hold your lane off the roundabout, then change lanes further on, where the lines are broken.`;
+    case "u_turn_lane":
+      return `To turn back through a gap in the central reserve, be in lane ${fault.lane ?? 4}, the lane beside the reserve, before you reach the gap. Finish the turn in the lane beside the reserve on the other side, then change lanes where the lines are broken.`;
     case "crossing_stop":
       return "You stopped on the white bars of the pedestrian crossing. Stop before it when someone is crossing, and never on it. The same goes for the roundabout, the yellow kerb and junctions: no stopping, parking or waiting there.";
     case "bay_line":

@@ -119,8 +119,9 @@ describe("progress through the course", () => {
     expect(levelDone(levelById("watch-straight-over")!, saved)).toBe(true);
     expect(levelDone(levelById("drive-straight")!, saved)).toBe(true);
     expect(levelDone(levelById("roads")!, saved)).toBe(false);
-    // Continue still goes to the first thing not done, which is level 1.
-    expect(nextLevel(saved).n).toBe(1);
+    // Having passed a task, the first drive counts as had. Continue goes to
+    // the first thing not done, which is the first reading level.
+    expect(nextLevel(saved).id).toBe("roads");
   });
 
   it("skips what is done when finding where to continue", () => {

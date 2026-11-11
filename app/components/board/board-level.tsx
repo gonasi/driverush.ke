@@ -18,7 +18,7 @@ import {
   unitOf,
   type Level,
 } from "~/lib/board/curriculum";
-import { levelSlides } from "~/lib/board/curriculum-content";
+import { findSpots, levelSlides } from "~/lib/board/curriculum-content";
 import { RING_R } from "~/lib/board/full-board";
 import { ARMS, OPTION_CODES, type ArmId } from "~/lib/board/geometry";
 import type { Seat } from "~/lib/board/joystick";
@@ -33,10 +33,19 @@ import {
 } from "~/lib/board/lessons";
 import type { Route } from "~/lib/board/network";
 import { shuffleParkingLayout } from "~/lib/board/parking-layouts";
-import { cam, fitTable, flyTo, useStage } from "~/lib/board/stage";
+import {
+  cam,
+  fitTable,
+  flyTo,
+  redraw,
+  setMarks,
+  useStage,
+} from "~/lib/board/stage";
 import { useBoardStore } from "~/lib/board-store";
 import { cn } from "~/lib/utils";
 
+import { LevelCheer } from "~/components/board/board-cheer";
+import { BoardSpotPicks } from "~/components/board/board-spot-picks";
 import { Icon } from "~/components/brand/icon";
 import {
   ArrowRightIcon,
@@ -161,12 +170,47 @@ function SlidesLevel({
 }) {
   const show = useStage((s) => s.show);
   const cards = React.useMemo(() => levelSlides(level), [level]);
-  const [at, setAt] = React.useState(0);
+  // Closed part-way through, a deck opens again on the card it was left at.
+  const keepPlace = useBoardStore((s) => s.keepPlace);
+  const [at, setAt] = React.useState(() => {
+    const kept = useBoardStore.getState().places?.[level.id] ?? 0;
+    return kept < cards.length - 1 ? kept : 0;
+  });
+  React.useEffect(() => keepPlace(level.id, at), [keepPlace, level.id, at]);
   const [finished, setFinished] = React.useState(false);
   const card = cards[Math.min(at, cards.length - 1)];
   const last = at >= cards.length - 1;
 
+  // After the cards, one thing to do: find one of them on the table. Nothing
+  // is scored, and a wrong pin only says what it is.
+  const spots = React.useMemo(() => findSpots(level), [level]);
+  const [target] = React.useState(() =>
+    spots.length > 0 ? spots[Math.floor(Math.random() * spots.length)] : null,
+  );
+  const [finding, setFinding] = React.useState(false);
+  const [wrong, setWrong] = React.useState<string[]>([]);
   React.useEffect(() => {
+    if (!finding) return;
+    show([]);
+    const pad = 14;
+    flyTo(
+      {
+        x0: Math.min(...spots.map((spot) => spot.x)) - pad,
+        x1: Math.max(...spots.map((spot) => spot.x)) + pad,
+        z0: Math.min(...spots.map((spot) => spot.z)) - pad,
+        z1: Math.max(...spots.map((spot) => spot.z)) + pad,
+      },
+      sideways,
+    );
+    setMarks(spots);
+    return () => setMarks([]);
+  }, [finding, spots, sideways, show]);
+  const lastWrong = spots.find((spot) => spot.id === wrong[wrong.length - 1]);
+  const letter = (id: string) =>
+    "ABCDEFGH"[spots.findIndex((spot) => spot.id === id)];
+
+  React.useEffect(() => {
+    if (finding) return;
     if (!card?.box) {
       show([]);
       fitTable();
@@ -174,9 +218,53 @@ function SlidesLevel({
     }
     show([], card.box);
     flyTo(card.box, sideways);
-  }, [card, sideways, show]);
+  }, [card, sideways, show, finding]);
 
   if (!card) return null;
+  if (finding && target) {
+    return (
+      <div className="grid gap-3">
+        <BoardSpotPicks
+          spots={spots}
+          wrong={wrong}
+          onPick={(id) => {
+            if (id !== target.id) {
+              setWrong((was) => [...was, id]);
+              return;
+            }
+            setFinding(false);
+            setFinished(true);
+            onDone();
+          }}
+        />
+        <div
+          aria-live="polite"
+          className="rounded-md border-2 border-[#f6c416] bg-white/5 p-3"
+        >
+          <p className={eyebrow}>Find it on the board</p>
+          <h3 className="m-0 mt-1 text-[17px] font-bold leading-snug">
+            Which pin is on: {target.name}?
+          </h3>
+          <p className="m-0 mt-1.5 text-[14px] leading-snug text-white/85">
+            {lastWrong
+              ? `Pin ${letter(lastWrong.id)} is: ${lastWrong.name}. Try another.`
+              : "Tap a pin on the table."}
+          </p>
+        </div>
+        <button
+          type="button"
+          className={secondary}
+          onClick={() => {
+            setFinding(false);
+            setWrong([]);
+          }}
+        >
+          <Icon icon={ChevronLeftIcon} size={16} />
+          Back to the cards
+        </button>
+      </div>
+    );
+  }
   return (
     <div className="grid gap-3">
       <div
@@ -209,6 +297,7 @@ function SlidesLevel({
       {finished || (done && last) ? (
         <>
           <DoneNote>Level {level.n} done.</DoneNote>
+          <LevelCheer level={level} />
           <LevelNext level={level} />
           <button
             type="button"
@@ -240,12 +329,20 @@ function SlidesLevel({
                 setAt((n) => n + 1);
                 return;
               }
+              if (target) {
+                setWrong([]);
+                setFinding(true);
+                return;
+              }
               setFinished(true);
               onDone();
             }}
           >
-            {last ? "Got it" : "Next"}
-            <Icon icon={last ? CheckIcon : ArrowRightIcon} size={16} />
+            {last && !target ? "Got it" : "Next"}
+            <Icon
+              icon={last && !target ? CheckIcon : ArrowRightIcon}
+              size={16}
+            />
           </button>
         </div>
       )}
@@ -308,6 +405,13 @@ function LanesLevel({
   const front = React.useMemo(() => pickable(cars, home), [cars, home]);
   const road = APPROACHES.find((a) => a.arm === arm);
   const allHome = home.length >= cars.length;
+  // On a phone the list of every option would cover the cars it is about, so
+  // it stays folded: the cars are picked on the table.
+  const [listOpen, setListOpen] = React.useState(
+    () =>
+      typeof window === "undefined" ||
+      !window.matchMedia("(max-width: 639px)").matches,
+  );
 
   React.useEffect(() => {
     show([]);
@@ -317,81 +421,114 @@ function LanesLevel({
 
   return (
     <div className="grid gap-3">
-      <p className="m-0 text-[13.5px] leading-snug text-white/80">
-        {road?.road}, {lanes} lanes each way. Its option code is{" "}
-        <strong className="font-mono text-white">{OPTION_CODES[lanes]}</strong>:
-        the number of options in each lane, counted from the kerb. There is one
-        car for each option. Take the front car of any lane and drive it to its
-        place.
+      <p className="m-0 text-[14px] font-semibold leading-snug text-white">
+        Tap the front car of any lane and drive it to its place.
       </p>
-      <p aria-live="polite" className={eyebrow}>
-        {home.length} of {cars.length} cars home
-      </p>
-      {Array.from({ length: lanes }, (_, i) => i + 1).map((lane) => (
-        <section key={lane} aria-label={`Lane ${lane}`}>
-          <p className="m-0 text-[13px] font-semibold leading-snug text-white/80">
-            {laneRule(lanes, lane)}
-          </p>
-          <ul className="m-0 mt-1.5 grid list-none gap-1.5 p-0">
-            {cars
-              .filter((car) => car.lane === lane)
-              .map((car) => {
-                const isHome = home.includes(car.id);
-                const canTake = front.includes(car);
-                return (
-                  <li key={car.id}>
-                    <button
-                      type="button"
-                      disabled={!canTake}
-                      onClick={() => pickCar(car.id)}
-                      className={cn(
-                        chip,
-                        chipOff,
-                        "flex w-full items-center gap-3 disabled:hover:bg-white/5",
-                        !canTake && !isHome && "opacity-55",
-                      )}
-                    >
-                      <span
-                        aria-hidden
-                        className="h-4 w-7 shrink-0 rounded-[5px] border border-white/40"
-                        style={{ background: car.paint }}
-                      />
-                      <span className="flex-1">
-                        {car.option.label}{" "}
-                        <span className="font-mono text-[11px] text-white/55">
-                          {car.option.degrees}
+      <div className="flex items-center justify-between gap-3">
+        <p aria-live="polite" className={eyebrow}>
+          {home.length} of {cars.length} cars home
+        </p>
+        <span aria-hidden className="flex gap-1">
+          {cars.map((car) => (
+            <span
+              key={car.id}
+              className={cn(
+                "size-2.5 rounded-full border border-white/40",
+                !home.includes(car.id) && "opacity-35",
+              )}
+              style={{ background: car.paint }}
+            />
+          ))}
+        </span>
+      </div>
+      <button
+        type="button"
+        aria-expanded={listOpen}
+        onClick={() => setListOpen((v) => !v)}
+        className="flex min-h-11 w-full items-center justify-between gap-2 rounded-md border-2 border-white/15 px-3 text-left text-[13.5px] font-semibold outline-none transition-colors hover:bg-white/10 focus-visible:border-white"
+      >
+        Where each lane may go
+        <span aria-hidden className="font-mono text-[16px] leading-none">
+          {listOpen ? "−" : "+"}
+        </span>
+      </button>
+      {listOpen && (
+        <p className="m-0 text-[13.5px] leading-snug text-white/80">
+          {road?.road}, {lanes} lanes each way. Its option code is{" "}
+          <strong className="font-mono text-white">
+            {OPTION_CODES[lanes]}
+          </strong>
+          : the number of options in each lane, counted from the kerb. There is
+          one car for each option.
+        </p>
+      )}
+      {listOpen &&
+        Array.from({ length: lanes }, (_, i) => i + 1).map((lane) => (
+          <section key={lane} aria-label={`Lane ${lane}`}>
+            <p className="m-0 text-[13px] font-semibold leading-snug text-white/80">
+              {laneRule(lanes, lane)}
+            </p>
+            <ul className="m-0 mt-1.5 grid list-none gap-1.5 p-0">
+              {cars
+                .filter((car) => car.lane === lane)
+                .map((car) => {
+                  const isHome = home.includes(car.id);
+                  const canTake = front.includes(car);
+                  return (
+                    <li key={car.id}>
+                      <button
+                        type="button"
+                        disabled={!canTake}
+                        onClick={() => pickCar(car.id)}
+                        className={cn(
+                          chip,
+                          chipOff,
+                          "flex w-full items-center gap-3 disabled:hover:bg-white/5",
+                          !canTake && !isHome && "opacity-55",
+                        )}
+                      >
+                        <span
+                          aria-hidden
+                          className="h-4 w-7 shrink-0 rounded-[5px] border border-white/40"
+                          style={{ background: car.paint }}
+                        />
+                        <span className="flex-1">
+                          {car.option.label}{" "}
+                          <span className="font-mono text-[11px] text-white/55">
+                            {car.option.degrees}
+                          </span>
+                          {!car.option.confirmed && (
+                            <span className="mt-0.5 block text-[12px] font-semibold text-kenya-gold">
+                              {UNSURE_NOTE}
+                            </span>
+                          )}
                         </span>
-                        {!car.option.confirmed && (
-                          <span className="mt-0.5 block text-[12px] font-semibold text-kenya-gold">
-                            {UNSURE_NOTE}
+                        {isHome ? (
+                          <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-kenya-green text-kenya-green-foreground">
+                            <Icon icon={CheckIcon} size={12} />
+                            <span className="sr-only">Home</span>
+                          </span>
+                        ) : canTake ? (
+                          <span className="shrink-0 font-mono text-[11px] font-bold uppercase tracking-widest text-[#f6c416]">
+                            Drive
+                          </span>
+                        ) : (
+                          <span className="shrink-0 font-mono text-[10px] font-bold uppercase tracking-widest text-white/55">
+                            Waiting
                           </span>
                         )}
-                      </span>
-                      {isHome ? (
-                        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-kenya-green text-kenya-green-foreground">
-                          <Icon icon={CheckIcon} size={12} />
-                          <span className="sr-only">Home</span>
-                        </span>
-                      ) : canTake ? (
-                        <span className="shrink-0 font-mono text-[11px] font-bold uppercase tracking-widest text-[#f6c416]">
-                          Drive
-                        </span>
-                      ) : (
-                        <span className="shrink-0 font-mono text-[10px] font-bold uppercase tracking-widest text-white/55">
-                          Waiting
-                        </span>
-                      )}
-                    </button>
-                  </li>
-                );
-              })}
-          </ul>
-        </section>
-      ))}
+                      </button>
+                    </li>
+                  );
+                })}
+            </ul>
+          </section>
+        ))}
 
       {allHome ? (
         <>
           <DoneNote>Every car is home. Level {level.n} done.</DoneNote>
+          <LevelCheer level={level} />
           <LevelNext level={level} />
         </>
       ) : (
@@ -484,6 +621,7 @@ function WatchLevel({
           {(ended || done) && (
             <>
               {ended && <DoneNote>Level {level.n} done.</DoneNote>}
+              {ended && <LevelCheer level={level} />}
               <LevelNext level={level} />
             </>
           )}
@@ -542,17 +680,30 @@ export function BoardLevel({
   );
 
   // On a phone the panel covers the bottom of the screen, so the camera holds
-  // what it is looking at above it. On a wide screen the panel is at the side.
+  // what it is looking at above it: by half the share of the screen the panel
+  // takes, which changes as the panel folds and opens. On a wide screen the
+  // panel is at the side.
+  const panel = React.useRef<HTMLElement>(null);
   React.useEffect(() => {
     const tall = window.matchMedia("(max-width: 639px)");
     const update = () => {
-      cam.lift = tall.matches ? 0.24 : 0;
+      const covered = panel.current
+        ? panel.current.offsetHeight / Math.max(1, window.innerHeight)
+        : 0.48;
+      cam.lift = tall.matches ? Math.min(0.27, Math.max(0, covered / 2)) : 0;
       cam.side = tall.matches ? 0 : Math.min(0.3, 188 / window.innerWidth);
+      redraw();
     };
     update();
     tall.addEventListener("change", update);
+    const watcher =
+      panel.current && typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(update)
+        : null;
+    if (panel.current) watcher?.observe(panel.current);
     return () => {
       tall.removeEventListener("change", update);
+      watcher?.disconnect();
       cam.lift = 0;
       cam.side = 0;
     };
@@ -563,6 +714,7 @@ export function BoardLevel({
   return (
     <div className="pointer-events-none absolute inset-0 z-20 flex flex-col justify-end sm:flex-row sm:justify-start">
       <section
+        ref={panel}
         aria-label={`Level ${level.n}: ${level.title}`}
         className="dr-rise pointer-events-auto flex max-h-[54dvh] w-full flex-col border-t-2 border-white/15 bg-[#101114]/95 pb-[env(safe-area-inset-bottom)] text-white sm:h-full sm:max-h-none sm:w-[23.5rem] sm:border-r-2 sm:border-t-0"
       >

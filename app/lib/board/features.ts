@@ -20,7 +20,17 @@ export type BoardFeature = {
   box: Box;
   /** The road sign that goes with it, where there is one. */
   sign?: { to: string; label: string };
+  /**
+   * Where a pin stands on it, when the middle of its box will not do: the
+   * roundabout's middle is the island.
+   */
+  pin?: { x: number; z: number };
 };
+
+/** Where a pin for this feature stands on the table. */
+export function featurePin(f: BoardFeature): { x: number; z: number } {
+  return f.pin ?? { x: (f.box.x0 + f.box.x1) / 2, z: (f.box.z0 + f.box.z1) / 2 };
+}
 
 const { SIDE, STREET, AISLE, PARK, FLUSH, CROSSINGS, WIDE, NARROW } = ROADS;
 
@@ -37,6 +47,8 @@ export const BOARD_FEATURES: readonly BoardFeature[] = [
     name: "Roundabout",
     note: "Go round it clockwise, keeping left. Give way to traffic already on it, coming from your right. No stopping, waiting, parking, overtaking or changing lanes on it. Choose your lane before you reach it.",
     box: around(0, 0, RING_R + 6),
+    // on the lanes going round, not on the island in the middle
+    pin: { x: RING_R - 4.5, z: 0 },
     sign: { to: "/road-signs/roundabout-ahead", label: "Roundabout ahead" },
   },
   {

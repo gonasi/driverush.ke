@@ -17,7 +17,7 @@ export type PracticeStreak = {
   lastDay: string;
 };
 
-function dayKey(time: number): string {
+export function dayKey(time: number): string {
   const d = new Date(time);
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");

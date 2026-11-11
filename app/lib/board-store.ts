@@ -36,8 +36,11 @@ import type { Fault, FaultId } from "./board/referee";
 import {
   beginChallenge,
   car,
+  drive,
+  judging,
   elapsedSeconds,
   hasMoved,
+  setBack,
   stopDriving,
   trail,
 } from "./board/runtime";
@@ -49,8 +52,9 @@ import {
   releaseCamera,
   useStage,
 } from "./board/stage";
+import { FIRST_DRIVE } from "./board/warmup";
 import { applyGrade, type SignProgress } from "./pelican-progress";
-import { bumpPracticeStreak } from "./practice-streak";
+import { bumpPracticeStreak, dayKey } from "./practice-streak";
 import { BUZZ, buzz, playSfx, stopAllSfx, warmSfx } from "./sounds";
 import { pickRound } from "./trainer-rounds";
 
@@ -102,6 +106,8 @@ export type LanesRun = {
   picked: string | null;
 };
 
+export type BoardNotice = { fault: Fault; n: number; back?: boolean };
+
 type BoardState = {
   // ---- persisted ----
   settings: BoardSettings;
@@ -110,6 +116,16 @@ type BoardState = {
   bestStars: Record<string, number>;
   /** Lessons watched to the end. */
   learned?: string[];
+  /** Levels finished today, for the day's goal on the Board page. */
+  daily?: { day: string; done: number };
+  /** The best mock test so far: tasks driven clean, out of how many. */
+  mockBest?: { clean: number; total: number; day: string };
+  /** The whole course has been finished once, and that has been marked. */
+  courseCheered?: boolean;
+  /** The card a deck of slides was left at, by level id. */
+  places?: Record<string, number>;
+  /** The cars already home in a lane options level left part-way, by level id. */
+  homes?: Record<string, Record<string, QueuePose>>;
   // ---- transient ----
   overlayOpen: boolean;
   mode: BoardMode;
@@ -119,6 +135,8 @@ type BoardState = {
   lanes: LanesRun | null;
   /** A hint was used on the task in front of the learner. */
   hinted: boolean;
+  /** The run is a mock test: a mixed round, not one task or a drill. */
+  round: boolean;
   phase: BoardPhase;
   queue: BoardChallenge[];
   pos: number;
@@ -129,8 +147,11 @@ type BoardState = {
   /** Which attempt at the task this is, from 1. */
   tries: number;
   fault: Fault | null;
-  /** The latest small mistake, shown as a toast. `n` restarts its animation. */
-  notice: { fault: Fault; n: number } | null;
+  /**
+   * The latest small mistake, shown as a toast. `n` restarts its animation.
+   * `back` means the car was put back a little instead of the attempt ending.
+   */
+  notice: BoardNotice | null;
   noticeCount: number;
   lastStars: number;
   /** Bumped on every (re)start, so the scene knows to snap the camera. */
@@ -167,6 +188,8 @@ type BoardState = {
   /** Done watching: the task again, from its start line. */
   resume: () => void;
   markLearned: (id: string) => void;
+  /** Remember the card a deck of slides is on. */
+  keepPlace: (level: string, at: number) => void;
   setSetting: (patch: Partial<BoardSettings>) => void;
   resetProgress: () => void;
 };
@@ -184,7 +207,7 @@ const FRESH_RUN = {
   taskFaults: 0,
   tries: 1,
   fault: null,
-  notice: null as { fault: Fault; n: number } | null,
+  notice: null as BoardNotice | null,
   noticeCount: 0,
   lastStars: 0,
   runClean: [] as string[],
@@ -202,6 +225,10 @@ export function starsFor(faults: number): number {
 
 /** This many small mistakes in one attempt and the examiner stops it. */
 export const SMALL_FAULT_LIMIT = 3;
+/** A gentle level puts the car back about this far before a mistake, metres. */
+const SET_BACK = 12;
+/** Driven past the box, it goes back far enough to come up to it again. */
+const SET_BACK_PAST = 28;
 /** The line the car drove, painted on the table when the examiner stops it. */
 const DRIVEN_COLOR = "#ff6b5e";
 
@@ -237,11 +264,43 @@ export const useBoardStore = create<BoardState>()(
         });
       };
 
+      /**
+       * How kindly this drive is judged. "free" is the first drive: nothing
+       * ends it and nothing is counted. "soft" is a lesson car or an Easy
+       * level: the first mistakes put the car back a little, and only the
+       * third stops the attempt.
+       */
+      const gentle = (): "free" | "soft" | null => {
+        const s = get();
+        const level = levelById(s.level);
+        if (level?.kind === "warmup") return "free";
+        if (s.lanes?.picked) return "soft";
+        if (level?.kind === "drive" && level.difficulty === "Easy") {
+          return "soft";
+        }
+        return null;
+      };
+
       /** A serious mistake: the examiner stops the attempt. */
       const onFault = (fault: Fault) => {
         if (get().settings.sound) playSfx("wrong");
         buzz(BUZZ.miss);
-        record(fault);
+        const kind = gentle();
+        const room =
+          kind === "free" ||
+          (kind === "soft" && get().faults < SMALL_FAULT_LIMIT - 1);
+        if (
+          room &&
+          setBack(fault.id === "past_end" ? SET_BACK_PAST : SET_BACK)
+        ) {
+          if (kind === "soft") record(fault);
+          set((s) => ({
+            notice: { fault, n: s.noticeCount + 1, back: true },
+            noticeCount: s.noticeCount + 1,
+          }));
+          return;
+        }
+        if (kind !== "free") record(fault);
         stopped(fault);
       };
 
@@ -265,6 +324,14 @@ export const useBoardStore = create<BoardState>()(
       const onSmall = (fault: Fault) => {
         if (get().settings.sound) playSfx("wrong");
         buzz(BUZZ.miss);
+        // The first drive only says the rule. Nothing is counted.
+        if (gentle() === "free") {
+          set((s) => ({
+            notice: { fault, n: s.noticeCount + 1 },
+            noticeCount: s.noticeCount + 1,
+          }));
+          return;
+        }
         record(fault);
         // Small mistakes add up. Leaning on kerbs all the way round is not a pass.
         if (get().faults >= SMALL_FAULT_LIMIT) {
@@ -289,16 +356,28 @@ export const useBoardStore = create<BoardState>()(
         stopDriving();
         useStage.getState().clear();
         forgetDriveZoom();
-        set({
-          mode: "level",
-          phase: "ready",
-          queue: [],
-          pos: 0,
-          fault: null,
-          notice: null,
-          lanes: { ...run, rest, picked: null },
+        const all = queueCars(run.arm).every((one) => rest[one.id]);
+        const levelId = get().level;
+        set((s) => {
+          // Kept so the line-up can be left and come back to. Once every car
+          // is home there is nothing to keep: next time it starts afresh.
+          const homes = { ...s.homes };
+          if (levelId) {
+            if (all) delete homes[levelId];
+            else homes[levelId] = rest;
+          }
+          return {
+            mode: "level",
+            phase: "ready",
+            queue: [],
+            pos: 0,
+            fault: null,
+            notice: null,
+            lanes: { ...run, rest, picked: null },
+            homes,
+          };
         });
-        if (queueCars(run.arm).every((one) => rest[one.id])) {
+        if (all) {
           if (get().settings.sound) playSfx("complete");
           get().completeLevel();
         }
@@ -316,6 +395,20 @@ export const useBoardStore = create<BoardState>()(
         }
         if (settings.sound) playSfx("correct");
         buzz(BUZZ.tap);
+        // The first drive is not graded: it is done, and that is all.
+        const here = levelById(get().level);
+        if (here?.kind === "warmup") {
+          set({ phase: "passed", lastStars: 3 });
+          const key = learnedKey(here);
+          const first = !get().learned?.includes(key);
+          get().markLearned(key);
+          get().setSetting({ coached: true });
+          if (first) {
+            bumpPracticeStreak();
+            levelCompleted(here);
+          }
+          return;
+        }
         // Clean means alone and first time: no mistake on any attempt, no hint.
         const clean = taskFaults === 0 && !hinted;
         // The stars are for this attempt. Shown the way, it is two at most.
@@ -351,14 +444,22 @@ export const useBoardStore = create<BoardState>()(
         if (level?.kind === "drive") levelCompleted(level);
       };
 
-      const levelCompleted = (level: Level) =>
-        level.kind !== "mock" &&
+      const levelCompleted = (level: Level) => {
+        if (level.kind === "mock") return;
+        const today = dayKey(Date.now());
+        set((s) => ({
+          daily: {
+            day: today,
+            done: (s.daily?.day === today ? s.daily.done : 0) + 1,
+          },
+        }));
         analytics.boardLevelCompleted({
           level: level.id,
           number: level.n,
           kind: level.kind,
           unit: unitOf(level).id,
         });
+      };
 
       const begin = () => {
         const { queue, pos } = get();
@@ -372,6 +473,9 @@ export const useBoardStore = create<BoardState>()(
           shuffleParkingLayout();
         }
         beginChallenge(challenge, { onFault, onSmall, onGoal });
+        // Judged kindly, the car is also carried out of the roundabout.
+        drive.exitHold = gentle() !== null;
+        judging.forgiveLanes = gentle() === "free";
         // A car from a line-up is told its option: its line is on the table.
         const run = get().lanes;
         const picked = run?.picked
@@ -416,6 +520,7 @@ export const useBoardStore = create<BoardState>()(
         mode: "drive",
         level: null,
         hinted: false,
+        round: false,
         phase: "ready",
         attempt: 0,
         ...FRESH_RUN,
@@ -434,6 +539,7 @@ export const useBoardStore = create<BoardState>()(
             mode: "drive",
             level: null,
             hinted: false,
+            round: !wanted,
           });
           analytics.boardStarted({
             challenges: queue.length,
@@ -462,7 +568,19 @@ export const useBoardStore = create<BoardState>()(
               clean: s.runClean.length,
               fault_count: s.runFaultCount,
             });
-            set({ phase: "complete" });
+            const best = s.mockBest;
+            const clean = s.runClean.length;
+            set({
+              phase: "complete",
+              mockBest:
+                s.round && (!best || clean > best.clean)
+                  ? {
+                      clean,
+                      total: s.queue.length,
+                      day: dayKey(Date.now()),
+                    }
+                  : best,
+            });
             return;
           }
           set({
@@ -544,6 +662,19 @@ export const useBoardStore = create<BoardState>()(
             set({ level: level.id });
             return;
           }
+          if (level.kind === "warmup") {
+            if (get().settings.sound) warmSfx();
+            set({
+              ...FRESH_RUN,
+              queue: [FIRST_DRIVE],
+              overlayOpen: true,
+              mode: "drive",
+              level: level.id,
+              hinted: false,
+            });
+            begin();
+            return;
+          }
           stopDriving();
           useStage.getState().clear();
           forgetDriveZoom();
@@ -557,7 +688,11 @@ export const useBoardStore = create<BoardState>()(
             hinted: false,
             lanes:
               level.kind === "lanes"
-                ? { arm: level.arm, rest: {}, picked: null }
+                ? {
+                    arm: level.arm,
+                    rest: get().homes?.[level.id] ?? {},
+                    picked: null,
+                  }
                 : null,
           });
         },
@@ -605,7 +740,14 @@ export const useBoardStore = create<BoardState>()(
 
         completeLevel: () => {
           const level = levelById(get().level);
-          if (!level || level.kind === "drive" || level.kind === "mock") return;
+          if (
+            !level ||
+            level.kind === "drive" ||
+            level.kind === "mock" ||
+            level.kind === "warmup"
+          ) {
+            return;
+          }
           const key = level.kind === "watch" ? level.lesson : learnedKey(level);
           const first = !get().learned?.includes(key);
           get().markLearned(key);
@@ -645,9 +787,23 @@ export const useBoardStore = create<BoardState>()(
               : { learned: [...(s.learned ?? []), id] },
           ),
 
+        keepPlace: (level, at) =>
+          set((s) =>
+            (s.places?.[level] ?? 0) === at
+              ? s
+              : { places: { ...s.places, [level]: at } },
+          ),
+
         setSetting: (patch) =>
           set((s) => ({ settings: { ...s.settings, ...patch } })),
-        resetProgress: () => set({ progress: {}, bestStars: {}, learned: [] }),
+        resetProgress: () =>
+          set({
+            progress: {},
+            bestStars: {},
+            learned: [],
+            places: {},
+            homes: {},
+          }),
       };
     },
     {
@@ -661,6 +817,11 @@ export const useBoardStore = create<BoardState>()(
         progress: s.progress,
         bestStars: s.bestStars,
         learned: s.learned,
+        places: s.places,
+        homes: s.homes,
+        daily: s.daily,
+        mockBest: s.mockBest,
+        courseCheered: s.courseCheered,
       }),
       // Here from day one, so a later version bump can keep progress instead
       // of wiping it. New optional fields don't need a bump at all.
@@ -671,6 +832,11 @@ export const useBoardStore = create<BoardState>()(
           progress: prev?.progress ?? {},
           bestStars: prev?.bestStars ?? {},
           learned: prev?.learned ?? [],
+          places: prev?.places ?? {},
+          homes: prev?.homes ?? {},
+          daily: prev?.daily,
+          mockBest: prev?.mockBest,
+          courseCheered: prev?.courseCheered,
         };
       },
       merge: (persisted, current) => {

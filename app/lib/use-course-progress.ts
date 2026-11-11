@@ -37,6 +37,8 @@ export function useCourseProgress(): CourseProgress | null {
       return {
         learned: Array.isArray(state?.learned) ? state.learned : [],
         bestStars: state?.bestStars ?? {},
+        daily: state?.daily,
+        mockBest: state?.mockBest,
       };
     } catch {
       return { learned: [], bestStars: {} };

@@ -18,6 +18,9 @@
 import { CAR, type CarInput, type CarState } from "./car";
 import type { BoardSide } from "./full-board";
 import {
+  ARMS,
+  ARM_ORDER,
+  RING_OUTER_R,
   bearingOf,
   dirOf,
   laneBearing,
@@ -49,6 +52,13 @@ export type DriveOptions = {
    * it to aim the tail. Null when there is no such line here.
    */
   guide?: (car: CarState) => { heading: number; along: number } | null;
+  /**
+   * Carry the car out of the roundabout. Pointing at an exit steers it into
+   * the exit lane with the number of the lane it came round in, which is the
+   * rule. For the levels that are judged kindly; elsewhere leaving in the
+   * right lane is the learner's to do.
+   */
+  exitHold?: boolean;
 };
 
 /** What the assist remembers between steps. */
@@ -65,6 +75,8 @@ export type AssistState = {
   along: number;
   /** Reverse gear coming in: 0 to 1 while the knob is held back at rest. */
   backing: number;
+  /** The exit road the car has begun to turn off onto, with `exitHold`. */
+  leaving?: string | null;
 };
 
 export function createAssist(): AssistState {
@@ -124,6 +136,57 @@ const BEND_GRIP = 3.2;
 const RING_REACH = 0.5;
 /** Joined the ring once this close to the middle of its lane, metres. */
 const JOINED = 0.9;
+
+/** An exit is being asked for when its mouth is within this of the car, metres. */
+const EXIT_NEAR = 24;
+/** The knob must point within this of the way the exit road runs. */
+const EXIT_CONE = (50 * Math.PI) / 180;
+/** The car turns off once it is this close to the line of the exit lane, metres. */
+const EXIT_LEVEL = 2.4;
+/** Turning off, it aims this far on down the exit lane from where it is. */
+const EXIT_AIM = 6;
+/** The speed it waits for the exit and turns off at, metres a second. */
+const EXIT_SPEED = 4.2;
+
+/**
+ * On the roundabout, with the knob pointing down an exit road that is close.
+ * Until the car is level with that road's lane it should stay on the ring
+ * (`"wait"`): cutting straight for the exit clips the kerb at the corner.
+ * Once level, the answer is the way to steer for the exit lane. Null when no
+ * exit is being asked for.
+ */
+export function exitAhead(
+  car: CarState,
+  knob: number,
+  state?: AssistState,
+): number | "wait" | null {
+  const loc = locate(car.x, car.z);
+  if (loc.kind !== "ring") return null;
+  for (const id of ARM_ORDER) {
+    const runs = laneBearing(id, "exit");
+    if (Math.abs(wrapPi(knob - runs)) > EXIT_CONE) continue;
+    const lane = Math.min(loc.lane, ARMS[id].lanes);
+    const mouth = lanePoint(id, "exit", lane, RING_OUTER_R);
+    const dir = dirOf(runs);
+    const dx = car.x - mouth.x;
+    const dz = car.z - mouth.z;
+    if (Math.hypot(dx, dz) > EXIT_NEAR) continue;
+    // How far down the exit lane's line the car is, and how far off to its side.
+    const along = dx * dir.x + dz * dir.z;
+    const side = Math.abs(dx * -dir.z + dz * dir.x);
+    // Once it has begun to turn off it keeps to that exit, even if the turn
+    // carries it a little wide of the line.
+    if (side > EXIT_LEVEL && state?.leaving !== id) return "wait";
+    if (state) state.leaving = id;
+    const ahead = along + EXIT_AIM;
+    return bearingOf(
+      mouth.x + dir.x * ahead - car.x,
+      mouth.z + dir.z * ahead - car.z,
+    );
+  }
+  if (state) state.leaving = null;
+  return null;
+}
 
 /** The world direction the knob is pointing, for a learner at `seat`. */
 export function stickBearing(stick: Stick, seat: Seat): number {
@@ -317,6 +380,20 @@ export function stickToInput(
     state.aimX = lane.aim.x;
     state.aimZ = lane.aim.z;
     state.along = lane.along;
+  }
+  // Asked for an exit: the ring is held until the car is level with the exit
+  // lane, and then that lane is steered for.
+  if (options.exitHold && lane) {
+    const out = exitAhead(car, knob, state);
+    if (out === "wait") {
+      target = lane.heading;
+      cap = Math.min(lane.cap, EXIT_SPEED);
+      state.hold = 1;
+    } else if (out != null) {
+      target = out;
+      cap = EXIT_SPEED;
+      state.hold = 1;
+    }
   }
 
   const off = wrapPi(target - car.heading);

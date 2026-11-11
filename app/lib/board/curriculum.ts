@@ -9,10 +9,19 @@
  * out in `curriculum-content.ts`, and `curriculum.test.ts` checks that every
  * id here is real and every title matches the lesson or task it names.
  *
+ * The one exception is level 1, a short first drive with nothing to get wrong,
+ * so the first thing a learner does on the board is move a car.
+ *
  * Every level is open from the start. `nextLevel` is only where Continue goes.
  */
 
-export type LevelKind = "slides" | "lanes" | "watch" | "drive" | "mock";
+export type LevelKind =
+  | "warmup"
+  | "slides"
+  | "lanes"
+  | "watch"
+  | "drive"
+  | "mock";
 export type LevelDifficulty = "Easy" | "Medium" | "Hard";
 
 /** One card of a "slides" level, and where on the board to look. */
@@ -31,6 +40,8 @@ type LevelBase = {
 };
 
 export type LevelDef =
+  /** The first drive (`warmup.ts`): a short straight road, nothing graded. */
+  | (LevelBase & { kind: "warmup" })
   | (LevelBase & { kind: "slides"; slides: readonly SlideRef[] })
   /** Every lane of one road into the roundabout, and where each may go. */
   | (LevelBase & { kind: "lanes"; arm: "S" | "N" | "W" | "E" })
@@ -97,6 +108,12 @@ const UNIT_DEFS: readonly {
     title: "Know the board",
     blurb: "Name every road, line and marking before you drive on it.",
     levels: [
+      {
+        kind: "warmup",
+        id: "first-drive",
+        title: "Your first drive",
+        difficulty: "Easy",
+      },
       slides("roads", "The four roads", [
         { feature: "dual-carriageway" },
         { feature: "three-lane-road" },
@@ -346,7 +363,14 @@ export function unitOf(level: Level): Unit {
 export type CourseProgress = {
   learned?: readonly string[];
   bestStars: Readonly<Record<string, number>>;
+  /** Levels finished on one calendar day (`YYYY-MM-DD`), for the day's goal. */
+  daily?: { day: string; done: number };
+  /** The best mock test so far: tasks driven clean, out of how many. */
+  mockBest?: { clean: number; total: number; day: string };
 };
+
+/** A small goal for one sitting: this many levels in a day. */
+export const DAILY_GOAL = 3;
 
 /** How a finished "slides" or "lanes" level is written in `learned`. */
 export const learnedKey = (level: Level) => `lv:${level.id}`;
@@ -363,6 +387,12 @@ export function levelDone(level: Level, saved: CourseProgress): boolean {
       return Boolean(saved.learned?.includes(level.lesson));
     case "mock":
       return false;
+    case "warmup":
+      // Anyone who has passed a driving task has had their first drive.
+      return (
+        Boolean(saved.learned?.includes(learnedKey(level))) ||
+        Object.values(saved.bestStars).some((stars) => stars > 0)
+      );
     default:
       return Boolean(saved.learned?.includes(learnedKey(level)));
   }
@@ -370,6 +400,38 @@ export function levelDone(level: Level, saved: CourseProgress): boolean {
 
 export function doneCount(saved: CourseProgress): number {
   return COURSE_LEVELS.filter((l) => levelDone(l, saved)).length;
+}
+
+/**
+ * How much of the course is in hand, 0 to 100. A level read or watched counts
+ * in full. A driving level counts by its best stars, so a pass with mistakes
+ * leaves something to come back for.
+ */
+export function readiness(saved: CourseProgress): number {
+  let points = 0;
+  for (const level of COURSE_LEVELS) {
+    if (level.kind === "drive") {
+      points += Math.min(3, saved.bestStars[level.challenge] ?? 0) / 3;
+    } else if (levelDone(level, saved)) {
+      points += 1;
+    }
+  }
+  return Math.round((points / COURSE_LEVELS.length) * 100);
+}
+
+/** The driving level with the fewest stars, once it has been passed. */
+export function weakestDrive(saved: CourseProgress): Level | undefined {
+  let worst: Level | undefined;
+  let fewest = 3;
+  for (const level of COURSE_LEVELS) {
+    if (level.kind !== "drive") continue;
+    const stars = saved.bestStars[level.challenge] ?? 0;
+    if (stars > 0 && stars < fewest) {
+      fewest = stars;
+      worst = level;
+    }
+  }
+  return worst;
 }
 
 /** Where Continue goes: the first level not done yet, then the mock test. */
@@ -386,6 +448,7 @@ export function levelAfter(level: Level): Level | undefined {
 }
 
 export const KIND_LABEL: Record<LevelKind, string> = {
+  warmup: "Drive",
   slides: "Learn",
   lanes: "Learn",
   watch: "Watch",

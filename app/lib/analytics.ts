@@ -248,7 +248,7 @@ export const analytics = {
   boardLevelStarted: (args: {
     level: string;
     number: number;
-    kind: "slides" | "lanes" | "watch" | "drive";
+    kind: "warmup" | "slides" | "lanes" | "watch" | "drive";
     unit: string;
   }) => emit("board_level_started", args),
 
@@ -256,7 +256,7 @@ export const analytics = {
   boardLevelCompleted: (args: {
     level: string;
     number: number;
-    kind: "slides" | "lanes" | "watch" | "drive";
+    kind: "warmup" | "slides" | "lanes" | "watch" | "drive";
     unit: string;
   }) => emit("board_level_completed", args),
 

@@ -8,6 +8,7 @@ import { Link, useLocation } from "react-router";
 
 import { SITE_TABS, activeTab } from "~/lib/nav";
 
+import { CourseLabel } from "~/components/board/course-label";
 import { useCourseStart } from "~/components/board/use-course-start";
 import { AppBar, AppBarLink } from "~/components/brand/app-bar";
 import { Icon } from "~/components/brand/icon";
@@ -18,7 +19,7 @@ import { Button } from "~/components/ui/button";
 export function SiteNav() {
   const { pathname } = useLocation();
   const current = activeTab(pathname);
-  const { href, label } = useCourseStart();
+  const { href, label, ready, done } = useCourseStart();
   return (
     <AppBar
       brand={
@@ -43,7 +44,7 @@ export function SiteNav() {
           className="hidden md:inline-flex"
         >
           <Link to={href}>
-            {label}
+            <CourseLabel label={label} ready={ready} started={done > 0} />
             <Icon icon={ArrowRightIcon} size={14} className="dr-arrow" />
           </Link>
         </Button>

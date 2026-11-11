@@ -91,6 +91,7 @@ export default function ModelTownBoard() {
         </>
       }
       lede={`${COURSE_LEVELS.length} levels on a 3D board you drive yourself, from the lanes to parking. Every rule from the NTSA handbook. Free, no signup, every level open.`}
+      ledeFirstOnly
       checked={CHECKED}
       byline={false}
       lead={<BoardLevels />}

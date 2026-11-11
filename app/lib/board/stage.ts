@@ -84,6 +84,21 @@ export const finish = { on: false, x: 0.5, y: 0.5, metres: 0 };
  */
 export const picks: { id: string; x: number; y: number }[] = [];
 
+/**
+ * Places on the table that get a pin to tap, for "find it on the board". The
+ * scene says where each is on the screen through `picks`, under the same id.
+ */
+export const marks: { id: string; x: number; z: number }[] = [];
+
+/** Set the pins on the table. An empty list takes them away. */
+export function setMarks(
+  next: readonly { id: string; x: number; z: number }[],
+) {
+  marks.length = 0;
+  marks.push(...next);
+  wake();
+}
+
 /** How far along its route the playback has got, in metres. */
 export const play = { distance: 0 };
 
@@ -91,6 +106,11 @@ let wake: () => void = () => {};
 /** The scene hands over its "draw a frame" call, for when nothing is animating. */
 export function setWake(fn: () => void): void {
   wake = fn;
+}
+
+/** Draw a frame: something the view depends on has changed. */
+export function redraw(): void {
+  wake();
 }
 
 /** How much the slant of the view squashes depth on the table. */

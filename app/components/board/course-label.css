@@ -1,0 +1,18 @@
+/*
+ * A learner who has already started the board course. `root.tsx` marks <html>
+ * before the first paint, from the saved progress, so these apply at once.
+ */
+
+/* The pitch for a first visit steps aside. It stays in the page for search. */
+html[data-board="started"] [data-first-only] {
+  display: none;
+}
+
+/*
+ * The server can only write "Start level 1". For a returning learner that
+ * would flip to "Continue: level N" a moment later, so it is held back until
+ * the page has read their progress and written the right words.
+ */
+html[data-board="started"] [data-course-label]:not([data-ready]) {
+  visibility: hidden;
+}

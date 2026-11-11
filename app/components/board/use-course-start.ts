@@ -16,6 +16,8 @@ export function useCourseStart() {
   const mock = next.kind === "mock";
   return {
     saved,
+    /** The saved progress has been read, so the label is the right one. */
+    ready: saved != null,
     done,
     next,
     href: mock ? BOARD_PLAY_PATH : levelHref(next.id),

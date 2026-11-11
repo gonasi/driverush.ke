@@ -20,6 +20,7 @@ import {
 import type { OtherPose, Physics } from "./physics";
 import {
   COLLISION,
+  LANE_FAULTS,
   createRef,
   refStep,
   type Fault,
@@ -40,6 +41,12 @@ export const car: CarState = { x: 0, z: 0, heading: 0, speed: 0, steer: 0 };
 export const stick: Stick = { x: 0, y: 0 };
 /** Where the learner stands, and whether lane assist is on. Set by the store. */
 export const drive: DriveOptions = { seat: "south", assist: true };
+
+/**
+ * How the drive is judged. On the no-fail first drive a breach of lane
+ * discipline is only said, as a small mistake, and the drive carries on.
+ */
+export const judging = { forgiveLanes: false };
 
 /** What the scene needs to know about the drive, beyond `car`. */
 export const view = {
@@ -107,6 +114,39 @@ let paused = false;
 let moved = false;
 let carry = 0;
 let elapsed = 0;
+
+/**
+ * The drive as it stood a little while ago, kept every couple of metres, so a
+ * gentle level can put the car back before a mistake instead of ending.
+ */
+type Snap = {
+  at: number;
+  trail: number;
+  car: CarState;
+  ref: RefState;
+  routeRef: RouteRefState;
+  assist: AssistState;
+};
+const snaps: Snap[] = [];
+const SNAP_GAP = 2;
+const SNAP_MAX = 48;
+/** Metres driven this attempt. */
+let driven = 0;
+/** After a set back the stick is ignored until it has been let go once. */
+let letGo = false;
+const REST: Stick = { x: 0, y: 0 };
+
+function snapshot(): void {
+  if (snaps.length >= SNAP_MAX) snaps.shift();
+  snaps.push({
+    at: driven,
+    trail: trail.length,
+    car: { ...car },
+    ref: structuredClone(ref),
+    routeRef: structuredClone(routeRef),
+    assist: { ...assist },
+  });
+}
 const before = { x: 0, z: 0, heading: 0 };
 const input: CarInput = { steer: 0, throttle: 0, brake: 0 };
 
@@ -162,10 +202,55 @@ export function beginChallenge(next: BoardChallenge, cb: Callbacks): void {
   trail.length = 0;
   trail.push({ x: car.x, z: car.z });
   lastBump = null;
+  driven = 0;
+  letGo = false;
+  snaps.length = 0;
+  snapshot();
   settle();
   driving = true;
   resetInput();
   if (!engine) void loadPhysics();
+}
+
+/**
+ * Put the car back where it was about this many metres ago, at rest, and carry
+ * on with the same attempt. False when there is nothing to go back to.
+ */
+export function setBack(metres: number): boolean {
+  if (!challenge || !callbacks || !engine || snaps.length === 0) return false;
+  const want = driven - metres;
+  let i = snaps.length - 1;
+  while (i > 0 && snaps[i].at > want) i -= 1;
+  const snap = snaps[i];
+  snaps.length = i + 1;
+  Object.assign(car, snap.car);
+  car.speed = 0;
+  car.steer = 0;
+  ref = structuredClone(snap.ref);
+  routeRef = structuredClone(snap.routeRef);
+  assist = { ...snap.assist };
+  physics = engine.createPhysics(challenge, car);
+  view.others = physics.poses;
+  view.braking = false;
+  view.reversing = false;
+  view.jolt = 0;
+  view.hold = 0;
+  view.backing = 0;
+  trail.length = Math.max(1, snap.trail);
+  driven = snap.at;
+  lastBump = null;
+  carry = 0;
+  paused = false;
+  settle();
+  resetInput();
+  letGo = true;
+  driving = true;
+  return true;
+}
+
+/** Metres driven this attempt. */
+export function drivenMetres(): number {
+  return driven;
 }
 
 /** Draw the car exactly where it is. */
@@ -264,7 +349,9 @@ export function tick(frameSeconds: number): void {
     before.x = car.x;
     before.z = car.z;
     before.heading = car.heading;
-    if (!moved && Math.hypot(stick.x, stick.y) > STICK_DEADZONE) moved = true;
+    const pushed = Math.hypot(stick.x, stick.y) > STICK_DEADZONE;
+    if (letGo && !pushed) letGo = false;
+    if (!moved && pushed && !letGo) moved = true;
     if (moved) elapsed += STEP;
     view.jolt = Math.max(0, view.jolt - STEP * 2.5);
 
@@ -278,7 +365,13 @@ export function tick(frameSeconds: number): void {
       continue;
     }
 
-    stickToInput(stick, car, input, manoeuvring() ? HANDS_ON : drive, assist);
+    stickToInput(
+      letGo ? REST : stick,
+      car,
+      input,
+      manoeuvring() ? HANDS_ON : drive,
+      assist,
+    );
     view.braking = input.brake > 0 && car.speed > 0.05;
     view.hold = assist.hold;
     view.aimX = assist.aimX;
@@ -287,6 +380,8 @@ export function tick(frameSeconds: number): void {
     view.backing = assist.backing;
     physicsStep(physics, car, input);
     view.reversing = car.speed < -0.05;
+    driven += Math.abs(car.speed) * STEP;
+    if (driven - snaps[snaps.length - 1].at > SNAP_GAP) snapshot();
     const last = trail[trail.length - 1];
     if (
       trail.length < TRAIL_MAX &&
@@ -324,7 +419,13 @@ export function tick(frameSeconds: number): void {
       }
       callbacks.onSmall(fault);
     }
-    if (result.fault) {
+    if (
+      result.fault &&
+      judging.forgiveLanes &&
+      LANE_FAULTS.has(result.fault.id)
+    ) {
+      callbacks.onSmall(result.fault);
+    } else if (result.fault) {
       stopDriving();
       callbacks.onFault(result.fault);
       return;

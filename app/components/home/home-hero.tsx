@@ -8,6 +8,7 @@ import { Link } from "react-router";
 import { COURSE_LEVELS } from "~/lib/board/curriculum";
 import { stagger } from "~/lib/motion";
 
+import { CourseLabel } from "~/components/board/course-label";
 import { useCourseStart } from "~/components/board/use-course-start";
 import { BoardThumb } from "~/components/board/board-thumb";
 import { Icon } from "~/components/brand/icon";
@@ -15,7 +16,7 @@ import { PlayIcon } from "~/components/brand/icons";
 import { Button } from "~/components/ui/button";
 
 export function HomeHero() {
-  const { href, label, detail, done } = useCourseStart();
+  const { href, label, detail, done, ready } = useCourseStart();
   return (
     <section
       id="try-now"
@@ -62,7 +63,7 @@ export function HomeHero() {
           >
             <Link to={href}>
               <Icon icon={PlayIcon} size={18} />
-              {label}
+              <CourseLabel label={label} ready={ready} started={done > 0} />
             </Link>
           </Button>
           <p className="m-0 min-w-0 flex-1 text-[14px] leading-snug text-ink-2">

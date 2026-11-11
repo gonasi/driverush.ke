@@ -5,8 +5,9 @@
  * the line `network.ts` found for it.
  *
  * It ends the attempt when the car leaves the route, is in the wrong lane at
- * the roundabout or coming up to a junction turn, drives against the traffic,
- * or runs a stop line. It passes
+ * the roundabout, at a gap in the reserve or coming up to a junction turn,
+ * crosses or drives along a continuous line, drives on the wrong side of a
+ * road, or runs a stop line. It passes
  * the task when the car stops in the green box, or in the bay, straight.
  *
  * Giving way, at a give way line or to people on a crossing, is not enforced:
@@ -15,9 +16,9 @@
  */
 import type { CarState } from "./car";
 import { ROADS } from "./full-board";
-import { locate, wrapPi } from "./geometry";
+import { ARMS, laneBearing, locate, wrapPi } from "./geometry";
 import { ROAD_BOX } from "./lessons";
-import type { Route } from "./network";
+import { network, type Route } from "./network";
 import { createLineState, lineStep, type LineState } from "./lines";
 import type { Contact } from "./physics";
 import type { Fault, RefResult, SmallFaultId } from "./referee";
@@ -27,6 +28,8 @@ export type RouteRefState = {
   progress: number;
   offTime: number;
   wrongWayTime: number;
+  /** How long the car has driven up the lane that comes the other way. */
+  wrongSideTime: number;
   goalTime: number;
   /** How long the car has sat in the bay without being straight in it. */
   askewTime: number;
@@ -48,6 +51,7 @@ export function createRouteRef(): RouteRefState {
     progress: 0,
     offTime: 0,
     wrongWayTime: 0,
+    wrongSideTime: 0,
     goalTime: 0,
     askewTime: 0,
     askewTold: false,
@@ -101,6 +105,37 @@ function noStopping(car: CarState): string | null {
   return locate(car.x, car.z).kind === "ring" ? "ring" : null;
 }
 const ASKEW_GRACE = 1.4;
+/** The middle of the car this near the middle of a lane is in that lane. */
+const IN_LANE = 1.6;
+
+/**
+ * The lane under the car: which way it runs, and whether only a painted line
+ * keeps it from the lane coming the other way. Null between lanes, in a
+ * junction, on the roundabout or in the parking zone.
+ */
+function laneUnder(car: CarState): { heading: number; line: boolean } | null {
+  const loc = locate(car.x, car.z);
+  if (loc.kind === "arm") {
+    return {
+      heading: laneBearing(loc.arm, loc.side),
+      line: ARMS[loc.arm].medianHalf === 0,
+    };
+  }
+  if (loc.kind !== "road") return null;
+  for (const lane of network().roadLanes) {
+    // The parking aisle is for getting in and out of bays, across both lanes.
+    if (lane.road === "aisle") continue;
+    const dx = car.x - lane.a.x;
+    const dz = car.z - lane.a.z;
+    const sin = Math.sin(lane.heading);
+    const cos = Math.cos(lane.heading);
+    const along = dx * sin - dz * cos;
+    if (along < 0 || along > lane.length) continue;
+    if (Math.abs(dx * cos + dz * sin) > IN_LANE) continue;
+    return { heading: lane.heading, line: true };
+  }
+  return null;
+}
 
 const BUMPS: Partial<Record<Contact, SmallFaultId>> = {
   kerb: "kerb",
@@ -174,13 +209,13 @@ export function routeRefStep(
     }
   }
 
-  // Continuous lines: white costs a star, yellow ends the attempt.
-  for (const color of lineStep(ref.lines, car)) {
-    if (color === "yellow") {
-      result.fault = { id: "centre_line", serious: true };
-      return result;
-    }
-    result.small.push({ id: "solid_line", serious: false });
+  // Continuous lines, crossed or driven along: white or yellow, the attempt ends.
+  for (const color of lineStep(ref.lines, car, dt)) {
+    result.fault = {
+      id: color === "yellow" ? "centre_line" : "solid_line",
+      serious: true,
+    };
+    return result;
   }
 
   const at = nearest(route, car, ref.progress);
@@ -199,7 +234,12 @@ export function routeRefStep(
   const isTurn = (s: typeof step) =>
     s.maneuver === "turn_left" || s.maneuver === "turn_right";
   const next = route.steps[index + 1];
+  // Turning back through a gap is made from the lane beside the reserve, into
+  // the lane beside it: the lane counts through the turn and on the way to it.
+  const isBack = (s: typeof step) => s.maneuver === "u_turn";
   const strict =
+    isBack(step) ||
+    (next != null && isBack(next) && at.distance > next.from - TURN_APPROACH) ||
     step.maneuver === "hold_lane" ||
     step.maneuver === "ring" ||
     step.maneuver === "exit" ||
@@ -210,9 +250,11 @@ export function routeRefStep(
     // In the turn itself, the car has gone somewhere else. Before it, or at
     // the roundabout, it is in the wrong lane.
     const fault: Fault =
-      strict && !isTurn(step)
-        ? { id: "wrong_lane", serious: true }
-        : { id: "off_route", serious: true };
+      isBack(step) || (next != null && isBack(next) && strict)
+        ? { id: "u_turn_lane", serious: true }
+        : strict && !isTurn(step)
+          ? { id: "wrong_lane", serious: true }
+          : { id: "off_route", serious: true };
     result.fault = fault;
     return result;
   }
@@ -222,6 +264,28 @@ export function routeRefStep(
   ref.wrongWayTime = against && speed > MOVING ? ref.wrongWayTime + dt : 0;
   if (ref.wrongWayTime > WRONG_WAY_GRACE) {
     result.fault = { id: "wrong_way", serious: true };
+    return result;
+  }
+
+  // Keep left: going forward up the lane that comes the other way. Where the
+  // route itself crosses that lane, to turn, turn back or park, it is allowed.
+  const crossing =
+    isTurn(step) ||
+    isBack(step) ||
+    step.gear === "reverse" ||
+    step.road === "angle_bay" ||
+    step.road === "flush_bay";
+  const under = crossing ? null : laneUnder(car);
+  const wrongSide =
+    under != null &&
+    car.speed > MOVING &&
+    Math.abs(wrapPi(car.heading - under.heading)) > WRONG_WAY_ANGLE;
+  ref.wrongSideTime = wrongSide ? ref.wrongSideTime + dt : 0;
+  if (ref.wrongSideTime > WRONG_WAY_GRACE) {
+    result.fault = {
+      id: under!.line ? "centre_line" : "wrong_way",
+      serious: true,
+    };
     return result;
   }
 

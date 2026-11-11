@@ -24,6 +24,8 @@ import { getPostHog, initAnalytics, usePageviews } from "~/lib/analytics";
 import { useLearnerAnalytics } from "~/lib/use-learner-analytics";
 import { useUtmCapture } from "~/lib/utm";
 
+const BOARD_INIT_SCRIPT = `try{var s=JSON.parse(localStorage.getItem("driverush:board")||"{}").state;if(s&&((s.learned&&s.learned.length)||(s.bestStars&&Object.keys(s.bestStars).length)))document.documentElement.dataset.board="started"}catch(e){}`;
+
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
@@ -51,6 +53,7 @@ export const links: Route.LinksFunction = () => [
     href: "/favicon-16x16.png",
   },
   { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
+  { rel: "manifest", href: "/manifest.webmanifest" },
 ];
 
 /**
@@ -82,6 +85,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
   // main nav (see <AppBar>) — it used to float over every page, which got in
   // the way of the games on mobile.
   useThemeSync();
+  // The service worker (`public/sw.js`) keeps opened pages and the board's
+  // files for when there is no connection. Not in development, where it would
+  // serve stale files.
+  React.useEffect(() => {
+    if (!import.meta.env.PROD || !("serviceWorker" in navigator)) return;
+    const register = () => {
+      navigator.serviceWorker.register("/sw.js").catch(() => {
+        // No worker only means no offline copy.
+      });
+    };
+    if (document.readyState === "complete") register();
+    else window.addEventListener("load", register, { once: true });
+  }, []);
   return (
     // The theme init script writes `style="color-scheme: …"` on <html> before
     // React hydrates (so light/dark settles without a flash). That edit comes
@@ -92,6 +108,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         {/* Settle light/dark before first paint — no flash. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {/* A learner who has started the board course: marked before first
+            paint, so the page opens as theirs (`course-label.css`). */}
+        <script dangerouslySetInnerHTML={{ __html: BOARD_INIT_SCRIPT }} />
         <Meta />
         <Links />
       </head>

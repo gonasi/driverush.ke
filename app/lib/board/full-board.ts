@@ -716,13 +716,13 @@ function armPaint(arm: Arm, numbers: boolean, white: string): ArmPaint {
     const a = lanePoint(arm.id, "approach", lane, RING_R + 5.4);
     marks.push(at(a.x, a.z, bearing, arrow(arrowFor(arm, lane))));
     if (!numbers) continue;
-    const t = lanePoint(arm.id, "approach", lane, RING_R + 10.4);
+    const t = lanePoint(arm.id, "approach", lane, NUMBER_ALONG);
     marks.push(
       at(
         t.x,
         t.z,
         bearing,
-        `<text y="0.8" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="2.2" fill="${C.white}">${lane}</text>`,
+        `<text y="${LANE_NUMBER.baseline}" text-anchor="middle" font-family="${LANE_NUMBER.family}" font-weight="${LANE_NUMBER.weight}" font-size="${LANE_NUMBER.size}" fill="${C.white}">${lane}</text>`,
       ),
     );
   }
@@ -732,6 +732,34 @@ function armPaint(arm: Arm, numbers: boolean, white: string): ArmPaint {
     ticks: mouthArc(arm, meets),
     marks: marks.join(""),
   };
+}
+
+/** How far up its road a lane's painted number sits, from the middle of the roundabout. */
+const NUMBER_ALONG = RING_R + 10.4;
+
+/** How a lane number is lettered, in metres, about the point it is painted at. */
+export const LANE_NUMBER = {
+  size: 2.2,
+  baseline: 0.8,
+  family: "Arial, Helvetica, sans-serif",
+  weight: 700,
+} as const;
+
+/** A lane number painted on a road: where, and which way up. */
+export type LaneNumber = { x: number; z: number; bearing: number; lane: number };
+
+/**
+ * Every painted lane number, exactly where the drawing letters it. The table
+ * paints them from this, so the two can never disagree.
+ */
+export function laneNumbers(): LaneNumber[] {
+  return ARM_LIST.flatMap((arm) => {
+    const bearing = laneBearing(arm.id, "approach");
+    return Array.from({ length: arm.lanes }, (_, i) => {
+      const t = lanePoint(arm.id, "approach", i + 1, NUMBER_ALONG);
+      return { x: t.x, z: t.z, bearing, lane: i + 1 };
+    });
+  });
 }
 
 /** A zebra crossing over the two-way road: six bars, kerb to kerb. */

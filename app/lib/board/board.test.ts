@@ -224,6 +224,35 @@ function follower(
   };
 }
 
+/**
+ * Turning back, driven properly: a firm push over to the lane beside the
+ * reserve where the lines are broken, then round through the gap from it.
+ */
+function turningBack(
+  challenge: TurnChallenge,
+  lane: number,
+  options: Follow = {},
+  endAlong = 40,
+) {
+  const follow = follower(challenge, turnBackPath(lane, 56, endAlong), options);
+  return (seconds: number, outcome: Outcome) => {
+    const loc = locate(car.x, car.z);
+    if (
+      loc.kind === "arm" &&
+      loc.arm === "N" &&
+      loc.side === "exit" &&
+      loc.lane < ARMS.N.lanes &&
+      loc.along > SOLID_ZONE + 2 &&
+      loc.along < 60
+    ) {
+      // Driving north, the reserve is on the right, the east.
+      point(laneBearing("N", "exit") + 45 * DEG, options.push);
+      return;
+    }
+    follow(seconds, outcome);
+  };
+}
+
 /** A route's line from where it has reached `lane`. */
 function fromLane(points: Vec[], lane: number): Vec[] {
   const at = points.findIndex((p) => {
@@ -241,10 +270,11 @@ function proper(
 ): Outcome {
   // A task from the three-lane road is driven along its own route, which
   // has the lane change and the lane to leave in.
+  if (challenge.id === "turn-back") {
+    return play(challenge, turningBack(challenge, lane, options));
+  }
   const path =
-    challenge.id === "turn-back"
-      ? turnBackPath(lane)
-      : challenge.start.arm === "S"
+    challenge.start.arm === "S"
         ? lanePath("S", lane, challenge.turn)
         : fromLane(challengeRoute(challenge)?.points ?? [], lane);
   return play(challenge, follower(challenge, path, options));
@@ -765,10 +795,11 @@ describe("serious mistakes end the attempt", () => {
   it("turning off into the parking zone, which no task uses", () => {
     drive.assist = false;
     const challenge = task("right", 3);
-    // Round to the right, then left off the road into the parking aisle.
+    // Round to the right, then left off the road into the parking aisle, once
+    // past the continuous lines.
     const path = [
-      ...lanePath("S", 3, "right", 56, 30),
-      { x: 36, z: -8 },
+      ...lanePath("S", 3, "right", 56, 35),
+      { x: 38.5, z: -9 },
       { x: 39.7, z: -16 },
       { x: 39.7, z: -30 },
       { x: 39.7, z: -45 },
@@ -785,7 +816,7 @@ describe("serious mistakes end the attempt", () => {
     const challenge = TURN_TASKS.find((c) => c.id === "turn-back")!;
     const result = play(
       challenge,
-      follower(challenge, turnBackPath(2, 56, 26), { through: true }),
+      turningBack(challenge, 2, { through: true }, 26),
     );
     expect(result.fault).toMatchObject({ id: "past_end" });
     expect(result.goal).toBe(false);
@@ -804,7 +835,7 @@ describe("serious mistakes end the attempt", () => {
   });
 });
 
-describe("small mistakes cost a star and the drive goes on", () => {
+describe("lane discipline ends the attempt", () => {
   it("a lane change over the continuous lines before the roundabout", () => {
     const challenge = task("straight", 2);
     const onward = follower(challenge, lanePath("S", 3, "straight"));
@@ -816,9 +847,8 @@ describe("small mistakes cost a star and the drive goes on", () => {
       else if (!across && car.z > 20) point(45 * DEG);
       else onward(seconds, outcome);
     });
-    expect(result.small.map((f) => f.id)).toEqual(["solid_line"]);
-    expect(result.small[0].serious).toBe(false);
-    expect(result.goal).toBe(true);
+    expect(result.fault).toMatchObject({ id: "solid_line", serious: true });
+    expect(result.goal).toBe(false);
   });
 
   it("the same lane change further back is fine", () => {
@@ -836,9 +866,12 @@ describe("small mistakes cost a star and the drive goes on", () => {
       ...lanePath("S", 3, "straight").filter((p) => p.z <= 7),
     ];
     const result = play(challenge, follower(challenge, path));
-    expect(result.small.map((f) => f.id)).toEqual(["roundabout_lane_change"]);
-    expect(result.small[0]).toMatchObject({ lane: 2, serious: false });
-    expect(result.goal).toBe(true);
+    expect(result.fault).toMatchObject({
+      id: "roundabout_lane_change",
+      lane: 2,
+      serious: true,
+    });
+    expect(result.goal).toBe(false);
   });
 
   it("leaving the roundabout in a different lane", () => {
@@ -850,11 +883,17 @@ describe("small mistakes cost a star and the drive goes on", () => {
       ...lanePath("S", 3, "straight").filter((p) => p.z <= -24),
     ];
     const result = play(challenge, follower(challenge, path));
-    expect(result.small.map((f) => f.id)).toEqual(["exit_lane"]);
-    expect(result.small[0]).toMatchObject({ lane: 2, serious: false });
-    expect(faultTip(result.small[0]).reason).toContain("lane 2");
-    expect(result.goal).toBe(true);
+    expect(result.fault).toMatchObject({
+      id: "exit_lane",
+      lane: 2,
+      serious: true,
+    });
+    expect(faultTip(result.fault!).reason).toContain("lane 2");
+    expect(result.goal).toBe(false);
   });
+});
+
+describe("small mistakes cost a star and the drive goes on", () => {
 
   it("stopping on the roundabout", () => {
     const challenge = task("straight", 2);
