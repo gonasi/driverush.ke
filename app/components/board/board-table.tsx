@@ -36,7 +36,15 @@ import { STICK_DEADZONE, type Seat } from "~/lib/board/joystick";
 import { taskGoalBox } from "~/lib/board/lessons";
 import { parkedCars } from "~/lib/board/parking-layouts";
 import { car, shown, stick, tick, view } from "~/lib/board/runtime";
-import { advance, cam, finish, setWake, useStage } from "~/lib/board/stage";
+import {
+  advance,
+  asDriveSpan,
+  cam,
+  endLook,
+  finish,
+  setWake,
+  useStage,
+} from "~/lib/board/stage";
 
 import {
   buildRibbon,
@@ -728,6 +736,10 @@ type Rig = {
   tight: number;
   /** The lane strip's brightness, eased so it fades rather than blinks. */
   hold: number;
+  /** Coming back from the learner's own view: ease, don't jump. */
+  returning: boolean;
+  /** How closed in the view is drawn, 0 to 1: it sets the slant. */
+  near: number;
 };
 
 function Scene({
@@ -929,6 +941,8 @@ function Scene({
     look: 1,
     tight: 0,
     hold: 0,
+    returning: false,
+    near: 0,
   });
   const holdStrip = React.useRef<THREE.Group>(null);
   const holdMaterial = React.useRef<THREE.MeshBasicMaterial>(null);
@@ -1053,7 +1067,6 @@ function Scene({
       r.zoom += (wantIn - r.zoom) * (1 - Math.exp(-dt * rate));
     }
     const close = ease(r.zoom);
-    const tilt = lerp(TILT_OUT, TILT_IN, close);
     const away = AWAY[seat];
     const sideways = seat === "east" || seat === "west";
 
@@ -1092,9 +1105,16 @@ function Scene({
     const turnRate = 1 - Math.exp(-dt * 3);
     r.look += ((backing ? -1 : 1) - r.look) * turnRate;
     r.tight += ((backing ? 1 : 0) - r.tight) * turnRate;
+    // How close is the learner's to choose. How far it backs off is not, so
+    // pushing the stick always closes in.
+    const spanOf = (d: number) => 2 * d * Math.tan(halfH);
+    cam.underWay = busy;
+    cam.inSpan = SPAN_IN * Math.max(1, aspect / 0.62);
+    cam.outSpan = spanOf(farOut);
+    const inSpan =
+      cam.driveSpan === null ? cam.inSpan : asDriveSpan(cam.driveSpan);
     const nearIn =
-      ((SPAN_IN * Math.max(1, aspect / 0.62)) / 2 / Math.tan(halfH)) *
-      lerp(1, REVERSE_CLOSER, r.tight);
+      (inSpan / 2 / Math.tan(halfH)) * lerp(1, REVERSE_CLOSER, r.tight);
     const depthIn = (2 * nearIn * Math.tan(halfV)) / Math.sin(TILT_IN);
     const nose = dirOf(at.heading);
     const ahead = { x: nose.x * r.look, z: nose.z * r.look };
@@ -1122,27 +1142,14 @@ function Scene({
 
     // The learner has hold of the camera: it goes where they slide it and as
     // close as they pinch it. It still never turns.
-    const spanOf = (d: number) => 2 * d * Math.tan(halfH);
     cam.aspect = aspect;
     cam.max = spanOf(whole);
-    // A fresh attempt keeps the zoom the learner chose on the one before.
-    if (fresh && driving && !cam.free && cam.driveSpan !== null) {
-      cam.free = true;
-      cam.follow = true;
-      cam.span = cam.driveSpan;
-    }
-    // Once the car is under way the view comes back to it, from a look at
-    // the finish or from wherever it was slid to. The zoom stays.
-    if (moving && cam.free) {
-      if (cam.back) {
-        cam.span = cam.back.span;
-        cam.free = cam.back.free;
-        cam.back = null;
-      }
-      cam.follow = true;
-    }
+    // A slide or a zoom is a look round the table. Once the stick is pushed
+    // the view goes back to the drive, which follows the car and closes in.
+    if (busy && cam.free) endLook();
     const free = cam.free;
     if (free) {
+      r.returning = true;
       if (!driving && cam.follow && pose) {
         cam.x = pose.x;
         cam.z = pose.z;
@@ -1180,7 +1187,6 @@ function Scene({
             out,
           );
         }
-        if (!cam.back) cam.driveSpan = cam.span;
         goalX = cam.x;
         goalZ = cam.z;
       } else {
@@ -1191,13 +1197,26 @@ function Scene({
         goalZ = cam.z - away.z * cam.lift * depth - away.x * across;
       }
     } else {
-      cam.free = false;
-      r.dist = distance;
+      if (fresh || r.dist === 0) r.returning = false;
+      if (r.returning) {
+        r.dist += (distance - r.dist) * k;
+        r.near += (close - r.near) * k;
+        near = r.near;
+        if (
+          Math.abs(distance - r.dist) < 0.3 &&
+          Math.abs(close - r.near) < 0.01
+        ) {
+          r.returning = false;
+        }
+      } else {
+        r.dist = distance;
+      }
       cam.x = r.x;
       cam.z = r.z;
-      cam.span = spanOf(distance);
+      cam.span = spanOf(r.dist);
     }
-    const tiltNow = free ? lerp(TILT_OUT, TILT_IN, near) : tilt;
+    r.near = near;
+    const tiltNow = lerp(TILT_OUT, TILT_IN, near);
     r.snappedFor = attempt;
     r.seat = seat;
     r.x += (goalX - r.x) * k;

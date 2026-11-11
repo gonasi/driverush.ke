@@ -52,10 +52,20 @@ export const cam = {
   min: 16,
   max: 240,
   /**
-   * The zoom the learner chose while driving, kept from one attempt to the
-   * next. Null leaves the zoom to the drive.
+   * How close the learner likes the view while the car is moving, kept from
+   * one attempt to the next. Null leaves it to the drive. It only changes how
+   * far the view closes in: the view still backs off when the car stops and
+   * closes in when it moves.
    */
   driveSpan: null as number | null,
+  /** The learner zoomed during this look, so the zoom is theirs to keep. */
+  zoomed: false,
+  /** The car is under way, or the stick is pushed. The scene fills it in. */
+  underWay: false,
+  /** How close the drive closes in when left alone. The scene fills it in. */
+  inSpan: 23,
+  /** How far the drive backs off when the car stops. The scene fills it in. */
+  outSpan: 64,
   /** The view to go back to after a look at the finish. */
   back: null as { free: boolean; span: number } | null,
 };
@@ -92,12 +102,51 @@ export function panBy(dx: number, dz: number): void {
   wake();
 }
 
+/**
+ * The widest the drive will hold the view while the car moves. Kept short of
+ * the backed-off view, so pushing the stick always closes in.
+ */
+export function widestDriveSpan(): number {
+  return Math.max(cam.min, cam.outSpan * 0.7);
+}
+
+/** The learner's zoom, as the drive can keep it. */
+export function asDriveSpan(span: number): number {
+  return clamp(span, cam.min, widestDriveSpan());
+}
+
 /** Zoom: under 1 closes in, over 1 backs off. */
 export function zoomBy(factor: number): void {
+  // With the car under way the view belongs to the drive. A zoom then sets
+  // how close the drive holds it, and takes nothing over.
+  if (cam.underWay && !cam.free) {
+    cam.driveSpan = asDriveSpan((cam.driveSpan ?? cam.inSpan) * factor);
+    wake();
+    return;
+  }
   cam.free = true;
+  cam.zoomed = true;
   cam.back = null;
   cam.span = clamp(Math.min(cam.span, cam.max) * factor, cam.min, cam.max);
   wake();
+}
+
+/**
+ * The car has moved off: a look round the table is over, and the view goes
+ * back to the drive. Zooming in closer than the drive does is kept as how
+ * close it closes in from now on. Backing off, or sliding, was only a look.
+ */
+export function endLook(): void {
+  if (!cam.free) return;
+  // A look at the finish is not the learner's zoom: theirs is the one before.
+  const span = cam.back ? cam.back.span : cam.span;
+  if (cam.zoomed && span < (cam.driveSpan ?? cam.inSpan)) {
+    cam.driveSpan = asDriveSpan(span);
+  }
+  cam.free = false;
+  cam.follow = false;
+  cam.zoomed = false;
+  cam.back = null;
 }
 
 /** Back off to the whole table. */
@@ -165,6 +214,7 @@ export function endPeek(): void {
 export function followCar(): void {
   cam.free = false;
   cam.follow = false;
+  cam.zoomed = false;
   cam.driveSpan = null;
   cam.back = null;
   wake();
@@ -174,6 +224,7 @@ export function followCar(): void {
 export function releaseCamera(): void {
   cam.free = false;
   cam.follow = false;
+  cam.zoomed = false;
   cam.back = null;
 }
 

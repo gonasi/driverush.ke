@@ -3,9 +3,11 @@
  * the view, pinch or scroll to zoom, double tap to see the whole table. The
  * camera never turns, so "up" stays away from you whichever side you stand at.
  *
- * It works during a drive too, under the joystick. There the zoom stays as the
- * learner set it, a slid view comes back to the car as soon as it moves, and
- * the third button hands the view back to the drive.
+ * It works during a drive too, under the joystick. There a slide or a zoom is
+ * a look round the table: the view goes back to the car as soon as the stick
+ * is pushed, and still closes in as it moves and backs off as it stops. Only
+ * how close it closes in is the learner's to keep (see `endLook`), and the
+ * third button gives that back to the drive too.
  *
  * It writes into `board/stage.ts`'s `cam`, which the scene reads every frame,
  * so moving the view never re-renders React.
