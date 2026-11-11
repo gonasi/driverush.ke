@@ -1,35 +1,45 @@
 /**
- * The Model Town Board as numbers: one roundabout where a four-lane road meets a
- * three-lane road, laid out from the NTSA Kenya Learner Driver Handbook (2016),
- * Unit 3. Everything else reads this file: the 3D scene, the 2D drawing and the
- * referee. No three.js in here, so the rules can be tested on their own.
+ * The roundabout and the four roads into it, as the rules see them: lanes,
+ * turns, and "where is this point?". The numbers come from `full-board.ts`,
+ * which lays out the whole board, so the rules and the drawing cannot disagree.
+ * No three.js in here, so the rules can be tested on their own.
  *
  * Top view, metres. `x` runs east and `z` runs south, which matches both SVG
  * (x right, y down) and the three.js ground plane. Bearings are compass angles
  * in radians: 0 is north, a quarter turn clockwise is east.
  */
+import {
+  ARMS as BOARD_ARMS,
+  ISLAND_R as BOARD_ISLAND_R,
+  LANE,
+  RING_LANE,
+  RING_LANES as BOARD_RING_LANES,
+  RING_R,
+  SOLID_TO,
+  otherRoad,
+  reserveAt,
+  type ArmId,
+  type OtherRoad,
+} from "./full-board";
 
-export const LANE_W = 3.5;
-/** The board is a square this far from the centre in each direction. */
-export const BOARD_HALF = 60;
-export const ISLAND_R = 5;
-export const RING_LANES = 4;
-export const RING_OUTER_R = ISLAND_R + RING_LANES * LANE_W;
-/** Half the width of the raised central reserve on the four-lane road. */
-export const MEDIAN_HALF = 0.8;
-/** Where the central reserve starts, measured from the centre. */
-export const MEDIAN_START = RING_OUTER_R + 4;
+export type { ArmId } from "./full-board";
+
+/** A lane on a road. The roundabout's own lanes are a little wider. */
+export const LANE_W = LANE;
+export const RING_LANE_W = RING_LANE;
+export const ISLAND_R = BOARD_ISLAND_R;
+export const RING_LANES = BOARD_RING_LANES;
+export const RING_OUTER_R = RING_R;
 /**
  * Lane lines are continuous for this far before the roundabout: choose your lane
  * before them, because a continuous white line means no changing lanes.
  */
-export const SOLID_ZONE = RING_OUTER_R + 14;
+export const SOLID_ZONE = SOLID_TO;
 /** A car has left the roundabout once it is this far out along an arm. */
 export const EXIT_CLEAR = RING_OUTER_R + 3;
 
 export type Vec = { x: number; z: number };
 
-export type ArmId = "S" | "W" | "N" | "E";
 /** Clockwise, the way traffic goes round. */
 export const ARM_ORDER: readonly ArmId[] = ["S", "W", "N", "E"];
 
@@ -37,42 +47,31 @@ export type Arm = {
   id: ArmId;
   /** Lanes each way. */
   lanes: number;
+  /** Half the width of the central reserve, or 0 where there is only a line. */
   medianHalf: number;
   /** Unit vector from the centre out along the arm. */
   out: Vec;
+  /** How far the arm runs from the centre. */
+  length: number;
 };
 
+const arm = (id: ArmId): Arm => ({
+  id,
+  lanes: BOARD_ARMS[id].lanes,
+  medianHalf: BOARD_ARMS[id].reserve,
+  out: BOARD_ARMS[id].out,
+  length: BOARD_ARMS[id].length,
+});
+
 export const ARMS: Record<ArmId, Arm> = {
-  S: { id: "S", lanes: 4, medianHalf: MEDIAN_HALF, out: { x: 0, z: 1 } },
-  W: { id: "W", lanes: 3, medianHalf: 0, out: { x: -1, z: 0 } },
-  N: { id: "N", lanes: 4, medianHalf: MEDIAN_HALF, out: { x: 0, z: -1 } },
-  E: { id: "E", lanes: 3, medianHalf: 0, out: { x: 1, z: 0 } },
+  S: arm("S"),
+  W: arm("W"),
+  N: arm("N"),
+  E: arm("E"),
 };
 
 export type Side = "approach" | "exit";
 export type Turn = "left" | "straight" | "right" | "back";
-
-/** Decoration only. Kept here so the texture can paint each tree's shadow. */
-export const TREES: readonly { x: number; z: number; s: number }[] = [
-  { x: -30, z: -27, s: 1.1 },
-  { x: -45, z: -41, s: 1.3 },
-  { x: -25, z: -49, s: 0.9 },
-  { x: -51, z: -21, s: 1 },
-  { x: 31, z: -29, s: 1.2 },
-  { x: 47, z: -45, s: 1 },
-  { x: 25, z: -51, s: 1.1 },
-  { x: 52, z: -20, s: 0.9 },
-  { x: -33, z: 29, s: 1 },
-  { x: -47, z: 45, s: 1.2 },
-  { x: -25, z: 52, s: 0.9 },
-  { x: -52, z: 23, s: 1.1 },
-  { x: 33, z: 27, s: 1.3 },
-  { x: 45, z: 43, s: 1 },
-  { x: 26, z: 53, s: 1.1 },
-  { x: 53, z: 21, s: 0.9 },
-  // The one on the roundabout's island.
-  { x: 0, z: 0, s: 0.75 },
-];
 
 // ---- small maths --------------------------------------------------------------
 
@@ -137,11 +136,11 @@ export function lanePoint(
 
 /** Ring lane 1 is the outermost, lane 4 hugs the island. */
 export function ringRadius(lane: number): number {
-  return RING_OUTER_R - (lane - 0.5) * LANE_W;
+  return RING_OUTER_R - (lane - 0.5) * RING_LANE_W;
 }
 
 export function ringLaneAt(r: number): number {
-  const lane = Math.floor((RING_OUTER_R - r) / LANE_W) + 1;
+  const lane = Math.floor((RING_OUTER_R - r) / RING_LANE_W) + 1;
   return Math.min(RING_LANES, Math.max(1, lane));
 }
 
@@ -150,6 +149,8 @@ export function ringLaneAt(r: number): number {
 export type Location =
   | { kind: "ring"; lane: number; r: number; bearing: number }
   | { kind: "arm"; arm: ArmId; side: Side; lane: number; along: number }
+  /** One of the board's other roads, which no task uses yet. */
+  | { kind: "road"; what: OtherRoad }
   | { kind: "off"; what: "island" | "median" | "verge" };
 
 export function locate(x: number, z: number): Location {
@@ -161,13 +162,14 @@ export function locate(x: number, z: number): Location {
   for (const id of ARM_ORDER) {
     const arm = ARMS[id];
     const along = x * arm.out.x + z * arm.out.z;
-    if (along <= 0 || along > BOARD_HALF) continue;
+    if (along <= 0 || along > arm.length) continue;
     // Positive on the side that drives toward the roundabout.
     const inward = leftOf({ x: -arm.out.x, z: -arm.out.z });
     const lat = x * inward.x + z * inward.z;
     const dist = Math.abs(lat);
     if (dist > armHalfWidth(arm)) continue;
-    if (dist < arm.medianHalf && along >= MEDIAN_START) {
+    // A gap in the reserve is road: the innermost lane of whichever side.
+    if (dist < arm.medianHalf && reserveAt(id, along)) {
       return { kind: "off", what: "median" };
     }
     const fromCentre = Math.max(0, dist - arm.medianHalf);
@@ -183,6 +185,8 @@ export function locate(x: number, z: number): Location {
       along,
     };
   }
+  const other = otherRoad(x, z);
+  if (other) return { kind: "road", what: other };
   return { kind: "off", what: "verge" };
 }
 

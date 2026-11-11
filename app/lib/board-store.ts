@@ -19,13 +19,24 @@ import {
 } from "./board/challenges";
 import type { Fault, FaultId } from "./board/referee";
 import { beginChallenge, elapsedSeconds, stopDriving } from "./board/runtime";
+import type { Seat } from "./board/joystick";
 import { applyGrade, type SignProgress } from "./pelican-progress";
 import { bumpPracticeStreak } from "./practice-streak";
 import { BUZZ, buzz, playSfx, stopAllSfx, warmSfx } from "./sounds";
 import { pickRound } from "./trainer-rounds";
 
 export type BoardQuality = "auto" | "low" | "high";
-export type BoardSettings = { sound: boolean; quality: BoardQuality };
+export type BoardSettings = {
+  sound: boolean;
+  quality: BoardQuality;
+  /**
+   * Which side of the table the learner stands at. Left out until they choose:
+   * the bottom on a tall screen, the right-hand side on a wide one.
+   */
+  seat?: Seat;
+  /** Hold the lane the car is in. On unless switched off. */
+  assist?: boolean;
+};
 export const DEFAULT_BOARD_SETTINGS: BoardSettings = {
   sound: true,
   quality: "auto",

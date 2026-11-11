@@ -1,12 +1,12 @@
 import { Link } from "react-router";
 
-import { boardSvg } from "~/lib/board/board-svg";
+import { fullBoardSvg } from "~/lib/board/full-board";
 import { stagger } from "~/lib/motion";
 
 import { Badge } from "~/components/ui/badge";
 
 /** A still of the board. The game itself only loads on the trainer's own page. */
-const POSTER = boardSvg({ cover: true });
+const POSTER = fullBoardSvg({ seen: "east", cover: true });
 
 /**
  * The Model Town Board trainer, one tap from home. `?go=1` starts a round as
@@ -31,13 +31,13 @@ export function BoardNotice() {
             Model Town Board
           </span>
           <span className="text-[14.5px] leading-snug text-ink-2">
-            Drive the roundabout. Pick your lane, take your exit, and
-            learn the rule when the examiner stops you. Free, no signup.
+            Drive the roundabout. Pick your lane, take your exit, and learn the
+            rule when the examiner stops you. Free, no signup.
           </span>
         </span>
         <span
           role="img"
-          aria-label="The Model Town Board from above, with numbered lanes meeting at a roundabout"
+          aria-label="The Model Town Board from above: numbered lanes meeting at a roundabout, with the parking zone and the two-way road beside it"
           className="order-first block aspect-[5/2] overflow-hidden border-b-2 border-ink sm:order-none sm:aspect-auto sm:border-b-0 sm:border-l-2 [&>svg]:block [&>svg]:size-full"
           dangerouslySetInnerHTML={{ __html: POSTER }}
         />

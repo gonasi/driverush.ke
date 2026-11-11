@@ -1,7 +1,7 @@
 /**
  * The Model Town Board trainer on its page. Before a run it is a still picture
  * of the board (in the server's HTML) with one Start button. Start opens a
- * fullscreen overlay with the game, the examiner's task and the three controls.
+ * fullscreen overlay with the table, the examiner's task and the joystick.
  * The store (`board-store.ts`) owns the run; this is the shell.
  */
 import * as React from "react";
@@ -9,10 +9,17 @@ import { createPortal } from "react-dom";
 import { useShallow } from "zustand/react/shallow";
 
 import { faultRule, faultTip } from "~/lib/board/board-rules";
-import { boardSvg, BOARD_COLORS } from "~/lib/board/board-svg";
 import { BOARD_CHALLENGES } from "~/lib/board/challenges";
-import { laneBearing, lanePoint, BOARD_HALF } from "~/lib/board/geometry";
-import { car, elapsedSeconds } from "~/lib/board/runtime";
+import {
+  BOUNDS,
+  CAR_COLORS,
+  COLORS,
+  fullBoardSvg,
+  placeOnPage,
+} from "~/lib/board/full-board";
+import { laneBearing, lanePoint } from "~/lib/board/geometry";
+import type { Seat } from "~/lib/board/joystick";
+import { car, drive, elapsedSeconds } from "~/lib/board/runtime";
 import { BOARD_CHALLENGE_IDS, useBoardStore } from "~/lib/board-store";
 import { signCounts } from "~/lib/pelican-progress";
 import { cn } from "~/lib/utils";
@@ -22,12 +29,14 @@ import {
   CloseIcon,
   PlayIcon,
   RefreshIcon,
+  SettingsIcon,
   StarIcon,
 } from "~/components/brand/icons";
 import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
 import { BoardControls } from "~/components/board/board-controls";
 import { BoardFaultTip } from "~/components/board/board-fault-tip";
+import { BoardSettingsSheet } from "~/components/board/board-settings-sheet";
 import { BoardViewer } from "~/components/board/board-viewer";
 
 // Only needed at the end of a round, and it brings framer-motion with it, so
@@ -40,23 +49,44 @@ const TrainerResultCard = React.lazy(() =>
 
 const POOL = BOARD_CHALLENGES.length;
 
-/** The still board: the yellow car on its start line, the red car parked. */
+/**
+ * The still board, lying the way it does on a wide screen: the yellow car on
+ * its start line, the red car parked.
+ */
 const POSTER = (() => {
-  const start = lanePoint("S", "approach", 2, 46);
+  const start = lanePoint("S", "approach", 2, 50);
   const red = BOARD_CHALLENGES.find((c) => c.otherCars.length > 0)
     ?.otherCars[0];
-  return boardSvg({
+  return fullBoardSvg({
+    seen: "east",
     cover: true,
     cars: [
       {
         ...start,
         heading: laneBearing("S", "approach"),
-        color: BOARD_COLORS.player,
+        color: CAR_COLORS.player,
       },
-      ...(red ? [{ ...red, color: BOARD_COLORS.red }] : []),
+      ...(red ? [{ ...red, color: CAR_COLORS.red }] : []),
     ],
   });
 })();
+
+/**
+ * Where the learner stands until they choose: at the bottom on a tall screen,
+ * where the board is tall too, and on the right on a wide one, where it lies
+ * on its side and fills the screen.
+ */
+function useDefaultSeat(): Seat {
+  const [seat, setSeat] = React.useState<Seat>("south");
+  React.useEffect(() => {
+    const wide = window.matchMedia("(min-aspect-ratio: 1/1)");
+    const update = () => setSeat(wide.matches ? "east" : "south");
+    update();
+    wide.addEventListener("change", update);
+    return () => wide.removeEventListener("change", update);
+  }, []);
+  return seat;
+}
 
 function Stars({ count, className }: { count: number; className?: string }) {
   return (
@@ -98,27 +128,41 @@ function Clock({ running }: { running: boolean }) {
   );
 }
 
-/** The whole board, small, with the car as a dot. */
-function Minimap({ svg, live }: { svg: string; live: boolean }) {
+const BOARD_ASPECT = (BOUNDS.x1 - BOUNDS.x0) / (BOUNDS.z1 - BOUNDS.z0);
+
+/** The whole board, small, seen from the learner's side, with the car as a dot. */
+function Minimap({
+  svg,
+  live,
+  seat,
+}: {
+  svg: string;
+  live: boolean;
+  seat: Seat;
+}) {
   const dot = React.useRef<HTMLSpanElement>(null);
   React.useEffect(() => {
     let frame = 0;
     const place = () => {
       if (dot.current) {
-        const x = ((car.x + BOARD_HALF) / (BOARD_HALF * 2)) * 100;
-        const y = ((car.z + BOARD_HALF) / (BOARD_HALF * 2)) * 100;
-        dot.current.style.left = `${x.toFixed(1)}%`;
-        dot.current.style.top = `${y.toFixed(1)}%`;
+        const at = placeOnPage(car.x, car.z, seat);
+        dot.current.style.left = `${(at.left * 100).toFixed(1)}%`;
+        dot.current.style.top = `${(at.top * 100).toFixed(1)}%`;
       }
       if (live) frame = requestAnimationFrame(place);
     };
     place();
     return () => cancelAnimationFrame(frame);
-  }, [live, svg]);
+  }, [live, svg, seat]);
+  const sideways = seat === "east" || seat === "west";
   return (
     <div
       aria-hidden
-      className="relative size-[4.75rem] overflow-hidden rounded-full border-2 border-white/80 shadow-[0_3px_0_rgba(0,0,0,0.45)] sm:size-28"
+      className={cn(
+        "relative overflow-hidden rounded-md border-2 border-white/80 shadow-[0_3px_0_rgba(0,0,0,0.45)]",
+        sideways ? "w-28 sm:w-40" : "w-[4.5rem] sm:w-24",
+      )}
+      style={{ aspectRatio: sideways ? 1 / BOARD_ASPECT : BOARD_ASPECT }}
     >
       <div
         className="size-full [&>svg]:block [&>svg]:size-full"
@@ -160,7 +204,18 @@ export function BoardPlayer({ className }: { className?: string }) {
   );
   const [mounted, setMounted] = React.useState(false);
   const [unsupported, setUnsupported] = React.useState(false);
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
+
+  // Where the learner stands, and whether the car holds its lane, go straight
+  // to the drive: the joystick reads them on every step.
+  const defaultSeat = useDefaultSeat();
+  const seat = s.settings.seat ?? defaultSeat;
+  const assist = s.settings.assist ?? true;
+  React.useEffect(() => {
+    drive.seat = seat;
+    drive.assist = assist;
+  }, [seat, assist]);
 
   const challenge = s.queue[s.pos] ?? null;
   const counts = signCounts(mounted ? s.progress : {}, BOARD_CHALLENGE_IDS);
@@ -188,8 +243,11 @@ export function BoardPlayer({ className }: { className?: string }) {
   }, [s.overlayOpen]);
 
   const minimap = React.useMemo(
-    () => (challenge ? boardSvg({ goal: challenge.goal }) : ""),
-    [challenge],
+    () =>
+      challenge
+        ? fullBoardSvg({ goal: challenge.goal, seen: seat, numbers: false })
+        : "",
+    [challenge, seat],
   );
 
   const overlay = (
@@ -211,6 +269,7 @@ export function BoardPlayer({ className }: { className?: string }) {
           driving={s.phase === "driving"}
           attempt={s.attempt}
           quality={s.settings.quality}
+          seat={seat}
           onUnsupported={() => setUnsupported(true)}
           className="absolute inset-0"
         />
@@ -244,6 +303,14 @@ export function BoardPlayer({ className }: { className?: string }) {
               </button>
               <button
                 type="button"
+                aria-label="Board settings: where you stand, lane assist, sound"
+                onClick={() => setSettingsOpen(true)}
+                className="inline-flex size-9 items-center justify-center rounded-md border-2 border-white/15 bg-[#101114]/85 outline-none transition-colors hover:bg-white/15 focus-visible:border-white"
+              >
+                <Icon icon={SettingsIcon} size={16} />
+              </button>
+              <button
+                type="button"
                 aria-label="Exit the board"
                 onClick={s.exit}
                 className="inline-flex size-9 items-center justify-center rounded-md border-2 border-white/15 bg-[#101114]/85 outline-none transition-colors hover:bg-white/15 focus-visible:border-white"
@@ -255,7 +322,7 @@ export function BoardPlayer({ className }: { className?: string }) {
               <Clock running={s.phase === "driving"} key={s.attempt} />
               <Stars count={Math.max(1, 3 - s.faults)} />
             </div>
-            <Minimap svg={minimap} live={s.phase === "driving"} />
+            <Minimap svg={minimap} live={s.phase === "driving"} seat={seat} />
           </div>
         </div>
       )}
@@ -280,7 +347,14 @@ export function BoardPlayer({ className }: { className?: string }) {
         </div>
       )}
 
-      {!unsupported && <BoardControls active={s.phase === "driving"} />}
+      {!unsupported && (
+        <BoardControls active={s.phase === "driving" && !settingsOpen} />
+      )}
+      <BoardSettingsSheet
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        seat={seat}
+      />
 
       {/* Stopped by the referee: the rule, and another go. */}
       {s.phase === "fault" && s.fault && (
@@ -397,11 +471,12 @@ export function BoardPlayer({ className }: { className?: string }) {
           type="button"
           onClick={() => s.start()}
           aria-label="Start driving the Model Town Board"
-          className="group relative block aspect-[4/3] w-full overflow-hidden bg-[#4d9a3c] outline-none sm:aspect-video"
+          className="group relative block aspect-[4/3] w-full overflow-hidden outline-none sm:aspect-video"
+          style={{ backgroundColor: COLORS.grass }}
         >
           <span
             role="img"
-            aria-label="The Model Town Board from above: a four-lane road and a three-lane road meet at a roundabout, with each lane numbered from the kerb"
+            aria-label="The Model Town Board from above: a four-lane dual carriageway and a three-lane road meet at a roundabout, with each lane numbered from the kerb. Beside them are the parking zone, a street, and a two-way road with pedestrian crossings."
             className="block size-full [&>svg]:block [&>svg]:size-full"
             dangerouslySetInnerHTML={{ __html: POSTER }}
           />
@@ -439,7 +514,7 @@ export function BoardPlayer({ className }: { className?: string }) {
             </div>
           ) : (
             <p className="m-0 text-center font-mono text-[10.5px] uppercase tracking-widest text-ink-3">
-              {POOL} tasks · three buttons, or arrow keys
+              {POOL} tasks · one joystick, or arrow keys
             </p>
           )}
         </div>

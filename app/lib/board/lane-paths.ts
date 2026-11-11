@@ -1,32 +1,25 @@
 /**
- * The lines the guided car follows: along a road lane, round the roundabout in
- * the ring lane with the same number, and out at an exit. Each is a list of
- * points a metre or so apart, with the corners rounded off.
+ * The line a car follows when it does a turn properly: up its approach lane,
+ * round the roundabout in the ring lane with the same number, and out in the
+ * exit lane with that number. The tests point the joystick along these, and a
+ * "show me the route" helper can draw them later.
  */
+import { RESERVE, U_TURN_GAPS } from "./full-board";
 import {
   ARMS,
-  BOARD_HALF,
   TAU,
+  armForTurn,
   bearingOf,
   dirOf,
   laneOffset,
-  leftOf,
+  lanePoint,
   ringRadius,
   type ArmId,
-  type Side,
+  type Turn,
   type Vec,
 } from "./geometry";
 
 const STEP = 1.5;
-/** How far a lane change takes, in metres of road. */
-const LANE_CHANGE_LENGTH = 15;
-/** Past the end of the board, so the referee sees the car run out of road. */
-const RUN_OFF = 12;
-
-function smoothstep(t: number): number {
-  const c = Math.max(0, Math.min(1, t));
-  return c * c * (3 - 2 * c);
-}
 
 /** Round off corners (Chaikin), keeping the two ends where they are. */
 function rounded(points: Vec[], passes = 2): Vec[] {
@@ -48,126 +41,84 @@ function rounded(points: Vec[], passes = 2): Vec[] {
   return out;
 }
 
-function onRing(lane: number, bearing: number): Vec {
-  const dir = dirOf(bearing);
-  const r = ringRadius(lane);
-  return { x: dir.x * r, z: dir.z * r };
-}
-
-function arc(lane: number, from: number, sweep: number, out: Vec[]): void {
-  const steps = Math.max(1, Math.ceil((sweep * ringRadius(lane)) / STEP));
-  for (let i = 1; i <= steps; i += 1) {
-    out.push(onRing(lane, from + (sweep * i) / steps));
-  }
-}
-
-function heading(armId: ArmId, side: Side): Vec {
-  const { out } = ARMS[armId];
-  return side === "exit" ? out : { x: -out.x, z: -out.z };
-}
-
-/** How far left of an arm's centre line a point is, for traffic on `side`. */
-export function offsetOn(armId: ArmId, side: Side, p: Vec): number {
-  const left = leftOf(heading(armId, side));
-  return p.x * left.x + p.z * left.z;
-}
-
-function onRoad(armId: ArmId, side: Side, along: number, offset: number): Vec {
-  const { out } = ARMS[armId];
-  const left = leftOf(heading(armId, side));
-  return {
-    x: out.x * along + left.x * offset,
-    z: out.z * along + left.z * offset,
-  };
-}
-
 /** Where a road lane meets the ring lane it feeds, measured along the arm. */
-export function joinAlong(armId: ArmId, roadLane: number, ringLane: number) {
+function joinAlong(armId: ArmId, roadLane: number, ringLane: number) {
   const off = laneOffset(ARMS[armId], roadLane);
   return Math.sqrt(Math.max(0, ringRadius(ringLane) ** 2 - off ** 2));
 }
 
-/** The compass bearing, seen from the centre, of that meeting point. */
-export function joinBearing(
-  armId: ArmId,
-  side: Side,
-  roadLane: number,
-  ringLane: number,
-): number {
-  const p = onRoad(
-    armId,
-    side,
-    joinAlong(armId, roadLane, ringLane),
-    laneOffset(ARMS[armId], roadLane),
-  );
-  return bearingOf(p.x, p.z);
+/**
+ * The whole route for one turn. `extraTurns` adds full circles of the
+ * roundabout first, for testing what happens when a car keeps going round.
+ */
+export function lanePath(
+  entry: ArmId,
+  lane: number,
+  turn: Turn,
+  startAlong = 56,
+  endAlong = 56,
+  extraTurns = 0,
+): Vec[] {
+  const exit = armForTurn(entry, turn);
+  const exitLane = Math.min(lane, ARMS[exit].lanes);
+  const radius = ringRadius(lane);
+  const joinIn = joinAlong(entry, lane, lane);
+  const joinOut = joinAlong(exit, exitLane, lane);
+
+  const points: Vec[] = [];
+  for (let along = startAlong; along > joinIn; along -= STEP) {
+    points.push(lanePoint(entry, "approach", lane, along));
+  }
+
+  const a = lanePoint(entry, "approach", lane, joinIn);
+  const b = lanePoint(exit, "exit", exitLane, joinOut);
+  const from = bearingOf(a.x, a.z);
+  let sweep = (bearingOf(b.x, b.z) - from) % TAU;
+  if (sweep < 0) sweep += TAU;
+  sweep += TAU * extraTurns;
+  const steps = Math.max(1, Math.ceil((sweep * radius) / STEP));
+  for (let i = 0; i <= steps; i += 1) {
+    const dir = dirOf(from + (sweep * i) / steps);
+    points.push({ x: dir.x * radius, z: dir.z * radius });
+  }
+
+  for (let along = joinOut + STEP; along <= endAlong; along += STEP) {
+    points.push(lanePoint(exit, "exit", exitLane, along));
+  }
+  return rounded(points);
 }
 
 /**
- * Up an approach lane and on round the roundabout. `fromOffset` is where the car
- * is now across the road, so a lane change eases over rather than jumping.
+ * The route for turning back: straight across the roundabout from the south,
+ * over to the lane beside the reserve, round through the first gap in it, and
+ * back down the other side. The turn starts as the gap opens, so the car swings
+ * through the middle of it.
  */
-export function approachPath(
-  armId: ArmId,
+export function turnBackPath(
   lane: number,
-  fromAlong: number,
-  fromOffset: number,
+  startAlong = 56,
+  endAlong = 40,
 ): Vec[] {
-  const target = laneOffset(ARMS[armId], lane);
-  const join = joinAlong(armId, lane, lane);
+  const gap = U_TURN_GAPS[0];
+  const inside = laneOffset(ARMS.N, ARMS.N.lanes);
+  // Wide enough to clear the end of the reserve, tight enough to stay in the gap.
+  const radius = Math.max(inside, RESERVE + 1.8);
+  const centre = gap.from + 0.4;
+  const out = lanePath("S", lane, "straight", startAlong, 36);
   const points: Vec[] = [];
-  for (let along = fromAlong; along > join; along -= STEP) {
-    const t = smoothstep((fromAlong - along) / LANE_CHANGE_LENGTH);
-    points.push(
-      onRoad(armId, "approach", along, fromOffset + (target - fromOffset) * t),
-    );
+  for (let along = 50; along < centre; along += STEP) {
+    points.push(lanePoint("N", "exit", ARMS.N.lanes, along));
   }
-  points.push(onRoad(armId, "approach", join, target));
-  arc(lane, joinBearing(armId, "approach", lane, lane), TAU * 0.75, points);
-  return rounded(points);
-}
-
-/** Keep going round, from where the car is now. */
-export function ringPath(lane: number, fromBearing: number, turns = 1.25) {
-  const points: Vec[] = [onRing(lane, fromBearing)];
-  arc(lane, fromBearing, TAU * turns, points);
-  return points;
-}
-
-/** Round to an exit and out along its lane, past the end of the board. */
-export function exitPath(
-  ringLane: number,
-  fromBearing: number,
-  armId: ArmId,
-  exitLane: number,
-): Vec[] {
-  const points: Vec[] = [onRing(ringLane, fromBearing)];
-  let sweep =
-    (joinBearing(armId, "exit", exitLane, ringLane) - fromBearing) % TAU;
-  if (sweep < 0) sweep += TAU;
-  arc(ringLane, fromBearing, sweep, points);
-  const offset = laneOffset(ARMS[armId], exitLane);
-  const join = joinAlong(armId, exitLane, ringLane);
-  for (let along = join + STEP; along <= BOARD_HALF + RUN_OFF; along += STEP) {
-    points.push(onRoad(armId, "exit", along, offset));
+  // North is up the board, so the car turns right, through east, to face south.
+  for (let i = 0; i <= 12; i += 1) {
+    const t = (Math.PI * i) / 12;
+    points.push({
+      x: -Math.cos(t) * radius,
+      z: -centre - Math.sin(t) * radius,
+    });
   }
-  return rounded(points);
-}
-
-/** Along an exit road to the end, easing over to `lane` on the way. */
-export function exitRoadPath(
-  armId: ArmId,
-  lane: number,
-  fromAlong: number,
-  fromOffset: number,
-): Vec[] {
-  const target = laneOffset(ARMS[armId], lane);
-  const points: Vec[] = [];
-  for (let along = fromAlong; along <= BOARD_HALF + RUN_OFF; along += STEP) {
-    const t = smoothstep((along - fromAlong) / LANE_CHANGE_LENGTH);
-    points.push(
-      onRoad(armId, "exit", along, fromOffset + (target - fromOffset) * t),
-    );
+  for (let along = centre - STEP; along >= endAlong; along -= STEP) {
+    points.push(lanePoint("N", "approach", ARMS.N.lanes, along));
   }
-  return rounded(points);
+  return [...out, ...rounded(points, 1)];
 }

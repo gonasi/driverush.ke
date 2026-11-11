@@ -1,0 +1,915 @@
+/**
+ * The Model Town Board as it is in a driving school: painted on a table, with
+ * the learner standing at one side of it.
+ *
+ * The board's surface is the same drawing the page shows (`full-board.ts`),
+ * laid on the table top, with the kerbs, the central reserve and the island
+ * raised from it. The view is fixed to the side the learner stands at and never
+ * turns. It closes in on the car while it moves and backs off when it stops:
+ * right out to the whole table on a wide screen, part of the way on a phone.
+ *
+ * three.js only loads with this file, which the viewer fetches after Start.
+ * The table is built once, by hand; only the cars and the camera move.
+ */
+import * as React from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import * as THREE from "three";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
+
+import type { BoardChallenge } from "~/lib/board/challenges";
+import {
+  BOUNDS,
+  CAR_COLORS,
+  COLORS,
+  ISLAND_R,
+  fullBoardSvg,
+  goalBox,
+  kerbHighlights,
+  parkedSpots,
+  reserves,
+  type Box,
+} from "~/lib/board/full-board";
+import { dirOf } from "~/lib/board/geometry";
+import type { Seat } from "~/lib/board/joystick";
+import { car, tick, view } from "~/lib/board/runtime";
+
+import { buildCar, type CarModel } from "~/components/board/car-model";
+
+export type BoardTier = "low" | "high";
+
+export type BoardTableProps = {
+  challenge: BoardChallenge | null;
+  /** The learner has control. Otherwise the scene shows where things stand. */
+  driving: boolean;
+  /** Changes on every fresh attempt, so the view snaps back to the start. */
+  attempt: number;
+  tier: BoardTier;
+  seat: Seat;
+  /** The board is painted and on screen. */
+  onReady?: () => void;
+};
+
+const BOARD_W = BOUNDS.x1 - BOUNDS.x0;
+const BOARD_H = BOUNDS.z1 - BOUNDS.z0;
+const CX = (BOUNDS.x0 + BOUNDS.x1) / 2;
+const CZ = (BOUNDS.z0 + BOUNDS.z1) / 2;
+/** The wooden frame round the board, and the table top showing beyond it. */
+const FRAME = 3.6;
+const MARGIN = 6;
+
+const ROOM = "#4f4c47";
+const VFOV = 32;
+const DEG = Math.PI / 180;
+
+// ---- small drawing helpers ------------------------------------------------------
+
+function seeded(seed: number): () => number {
+  let s = seed;
+  return () => {
+    s = (s * 16807) % 2147483647;
+    return s / 2147483647;
+  };
+}
+
+function canvasOf(width: number, height: number) {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  return canvas;
+}
+
+function textureOf(
+  canvas: HTMLCanvasElement,
+  repeat?: [number, number],
+): THREE.CanvasTexture {
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  if (repeat) {
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(repeat[0], repeat[1]);
+  }
+  return texture;
+}
+
+/** Planked wood: a base colour, darker seams, and grain running along it. */
+function woodTexture(base: string, dark: string, planks: number, seed: number) {
+  const size = 512;
+  const canvas = canvasOf(size, size);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return textureOf(canvas);
+  const rnd = seeded(seed);
+  const width = size / planks;
+  for (let p = 0; p < planks; p += 1) {
+    ctx.fillStyle = base;
+    ctx.fillRect(p * width, 0, width, size);
+    ctx.fillStyle = rnd() > 0.5 ? "rgba(255,235,200,0.08)" : "rgba(0,0,0,0.07)";
+    ctx.fillRect(p * width, 0, width, size);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(p * width, 0, width, size);
+    ctx.clip();
+    const sway = (rnd() - 0.5) * 18;
+    ctx.strokeStyle = dark;
+    for (let i = 0; i < 36; i += 1) {
+      ctx.globalAlpha = 0.05 + rnd() * 0.15;
+      ctx.lineWidth = 0.5 + rnd() * 2;
+      const x = p * width + rnd() * width;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.bezierCurveTo(
+        x + sway * rnd(),
+        size * 0.33,
+        x - sway * rnd(),
+        size * 0.66,
+        x + (rnd() - 0.5) * 8,
+        size,
+      );
+      ctx.stroke();
+    }
+    ctx.restore();
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = dark;
+    ctx.fillRect(p * width, 0, 1.2, size);
+    ctx.globalAlpha = 1;
+  }
+  return textureOf(canvas);
+}
+
+/** A classroom floor: big speckled tiles with dark joints. */
+function floorTexture() {
+  const size = 256;
+  const canvas = canvasOf(size, size);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return textureOf(canvas);
+  const rnd = seeded(41);
+  ctx.fillStyle = "#807d78";
+  ctx.fillRect(0, 0, size, size);
+  for (let i = 0; i < 900; i += 1) {
+    ctx.fillStyle = rnd() > 0.5 ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.12)";
+    ctx.fillRect(rnd() * size, rnd() * size, 1 + rnd() * 2, 1 + rnd() * 2);
+  }
+  ctx.fillStyle = "#44423f";
+  ctx.fillRect(0, 0, size, 2);
+  ctx.fillRect(0, 0, 2, size);
+  return textureOf(canvas, [30, 30]);
+}
+
+function plateTexture() {
+  const canvas = canvasOf(512, 96);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return textureOf(canvas);
+  const shine = ctx.createLinearGradient(0, 0, 0, 96);
+  shine.addColorStop(0, "#e9cf86");
+  shine.addColorStop(0.5, "#b8923c");
+  shine.addColorStop(1, "#d8bb6a");
+  ctx.fillStyle = shine;
+  ctx.fillRect(0, 0, 512, 96);
+  ctx.strokeStyle = "#6b5220";
+  ctx.lineWidth = 5;
+  ctx.strokeRect(6, 6, 500, 84);
+  ctx.fillStyle = "#3d2f12";
+  ctx.font = "bold 40px Georgia, serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("MODEL TOWN BOARD", 256, 50);
+  return textureOf(canvas);
+}
+
+/** A soft dark patch for under a car. */
+function blobTexture() {
+  const canvas = canvasOf(64, 128);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return textureOf(canvas);
+  ctx.scale(1, 2);
+  const fade = ctx.createRadialGradient(32, 32, 4, 32, 32, 32);
+  fade.addColorStop(0, "rgba(0,0,0,0.55)");
+  fade.addColorStop(0.6, "rgba(0,0,0,0.34)");
+  fade.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = fade;
+  ctx.fillRect(0, 0, 64, 64);
+  return textureOf(canvas);
+}
+
+/**
+ * Give the flat drawing some tooth: fine grain like flock and tarmac, and
+ * broader patches so no large area looks printed.
+ */
+function roughen(ctx: CanvasRenderingContext2D, width: number, height: number) {
+  const tile = canvasOf(256, 256);
+  const t = tile.getContext("2d");
+  if (!t) return;
+  const image = t.createImageData(256, 256);
+  const rnd = seeded(7);
+  for (let i = 0; i < image.data.length; i += 4) {
+    const v = 196 + rnd() * 59;
+    image.data[i] = image.data[i + 1] = image.data[i + 2] = v;
+    image.data[i + 3] = 255;
+  }
+  t.putImageData(image, 0, 0);
+  const pattern = ctx.createPattern(tile, "repeat");
+  if (!pattern) return;
+  ctx.save();
+  ctx.globalCompositeOperation = "multiply";
+  ctx.fillStyle = pattern;
+  ctx.fillRect(0, 0, width, height);
+  ctx.globalAlpha = 0.55;
+  ctx.scale(11, 11);
+  ctx.fillRect(0, 0, width / 11 + 1, height / 11 + 1);
+  ctx.restore();
+}
+
+/** Paint the board's top from its drawing. Resolves once it can be used. */
+function paintBoard(width: number): Promise<THREE.CanvasTexture> {
+  return new Promise((resolve, reject) => {
+    const svg = fullBoardSvg({ width, noKerbs: true });
+    const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+    const image = new Image();
+    image.onload = () => {
+      const height = Math.round((width * BOARD_H) / BOARD_W);
+      const canvas = canvasOf(width, height);
+      const ctx = canvas.getContext("2d");
+      URL.revokeObjectURL(url);
+      if (!ctx) {
+        reject(new Error("no 2d canvas"));
+        return;
+      }
+      ctx.drawImage(image, 0, 0, width, height);
+      roughen(ctx, width, height);
+      resolve(textureOf(canvas));
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("the board drawing did not load"));
+    };
+    image.src = url;
+  });
+}
+
+// ---- the table, built once ------------------------------------------------------
+
+type Pair = [number, number];
+
+/** A raised strip following a line of points on the board. Corners are mitred. */
+function stripGeometry(points: Pair[], width: number, height: number) {
+  const half = width / 2;
+  const left: Pair[] = [];
+  const right: Pair[] = [];
+  points.forEach(([x, z], i) => {
+    const a = points[Math.max(0, i - 1)];
+    const b = points[Math.min(points.length - 1, i + 1)];
+    const before: Pair = [x - a[0], z - a[1]];
+    const after: Pair = [b[0] - x, b[1] - z];
+    const l1 = Math.hypot(before[0], before[1]) || 1;
+    const l2 = Math.hypot(after[0], after[1]) || 1;
+    const n1: Pair | null = i === 0 ? null : [-before[1] / l1, before[0] / l1];
+    const n2: Pair | null =
+      i === points.length - 1 ? null : [-after[1] / l2, after[0] / l2];
+    const first = n1 ?? n2 ?? [0, 1];
+    const second = n2 ?? n1 ?? [0, 1];
+    let mx = first[0] + second[0];
+    let mz = first[1] + second[1];
+    const length = Math.hypot(mx, mz) || 1;
+    mx /= length;
+    mz /= length;
+    const reach = half / Math.max(0.5, mx * first[0] + mz * first[1]);
+    left.push([x + mx * reach, z + mz * reach]);
+    right.push([x - mx * reach, z - mz * reach]);
+  });
+  const shape = new THREE.Shape();
+  shape.moveTo(left[0][0], left[0][1]);
+  for (const p of left.slice(1)) shape.lineTo(p[0], p[1]);
+  for (const p of right.slice().reverse()) shape.lineTo(p[0], p[1]);
+  shape.closePath();
+  return raise(shape, height);
+}
+
+/** Stand a flat outline up from the board, with a softened top edge. */
+function raise(shape: THREE.Shape, height: number) {
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth: height - 0.06,
+    bevelEnabled: true,
+    bevelThickness: 0.06,
+    bevelSize: 0.06,
+    bevelSegments: 2,
+    curveSegments: 10,
+  });
+  // The outline is drawn in board space (x, z); turn it to lie on the table.
+  geometry.rotateX(Math.PI / 2);
+  geometry.translate(0, height, 0);
+  return geometry;
+}
+
+function roundedRect(r: Box, inset: number, radius: number) {
+  const x0 = r.x0 + inset;
+  const x1 = r.x1 - inset;
+  const z0 = r.z0 + inset;
+  const z1 = r.z1 - inset;
+  const shape = new THREE.Shape();
+  shape.moveTo(x0 + radius, z0);
+  shape.lineTo(x1 - radius, z0);
+  shape.absarc(x1 - radius, z0 + radius, radius, -Math.PI / 2, 0, false);
+  shape.lineTo(x1, z1 - radius);
+  shape.absarc(x1 - radius, z1 - radius, radius, 0, Math.PI / 2, false);
+  shape.lineTo(x0 + radius, z1);
+  shape.absarc(x0 + radius, z1 - radius, radius, Math.PI / 2, Math.PI, false);
+  shape.lineTo(x0, z0 + radius);
+  shape.absarc(x0 + radius, z0 + radius, radius, Math.PI, Math.PI * 1.5, false);
+  return shape;
+}
+
+function disc(radius: number) {
+  const shape = new THREE.Shape();
+  shape.absarc(0, 0, radius, 0, Math.PI * 2, false);
+  return shape;
+}
+
+type Table = {
+  group: THREE.Group;
+  /** The board's top. Its picture arrives a moment after the table. */
+  surface: THREE.MeshStandardMaterial;
+};
+
+function buildTable(tier: BoardTier): Table {
+  const group = new THREE.Group();
+  const shadows = tier === "high";
+  const put = (
+    geometry: THREE.BufferGeometry,
+    material: THREE.Material,
+    x = 0,
+    y = 0,
+    z = 0,
+  ) => {
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(x, y, z);
+    mesh.castShadow = shadows;
+    mesh.receiveShadow = shadows;
+    group.add(mesh);
+    return mesh;
+  };
+
+  // The classroom floor, far below.
+  const floor = put(
+    new THREE.PlaneGeometry(2400, 2400),
+    new THREE.MeshStandardMaterial({ map: floorTexture(), roughness: 0.85 }),
+    CX,
+    -62,
+    CZ,
+  );
+  floor.rotation.x = -Math.PI / 2;
+  floor.castShadow = false;
+
+  // The table: a varnished top, an apron under it and four tapered legs.
+  const hx = BOARD_W / 2 + FRAME + MARGIN;
+  const hz = BOARD_H / 2 + FRAME + MARGIN;
+  const oak = woodTexture("#8f5a2c", "#3a1f0b", 7, 11);
+  oak.wrapS = oak.wrapT = THREE.RepeatWrapping;
+  oak.repeat.set(1.5, 1.7);
+  const varnished = new THREE.MeshStandardMaterial({
+    map: oak,
+    roughness: 0.42,
+    envMapIntensity: 0.8,
+  });
+  put(
+    new RoundedBoxGeometry(hx * 2, 5, hz * 2, 3, 1.3),
+    varnished,
+    CX,
+    -2.52,
+    CZ,
+  );
+  const legWood = new THREE.MeshStandardMaterial({
+    map: woodTexture("#8f5a2c", "#3a1f0b", 5, 23),
+    roughness: 0.5,
+  });
+  const aprons: [number, number, number, number][] = [
+    [0, hz - 11, hx * 2 - 26, 2.6],
+    [0, -(hz - 11), hx * 2 - 26, 2.6],
+    [hx - 11, 0, 2.6, hz * 2 - 26],
+    [-(hx - 11), 0, 2.6, hz * 2 - 26],
+  ];
+  for (const [x, z, w, d] of aprons) {
+    put(new THREE.BoxGeometry(w, 11, d), legWood, CX + x, -10.5, CZ + z);
+  }
+  const leg = new THREE.CylinderGeometry(4.4, 3, 57, 4, 1);
+  leg.rotateY(Math.PI / 4);
+  for (const sx of [-1, 1]) {
+    for (const sz of [-1, 1]) {
+      put(leg, legWood, CX + sx * (hx - 11), -33.5, CZ + sz * (hz - 11));
+    }
+  }
+
+  // The pale frame round the board, with a brass plate on the near edge.
+  const beech = new THREE.MeshStandardMaterial({
+    map: woodTexture("#c9a06a", "#7a4c20", 3, 29),
+    roughness: 0.4,
+    envMapIntensity: 0.8,
+  });
+  const bars: [number, number, number, boolean][] = [
+    [CX, BOUNDS.z0 - FRAME / 2, BOARD_W + FRAME * 2, false],
+    [CX, BOUNDS.z1 + FRAME / 2, BOARD_W + FRAME * 2, false],
+    [BOUNDS.x0 - FRAME / 2, CZ, BOARD_H, true],
+    [BOUNDS.x1 + FRAME / 2, CZ, BOARD_H, true],
+  ];
+  for (const [x, z, length, turned] of bars) {
+    const bar = put(
+      new RoundedBoxGeometry(length, 2.2, FRAME, 2, 0.5),
+      beech,
+      x,
+      1,
+      z,
+    );
+    if (turned) bar.rotation.y = Math.PI / 2;
+  }
+  const plate = put(
+    new THREE.PlaneGeometry(15, 2.7),
+    new THREE.MeshStandardMaterial({
+      map: plateTexture(),
+      metalness: 0.85,
+      roughness: 0.32,
+    }),
+    CX,
+    2.13,
+    BOUNDS.z1 + FRAME / 2,
+  );
+  plate.rotation.x = -Math.PI / 2;
+  plate.castShadow = false;
+
+  // The board's top.
+  const surface = new THREE.MeshStandardMaterial({
+    color: COLORS.asphalt,
+    roughness: 0.95,
+    envMapIntensity: 0.4,
+  });
+  const top = put(
+    new THREE.PlaneGeometry(BOARD_W, BOARD_H),
+    surface,
+    CX,
+    0,
+    CZ,
+  );
+  top.rotation.x = -Math.PI / 2;
+  top.castShadow = false;
+
+  // Raised from it: yellow kerbs at the junctions, the green central reserve
+  // with a yellow cap at each end, and the island.
+  const kerb = new THREE.MeshStandardMaterial({
+    color: COLORS.yellow,
+    roughness: 0.42,
+  });
+  const green = new THREE.MeshStandardMaterial({
+    color: "#15752b",
+    roughness: 0.95,
+  });
+  for (const line of kerbHighlights()) {
+    put(
+      stripGeometry(
+        line.map((p): Pair => [p.x, p.z]),
+        0.5,
+        0.3,
+      ),
+      kerb,
+    );
+  }
+  for (const r of reserves()) {
+    put(raise(roundedRect(r, 0.08, 0.5), 0.26), green);
+    const xa = r.x0 + 0.3;
+    const xb = r.x1 - 0.3;
+    if (r.z0 > BOUNDS.z0 + 0.1) {
+      const cap: Pair[] = [
+        [xa, r.z0 + 3],
+        [xa, r.z0 + 0.3],
+        [xb, r.z0 + 0.3],
+        [xb, r.z0 + 3],
+      ];
+      put(stripGeometry(cap, 0.55, 0.34), kerb);
+    }
+    if (r.z1 < BOUNDS.z1 - 0.1) {
+      const cap: Pair[] = [
+        [xa, r.z1 - 3],
+        [xa, r.z1 - 0.3],
+        [xb, r.z1 - 0.3],
+        [xb, r.z1 - 3],
+      ];
+      put(stripGeometry(cap, 0.55, 0.34), kerb);
+    }
+  }
+  put(raise(disc(ISLAND_R), 0.3), kerb);
+  put(raise(disc(ISLAND_R - 0.5), 0.34), green);
+
+  return { group, surface };
+}
+
+/** Free everything a built object holds on the graphics card. */
+function dispose(root: THREE.Object3D) {
+  root.traverse((node) => {
+    const mesh = node as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    mesh.geometry.dispose();
+    const materials = Array.isArray(mesh.material)
+      ? mesh.material
+      : [mesh.material];
+    for (const material of materials) {
+      const map = (material as THREE.MeshStandardMaterial).map;
+      map?.dispose();
+      material.dispose();
+    }
+  });
+}
+
+// ---- cars -----------------------------------------------------------------------
+
+let blob: THREE.CanvasTexture | null = null;
+
+/** A car with a soft shadow under it, ready to be placed on the table. */
+function carOnTable(paint: string, plate: string, tier: BoardTier) {
+  const holder = new THREE.Group();
+  const model = buildCar({
+    paint: new THREE.Color(paint).getHex(),
+    plate,
+    simple: tier === "low",
+  });
+  if (tier === "low") {
+    model.traverse((node) => {
+      node.castShadow = false;
+      node.receiveShadow = false;
+    });
+  }
+  holder.add(model);
+  blob ??= blobTexture();
+  const shadow = new THREE.Mesh(
+    new THREE.PlaneGeometry(3, 5.5),
+    new THREE.MeshBasicMaterial({
+      map: blob,
+      transparent: true,
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2,
+      opacity: tier === "low" ? 1 : 0.6,
+    }),
+  );
+  shadow.rotation.x = -Math.PI / 2;
+  shadow.position.set(0.1, 0.03, 0.06);
+  holder.add(shadow);
+  holder.userData.model = model;
+  return holder;
+}
+
+const PARKED_PAINTS = ["#2456b4", "#dfe3e8", "#2f3238", "#1f7a4d"];
+const PARKED_PLATES = ["KDA 101B", "KCB 442T", "KDG 907K", "KCY 365H"];
+
+// ---- the view -------------------------------------------------------------------
+
+/** Where the camera sits round the table for each seat, as a compass angle. */
+const SEAT_ANGLE: Record<Seat, number> = {
+  south: 0,
+  west: -Math.PI / 2,
+  north: Math.PI,
+  east: Math.PI / 2,
+};
+/** The direction "away from me" on the table, for each seat. */
+const AWAY: Record<Seat, { x: number; z: number }> = {
+  south: { x: 0, z: -1 },
+  west: { x: 1, z: 0 },
+  north: { x: 0, z: 1 },
+  east: { x: -1, z: 0 },
+};
+
+const TILT_OUT = 47 * DEG;
+const TILT_IN = 40 * DEG;
+/** Metres of board across the screen when closed in on the car, on a phone. */
+const SPAN_IN = 23;
+/** And when backed off on a phone, which shows only part of the table. */
+const SPAN_PART = 64;
+/** Faster than this and the view closes in. */
+const MOVING = 0.8;
+/** How long after stopping before it backs off, so a pause doesn't pump it. */
+const LINGER = 0.9;
+
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+const clamp = (v: number, lo: number, hi: number) =>
+  Math.min(hi, Math.max(lo, v));
+const ease = (t: number) => t * t * (3 - 2 * t);
+
+type Rig = {
+  zoom: number;
+  linger: number;
+  x: number;
+  z: number;
+  snappedFor: number;
+  seat: Seat | null;
+};
+
+function Scene({
+  challenge,
+  driving,
+  attempt,
+  tier,
+  seat,
+  onReady,
+}: BoardTableProps) {
+  const gl = useThree((s) => s.gl);
+  const scene = useThree((s) => s.scene);
+  const invalidate = useThree((s) => s.invalidate);
+
+  const table = React.useMemo(() => buildTable(tier), [tier]);
+  React.useEffect(() => () => dispose(table.group), [table]);
+
+  // The room the paint and the varnish reflect. Phones that struggle go without.
+  React.useEffect(() => {
+    gl.toneMappingExposure = tier === "high" ? 0.8 : 0.95;
+    if (tier !== "high") return;
+    const pmrem = new THREE.PMREMGenerator(gl);
+    const room = pmrem.fromScene(new RoomEnvironment(), 0.035);
+    scene.environment = room.texture;
+    scene.environmentIntensity = 0.5;
+    invalidate();
+    return () => {
+      scene.environment = null;
+      room.dispose();
+      pmrem.dispose();
+    };
+  }, [gl, scene, tier, invalidate]);
+
+  // The board's top is painted from its drawing, then the learner may start.
+  const ready = React.useRef(onReady);
+  ready.current = onReady;
+  React.useEffect(() => {
+    let alive = true;
+    let painted: THREE.CanvasTexture | null = null;
+    const limit = gl.capabilities.maxTextureSize;
+    const wanted = tier === "high" ? 2048 : 1280;
+    // The board is taller than wide, so the height is what must fit.
+    const width = Math.min(wanted, Math.floor((limit * BOARD_W) / BOARD_H));
+    paintBoard(width)
+      .then((texture) => {
+        if (!alive) {
+          texture.dispose();
+          return;
+        }
+        painted = texture;
+        texture.anisotropy = Math.min(
+          tier === "high" ? 8 : 2,
+          gl.capabilities.getMaxAnisotropy(),
+        );
+        table.surface.map = texture;
+        table.surface.color.set("#ffffff");
+        table.surface.needsUpdate = true;
+      })
+      .catch(() => {
+        // The table still draws, with a plain black top. Better than nothing.
+      })
+      .finally(() => {
+        if (!alive) return;
+        invalidate();
+        ready.current?.();
+      });
+    return () => {
+      alive = false;
+      painted?.dispose();
+    };
+  }, [gl, tier, table, invalidate]);
+
+  const player = React.useMemo(
+    () => carOnTable(CAR_COLORS.player, "KDR 254U", tier),
+    [tier],
+  );
+  React.useEffect(() => () => dispose(player), [player]);
+
+  const others = React.useMemo(
+    () =>
+      (challenge?.otherCars ?? []).map(() =>
+        carOnTable(CAR_COLORS.red, "KCZ 718M", tier),
+      ),
+    [challenge, tier],
+  );
+  React.useEffect(() => () => others.forEach(dispose), [others]);
+
+  // Cars standing in the parking zone, to show what it is for.
+  const parked = React.useMemo(() => {
+    const group = new THREE.Group();
+    if (tier !== "high") return group;
+    parkedSpots().forEach((spot, i) => {
+      const parkedCar = carOnTable(
+        PARKED_PAINTS[i % PARKED_PAINTS.length],
+        PARKED_PLATES[i % PARKED_PLATES.length],
+        tier,
+      );
+      parkedCar.position.set(spot.x, 0, spot.z);
+      parkedCar.rotation.y = -spot.heading;
+      group.add(parkedCar);
+    });
+    return group;
+  }, [tier]);
+  React.useEffect(() => () => dispose(parked), [parked]);
+
+  const goal = React.useMemo(() => {
+    if (!challenge) return null;
+    const box = goalBox(challenge.goal);
+    return {
+      x: (box.x0 + box.x1) / 2,
+      z: (box.z0 + box.z1) / 2,
+      w: box.x1 - box.x0 - 0.6,
+      h: box.z1 - box.z0,
+    };
+  }, [challenge]);
+  const goalMaterial = React.useRef<THREE.MeshBasicMaterial>(null);
+
+  // The light points at the middle of the board, which is not the origin.
+  const sun = React.useRef<THREE.DirectionalLight>(null);
+  React.useEffect(() => {
+    const light = sun.current;
+    if (!light) return;
+    light.target.position.set(CX, 0, CZ);
+    light.target.updateMatrixWorld();
+    invalidate();
+  }, [invalidate]);
+
+  const rig = React.useRef<Rig>({
+    zoom: 0,
+    linger: 0,
+    x: CX,
+    z: CZ,
+    snappedFor: -1,
+    seat: null,
+  });
+
+  // Off the clock, one frame is enough to show where things stand.
+  React.useEffect(() => {
+    invalidate();
+  }, [driving, attempt, challenge, seat, invalidate]);
+
+  useFrame((state, delta) => {
+    const dt = Math.min(delta, 0.1);
+    if (driving) tick(dt);
+
+    player.position.set(car.x, 0, car.z);
+    player.rotation.y = -car.heading;
+    const model = player.userData.model as CarModel;
+    model.userData.tail.emissiveIntensity = view.braking ? 2.4 : 0.5;
+    others.forEach((other, i) => {
+      const pose = view.others[i] ?? challenge?.otherCars[i];
+      if (!pose) return;
+      other.position.set(pose.x, 0, pose.z);
+      other.rotation.y = -pose.heading;
+    });
+    if (goalMaterial.current) {
+      goalMaterial.current.opacity =
+        0.34 + 0.12 * Math.sin(state.clock.elapsedTime * 3);
+    }
+
+    // ---- the camera: fixed to the seat, it only zooms and slides ----
+    const r = rig.current;
+    const fresh = r.snappedFor !== attempt || r.seat !== seat;
+    const aspect = state.size.width / Math.max(1, state.size.height);
+    const halfV = (VFOV * DEG) / 2;
+    const halfH = Math.atan(Math.tan(halfV) * aspect);
+
+    const moving = driving && car.speed > MOVING;
+    r.linger = moving ? LINGER : Math.max(0, r.linger - dt);
+    const wantIn = driving && (moving || r.linger > 0) ? 1 : 0;
+    if (fresh) r.zoom = 0;
+    else {
+      const rate = wantIn > r.zoom ? 2.4 : 1.3;
+      r.zoom += (wantIn - r.zoom) * (1 - Math.exp(-dt * rate));
+    }
+    const close = ease(r.zoom);
+    const tilt = lerp(TILT_OUT, TILT_IN, close);
+    const away = AWAY[seat];
+    const sideways = seat === "east" || seat === "west";
+
+    // Backed off: the whole table on a wide screen, part of it on a tall one.
+    const edge = 2 * (FRAME + MARGIN) + 6;
+    const across = (sideways ? BOARD_H : BOARD_W) + edge;
+    const deep = (sideways ? BOARD_W : BOARD_H) + edge;
+    const whole =
+      1.13 *
+      Math.max(
+        across / 2 / Math.tan(halfH),
+        (deep * Math.sin(TILT_OUT) * 0.56) / Math.tan(halfV),
+      );
+    const wide = clamp((aspect - 0.75) / 0.5, 0, 1);
+    const part = SPAN_PART / 2 / Math.tan(halfH);
+    const farOut = Math.min(whole, lerp(part, whole, wide));
+    const depthOut = (2 * farOut * Math.tan(halfV)) / Math.sin(TILT_OUT);
+    const partX = clamp(
+      car.x + away.x * 0.12 * depthOut,
+      BOUNDS.x0 + 8,
+      BOUNDS.x1 - 8,
+    );
+    const partZ = clamp(
+      car.z + away.z * 0.12 * depthOut,
+      BOUNDS.z0 + 8,
+      BOUNDS.z1 - 8,
+    );
+    const outX = lerp(partX, CX, wide);
+    const outZ = lerp(partZ, CZ, wide);
+
+    // Closed in: the car, a little of the road ahead of it, and more of the
+    // table beyond it than in front.
+    const nearIn = (SPAN_IN * Math.max(1, aspect / 0.62)) / 2 / Math.tan(halfH);
+    const depthIn = (2 * nearIn * Math.tan(halfV)) / Math.sin(TILT_IN);
+    const ahead = dirOf(car.heading);
+    const inX = car.x + ahead.x * 4 + away.x * 0.1 * depthIn;
+    const inZ = car.z + ahead.z * 4 + away.z * 0.1 * depthIn;
+
+    const distance = lerp(farOut, nearIn, close);
+    const goalX = lerp(outX, inX, close);
+    const goalZ = lerp(outZ, inZ, close);
+    const k = fresh ? 1 : 1 - Math.exp(-dt * 4);
+    r.snappedFor = attempt;
+    r.seat = seat;
+    r.x += (goalX - r.x) * k;
+    r.z += (goalZ - r.z) * k;
+
+    // A bump shakes the table a little.
+    const shake = driving ? view.jolt * 0.3 : 0;
+    const sx = r.x + Math.sin(state.clock.elapsedTime * 61) * shake;
+    const sz = r.z + Math.cos(state.clock.elapsedTime * 53) * shake;
+    const lookY = lerp(-5, 0, close);
+    const angle = SEAT_ANGLE[seat];
+    state.camera.position.set(
+      sx + distance * Math.cos(tilt) * Math.sin(angle),
+      lookY + distance * Math.sin(tilt),
+      sz + distance * Math.cos(tilt) * Math.cos(angle),
+    );
+    state.camera.lookAt(sx, lookY, sz);
+
+    // Still easing after the car has stopped: ask for another frame.
+    const settled =
+      Math.abs(wantIn - r.zoom) < 0.004 &&
+      Math.hypot(goalX - r.x, goalZ - r.z) < 0.03;
+    if (!driving && !settled) invalidate();
+  });
+
+  const reach = Math.max(BOARD_W, BOARD_H) / 2 + 40;
+
+  return (
+    <>
+      <color attach="background" args={[ROOM]} />
+      <fog attach="fog" args={[ROOM, 520, 1200]} />
+      <hemisphereLight
+        args={["#dfeaff", "#6a7a4a", tier === "high" ? 0.6 : 1.25]}
+      />
+      {/* Sun through a window: one warm light from over the left shoulder. */}
+      <directionalLight
+        ref={sun}
+        position={[CX - 150, 210, CZ + 120]}
+        intensity={tier === "high" ? 3.1 : 2.3}
+        color="#fff0d6"
+        castShadow={tier === "high"}
+        shadow-mapSize={[2048, 2048]}
+        shadow-camera-left={-reach}
+        shadow-camera-right={reach}
+        shadow-camera-top={reach}
+        shadow-camera-bottom={-reach}
+        shadow-camera-near={30}
+        shadow-camera-far={760}
+        shadow-bias={-0.0004}
+        shadow-normalBias={0.12}
+      />
+
+      <primitive object={table.group} />
+      <primitive object={parked} />
+
+      {goal && (
+        <mesh position={[goal.x, 0.05, goal.z]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[goal.w, goal.h]} />
+          <meshBasicMaterial
+            ref={goalMaterial}
+            color={COLORS.goal}
+            transparent
+            opacity={0.4}
+            depthWrite={false}
+          />
+        </mesh>
+      )}
+
+      {others.map((other, i) => (
+        <primitive key={i} object={other} />
+      ))}
+      <primitive object={player} />
+    </>
+  );
+}
+
+export default function BoardTable(props: BoardTableProps) {
+  const high = props.tier === "high";
+  return (
+    <Canvas
+      shadows={high ? "soft" : false}
+      dpr={high ? [1, 1.75] : 1}
+      frameloop={props.driving ? "always" : "demand"}
+      camera={{ fov: VFOV, near: 4, far: 2600, position: [CX, 240, CZ + 260] }}
+      gl={{
+        antialias: high,
+        alpha: false,
+        powerPreference: "high-performance",
+      }}
+      style={{ touchAction: "none" }}
+    >
+      <Scene {...props} />
+    </Canvas>
+  );
+}

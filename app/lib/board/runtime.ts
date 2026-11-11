@@ -1,42 +1,43 @@
 /**
- * The live drive: one car, the lane-keeping driver, the collision world and the
- * referee, stepped at a fixed rate. It sits in module scope on purpose. The
- * stage reads `car` and `view` every frame and the controls set `controls.go`
- * or call `pressLeft` / `pressRight`, and none of it goes through React.
+ * The live drive: one car, the joystick, the table's physics and the referee,
+ * stepped at a fixed rate. It sits in module scope on purpose. The scene reads
+ * `car` and `view` every frame and the controls write `stick`, and none of it
+ * goes through React.
  */
-import type { CarState } from "./car-sim";
+import type { CarInput, CarState } from "./car";
 import type { BoardChallenge } from "./challenges";
+import { laneBearing, lanePoint } from "./geometry";
 import {
-  createGuide,
-  guideStep,
-  leftMeansExit,
-  placeAtStart,
-  pressLeft as guideLeft,
-  pressRight as guideRight,
-  type Guide,
-  type Press,
-} from "./guide";
+  createAssist,
+  stickToInput,
+  type AssistState,
+  type DriveOptions,
+  type Stick,
+} from "./joystick";
 import type { OtherPose, Physics } from "./physics";
-import { COLLISION, inGoalBox, judge, smallFault, type Fault } from "./referee";
+import {
+  COLLISION,
+  createRef,
+  refStep,
+  type Fault,
+  type RefState,
+} from "./referee";
 
 const STEP = 1 / 60;
 /** A stalled tab mustn't fast-forward the car when it wakes. */
 const MAX_FRAME = 0.1;
-const STOPPED = 0.2;
-const GOAL_HOLD = 0.35;
 
 export const car: CarState = { x: 0, z: 0, heading: 0, speed: 0, steer: 0 };
-/** Held down by the Go button. */
-export const controls = { go: false };
+/** Where the learner is holding the knob. The controls write this. */
+export const stick: Stick = { x: 0, y: 0 };
+/** Where the learner stands, and whether lane assist is on. Set by the store. */
+export const drive: DriveOptions = { seat: "south", assist: true };
 
-/** What the stage and the buttons need to know about the drive, beyond `car`. */
+/** What the scene needs to know about the drive, beyond `car`. */
 export const view = {
   others: [] as OtherPose[],
-  indicator: null as "left" | "right" | null,
   braking: false,
-  /** Near and on the roundabout, the left button signals for an exit. */
-  leftIsExit: false,
-  /** Set for a moment when something is hit or refused, 0 to 1. */
+  /** Set for a moment when something is hit, 0 to 1. */
   jolt: 0,
 };
 
@@ -53,7 +54,17 @@ type Callbacks = {
 let engine: typeof import("./physics") | null = null;
 let loading: Promise<void> | null = null;
 
-/** Fetch the collision engine. The car waits on its start line until it's in. */
+let challenge: BoardChallenge | null = null;
+let physics: Physics | null = null;
+let ref: RefState = createRef();
+let assist: AssistState = createAssist();
+let callbacks: Callbacks | null = null;
+let driving = false;
+let carry = 0;
+let elapsed = 0;
+const input: CarInput = { steer: 0, throttle: 0, brake: 0 };
+
+/** Fetch the physics. The car waits on its start line until it's in. */
 export function loadPhysics(): Promise<void> {
   loading ??= import("./physics").then((mod) => {
     engine = mod;
@@ -65,36 +76,39 @@ export function loadPhysics(): Promise<void> {
   return loading;
 }
 
-let challenge: BoardChallenge | null = null;
-let guide: Guide | null = null;
-let physics: Physics | null = null;
-let callbacks: Callbacks | null = null;
-let driving = false;
-let carry = 0;
-let elapsed = 0;
-let goalTime = 0;
-
 export function resetInput(): void {
-  controls.go = false;
+  stick.x = 0;
+  stick.y = 0;
+  input.steer = 0;
+  input.throttle = 0;
+  input.brake = 0;
 }
 
 /** Put the car on its start line and hand control to the learner. */
 export function beginChallenge(next: BoardChallenge, cb: Callbacks): void {
-  placeAtStart(next, car);
+  const start = lanePoint(
+    next.start.arm,
+    "approach",
+    next.start.lane,
+    next.start.along,
+  );
+  car.x = start.x;
+  car.z = start.z;
+  car.heading = laneBearing(next.start.arm, "approach");
+  car.speed = 0;
+  car.steer = 0;
   challenge = next;
   callbacks = cb;
-  guide = createGuide(next);
+  ref = createRef();
+  assist = createAssist();
   physics = engine ? engine.createPhysics(next, car) : null;
   view.others = physics
     ? physics.poses
     : next.otherCars.map(({ x, z, heading }) => ({ x, z, heading }));
-  view.indicator = null;
   view.braking = false;
-  view.leftIsExit = false;
   view.jolt = 0;
   carry = 0;
   elapsed = 0;
-  goalTime = 0;
   driving = true;
   resetInput();
   if (!engine) void loadPhysics();
@@ -116,31 +130,9 @@ export function elapsedSeconds(): number {
   return elapsed;
 }
 
-function press(result: Press): Press {
-  if (!result.ok && callbacks) {
-    view.jolt = 0.6;
-    callbacks.onSmall(smallFault(result.why));
-  }
-  return result;
-}
-
-/** The left button: lane left on a road, signal for an exit at the roundabout. */
-export function pressLeft(): Press | null {
-  if (!driving || !guide || physics?.crashed) return null;
-  return press(guideLeft(guide, car));
-}
-
-/** The right button: lane right. */
-export function pressRight(): Press | null {
-  if (!driving || !guide || physics?.crashed) return null;
-  return press(guideRight(guide, car));
-}
-
 /** Advance the drive by one rendered frame. */
 export function tick(frameSeconds: number): void {
-  if (!driving || !challenge || !callbacks || !guide || !physics || !engine) {
-    return;
-  }
+  if (!driving || !challenge || !callbacks || !physics || !engine) return;
   const { physicsStep } = engine;
   carry += Math.min(frameSeconds, MAX_FRAME);
   while (carry >= STEP) {
@@ -150,7 +142,7 @@ export function tick(frameSeconds: number): void {
 
     if (physics.crashed) {
       // The bump plays out, then the examiner calls it.
-      if (physicsStep(physics, car)) {
+      if (physicsStep(physics, car, input)) {
         stopDriving();
         callbacks.onFault(COLLISION);
         return;
@@ -158,32 +150,27 @@ export function tick(frameSeconds: number): void {
       continue;
     }
 
-    const events = guideStep(guide, car, controls.go, STEP);
-    view.indicator = guide.indicator;
-    view.braking = guide.braking;
-    view.leftIsExit = leftMeansExit(guide, car);
+    stickToInput(stick, car, input, drive, assist);
+    view.braking = input.brake > 0 && car.speed > 0.05;
+    physicsStep(physics, car, input);
 
-    physicsStep(physics, car);
     if (physics.crashed) {
       view.jolt = Math.max(0.5, physics.impact);
-      view.indicator = null;
+      view.braking = false;
       continue;
     }
 
-    for (const event of events) {
-      const fault = judge(event, challenge);
-      if (!fault) continue;
-      if (fault.serious) {
-        stopDriving();
-        callbacks.onFault(fault);
-        return;
-      }
+    const result = refStep(ref, challenge, car, physics.contacts, STEP);
+    for (const fault of result.small) {
+      view.jolt = Math.max(view.jolt, 0.6 * Math.max(0.5, physics.impact));
       callbacks.onSmall(fault);
     }
-
-    const parked = car.speed < STOPPED && inGoalBox(challenge, car);
-    goalTime = parked ? goalTime + STEP : 0;
-    if (goalTime >= GOAL_HOLD) {
+    if (result.fault) {
+      stopDriving();
+      callbacks.onFault(result.fault);
+      return;
+    }
+    if (result.goal) {
       stopDriving();
       callbacks.onGoal();
       return;

@@ -1,12 +1,17 @@
+import Matter from "matter-js";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { faultTip } from "./board-rules";
+import { CAR } from "./car";
 import { BOARD_CHALLENGES, type BoardChallenge } from "./challenges";
+import { BOUNDS, U_TURN_GAPS, onTarmac } from "./full-board";
 import {
   ARMS,
+  ISLAND_R,
   SOLID_ZONE,
   allowedTurns,
   armForTurn,
+  armHalfWidth,
   bearingOf,
   laneBearing,
   lanePoint,
@@ -14,24 +19,29 @@ import {
   locate,
   ringRadius,
   turnBetween,
+  wrapPi,
   type Turn,
+  type Vec,
 } from "./geometry";
+import { SEATS, stickBearing, type Seat } from "./joystick";
+import { lanePath, turnBackPath } from "./lane-paths";
+import { createPhysics, physicsStep } from "./physics";
 import type { Fault } from "./referee";
 import {
   beginChallenge,
   car,
-  controls,
+  drive,
   loadPhysics,
-  pressLeft,
-  pressRight,
+  stick,
   stopDriving,
   tick,
   view,
 } from "./runtime";
 
 const STEP = 1 / 60;
-/** How hard the car slows once Go is released, m/s². */
-const RELEASE_DECEL = 7.4;
+/** How hard the car slows once the knob is let go, m/s². */
+const RELEASE_DECEL = 0.7 * CAR.brake + CAR.coast;
+const DEG = Math.PI / 180;
 
 function task(turn: Turn, startLane = 1): BoardChallenge {
   return {
@@ -49,20 +59,38 @@ type Outcome = {
   fault?: Fault;
   small: Fault[];
   goal: boolean;
-  /** The car left the tarmac at some point. It never should. */
+  /** The car's middle left the tarmac at some point. Kerbs should stop that. */
   offRoad: boolean;
+  /** The furthest the car strayed from the line it was following, metres. */
+  strayed: number;
 };
 
+/** Push the knob toward a compass bearing, as seen from the south seat. */
+function point(bearing: number, push = 0.7): void {
+  stick.x = Math.sin(bearing) * push;
+  stick.y = -Math.cos(bearing) * push;
+}
+
+function letGo(): void {
+  stick.x = 0;
+  stick.y = 0;
+}
+
 /**
- * Play a task the way a learner does: hold Go, tap the two buttons, let go.
- * `each` is called every step and may press things.
+ * Play a task the way a learner does, by moving the knob. `each` is called
+ * every step and sets the stick.
  */
 function play(
   challenge: BoardChallenge,
-  each: (seconds: number) => void,
-  seconds = 120,
+  each: (seconds: number, outcome: Outcome) => void,
+  seconds = 150,
 ): Outcome {
-  const outcome: Outcome = { small: [], goal: false, offRoad: false };
+  const outcome: Outcome = {
+    small: [],
+    goal: false,
+    offRoad: false,
+    strayed: 0,
+  };
   let over = false;
   beginChallenge(challenge, {
     onFault: (fault) => {
@@ -76,7 +104,7 @@ function play(
     },
   });
   for (let i = 0; i < seconds / STEP && !over; i += 1) {
-    each(i * STEP);
+    each(i * STEP, outcome);
     tick(STEP);
     if (!over && locate(car.x, car.z).kind === "off") outcome.offRoad = true;
   }
@@ -84,49 +112,125 @@ function play(
   return outcome;
 }
 
-const degrees = () => ((bearingOf(car.x, car.z) * 180) / Math.PI + 360) % 360;
-const onRoundabout = () => Math.hypot(car.x, car.z) < 19;
+/** True once the car should let go to stop in the middle of the box. */
+function atBox(challenge: BoardChallenge): boolean {
+  const goal = challenge.goal;
+  const side = goal.side ?? "exit";
+  const loc = locate(car.x, car.z);
+  if (loc.kind !== "arm" || loc.side !== side || loc.arm !== goal.arm) {
+    return false;
+  }
+  const middle = (goal.alongMin + goal.alongMax) / 2;
+  const stopping = car.speed ** 2 / (2 * RELEASE_DECEL);
+  // Leaving the roundabout the car is driving out along the road; coming
+  // back toward it, in.
+  return side === "exit"
+    ? loc.along + stopping >= middle
+    : loc.along - stopping <= middle;
+}
 
-/** Where on the roundabout to tap Exit for each turn: after the exit before it. */
-const TAP_EXIT: Record<Turn, () => boolean> = {
-  // Signalled on the way in, so the first exit is taken.
-  left: () => view.leftIsExit,
-  straight: () => onRoundabout() && degrees() > 285 && degrees() < 330,
-  right: () => onRoundabout() && degrees() > 15 && degrees() < 60,
-  back: () => onRoundabout() && degrees() > 105 && degrees() < 150,
+type Follow = {
+  /** Degrees of thumb wobble either side of the true direction. */
+  wobble?: number;
+  push?: number;
+  /** Keep going instead of stopping in the box. */
+  through?: boolean;
 };
 
-/** Hold Go, and let go in time to stop in the middle of the box. */
-function goUntilBox(challenge: BoardChallenge): void {
-  const goal = challenge.goal;
-  const loc = locate(car.x, car.z);
-  const middle = (goal.alongMin + goal.alongMax) / 2;
-  const there =
-    loc.kind === "arm" &&
-    loc.side === "exit" &&
-    loc.arm === goal.arm &&
-    loc.along + car.speed ** 2 / (2 * RELEASE_DECEL) >= middle;
-  controls.go = !there;
+/**
+ * A learner who keeps the knob pointed along a route: a point a few metres down
+ * the line from the car. If the route starts in another lane, they change to
+ * it first.
+ */
+function follower(
+  challenge: BoardChallenge,
+  path: Vec[],
+  options: Follow = {},
+) {
+  let nearest = 0;
+  const first = locate(path[0].x, path[0].z);
+  const wantLane = first.kind === "arm" ? first.lane : null;
+  return (seconds: number, outcome: Outcome) => {
+    const loc = locate(car.x, car.z);
+    if (
+      wantLane != null &&
+      loc.kind === "arm" &&
+      loc.arm === "S" &&
+      loc.side === "approach" &&
+      loc.lane !== wantLane &&
+      loc.along > SOLID_ZONE + 2
+    ) {
+      // A lane change is a firm push across. On the road north from the
+      // south, lane 1 is to the left, the west.
+      point((loc.lane > wantLane ? -45 : 45) * DEG, options.push);
+      return;
+    }
+
+    while (
+      nearest < path.length - 1 &&
+      Math.hypot(path[nearest + 1].x - car.x, path[nearest + 1].z - car.z) <=
+        Math.hypot(path[nearest].x - car.x, path[nearest].z - car.z)
+    ) {
+      nearest += 1;
+    }
+    outcome.strayed = Math.max(
+      outcome.strayed,
+      Math.hypot(path[nearest].x - car.x, path[nearest].z - car.z),
+    );
+    if (!options.through && atBox(challenge)) {
+      letGo();
+      return;
+    }
+
+    let aim = nearest;
+    let run = 0;
+    while (aim < path.length - 1 && run < 4.5) {
+      run += Math.hypot(
+        path[aim + 1].x - path[aim].x,
+        path[aim + 1].z - path[aim].z,
+      );
+      aim += 1;
+    }
+    const wobble =
+      (options.wobble ?? 0) *
+      DEG *
+      Math.sin(seconds * 5.3) *
+      Math.cos(seconds * 1.7 + 1);
+    point(
+      bearingOf(path[aim].x - car.x, path[aim].z - car.z) + wobble,
+      options.push,
+    );
+  };
 }
 
-/** Drive a task properly: get into `lane`, signal at the right moment, stop. */
-function proper(challenge: BoardChallenge, lane: number): Outcome {
-  let tapped = false;
-  return play(challenge, (seconds) => {
-    if (seconds === 0) {
-      for (let n = challenge.start.lane; n > lane; n -= 1) pressLeft();
-      for (let n = challenge.start.lane; n < lane; n += 1) pressRight();
-    }
-    if (!tapped && TAP_EXIT[challenge.turn]()) {
-      pressLeft();
-      tapped = true;
-    }
-    goUntilBox(challenge);
-  });
+/** Drive a task properly, getting into `lane` first. */
+function proper(
+  challenge: BoardChallenge,
+  lane: number,
+  options: Follow = {},
+): Outcome {
+  const path =
+    challenge.id === "turn-back"
+      ? turnBackPath(lane)
+      : lanePath("S", lane, challenge.turn);
+  return play(challenge, follower(challenge, path, options));
 }
+
+const SHIPPED_LANES: Record<string, number> = {
+  straight: 2,
+  left: 1,
+  right: 3,
+  back: 4,
+  "turn-back": 2,
+  "behind-red": 1,
+};
 
 beforeAll(() => loadPhysics());
-beforeEach(() => stopDriving());
+beforeEach(() => {
+  stopDriving();
+  drive.seat = "south";
+  drive.assist = true;
+});
 
 describe("the board's geometry", () => {
   it("numbers lanes from the kerb in to the centre", () => {
@@ -153,6 +257,34 @@ describe("the board's geometry", () => {
     expect(locate(back.x, back.z)).toMatchObject({ side: "approach", lane: 1 });
     // Leaving west you are on the south half, by the kerb.
     expect(out.z).toBeGreaterThan(0);
+  });
+
+  it("knows the board's other roads from the four into the roundabout", () => {
+    // The two-way road down the right, the street, and the parking aisle.
+    expect(locate(69, 30)).toEqual({ kind: "road", what: "two_way" });
+    expect(locate(40, -99)).toEqual({ kind: "road", what: "street" });
+    expect(locate(39.7, -50)).toEqual({ kind: "road", what: "parking" });
+    // The field between them is not road.
+    expect(locate(-40, -60)).toEqual({ kind: "off", what: "verge" });
+    expect(locate(58, -50)).toEqual({ kind: "off", what: "verge" });
+  });
+
+  it("opens the central reserve at each U-turn gap, and nowhere else", () => {
+    for (const gap of U_TURN_GAPS) {
+      expect(locate(0, -(gap.from + gap.to) / 2)).toMatchObject({
+        kind: "arm",
+        arm: "N",
+        lane: 4,
+      });
+      expect(locate(0, -(gap.from - 2))).toEqual({
+        kind: "off",
+        what: "median",
+      });
+      expect(locate(0, -(gap.to + 2))).toEqual({ kind: "off", what: "median" });
+    }
+    // It runs right up to the roundabout on both sides, with no gap below it.
+    expect(locate(0, 30)).toEqual({ kind: "off", what: "median" });
+    expect(locate(0, -30)).toEqual({ kind: "off", what: "median" });
   });
 
   it("puts ring lane 1 on the outside and lane 4 by the island", () => {
@@ -189,7 +321,94 @@ describe("the board's geometry", () => {
   });
 });
 
-describe("guided driving, done properly", () => {
+describe("the joystick", () => {
+  it("means 'away from me' at every seat", () => {
+    const up = { x: 0, y: -1 };
+    const away: Record<Seat, number> = {
+      south: 0,
+      west: 90,
+      north: 180,
+      east: -90,
+    };
+    for (const seat of SEATS) {
+      expect(wrapPi(stickBearing(up, seat) - away[seat] * DEG)).toBeCloseTo(0);
+      // And the knob's right is the learner's right.
+      expect(
+        wrapPi(stickBearing({ x: 1, y: 0 }, seat) - (away[seat] + 90) * DEG),
+      ).toBeCloseTo(0);
+    }
+  });
+
+  it("drives the same way on the table from any seat", () => {
+    // From the north side the car on the south road comes toward you, so
+    // "north" on the table is the knob pulled down.
+    const knob: Record<Seat, [number, number]> = {
+      south: [0, -1],
+      west: [-1, 0],
+      north: [0, 1],
+      east: [1, 0],
+    };
+    for (const seat of SEATS) {
+      drive.seat = seat;
+      play(
+        task("straight", 2),
+        () => {
+          [stick.x, stick.y] = knob[seat];
+        },
+        3,
+      );
+      expect(car.z, seat).toBeLessThan(50);
+      expect(car.x, seat).toBeCloseTo(lanePoint("S", "approach", 2, 50).x, 0);
+    }
+  });
+
+  it("stops the car when you let go", () => {
+    play(
+      task("straight", 2),
+      (seconds) => {
+        if (seconds < 3) point(0, 1);
+        else letGo();
+      },
+      7,
+    );
+    expect(car.speed).toBe(0);
+  });
+
+  it("goes faster the further you push", () => {
+    const speedAt = (push: number) => {
+      let speed = 0;
+      play(
+        task("straight", 2),
+        () => {
+          point(0, push);
+          speed = car.speed;
+        },
+        5,
+      );
+      return speed;
+    };
+    const gentle = speedAt(0.5);
+    const full = speedAt(1);
+    expect(gentle).toBeGreaterThan(1);
+    expect(full).toBeGreaterThan(gentle + 2);
+    expect(full).toBeLessThanOrEqual(CAR.maxSpeed);
+  });
+
+  it("brakes instead of spinning round when pulled straight back", () => {
+    drive.assist = false;
+    play(
+      task("straight", 2),
+      (seconds) => {
+        point(seconds < 3 ? 0 : 180 * DEG, 1);
+      },
+      7,
+    );
+    expect(car.speed).toBe(0);
+    expect(Math.abs(wrapPi(car.heading))).toBeLessThan(0.05);
+  });
+});
+
+describe("driving properly", () => {
   const legal: [number, Turn][] = [
     [1, "left"],
     [1, "straight"],
@@ -199,101 +418,210 @@ describe("guided driving, done properly", () => {
     [4, "right"],
     [4, "back"],
   ];
-  for (const [lane, turn] of legal) {
-    it(`passes lane ${lane} going ${turn}, and never leaves the road`, () => {
-      const result = proper(task(turn, lane), lane);
-      expect(result.fault).toBeUndefined();
-      expect(result.small).toEqual([]);
-      expect(result.offRoad).toBe(false);
-      expect(result.goal).toBe(true);
+  for (const assist of [true, false]) {
+    for (const [lane, turn] of legal) {
+      it(`passes lane ${lane} going ${turn}, assist ${assist ? "on" : "off"}`, () => {
+        drive.assist = assist;
+        const result = proper(task(turn, lane), lane);
+        expect(result.fault).toBeUndefined();
+        expect(result.small).toEqual([]);
+        expect(result.offRoad).toBe(false);
+        expect(result.goal).toBe(true);
+      });
+    }
+
+    it(`passes every shipped task, lane changes included, assist ${assist ? "on" : "off"}`, () => {
+      drive.assist = assist;
+      for (const challenge of BOARD_CHALLENGES) {
+        const result = proper(challenge, SHIPPED_LANES[challenge.id]);
+        expect(result.fault, challenge.id).toBeUndefined();
+        expect(result.small, challenge.id).toEqual([]);
+        expect(result.offRoad, challenge.id).toBe(false);
+        expect(result.goal, challenge.id).toBe(true);
+      }
     });
   }
+});
 
-  it("passes every shipped task, lane changes included", () => {
-    const lanes: Record<string, number> = {
-      straight: 2,
-      left: 1,
-      right: 3,
-      back: 4,
-      "behind-red": 1,
-    };
-    for (const challenge of BOARD_CHALLENGES) {
-      const result = proper(challenge, lanes[challenge.id]);
-      expect(result.fault, challenge.id).toBeUndefined();
-      expect(result.small, challenge.id).toEqual([]);
-      expect(result.offRoad, challenge.id).toBe(false);
-      expect(result.goal, challenge.id).toBe(true);
+describe("lane assist", () => {
+  it("holds every lane, roundabout included, under a wobbly thumb", () => {
+    const routes: [number, Turn][] = [
+      [1, "straight"],
+      [2, "straight"],
+      [3, "right"],
+      [4, "back"],
+    ];
+    for (const [lane, turn] of routes) {
+      const challenge = task(turn, lane);
+      const onward = follower(challenge, lanePath("S", lane, turn), {
+        wobble: 20,
+      });
+      const laneX = lanePoint("S", "approach", lane, 40).x;
+      let offRoadLane = 0;
+      let offRingLane = 0;
+      const result = play(challenge, (seconds, outcome) => {
+        onward(seconds, outcome);
+        const degrees = (bearingOf(car.x, car.z) / DEG + 360) % 360;
+        const r = Math.hypot(car.x, car.z);
+        // Coming up the road, and then round the west side of the roundabout,
+        // between joining it and leaving it.
+        if (car.z > 25 && car.z < 54 && car.x < 0) {
+          offRoadLane = Math.max(offRoadLane, Math.abs(car.x - laneX));
+        }
+        if (r < 19 && degrees > 245 && degrees < 290) {
+          offRingLane = Math.max(offRingLane, Math.abs(r - ringRadius(lane)));
+        }
+      });
+      expect(result.fault, `lane ${lane}`).toBeUndefined();
+      expect(result.small, `lane ${lane}`).toEqual([]);
+      expect(result.goal, `lane ${lane}`).toBe(true);
+      // A lane is 3.5 m wide and the car 1.8 m, so this keeps it inside.
+      expect(offRoadLane, `lane ${lane} on the road`).toBeLessThan(0.5);
+      expect(offRingLane, `lane ${lane} on the roundabout`).toBeLessThan(0.6);
     }
   });
 
-  it("keeps the car in the lane it was put in", () => {
-    let entered: number | null = null;
-    play(
-      task("straight", 2),
-      (seconds) => {
-        if (seconds === 0) pressRight();
-        controls.go = true;
-        const loc = locate(car.x, car.z);
-        if (loc.kind === "arm" && loc.side === "approach" && loc.along < 26) {
-          entered = loc.lane;
-        }
-        if (onRoundabout() && degrees() > 285) stopDriving();
-      },
-      40,
-    );
-    expect(entered).toBe(3);
-    // Lane 3 on the road is ring lane 3 on the roundabout.
-    expect(Math.hypot(car.x, car.z)).toBeCloseTo(ringRadius(3), 0);
+  it("still holds every lane with the knob pushed all the way", () => {
+    const routes: [number, Turn][] = [
+      [1, "left"],
+      [2, "straight"],
+      [3, "right"],
+      [4, "back"],
+    ];
+    for (const [lane, turn] of routes) {
+      const result = proper(task(turn, lane), lane, { push: 1, wobble: 15 });
+      expect(result.fault, `lane ${lane}`).toBeUndefined();
+      expect(result.small, `lane ${lane}`).toEqual([]);
+      expect(result.goal, `lane ${lane}`).toBe(true);
+    }
   });
 
-  it("slows down for the roundabout by itself", () => {
-    let fastest = 0;
-    let onRing = 0;
-    play(
+  it("joins the ring lane with the approach lane's number", () => {
+    for (const lane of [1, 2, 3, 4]) {
+      const challenge = task("back", lane);
+      const onward = follower(challenge, lanePath("S", lane, "back"), {
+        through: true,
+      });
+      let radius = 0;
+      play(
+        challenge,
+        (seconds, outcome) => {
+          onward(seconds, outcome);
+          // A quarter of the way round, at the west side.
+          if (radius === 0 && car.x < 0 && car.z < 0 && car.z > -3) {
+            radius = Math.hypot(car.x, car.z);
+          }
+        },
+        40,
+      );
+      expect(radius, `lane ${lane}`).toBeGreaterThan(ringRadius(lane) - 0.6);
+      expect(radius, `lane ${lane}`).toBeLessThan(ringRadius(lane) + 0.6);
+    }
+  });
+
+  it("lets go when the knob points at the next lane", () => {
+    const result = proper(task("left", 3), 1);
+    expect(result.small).toEqual([]);
+    expect(result.goal).toBe(true);
+  });
+});
+
+describe("solid things are solid", () => {
+  it("the kerb stops the car and costs a star, and the drive goes on", () => {
+    drive.assist = false;
+    const challenge = task("straight", 1);
+    const onward = follower(challenge, lanePath("S", 1, "straight"));
+    let leftmost = 0;
+    const result = play(challenge, (seconds, outcome) => {
+      if (car.z > 25) leftmost = Math.min(leftmost, car.x);
+      if (outcome.small.length === 0) point(-40 * DEG);
+      else onward(seconds, outcome);
+    });
+    expect(result.small.map((f) => f.id)).toEqual(["kerb"]);
+    expect(result.small[0].serious).toBe(false);
+    expect(result.offRoad).toBe(false);
+    // The middle of the car never gets past the edge of the tarmac.
+    expect(leftmost).toBeGreaterThan(-armHalfWidth(ARMS.S));
+    expect(result.goal).toBe(true);
+  });
+
+  it("no kerb wall stands on the road, anywhere on the board", () => {
+    const physics = createPhysics(task("straight"), { ...car });
+    const walls = Matter.Composite.allBodies(physics.engine.world).filter(
+      (body) => body.isStatic && body.label === "kerb",
+    );
+    expect(walls.length).toBeGreaterThan(100);
+    const blocked: string[] = [];
+    for (let x = BOUNDS.x0 + 1; x < BOUNDS.x1; x += 1) {
+      for (let z = BOUNDS.z0 + 1; z < BOUNDS.z1; z += 1) {
+        // Well inside the tarmac, where a car's middle can be.
+        if (!onTarmac(x, z, -0.9)) continue;
+        if (Matter.Query.point(walls, { x: x * 10, y: z * 10 }).length > 0) {
+          blocked.push(`${x},${z}`);
+        }
+      }
+    }
+    expect(blocked).toEqual([]);
+  });
+
+  it("the kerb behind a parking bay stops the car", () => {
+    // In the aisle of the parking zone, pointed at the back of a bay.
+    const state = { x: 39.7, z: -50, heading: 90 * DEG, speed: 0, steer: 0 };
+    const physics = createPhysics(task("straight"), state);
+    const touched = new Set<string>();
+    let furthest = state.x;
+    for (let i = 0; i < 60 * 8; i += 1) {
+      physicsStep(physics, state, { steer: 0, throttle: 1, brake: 0 });
+      for (const contact of physics.contacts) touched.add(contact);
+      furthest = Math.max(furthest, state.x);
+    }
+    expect([...touched]).toEqual(["kerb"]);
+    // The back of the bay is at 53.8 metres: the car's nose stops there.
+    expect(furthest).toBeLessThan(53.8 - CAR.length / 2 + 0.3);
+    expect(furthest).toBeGreaterThan(48);
+  });
+
+  it("the central reserve stops the car", () => {
+    drive.assist = false;
+    const challenge = task("right", 4);
+    const onward = follower(challenge, lanePath("S", 4, "right"));
+    let rightmost = -99;
+    const result = play(challenge, (seconds, outcome) => {
+      if (car.z > 25) rightmost = Math.max(rightmost, car.x);
+      if (outcome.small.length === 0) point(40 * DEG);
+      else onward(seconds, outcome);
+    });
+    expect(result.small.map((f) => f.id)).toEqual(["central_reserve"]);
+    expect(result.offRoad).toBe(false);
+    expect(rightmost).toBeLessThan(-ARMS.S.medianHalf);
+    expect(result.goal).toBe(true);
+  });
+
+  it("the island stops the car", () => {
+    drive.assist = false;
+    let nearest = 99;
+    const result = play(
       task("back", 4),
-      () => {
-        controls.go = true;
-        fastest = Math.max(fastest, car.speed);
-        // Once it is circling the island in the tight inner lane.
-        if (Math.hypot(car.x, car.z) < ringRadius(4) + 1) {
-          onRing = Math.max(onRing, car.speed);
-        }
-        if (onRoundabout() && degrees() > 300) stopDriving();
-      },
-      40,
-    );
-    expect(fastest).toBeGreaterThan(7);
-    expect(onRing).toBeLessThan(5.5);
-  });
-
-  it("stops when Go is released", () => {
-    play(
-      task("straight", 2),
-      (seconds) => {
-        controls.go = seconds < 3;
-      },
-      8,
-    );
-    expect(car.speed).toBe(0);
-  });
-
-  it("turns the left button into Exit close to the roundabout", () => {
-    const seen: [number, boolean][] = [];
-    play(
-      task("straight", 2),
-      () => {
-        controls.go = true;
-        if (car.z > 20) seen.push([car.z, view.leftIsExit]);
-        if (car.z < 20) stopDriving();
+      (_, outcome) => {
+        nearest = Math.min(nearest, Math.hypot(car.x, car.z));
+        // Straight up the road, then into the middle of the roundabout.
+        if (outcome.small.length > 0) letGo();
+        else if (car.z > 21) point(0, 0.6);
+        else point(bearingOf(-car.x, -car.z), 0.6);
       },
       30,
     );
-    expect(
-      seen.filter(([z]) => z > SOLID_ZONE + 0.5).every(([, e]) => !e),
-    ).toBe(true);
-    expect(seen.filter(([z]) => z < SOLID_ZONE - 0.5).every(([, e]) => e)).toBe(
-      true,
-    );
+    expect(result.small.map((f) => f.id)).toContain("island");
+    expect(nearest).toBeGreaterThan(ISLAND_R);
+  });
+
+  it("the red car gets shoved, and that ends the attempt", () => {
+    const challenge = BOARD_CHALLENGES.find((c) => c.id === "behind-red")!;
+    const before = { ...challenge.otherCars[0] };
+    const result = proper(challenge, 1, { through: true });
+    expect(result.fault).toMatchObject({ id: "collision", serious: true });
+    // It was parked facing west, and it has been pushed further west.
+    expect(view.others[0].x).toBeLessThan(before.x - 0.3);
   });
 });
 
@@ -317,15 +645,11 @@ describe("serious mistakes end the attempt", () => {
   });
 
   it("a legal turn that isn't the one asked for", () => {
-    // Asked to turn left, but only signals after the first exit has gone by.
-    let tapped = false;
-    const result = play(task("left", 1), () => {
-      controls.go = true;
-      if (!tapped && TAP_EXIT.straight()) {
-        pressLeft();
-        tapped = true;
-      }
-    });
+    const challenge = task("left", 1);
+    const result = play(
+      challenge,
+      follower(challenge, lanePath("S", 1, "straight")),
+    );
     expect(result.fault).toMatchObject({
       id: "wrong_destination",
       turn: "straight",
@@ -334,147 +658,147 @@ describe("serious mistakes end the attempt", () => {
   });
 
   it("going all the way round outside lane 4", () => {
-    const result = play(task("straight", 2), () => {
-      controls.go = true;
-    });
+    const challenge = task("straight", 2);
+    const result = play(
+      challenge,
+      follower(challenge, lanePath("S", 2, "straight", 56, 56, 1)),
+    );
     expect(result.fault).toMatchObject({ id: "full_circle", lane: 2 });
   });
 
-  it("but lane 4 may go round as often as it likes", () => {
-    let turns = 0;
-    let last = 0;
+  it("but lane 4 may go round and round", () => {
+    const challenge = task("back", 4);
     const result = play(
-      task("back", 4),
-      () => {
-        controls.go = true;
-        if (onRoundabout()) {
-          if (degrees() < last - 180) turns += 1;
-          last = degrees();
-        }
-      },
-      60,
+      challenge,
+      follower(challenge, lanePath("S", 4, "back", 56, 56, 2)),
     );
-    expect(turns).toBeGreaterThanOrEqual(2);
     expect(result.fault).toBeUndefined();
+    expect(result.goal).toBe(true);
   });
 
-  it("driving past the box to the end of the board", () => {
-    let tapped = false;
-    const result = play(task("straight", 2), () => {
-      controls.go = true;
-      if (!tapped && TAP_EXIT.straight()) {
-        pressLeft();
-        tapped = true;
-      }
-    });
+  it("driving against the traffic", () => {
+    drive.assist = false;
+    // Swings round to the left and comes back down its own side of the road.
+    const result = play(
+      task("straight", 4),
+      () => {
+        const turned = Math.abs(wrapPi(car.heading + 90 * DEG)) < 25 * DEG;
+        const facingSouth =
+          Math.abs(wrapPi(car.heading - 180 * DEG)) < 70 * DEG;
+        point(turned || facingSouth ? 180 * DEG : -90 * DEG, 0.45);
+      },
+      30,
+    );
+    expect(result.fault).toMatchObject({ id: "wrong_way", serious: true });
+  });
+
+  it("leaving on the wrong side of the yellow centre line", () => {
+    drive.assist = false;
+    const challenge = task("left", 1);
+    const path = [
+      ...lanePath("S", 1, "left").filter((p) => p.x > 2 - ringRadius(1)),
+      ...[20, 26, 32, 38, 44].map((along) =>
+        lanePoint("W", "approach", 2, along),
+      ),
+    ];
+    const result = play(challenge, follower(challenge, path));
+    expect(result.fault).toMatchObject({ id: "centre_line", serious: true });
+  });
+
+  it("turning off into the parking zone, which no task uses", () => {
+    drive.assist = false;
+    const challenge = task("right", 3);
+    // Round to the right, then left off the road into the parking aisle.
+    const path = [
+      ...lanePath("S", 3, "right", 56, 30),
+      { x: 36, z: -8 },
+      { x: 39.7, z: -16 },
+      { x: 39.7, z: -30 },
+      { x: 39.7, z: -45 },
+    ];
+    const result = play(
+      challenge,
+      follower(challenge, path, { through: true }),
+    );
+    expect(result.fault).toMatchObject({ id: "off_route", serious: true });
+    expect(faultTip(result.fault!).reason).toContain("does not use");
+  });
+
+  it("turning back, then driving on past the box toward the roundabout", () => {
+    const challenge = BOARD_CHALLENGES.find((c) => c.id === "turn-back")!;
+    const result = play(
+      challenge,
+      follower(challenge, turnBackPath(2, 56, 26), { through: true }),
+    );
     expect(result.fault).toMatchObject({ id: "past_end" });
+    expect(result.goal).toBe(false);
   });
 
-  it("running into the red car, which gets shoved", () => {
-    const challenge = BOARD_CHALLENGES.find((c) => c.id === "behind-red")!;
-    const before = { ...challenge.otherCars[0] };
-    let tapped = false;
-    const result = play(challenge, (seconds) => {
-      if (seconds === 0) {
-        pressLeft();
-        pressLeft();
-      }
-      controls.go = true;
-      if (!tapped && view.leftIsExit) {
-        pressLeft();
-        tapped = true;
-      }
-    });
-    expect(result.fault).toMatchObject({ id: "collision", serious: true });
-    // It was parked facing west, and it has been pushed further west.
-    expect(view.others[0].x).toBeLessThan(before.x - 0.3);
+  it("driving past the box to the end of the road", () => {
+    const challenge = task("straight", 2);
+    const result = play(
+      challenge,
+      follower(challenge, lanePath("S", 2, "straight", 56, 70), {
+        through: true,
+      }),
+    );
+    expect(result.fault).toMatchObject({ id: "past_end" });
+    expect(result.goal).toBe(false);
   });
 });
 
 describe("small mistakes cost a star and the drive goes on", () => {
-  function refused(
-    challenge: BoardChallenge,
-    when: () => boolean,
-    which: "left" | "right",
-  ): Outcome {
-    let pressed = false;
-    let tapped = false;
-    return play(challenge, () => {
-      if (!pressed && when()) {
-        if (which === "left") pressLeft();
-        else pressRight();
-        pressed = true;
-      }
-      if (!tapped && TAP_EXIT[challenge.turn]()) {
-        pressLeft();
-        tapped = true;
-      }
-      goUntilBox(challenge);
+  it("a lane change over the continuous lines before the roundabout", () => {
+    const challenge = task("straight", 2);
+    const onward = follower(challenge, lanePath("S", 3, "straight"));
+    const result = play(challenge, (seconds, outcome) => {
+      const loc = locate(car.x, car.z);
+      const early = car.z > SOLID_ZONE - 2;
+      const across = loc.kind === "arm" && loc.lane === 3;
+      if (early) point(0);
+      else if (!across && car.z > 20) point(45 * DEG);
+      else onward(seconds, outcome);
     });
-  }
-
-  it("lane left from lane 1 is the kerb", () => {
-    const result = refused(task("straight", 1), () => car.z < 50, "left");
-    expect(result.small.map((f) => f.id)).toEqual(["kerb"]);
-    expect(result.goal).toBe(true);
-  });
-
-  it("lane right from lane 4 is the central reserve", () => {
-    const result = refused(task("right", 4), () => car.z < 50, "right");
-    expect(result.small.map((f) => f.id)).toEqual(["central_reserve"]);
-    expect(result.goal).toBe(true);
-  });
-
-  it("lane right across the yellow centre line is refused", () => {
-    // Leaves west in lane 3 of the three-lane road, beside the centre line.
-    const result = refused(task("left", 4), () => car.x < -26, "right");
-    expect(result.small.map((f) => f.id)).toEqual(["centre_line"]);
-    expect(result.goal).toBe(true);
-  });
-
-  it("no lane change over the continuous lines before the roundabout", () => {
-    const result = refused(
-      task("straight", 2),
-      () => car.z < SOLID_ZONE - 2 && car.z > 20,
-      "right",
-    );
     expect(result.small.map((f) => f.id)).toEqual(["solid_line"]);
     expect(result.small[0].serious).toBe(false);
     expect(result.goal).toBe(true);
   });
 
-  it("no lane change on the roundabout", () => {
-    const result = refused(
-      task("straight", 2),
-      () => onRoundabout() && degrees() > 240,
-      "right",
-    );
-    expect(result.small.map((f) => f.id)).toEqual(["roundabout_lane_change"]);
+  it("the same lane change further back is fine", () => {
+    const result = proper(task("straight", 2), 3);
+    expect(result.small).toEqual([]);
     expect(result.goal).toBe(true);
   });
 
-  it("no stopping on the roundabout", () => {
-    let waited = 0;
-    let tapped = false;
+  it("settling into another lane on the roundabout", () => {
+    drive.assist = false;
     const challenge = task("straight", 2);
-    const result = play(challenge, () => {
-      goUntilBox(challenge);
-      if (onRoundabout() && degrees() > 250 && waited < 4) {
-        controls.go = false;
+    // Enters in lane 2, drifts in to ring lane 3, and still leaves north.
+    const path = [
+      ...lanePath("S", 2, "straight").filter((p) => p.z > 13),
+      ...lanePath("S", 3, "straight").filter((p) => p.z <= 7),
+    ];
+    const result = play(challenge, follower(challenge, path));
+    expect(result.small.map((f) => f.id)).toEqual(["roundabout_lane_change"]);
+    expect(result.small[0]).toMatchObject({ lane: 2, serious: false });
+    expect(result.goal).toBe(true);
+  });
+
+  it("stopping on the roundabout", () => {
+    const challenge = task("straight", 2);
+    const onward = follower(challenge, lanePath("S", 2, "straight"));
+    let waited = 0;
+    const result = play(challenge, (seconds, outcome) => {
+      const degrees = (bearingOf(car.x, car.z) / DEG + 360) % 360;
+      const onRing = Math.hypot(car.x, car.z) < 19;
+      if (onRing && degrees > 250 && waited < 4.5) {
+        letGo();
         waited += STEP;
-      }
-      if (!tapped && TAP_EXIT.straight()) {
-        pressLeft();
-        tapped = true;
+      } else {
+        onward(seconds, outcome);
       }
     });
     expect(result.small.map((f) => f.id)).toEqual(["roundabout_stop"]);
-    expect(result.goal).toBe(true);
-  });
-
-  it("a lane change on the open road is fine", () => {
-    const result = proper(task("left", 3), 1);
-    expect(result.small).toEqual([]);
     expect(result.goal).toBe(true);
   });
 });

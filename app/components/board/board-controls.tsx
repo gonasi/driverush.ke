@@ -1,111 +1,139 @@
 /**
- * The three controls, drawn in plain DOM over the game: hold Go to drive and
- * let go to brake, and tap left or right to change lane. Close to the
- * roundabout and on it, the left button becomes Exit. The car steers itself
- * along its lane (`board/guide.ts`), so nobody has to wrestle a wheel.
+ * The joystick: one knob, drawn in plain DOM over the table. Push it toward
+ * where you want the car to go on the screen, further to go faster, and let go
+ * to stop. Up is always away from you, whichever side of the table you stand
+ * at. `board/joystick.ts` turns that into steering and pedals, and holds the
+ * lane you are in when lane assist is on.
  *
- * Presses go straight to `board/runtime.ts`. The only React state is whether
- * the left button reads "Lane" or "Exit", checked a few times a second.
+ * It writes straight into `board/runtime.ts`'s `stick` and moves the knob with a
+ * transform, so driving never re-renders React. Arrow keys and WASD push the
+ * same knob on a computer.
  */
 import * as React from "react";
 
-import {
-  controls,
-  pressLeft,
-  pressRight,
-  resetInput,
-  view,
-} from "~/lib/board/runtime";
+import { STICK_DEADZONE } from "~/lib/board/joystick";
+import { resetInput, stick } from "~/lib/board/runtime";
 import { cn } from "~/lib/utils";
 
-const GO_KEYS = new Set(["ArrowUp", "w", "W", " "]);
-const LEFT_KEYS = new Set(["ArrowLeft", "a", "A"]);
-const RIGHT_KEYS = new Set(["ArrowRight", "d", "D"]);
+type Dir = "left" | "right" | "up" | "down";
 
-const BUTTON =
-  "pointer-events-auto flex touch-none select-none flex-col items-center justify-center gap-0.5 rounded-xl border-2 font-display font-extrabold uppercase leading-none tracking-tight outline-none transition-transform duration-75 active:translate-y-1 focus-visible:border-white";
-
-function Arrow({ flip }: { flip?: boolean }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      aria-hidden
-      className={cn("size-7", flip && "-scale-x-100")}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="3"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M19 12H5M11 5.5L4.5 12l6.5 6.5" />
-    </svg>
-  );
-}
+const KEYS: Record<string, Dir> = {
+  ArrowLeft: "left",
+  a: "left",
+  A: "left",
+  ArrowRight: "right",
+  d: "right",
+  D: "right",
+  ArrowUp: "up",
+  w: "up",
+  W: "up",
+  ArrowDown: "down",
+  s: "down",
+  S: "down",
+};
 
 export function BoardControls({ active }: { active: boolean }) {
-  const [exit, setExit] = React.useState(false);
-  // Shown until the learner has pressed Go once.
+  const base = React.useRef<HTMLDivElement>(null);
+  const knob = React.useRef<HTMLDivElement>(null);
+  const dragging = React.useRef(false);
+  const held = React.useRef<Record<Dir, boolean>>({
+    left: false,
+    right: false,
+    up: false,
+    down: false,
+  });
+  // Shown until the learner has pushed the knob once.
   const [hint, setHint] = React.useState(true);
-  const go = React.useRef<HTMLButtonElement>(null);
 
-  const hold = React.useCallback((down: boolean) => {
-    controls.go = down;
-    if (go.current) go.current.dataset.down = String(down);
-    if (down) setHint(false);
+  /** Put the knob at `x`, `y` (each -1 to 1) and tell the car. */
+  const place = React.useCallback((x: number, y: number) => {
+    const reach = Math.hypot(x, y);
+    const k = reach > 1 ? 1 / reach : 1;
+    stick.x = x * k;
+    stick.y = y * k;
+    const b = base.current;
+    const el = knob.current;
+    if (b && el) {
+      const travel = (b.offsetWidth - el.offsetWidth) / 2;
+      el.style.transform = `translate(${(stick.x * travel).toFixed(1)}px, ${(stick.y * travel).toFixed(1)}px)`;
+    }
+    if (reach > STICK_DEADZONE) setHint(false);
   }, []);
 
   React.useEffect(() => {
-    if (!active) {
-      hold(false);
+    const keys = held.current;
+    const release = () => {
+      dragging.current = false;
+      keys.left = keys.right = keys.up = keys.down = false;
+      if (knob.current) knob.current.dataset.held = "false";
+      place(0, 0);
       resetInput();
-      setExit(false);
+    };
+    if (!active) {
+      release();
       return;
     }
 
+    const fromKeys = () => {
+      if (dragging.current) return;
+      const x = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+      const y = (keys.down ? 1 : 0) - (keys.up ? 1 : 0);
+      place(x, y);
+    };
     const onKey = (down: boolean) => (e: KeyboardEvent) => {
-      if (GO_KEYS.has(e.key)) {
+      if (e.key === " ") {
+        // Space lets go of everything.
         e.preventDefault();
-        hold(down);
+        if (down) {
+          keys.left = keys.right = keys.up = keys.down = false;
+          fromKeys();
+        }
         return;
       }
-      if (!down || e.repeat) return;
-      if (LEFT_KEYS.has(e.key)) {
-        e.preventDefault();
-        pressLeft();
-      } else if (RIGHT_KEYS.has(e.key)) {
-        e.preventDefault();
-        pressRight();
-      }
+      const dir = KEYS[e.key];
+      if (!dir) return;
+      e.preventDefault();
+      keys[dir] = down;
+      fromKeys();
     };
     const keyDown = onKey(true);
     const keyUp = onKey(false);
-    const letGo = () => hold(false);
     window.addEventListener("keydown", keyDown);
     window.addEventListener("keyup", keyUp);
-    // Switching tabs with Go held must not leave the car driving itself.
-    window.addEventListener("blur", letGo);
-    const watch = window.setInterval(() => setExit(view.leftIsExit), 120);
+    // Switching tabs mid-push must not leave the car driving itself.
+    window.addEventListener("blur", release);
 
     return () => {
       window.removeEventListener("keydown", keyDown);
       window.removeEventListener("keyup", keyUp);
-      window.removeEventListener("blur", letGo);
-      window.clearInterval(watch);
-      hold(false);
+      window.removeEventListener("blur", release);
+      release();
     };
-  }, [active, hold]);
+  }, [active, place]);
 
-  const tap = (press: () => unknown) => (e: React.PointerEvent) => {
-    e.preventDefault();
-    press();
+  const follow = (e: React.PointerEvent<HTMLDivElement>) => {
+    const b = base.current;
+    const el = knob.current;
+    if (!b || !el) return;
+    const box = b.getBoundingClientRect();
+    const travel = (b.offsetWidth - el.offsetWidth) / 2 || 1;
+    place(
+      (e.clientX - (box.left + box.width / 2)) / travel,
+      (e.clientY - (box.top + box.height / 2)) / travel,
+    );
+  };
+  const drop = () => {
+    if (!dragging.current) return;
+    dragging.current = false;
+    if (knob.current) knob.current.dataset.held = "false";
+    place(0, 0);
   };
 
   return (
     <div
       className={cn(
-        "pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] transition-opacity duration-200 sm:pb-6",
+        "pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-1 pb-[max(0.75rem,env(safe-area-inset-bottom))] transition-opacity duration-200 sm:pb-6",
         active ? "opacity-100" : "opacity-0",
-        !active && "[&_button]:pointer-events-none",
       )}
     >
       <p
@@ -115,65 +143,56 @@ export function BoardControls({ active }: { active: boolean }) {
           hint ? "opacity-100" : "opacity-0",
         )}
       >
-        Hold Go to drive. Let go to stop.
+        Push toward where you want to go. Let go to stop.
       </p>
 
-      <div className="grid w-full max-w-md grid-cols-[1fr_1.35fr_1fr] gap-2.5">
-        <button
-          type="button"
-          aria-label={exit ? "Take the next exit" : "Move one lane to the left"}
-          onPointerDown={tap(pressLeft)}
-          onContextMenu={(e) => e.preventDefault()}
-          className={cn(
-            BUTTON,
-            "h-[4.75rem] text-[15px] shadow-[0_5px_0_rgba(0,0,0,0.5)]",
-            exit
-              ? "border-[#17181b] bg-[#f6c416] text-[#17181b]"
-              : "border-white/30 bg-[#2b2d33] text-white",
-          )}
+      {/* The pad is bigger than the drawn base, so a thumb doesn't have to aim. */}
+      <div
+        role="application"
+        aria-label="Joystick. Push toward where you want the car to go, and let go to stop. Arrow keys work too."
+        className={cn(
+          "flex size-[12.5rem] touch-none select-none items-center justify-center",
+          active && "pointer-events-auto",
+        )}
+        onPointerDown={(e) => {
+          try {
+            e.currentTarget.setPointerCapture(e.pointerId);
+          } catch {
+            // No capture (some webviews): the drag still works over the pad.
+          }
+          dragging.current = true;
+          if (knob.current) knob.current.dataset.held = "true";
+          follow(e);
+        }}
+        onPointerMove={(e) => {
+          if (dragging.current) follow(e);
+        }}
+        onPointerUp={drop}
+        onPointerCancel={drop}
+        onLostPointerCapture={drop}
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        <div
+          ref={base}
+          className="relative flex size-36 items-center justify-center rounded-full border-2 border-white/30 bg-[#17181b]/70 shadow-[0_6px_0_rgba(0,0,0,0.45)]"
         >
-          <Arrow />
-          {exit ? "Exit" : "Lane"}
-        </button>
-
-        <button
-          ref={go}
-          type="button"
-          aria-label="Go. Hold to drive, let go to brake."
-          data-down="false"
-          onPointerDown={(e) => {
-            try {
-              e.currentTarget.setPointerCapture(e.pointerId);
-            } catch {
-              // No capture (some webviews): leaving the button lets go instead.
-            }
-            hold(true);
-          }}
-          onPointerUp={() => hold(false)}
-          onPointerCancel={() => hold(false)}
-          onLostPointerCapture={() => hold(false)}
-          onContextMenu={(e) => e.preventDefault()}
-          className={cn(
-            BUTTON,
-            "h-[4.75rem] border-[#0c3d22] bg-[#1fa85a] text-[26px] text-white shadow-[0_5px_0_rgba(0,0,0,0.5)] data-[down=true]:translate-y-1 data-[down=true]:bg-[#178a49] data-[down=true]:shadow-[0_1px_0_rgba(0,0,0,0.5)]",
-          )}
-        >
-          Go
-        </button>
-
-        <button
-          type="button"
-          aria-label="Move one lane to the right"
-          onPointerDown={tap(pressRight)}
-          onContextMenu={(e) => e.preventDefault()}
-          className={cn(
-            BUTTON,
-            "h-[4.75rem] border-white/30 bg-[#2b2d33] text-[15px] text-white shadow-[0_5px_0_rgba(0,0,0,0.5)]",
-          )}
-        >
-          <Arrow flip />
-          Lane
-        </button>
+          {/* Four ticks: the knob points at the screen, not at the car. */}
+          <svg
+            viewBox="0 0 100 100"
+            aria-hidden
+            className="absolute inset-0 size-full text-white/45"
+          >
+            <path
+              d="M50 9l5 7H45zM50 91l5-7H45zM9 50l7-5v10zM91 50l-7-5v10z"
+              fill="currentColor"
+            />
+          </svg>
+          <div
+            ref={knob}
+            data-held="false"
+            className="size-16 rounded-full border-2 border-[#f6c416] bg-[#2b2d33] shadow-[0_4px_0_rgba(0,0,0,0.55),inset_0_2px_0_rgba(255,255,255,0.18)] will-change-transform data-[held=false]:transition-transform data-[held=false]:duration-150"
+          />
+        </div>
       </div>
     </div>
   );

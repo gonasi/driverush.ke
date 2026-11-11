@@ -8,6 +8,7 @@ import {
   laneBearing,
   lanePoint,
   type ArmId,
+  type Side,
   type Turn,
 } from "./geometry";
 
@@ -20,6 +21,11 @@ export type OtherCar = {
 
 export type BoardGoal = {
   arm: ArmId;
+  /**
+   * Which side of the road the box is on. Left out, it is the side leaving the
+   * roundabout. The U-turn task ends on the side driving back toward it.
+   */
+  side?: Side;
   /** Only this lane counts, when set. */
   lane?: number;
   alongMin: number;
@@ -37,7 +43,8 @@ export type BoardChallenge = {
   otherCars: OtherCar[];
 };
 
-const START_ALONG = 56;
+/** Far enough back that there is room to change lanes before the continuous lines. */
+const START_ALONG = 60;
 const BOX = { alongMin: 33, alongMax: 44 };
 
 function turnChallenge(
@@ -91,6 +98,17 @@ export const BOARD_CHALLENGES: readonly BoardChallenge[] = [
     3,
     "back",
   ),
+  {
+    id: "turn-back",
+    title: "Turn back",
+    prompt:
+      "Go straight across the roundabout. Turn back through the first gap in the central reserve and stop in the green box.",
+    start: { arm: "S", lane: 2, along: START_ALONG },
+    turn: "straight",
+    // On the side driving back toward the roundabout, short of the continuous lines.
+    goal: { arm: "N", side: "approach", alongMin: 46, alongMax: 58 },
+    otherCars: [],
+  },
   {
     id: "behind-red",
     title: "Behind the red car",

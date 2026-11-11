@@ -16,11 +16,11 @@ to date when an asset or an agreement changes. No personal contact details here.
 - Do not credit Pelican Signs as the author of this artwork.
 - **Missing:** the 3D model for M.5 (Pass to the left). `M_5.glb` was an exact copy of the M.7 bicycle, so it was deleted and M.5 is out of the 3D trainer until it's re-exported. Add it back in `app/data/road-signs-3d.json` or `/tools/sign-3d`. The chart trainer still has M.5.
 
-## Board game sprites
-- **What:** the cars and trees in the Model Town Board game. Files: `public/assets/board/car-yellow.png`, `car-red.png`, `tree-large.png`, `tree-small.png`.
-- **From:** Kenney's "Racing Pack" (kenney.nl/assets/racing-pack), files `car_yellow_1.png`, `car_red_1.png`, `tree_large.png` and `tree_small.png`, unchanged. Downloaded on 2026-11-11.
-- **Licence:** Creative Commons Zero (CC0), as stated in the pack's `License.txt`: free for personal, educational and commercial use. Credit is welcome but not required.
-- **Everything else on the board** (roads, markings, kerbs, the stopping box) is drawn by our own code in `app/lib/board/board-svg.ts`.
+## Model Town Board
+- **Made by:** the DriveRush team's own code. Nothing on the board is downloaded or bought.
+- **The board** (roads, markings, kerbs, the parking zone, the stopping box) is drawn by `app/lib/board/full-board.ts`. Its layout follows the boards Kenyan driving schools paint, and its proportions were measured off a reference drawing of one. No artwork was copied from either.
+- **The cars** are modelled in code in `app/components/board/car-model.ts`. The table, its wood and the floor are drawn in code in `app/components/board/board-table.tsx`.
+- **Removed on 2026-11-11:** the cars and trees from Kenney's "Racing Pack" (CC0), used by the earlier 2D game. They are no longer in the repository.
 
 ## Voice clips
 - **Made with:** ElevenLabs, on a paid plan. The clips in `public/assets/road-signs/sounds/` carry ElevenLabs content tags.
