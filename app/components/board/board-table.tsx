@@ -1573,9 +1573,14 @@ function Scene({
       finish.metres = Math.hypot(goal.x - car.x, goal.z - car.z);
     }
 
-    // Where the upside-down cars are on the screen, so nothing is drawn over them.
+    // Where the learner's car and the upside-down cars are on the screen, so
+    // nothing is drawn over them.
     blockSpots.length = 0;
     if (driving && challenge) {
+      probe.set(at.x, 1, at.z).project(state.camera);
+      if (probe.z <= 1) {
+        blockSpots.push({ x: (probe.x + 1) / 2, y: (1 - probe.y) / 2 });
+      }
       for (const other of challenge.otherCars) {
         if (!other.flipped) continue;
         probe.set(other.x, 1, other.z).project(state.camera);

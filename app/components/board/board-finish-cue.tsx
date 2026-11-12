@@ -95,16 +95,20 @@ export function BoardFinishCue({
       );
       const px = cx + dx * t;
       let py = cy + dy * t;
-      // Never over an upside-down car: slide down the edge, or up, to clear it.
-      for (const spot of blockSpots) {
-        const bx = spot.x * w;
-        const by = spot.y * h;
-        const clearY = halfH + 34;
-        if (Math.abs(bx - px) > halfW + 30 || Math.abs(by - py) > clearY) {
-          continue;
-        }
-        const below = by + clearY;
-        py = below + halfH <= low ? below : by - clearY;
+      // Never over the learner's car or an upside-down car: go below every
+      // car it would cover, or above them all where there is no room below.
+      const clearY = halfH + 34;
+      const covered = blockSpots
+        .map((spot) => ({ x: spot.x * w, y: spot.y * h }))
+        .filter((spot) => Math.abs(spot.x - px) <= halfW + 30);
+      const hits = (y: number) =>
+        covered.some((spot) => Math.abs(spot.y - y) < clearY);
+      if (hits(py)) {
+        const ys = covered.map((spot) => spot.y);
+        const below = Math.max(...ys) + clearY;
+        const above = Math.min(...ys) - clearY;
+        // between two cars there is rarely room, so only above or below
+        py = below + halfH <= low ? below : Math.max(top + halfH, above);
       }
       c.style.transform = `translate(${px.toFixed(1)}px, ${py.toFixed(1)}px) translate(-50%, -50%)`;
       if (arrow.current) {

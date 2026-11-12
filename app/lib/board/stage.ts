@@ -79,9 +79,9 @@ export const cam = {
 export const finish = { on: false, x: 0.5, y: 0.5, metres: 0 };
 
 /**
- * Where the upside-down cars of a blocked-road task are on the screen, in the
- * same shares. The finish button keeps off them: a learner has to see what is
- * blocked.
+ * Where the learner's car and the upside-down cars of a blocked-road task are
+ * on the screen, in the same shares. The finish button keeps off them: a
+ * learner has to see their own car and what is blocked.
  */
 export const blockSpots: { x: number; y: number }[] = [];
 

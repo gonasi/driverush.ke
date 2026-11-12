@@ -7,7 +7,11 @@
  */
 import * as React from "react";
 
+import { cam, redraw } from "~/lib/board/stage";
 import { cn } from "~/lib/utils";
+
+/** The most of the view a popup may push the camera up by. */
+const MAX_LIFT = 0.31;
 
 type Tone = "fault" | "pass" | "watch" | "ask";
 
@@ -30,10 +34,41 @@ export function BoardSheet({
   strip: React.ReactNode;
   children: React.ReactNode;
 } & Omit<React.ComponentProps<"div">, "children">) {
+  // The popup covers the bottom of the screen, on a phone often more than
+  // half of it. The camera holds what it is looking at, the car above all, in
+  // the part left clear above the popup: up by half the share the popup
+  // takes, measured, and measured again whenever the popup changes size.
+  const card = React.useRef<HTMLDivElement>(null);
+  React.useLayoutEffect(() => {
+    const el = card.current;
+    if (!el) return;
+    const before = cam.lift;
+    const update = () => {
+      const tall = Math.max(1, window.innerHeight);
+      // The wrapper, not the card: the card slides up as it comes in, and
+      // the wrapper has the gap under it too.
+      const covered = (el.parentElement ?? el).offsetHeight / tall;
+      cam.lift = Math.min(MAX_LIFT, Math.max(before, covered / 2));
+      redraw();
+    };
+    update();
+    const watcher =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(update) : null;
+    watcher?.observe(el);
+    window.addEventListener("resize", update);
+    return () => {
+      watcher?.disconnect();
+      window.removeEventListener("resize", update);
+      cam.lift = before;
+      redraw();
+    };
+  }, []);
+
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-8">
       <div
         {...props}
+        ref={card}
         className={cn(
           // Every popup in the game is one dark card. `dark` turns the brand's
           // own colours over inside it, so buttons and text made for paper
