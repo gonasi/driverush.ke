@@ -374,7 +374,9 @@ export function tick(frameSeconds: number): void {
       // The bump plays out, then the examiner calls it.
       if (physicsStep(physics, car, input)) {
         stopDriving();
-        callbacks.onFault(COLLISION);
+        callbacks.onFault(
+          physics.hitBlock ? { ...COLLISION, block: true } : COLLISION,
+        );
         return;
       }
       continue;

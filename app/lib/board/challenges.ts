@@ -19,6 +19,7 @@ import {
   type Side,
   type Turn,
 } from "./geometry";
+import { blockById } from "./blocks";
 import type { BoardCarId } from "./cars";
 import { parkedCars } from "./parking-layouts";
 
@@ -31,6 +32,11 @@ export type OtherCar = {
   paint?: string;
   car?: BoardCarId;
   plate?: string;
+  /**
+   * Turned upside down by the instructor to close a way (`blocks.ts`). It
+   * cannot be pushed aside.
+   */
+  flipped?: boolean;
 };
 
 export type BoardGoal = {
@@ -65,6 +71,8 @@ export type RouteChallenge = TaskBase & {
   lesson: string;
   /** The car has a reverse gear in this task. */
   reverse: boolean;
+  /** The way an upside-down car has closed, in a blocked-road task. */
+  block?: string;
 };
 
 export type BoardChallenge = TurnChallenge | RouteChallenge;
@@ -129,6 +137,84 @@ function parkingTask(
     get: () => parked.otherCars,
   }) as RouteChallenge;
 }
+
+/** What the upside-down cars are painted, so they read as one thing. */
+const BLOCK_PAINT = "#b8141b";
+
+/** The upside-down cars of a block, as cars on the table. */
+export function blockCars(id: string): OtherCar[] {
+  return (blockById(id)?.cars ?? []).map((car) => ({
+    ...car,
+    color: "red" as const,
+    paint: BLOCK_PAINT,
+    flipped: true,
+  }));
+}
+
+/**
+ * A blocked-road task. Its lesson is one of `BLOCKED_ROUTES`, and the cars are
+ * read when asked for: the block's, and the parked ones where the task parks.
+ */
+function blockedTask(
+  task: Omit<RouteChallenge, "otherCars" | "reverse" | "lesson" | "block"> & {
+    block: string;
+    parks?: boolean;
+  },
+): RouteChallenge {
+  const { parks = false, ...rest } = task;
+  return Object.defineProperty(
+    { ...rest, lesson: task.id, reverse: parks },
+    "otherCars",
+    {
+      enumerable: true,
+      get: () => [...(parks ? parked.otherCars : []), ...blockCars(task.block)],
+    },
+  ) as RouteChallenge;
+}
+
+/** Said at the end of every blocked-road task. */
+const FIND_IT = "Find the next correct route. Stop in the green box.";
+
+const BLOCKED_TASKS: readonly RouteChallenge[] = [
+  blockedTask({
+    id: "blocked-lane",
+    block: "lane",
+    title: "A lane is blocked",
+    prompt: `You are in lane 4. Turn right at the roundabout, then right onto the two-way road. The upside-down car means lane 4 is blocked. ${FIND_IT}`,
+  }),
+  blockedTask({
+    id: "blocked-ring",
+    block: "ring",
+    title: "A lane on the roundabout is blocked",
+    prompt: `You are in lane 4. Come back down this road. The upside-down car means lane 4 on the roundabout is blocked, and no other lane may go all the way round. ${FIND_IT}`,
+  }),
+  blockedTask({
+    id: "blocked-exit",
+    block: "exit",
+    title: "An exit is blocked",
+    prompt: `Reach the bottom of the two-way road. The upside-down cars mean the roundabout's exit to it is blocked. ${FIND_IT}`,
+  }),
+  blockedTask({
+    id: "blocked-gap",
+    block: "gap",
+    title: "The gap is blocked",
+    prompt: `You are in lane 2 at the continuous lines, and you are asked to turn left. Lane 2 only goes straight, and the upside-down car means the first gap in the central reserve is blocked. ${FIND_IT}`,
+  }),
+  blockedTask({
+    id: "blocked-street",
+    block: "street",
+    title: "The street is blocked",
+    prompt: `Reach the top of the two-way road. The upside-down car means the street is blocked. ${FIND_IT}`,
+  }),
+  blockedTask({
+    id: "blocked-parking",
+    block: "parking",
+    parks: true,
+    title: "The way into the parking is blocked",
+    prompt:
+      "Park nose first in the farthest free angle bay. It has the green box. The upside-down car means the turn into the parking is blocked. Find the next correct route.",
+  }),
+];
 
 const ROUTE_TASKS: readonly RouteChallenge[] = [
   {
@@ -278,6 +364,7 @@ export const BOARD_CHALLENGES: readonly BoardChallenge[] = [
     3,
   ),
   ...ROUTE_TASKS,
+  ...BLOCKED_TASKS,
 ];
 
 export const BOARD_ROUND_SIZE = 5;

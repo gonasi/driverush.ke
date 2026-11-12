@@ -9,7 +9,11 @@ import { Link } from "react-router";
 
 import { analytics } from "~/lib/analytics";
 import { BOARD_LEVELS_PATH, levelHref } from "~/lib/board-guides";
-import { RULES_SOURCE, laneRule } from "~/lib/board/board-rules";
+import {
+  BLOCK_SOURCE,
+  RULES_SOURCE,
+  laneRule,
+} from "~/lib/board/board-rules";
 import {
   COURSE_LEVELS,
   KIND_LABEL,
@@ -169,6 +173,7 @@ function SlidesLevel({
   onDone: () => void;
 }) {
   const show = useStage((s) => s.show);
+  const setBlock = useStage((s) => s.setBlock);
   const cards = React.useMemo(() => levelSlides(level), [level]);
   // Closed part-way through, a deck opens again on the card it was left at.
   const keepPlace = useBoardStore((s) => s.keepPlace);
@@ -208,6 +213,13 @@ function SlidesLevel({
   const lastWrong = spots.find((spot) => spot.id === wrong[wrong.length - 1]);
   const letter = (id: string) =>
     "ABCDEFGH"[spots.findIndex((spot) => spot.id === id)];
+
+  // A card about a blocked road stands the upside-down car on the board.
+  const cardBlock = card?.block ?? null;
+  React.useEffect(() => {
+    setBlock(cardBlock);
+    return () => setBlock(null);
+  }, [cardBlock, setBlock]);
 
   React.useEffect(() => {
     if (finding) return;
@@ -290,7 +302,7 @@ function SlidesLevel({
           </Link>
         )}
         <p className="m-0 mt-2 font-mono text-[10px] uppercase tracking-widest text-white/50">
-          {RULES_SOURCE}, Unit 3
+          {card.block ? BLOCK_SOURCE : `${RULES_SOURCE}, Unit 3`}
         </p>
       </div>
 

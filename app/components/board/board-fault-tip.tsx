@@ -30,7 +30,7 @@ export function BoardFaultTip({
           {tip.rule}
         </p>
         <p className="m-0 text-[11.5px] leading-snug text-ink-3">
-          From the {RULES_SOURCE}.
+          {tip.source ? `${tip.source}.` : `From the ${RULES_SOURCE}.`}
         </p>
       </div>
     </div>

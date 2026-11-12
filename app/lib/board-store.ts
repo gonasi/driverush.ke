@@ -605,7 +605,10 @@ export const useBoardStore = create<BoardState>()(
         releaseCamera();
         // The parked cars stand somewhere new each attempt, so the farthest
         // free bay has to be looked for.
-        if (isRouteTask(challenge) && challenge.otherCars.length > 0) {
+        if (
+          isRouteTask(challenge) &&
+          challenge.otherCars.some((other) => !other.flipped)
+        ) {
           shuffleParkingLayout();
         }
         beginChallenge(challenge, { onFault, onSmall, onDeviation, onGoal });

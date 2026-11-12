@@ -3,6 +3,7 @@
  * each road into the roundabout can take you, routes across the whole board,
  * parking, and the right way through each driving task.
  */
+import { blockById, closedEdges } from "./blocks";
 import { isRouteTask, type BoardChallenge } from "./challenges";
 import { goalBox, type Box } from "./full-board";
 import {
@@ -27,6 +28,7 @@ import {
   routeOf,
   trimRoute,
   type Maneuver,
+  type NetEdge,
   type Plan,
   type Route,
 } from "./network";
@@ -168,6 +170,8 @@ export type Lesson = {
   to: string;
   /** How the route has to end, where there is more than one way. */
   arrive?: Maneuver;
+  /** A way an upside-down car has closed (`blocks.ts`). */
+  block?: string;
 };
 
 /**
@@ -322,6 +326,93 @@ export const LESSONS: readonly Lesson[] = [
   },
 ];
 
+/**
+ * Routes with a way closed by an upside-down car. The learner works these out,
+ * so they are driven as tasks and never played as lessons: they are kept out
+ * of `LESSONS`, and so out of Learn mode and the watch levels.
+ */
+export const BLOCKED_ROUTES: readonly Lesson[] = [
+  {
+    id: "blocked-lane",
+    group: "routes",
+    level: "Medium",
+    title: "A lane is blocked",
+    ask: "From lane 4, turn right at the roundabout and reach the bottom of the two-way road. Lane 4 is blocked.",
+    from: `From ${DUAL_BOTTOM}, lane 4`,
+    to: `To ${TWO_WAY_BOTTOM}`,
+    block: "lane",
+  },
+  {
+    id: "blocked-ring",
+    group: "routes",
+    level: "Hard",
+    title: "A lane on the roundabout is blocked",
+    ask: "From lane 4, come back the way you came. Lane 4 on the roundabout is blocked.",
+    from: `From ${DUAL_BOTTOM}, lane 4`,
+    to: `To ${DUAL_BOTTOM}, lane 3`,
+    block: "ring",
+  },
+  {
+    id: "blocked-exit",
+    group: "routes",
+    level: "Medium",
+    title: "An exit is blocked",
+    ask: "From the top of the dual carriageway, reach the bottom of the two-way road. The roundabout's exit to it is blocked.",
+    from: `From ${DUAL_TOP}, lane 4`,
+    to: `To ${TWO_WAY_BOTTOM}`,
+    block: "exit",
+  },
+  {
+    id: "blocked-gap",
+    group: "routes",
+    level: "Hard",
+    title: "The gap is blocked",
+    ask: "You are in lane 2 at the continuous lines and you are asked to turn left. The first gap in the central reserve is blocked.",
+    from: `At the continuous lines on ${DUAL_BOTTOM}, lane 2`,
+    to: `To ${THREE_LEFT}, lane 1`,
+    block: "gap",
+  },
+  {
+    id: "blocked-street",
+    group: "routes",
+    level: "Hard",
+    title: "The street is blocked",
+    ask: "From the top of the dual carriageway, reach the top of the two-way road. The street is blocked.",
+    from: `From ${DUAL_TOP}, lane 1`,
+    to: `To ${TWO_WAY_TOP}`,
+    block: "street",
+  },
+  {
+    id: "blocked-parking",
+    group: "parking",
+    level: "Hard",
+    title: "The way into the parking is blocked",
+    ask: "From the top of the dual carriageway, park in the angle parking, nose first, in the farthest free bay. The turn into the parking is blocked.",
+    from: `From ${DUAL_TOP}, lane 1`,
+    to: ANGLE_BAY,
+    block: "parking",
+  },
+];
+
+/** A lesson or a blocked route, by its id. */
+export function lessonById(id: string): Lesson | undefined {
+  return (
+    LESSONS.find((l) => l.id === id) ?? BLOCKED_ROUTES.find((l) => l.id === id)
+  );
+}
+
+/**
+ * What a blocked route may not use: the pieces the upside-down car closes, and
+ * any connection a driving school still has to confirm. The learner is asked
+ * to work the way out, so the answer must not rest on a rule schools differ on.
+ */
+function closedFor(id: string): ReadonlySet<NetEdge> {
+  const block = blockById(id);
+  const closed = new Set(block ? closedEdges(block) : []);
+  for (const e of network().edges) if (!e.confirmed) closed.add(e);
+  return closed;
+}
+
 const lessonCache = new Map<string, Plan | null>();
 
 /** The route for a lesson, with the route rule that picked it. */
@@ -331,7 +422,16 @@ export function lessonPlan(lesson: Lesson): Plan | null {
   const places = network().places;
   const from = places.find((p) => p.label === placeLabel(lesson.from));
   const to = places.find((p) => p.label === placeLabel(lesson.to));
-  const plan = from && to ? planRoute(from.id, to.id, lesson.arrive) : null;
+  const block = lesson.block ? blockById(lesson.block) : undefined;
+  const plan =
+    from && to
+      ? planRoute(
+          from.id,
+          to.id,
+          lesson.arrive,
+          block ? closedFor(block.id) : undefined,
+        )
+      : null;
   lessonCache.set(key, plan);
   return plan;
 }
@@ -372,7 +472,7 @@ export const ROAD_BOX = 12;
 /** The line a task should be driven along, from its start line to its green box. */
 export function challengeRoute(challenge: BoardChallenge): Route | null {
   if (isRouteTask(challenge)) {
-    const lesson = LESSONS.find((l) => l.id === challenge.lesson);
+    const lesson = lessonById(challenge.lesson);
     const key = layoutKey(challenge.id, lesson?.group === "parking");
     if (taskCache.has(key)) return taskCache.get(key) ?? null;
     const whole = lesson ? lessonRoute(lesson) : null;
@@ -430,7 +530,7 @@ export function challengeRoute(challenge: BoardChallenge): Route | null {
 /** True when a task ends in a parking bay and not on a road. */
 export function taskParks(challenge: BoardChallenge): boolean {
   if (!isRouteTask(challenge)) return false;
-  const lesson = LESSONS.find((l) => l.id === challenge.lesson);
+  const lesson = lessonById(challenge.lesson);
   return Boolean(lesson && !lesson.to.startsWith("To "));
 }
 

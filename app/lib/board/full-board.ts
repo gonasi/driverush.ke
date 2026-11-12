@@ -868,7 +868,14 @@ export type FullBoardOptions = {
   };
   /** A green box anywhere on the board, for a task that ends off these roads. */
   box?: Box;
-  cars?: { x: number; z: number; heading: number; color: string }[];
+  cars?: {
+    x: number;
+    z: number;
+    heading: number;
+    color: string;
+    /** Upside down, closing a way: drawn as its underside with a cross. */
+    flipped?: boolean;
+  }[];
   /** Lines drawn over the paint: a route, or the lane network for checking. */
   routes?: {
     points: Point[];
@@ -1157,7 +1164,9 @@ export function fullBoardSvg(options: FullBoardOptions = {}): string {
           car.x,
           car.z,
           car.heading,
-          `<rect x="-1.1" y="-2.4" width="2.2" height="4.8" rx="0.8" fill="${car.color}" stroke="${C.kerbBlack}" stroke-width="0.3"/><rect x="-0.8" y="-0.9" width="1.6" height="2.1" rx="0.4" fill="${C.kerbBlack}" fill-opacity="0.7"/>`,
+          car.flipped
+            ? `<rect x="-1.1" y="-2.4" width="2.2" height="4.8" rx="0.8" fill="${C.kerbBlack}" stroke="${car.color}" stroke-width="0.45"/><path d="M-0.75 -1.95 L0.75 1.95 M0.75 -1.95 L-0.75 1.95" fill="none" stroke="#ffffff" stroke-width="0.5" stroke-linecap="round"/>`
+            : `<rect x="-1.1" y="-2.4" width="2.2" height="4.8" rx="0.8" fill="${car.color}" stroke="${C.kerbBlack}" stroke-width="0.3"/><rect x="-0.8" y="-0.9" width="1.6" height="2.1" rx="0.4" fill="${C.kerbBlack}" fill-opacity="0.7"/>`,
         ),
       )
       .join(""),

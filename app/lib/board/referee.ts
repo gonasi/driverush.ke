@@ -96,6 +96,8 @@ export type Fault = {
   turn?: Turn;
   /** The turn the challenge asked for. */
   asked?: Turn;
+  /** A collision with an upside-down car that closes a way (`blocks.ts`). */
+  block?: boolean;
 };
 
 export type RefResult = {

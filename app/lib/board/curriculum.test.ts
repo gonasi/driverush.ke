@@ -91,6 +91,13 @@ describe("the course", () => {
       if (level.kind !== "drive") continue;
       const task = challengeById(level.challenge);
       if (!task || !isRouteTask(task)) continue;
+      if (task.block) {
+        // A blocked road is worked out, not watched: the rule comes first.
+        const rule = ALL_LEVELS.find((l) => l.id === "blocked-roads");
+        expect(rule, level.id).toBeDefined();
+        expect(rule!.n).toBeLessThan(level.n);
+        continue;
+      }
       const shown = ALL_LEVELS.find(
         (l) => l.kind === "watch" && l.lesson === task.lesson,
       );

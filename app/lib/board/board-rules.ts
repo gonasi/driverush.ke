@@ -7,6 +7,11 @@ import { lanesForTurn, type Turn } from "./geometry";
 import type { Fault, FaultId } from "./referee";
 
 export const RULES_SOURCE = "Kenya Learner Driver Handbook, NTSA";
+/**
+ * Where the blocked-road rule comes from. It is how instructors set the board
+ * up, not a line of the handbook, so it is never credited to the handbook.
+ */
+export const BLOCK_SOURCE = "How driving instructors set the board";
 
 export type FaultTip = {
   id: FaultId;
@@ -14,6 +19,8 @@ export type FaultTip = {
   reason: string;
   /** The rule in one line, for the toast and the result card. */
   rule: string;
+  /** Where the rule comes from, when it is not the handbook. */
+  source?: string;
 };
 
 const TURN_VERB: Record<Turn, string> = {
@@ -175,7 +182,9 @@ function reasonFor(fault: Fault): string {
     case "full_circle":
       return `You went all the way round after entering in lane ${fault.lane ?? 1}. Only the innermost lane, lane 4, may make a full circle. In the other lanes, take your exit the first time you reach it.`;
     case "collision":
-      return "You drove into the red car. Ease off early and stop behind it with a gap.";
+      return fault.block
+        ? "You drove into the upside-down car. An instructor turns a car over to close that way, so you may not touch it or squeeze past it. Look for it before you set off, then take the next correct route: the shortest one that is still open, without using the parking area unless nothing else is left."
+        : "You drove into the red car. Ease off early and stop behind it with a gap.";
     case "off_route":
       return "You left the way you were asked to go, for a road or a part of the road this task does not use. No rule was broken, so nobody stops you, but only the route you were asked for is a pass. Stay on the road you were asked to take, and stop in the green box.";
     case "wrong_lane":
@@ -195,8 +204,21 @@ function reasonFor(fault: Fault): string {
   }
 }
 
+/** Hitting an upside-down car is a collision with its own words. */
+const BLOCK_HIT = {
+  title: "You hit the upside-down car",
+  rule: "An upside-down car means that way is blocked. Find the next correct route.",
+};
+
 export function faultTip(fault: Fault): FaultTip {
-  return { id: fault.id, ...RULES[fault.id], reason: reasonFor(fault) };
+  const words =
+    fault.id === "collision" && fault.block ? BLOCK_HIT : RULES[fault.id];
+  return {
+    id: fault.id,
+    ...words,
+    reason: reasonFor(fault),
+    ...(words === BLOCK_HIT ? { source: BLOCK_SOURCE } : {}),
+  };
 }
 
 export function faultRule(id: FaultId): string {

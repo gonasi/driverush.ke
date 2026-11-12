@@ -30,8 +30,12 @@ export type SlideRef =
   | { feature: string }
   /** One of the handbook's route rules, from `lessons.ts`. */
   | { rule: "shortest" | "longest" | "last_resort"; at: string }
-  /** A rule said here. `at` is the feature whose part of the board to show. */
-  | { title: string; note: string; at: string };
+  /**
+   * A rule said here. `at` is the feature whose part of the board to show.
+   * With `block`, an upside-down car stands on the board while the card is up
+   * (`blocks.ts`), and the camera goes to it.
+   */
+  | { title: string; note: string; at: string; block?: string };
 
 type LevelBase = {
   id: string;
@@ -284,6 +288,36 @@ const UNIT_DEFS: readonly {
       drive("from-two-way", "Back to the dual carriageway", "Medium"),
       watch("across-town", "Across the board", "Hard"),
       watch("round-the-block", "Round the block and back north", "Hard"),
+      slides(
+        "blocked-roads",
+        "When a road is blocked",
+        [
+          {
+            title: "An upside-down car closes the way",
+            note: "An instructor turns a toy car upside down to block a lane, an exit, a gap or a whole road. That way is closed for the task.",
+            at: "dual-carriageway",
+            block: "lane",
+          },
+          {
+            title: "Never touch it or squeeze past",
+            note: "Do not bump the upside-down car, and do not cross a continuous line to get round it. Changing lanes on the roundabout to pass one is still not allowed.",
+            at: "roundabout",
+            block: "ring",
+          },
+          {
+            title: "Take the next correct route",
+            note: "Look for the block before you set off. Then use the same three route rules on the roads that are still open: the shortest correct route, the long way round, and the parking area only as a last resort.",
+            at: "u-turn-gap",
+            block: "gap",
+          },
+        ],
+        "Medium",
+      ),
+      drive("blocked-lane", "A lane is blocked", "Medium"),
+      drive("blocked-exit", "An exit is blocked", "Medium"),
+      drive("blocked-ring", "A lane on the roundabout is blocked", "Hard"),
+      drive("blocked-gap", "The gap is blocked", "Hard"),
+      drive("blocked-street", "The street is blocked", "Hard"),
     ],
   },
   {
@@ -317,6 +351,7 @@ const UNIT_DEFS: readonly {
       drive("park-flush", "Flush parking", "Medium"),
       watch("leave-flush", "Pull out of flush parking", "Easy"),
       drive("leave-flush", "Pull out of flush parking", "Easy"),
+      drive("blocked-parking", "The way into the parking is blocked", "Hard"),
     ],
   },
   {

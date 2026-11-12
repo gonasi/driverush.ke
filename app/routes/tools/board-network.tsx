@@ -2,7 +2,19 @@ import * as React from "react";
 
 import type { Route as PageRoute } from "./+types/board-network";
 
-import { fullBoardSvg, type FullBoardOptions } from "~/lib/board/full-board";
+import { blockById } from "~/lib/board/blocks";
+import { BOARD_CHALLENGES, isRouteTask } from "~/lib/board/challenges";
+import {
+  CAR_COLORS,
+  fullBoardSvg,
+  type FullBoardOptions,
+} from "~/lib/board/full-board";
+import {
+  challengeRoute,
+  lessonById,
+  lessonPlan,
+  taskGoalBox,
+} from "~/lib/board/lessons";
 import { parkedCars } from "~/lib/board/parking-layouts";
 import {
   network,
@@ -72,6 +84,13 @@ const LAYERS = [
 type LayerId = (typeof LAYERS)[number]["id"];
 
 const ROUTE_COLOR = "#fde047";
+/** A blocked-road task: the answer, and the way the block has closed. */
+const ANSWER_COLOR = "#4ade80";
+const CLOSED_COLOR = "#f87171";
+
+const BLOCKED_TASKS = BOARD_CHALLENGES.filter(
+  (c) => isRouteTask(c) && c.block !== undefined,
+);
 const REVERSE_COLOR = "#f87171";
 const SHORTCUT_COLOR = "#f472b6";
 
@@ -124,14 +143,69 @@ export default function BoardNetworkTool() {
   const [active, setActive] = React.useState<number | null>(null);
   const [seen, setSeen] = React.useState<"south" | "east">("south");
 
+  /** A blocked-road task to look at, by its id. It takes over the picture. */
+  const [blockedId, setBlockedId] = React.useState("");
+  const blockedTask = BLOCKED_TASKS.find((c) => c.id === blockedId);
+  const blockedLesson =
+    blockedTask && isRouteTask(blockedTask)
+      ? lessonById(blockedTask.lesson)
+      : undefined;
+
   const plan = React.useMemo(
-    () => (from && to ? planRoute(from, to) : null),
-    [from, to],
+    () =>
+      blockedLesson
+        ? lessonPlan(blockedLesson)
+        : from && to
+          ? planRoute(from, to)
+          : null,
+    [blockedLesson, from, to],
   );
-  React.useEffect(() => setActive(null), [from, to]);
+  React.useEffect(() => setActive(null), [from, to, blockedId]);
 
   const svg = React.useMemo(() => {
     const lines: Line[] = [];
+    if (blockedTask && plan?.route) {
+      if (plan.closed) {
+        lines.push({
+          points: plan.closed.points,
+          color: CLOSED_COLOR,
+          width: 0.8,
+          dashed: true,
+          arrow: true,
+        });
+      }
+      const driven = challengeRoute(blockedTask) ?? plan.route;
+      lines.push(
+        ...driven.steps.map((_, i) => ({
+          points: stepPoints(driven, i),
+          color: ANSWER_COLOR,
+          width: active === i ? 1.9 : 1.1,
+          opacity: active === null || active === i ? 1 : 0.45,
+          arrow: i === driven.steps.length - 1 || active === i,
+        })),
+      );
+      const start = driven.points[0];
+      return fullBoardSvg({
+        seen,
+        routes: lines,
+        box: taskGoalBox(blockedTask),
+        cars: [
+          ...blockedTask.otherCars.map((car) => ({
+            x: car.x,
+            z: car.z,
+            heading: car.heading,
+            color: CAR_COLORS.red,
+            flipped: car.flipped,
+          })),
+          {
+            x: start.x,
+            z: start.z,
+            heading: driven.headings[0],
+            color: CAR_COLORS.player,
+          },
+        ],
+      });
+    }
     if (plan?.route) {
       if (plan.shortcut) {
         lines.push({
@@ -167,7 +241,7 @@ export default function BoardNetworkTool() {
       }
     }
     return fullBoardSvg({ seen, routes: lines });
-  }, [net, plan, shown, active, seen]);
+  }, [net, plan, shown, active, seen, blockedTask]);
 
   /** One line per unconfirmed rule, with how many connections rest on it. */
   const unsure = React.useMemo(() => {
@@ -187,7 +261,8 @@ export default function BoardNetworkTool() {
     return [...groups].sort((a, b) => a[0].localeCompare(b[0]));
   }, [net]);
 
-  const route = plan?.route ?? null;
+  const route =
+    (blockedTask ? challengeRoute(blockedTask) : null) ?? plan?.route ?? null;
 
   return (
     <div>
@@ -212,6 +287,40 @@ export default function BoardNetworkTool() {
         />
 
         <div className="flex flex-col gap-6">
+          <section
+            className="border-2 border-ink bg-surface p-4"
+            data-testid="blocked-roads"
+          >
+            <h2 className="m-0 font-display text-[18px] font-extrabold uppercase tracking-tight">
+              Blocked roads
+            </h2>
+            <p className="m-0 mt-2 text-[13.5px] leading-relaxed text-ink-2">
+              An upside-down car closes a way. Green is the answer the task
+              wants, red dashed is the way it would have gone.
+            </p>
+            <select
+              aria-label="Blocked-road task"
+              className={cn(selectClass, "mt-3")}
+              value={blockedId}
+              onChange={(e) => setBlockedId(e.target.value)}
+            >
+              <option value="">None</option>
+              {BLOCKED_TASKS.map((task) => (
+                <option key={task.id} value={task.id}>
+                  {task.title}
+                </option>
+              ))}
+            </select>
+            {blockedTask && isRouteTask(blockedTask) && (
+              <p className="m-0 mt-3 text-[13.5px] leading-relaxed text-ink">
+                <span className="font-bold">
+                  Closed: {blockById(blockedTask.block ?? "")?.what}.
+                </span>{" "}
+                {blockedTask.prompt}
+              </p>
+            )}
+          </section>
+
           <section className="border-2 border-ink bg-surface p-4">
             <h2 className="m-0 font-display text-[18px] font-extrabold uppercase tracking-tight">
               Try a route
@@ -283,6 +392,8 @@ export default function BoardNetworkTool() {
                     ` The pink dashed line is the short way from another lane, ${Math.round(route.length - plan.blocked.length)} m shorter, but a continuous line is in the way.`}
                   {plan.rule === "parking" &&
                     "Starts or ends in the parking area, so it has to use it."}
+                  {plan.closed &&
+                    ` With nothing blocked it would be ${Math.round(plan.closed.length)} m.`}
                   {plan.shortcut &&
                     ` The pink dashed line is ${Math.round(route.length - plan.shortcut.length)} m shorter but cuts through the parking area, so it is the wrong answer.`}
                   {!route.confirmed &&

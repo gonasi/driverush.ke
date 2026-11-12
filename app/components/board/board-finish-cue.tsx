@@ -11,7 +11,7 @@
  */
 import * as React from "react";
 
-import { finish } from "~/lib/board/stage";
+import { blockSpots, finish } from "~/lib/board/stage";
 
 import { Icon } from "~/components/brand/icon";
 import { ArrowRightIcon, FinishIcon } from "~/components/brand/icons";
@@ -93,7 +93,20 @@ export function BoardFinishCue({
         reachX / Math.max(1, Math.abs(dx)),
         reachY / Math.max(1, Math.abs(dy)),
       );
-      c.style.transform = `translate(${(cx + dx * t).toFixed(1)}px, ${(cy + dy * t).toFixed(1)}px) translate(-50%, -50%)`;
+      const px = cx + dx * t;
+      let py = cy + dy * t;
+      // Never over an upside-down car: slide down the edge, or up, to clear it.
+      for (const spot of blockSpots) {
+        const bx = spot.x * w;
+        const by = spot.y * h;
+        const clearY = halfH + 34;
+        if (Math.abs(bx - px) > halfW + 30 || Math.abs(by - py) > clearY) {
+          continue;
+        }
+        const below = by + clearY;
+        py = below + halfH <= low ? below : by - clearY;
+      }
+      c.style.transform = `translate(${px.toFixed(1)}px, ${py.toFixed(1)}px) translate(-50%, -50%)`;
       if (arrow.current) {
         arrow.current.style.transform = `rotate(${Math.atan2(dy, dx).toFixed(3)}rad)`;
       }

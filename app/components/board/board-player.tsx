@@ -9,14 +9,20 @@ import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router";
 import { useShallow } from "zustand/react/shallow";
 
-import { resolveCar } from "~/lib/board/cars";
+import { BOARD_CARS, resolveCar } from "~/lib/board/cars";
 import { faultRule, faultTip } from "~/lib/board/board-rules";
 import {
   BOARD_CHALLENGES,
+  blockCars,
   isRouteTask,
   type BoardChallenge,
 } from "~/lib/board/challenges";
-import { BOUNDS, fullBoardSvg, placeOnPage } from "~/lib/board/full-board";
+import {
+  BOUNDS,
+  CAR_COLORS,
+  fullBoardSvg,
+  placeOnPage,
+} from "~/lib/board/full-board";
 import type { Seat } from "~/lib/board/joystick";
 import { pickable, queueCars } from "~/lib/board/lane-queue";
 import {
@@ -786,18 +792,30 @@ export function BoardGame() {
       lineUp && lanesRest ? pickable(lineUp, Object.keys(lanesRest)) : [],
     [lineUp, lanesRest],
   );
+  // An upside-down car a card is talking about (`blocked-roads`).
+  const shownBlock = useStage((st) => st.block);
   const standingCars = React.useMemo(
     () =>
-      lineUp && lanesRest && !pickedCar
-        ? lineUp.map((one) => ({
-            car: one.car,
-            paint: one.paint,
-            plate: one.plate,
-            ...(lanesRest[one.id] ?? one.start),
-            pick: frontCars.includes(one) ? one.id : undefined,
+      shownBlock
+        ? blockCars(shownBlock).map((one) => ({
+            car: BOARD_CARS[0].id,
+            paint: one.paint ?? CAR_COLORS.red,
+            plate: "KCZ 718M",
+            x: one.x,
+            z: one.z,
+            heading: one.heading,
+            flipped: true,
           }))
-        : undefined,
-    [lineUp, lanesRest, pickedCar, frontCars],
+        : lineUp && lanesRest && !pickedCar
+          ? lineUp.map((one) => ({
+              car: one.car,
+              paint: one.paint,
+              plate: one.plate,
+              ...(lanesRest[one.id] ?? one.start),
+              pick: frontCars.includes(one) ? one.id : undefined,
+            }))
+          : undefined,
+    [shownBlock, lineUp, lanesRest, pickedCar, frontCars],
   );
   // The level of the course the game was opened on, if it was.
   const level = levelById(s.level) ?? null;
@@ -861,6 +879,16 @@ export function BoardGame() {
             box: taskGoalBox(challenge),
             seen: seat,
             numbers: false,
+            // a blocked way shows on the small map too
+            cars: challenge.otherCars
+              .filter((other) => other.flipped)
+              .map((other) => ({
+                x: other.x,
+                z: other.z,
+                heading: other.heading,
+                color: CAR_COLORS.red,
+                flipped: true,
+              })),
           })
         : "",
     // eslint-disable-next-line react-hooks/exhaustive-deps -- see `layout`

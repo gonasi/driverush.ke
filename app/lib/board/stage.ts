@@ -79,6 +79,13 @@ export const cam = {
 export const finish = { on: false, x: 0.5, y: 0.5, metres: 0 };
 
 /**
+ * Where the upside-down cars of a blocked-road task are on the screen, in the
+ * same shares. The finish button keeps off them: a learner has to see what is
+ * blocked.
+ */
+export const blockSpots: { x: number; y: number }[] = [];
+
+/**
  * Where each car that can be picked from a line-up is on the screen, as
  * shares of its width and height. The scene fills it in every frame it draws.
  */
@@ -270,6 +277,9 @@ type StageState = {
   lines: StageLine[];
   /** A part of the board to light up. */
   glow: Box | null;
+  /** An upside-down car to stand on the board, by its block's id. */
+  block: string | null;
+  setBlock: (block: string | null) => void;
   /** The route being played back, if any. */
   route: Route | null;
   playing: boolean;
@@ -291,6 +301,11 @@ type StageState = {
 export const useStage = create<StageState>()((set, get) => ({
   lines: [],
   glow: null,
+  block: null,
+  setBlock: (block) => {
+    set({ block });
+    wake();
+  },
   route: null,
   playing: false,
   rate: 1,
@@ -351,6 +366,7 @@ export const useStage = create<StageState>()((set, get) => ({
     set({
       lines: [],
       glow: null,
+      block: null,
       route: null,
       playing: false,
       ended: false,

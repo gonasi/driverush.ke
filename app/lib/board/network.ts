@@ -1080,6 +1080,8 @@ function shortest(
   to: string,
   parking: boolean,
   arrive?: Maneuver,
+  /** Pieces of road that are closed, such as by an upside-down car. */
+  avoid?: ReadonlySet<NetEdge>,
 ): NetEdge[] | null {
   const net = network();
   if (!net.nodes.has(from) || !net.nodes.has(to)) return null;
@@ -1102,6 +1104,7 @@ function shortest(
     for (const e of net.out.get(here) ?? []) {
       // a bay is somewhere to park, never a way through
       if (e.bay ? !bays.has(e.bay) : e.parking && !parking) continue;
+      if (avoid?.has(e)) continue;
       if (arrive && e.to === to && e.maneuver !== arrive) continue;
       const next =
         best +
@@ -1258,6 +1261,11 @@ export type Plan = {
    * continuous line stands between the car and it.
    */
   blocked: Route | null;
+  /**
+   * The way it would have gone had no road been closed, when a closed road
+   * changed the answer. Null when nothing is closed or the route is the same.
+   */
+  closed: Route | null;
 };
 
 const inParking = (id: string) =>
@@ -1293,24 +1301,50 @@ export function planRoute(
   to: string,
   /** Insist on how the route ends, such as reversing into a bay. */
   arrive?: Maneuver,
+  /**
+   * Pieces of road that are closed (`blocks.ts`). The same three rules then
+   * pick the way from what is left.
+   */
+  avoid?: ReadonlySet<NetEdge>,
+): Plan {
+  if (avoid && avoid.size > 0) {
+    const open = planRoute(from, to, arrive);
+    const plan = planAvoiding(from, to, arrive, avoid);
+    const same =
+      open.route &&
+      plan.route &&
+      open.route.edges.length === plan.route.edges.length &&
+      open.route.edges.every((e, i) => e === plan.route?.edges[i]);
+    return { ...plan, closed: same ? null : open.route };
+  }
+  return planAvoiding(from, to, arrive);
+}
+
+function planAvoiding(
+  from: string,
+  to: string,
+  arrive?: Maneuver,
+  avoid?: ReadonlySet<NetEdge>,
 ): Plan {
   if (inParking(from) || inParking(to)) {
-    const edges = shortest(from, to, true, arrive);
+    const edges = shortest(from, to, true, arrive, avoid);
     return {
       route: edges ? routeOf(edges) : null,
       rule: "parking",
       shortcut: null,
       blocked: null,
+      closed: null,
     };
   }
-  const clear = shortest(from, to, false, arrive);
-  const through = shortest(from, to, true, arrive);
+  const clear = shortest(from, to, false, arrive, avoid);
+  const through = shortest(from, to, true, arrive, avoid);
   if (!clear) {
     return {
       route: through ? routeOf(through) : null,
       rule: "last_resort",
       shortcut: null,
       blocked: null,
+      closed: null,
     };
   }
   const route = routeOf(clear);
@@ -1321,7 +1355,7 @@ export function planRoute(
     clear.find((e) => e.maneuver !== "follow")?.maneuver === "hold_lane";
   let short: NetEdge[] | null = null;
   for (const other of held ? besideOf(from) : []) {
-    const way = shortest(other, to, false, arrive);
+    const way = shortest(other, to, false, arrive, avoid);
     if (way && (!short || lengthOfEdges(way) < lengthOfEdges(short))) {
       short = way;
     }
@@ -1336,6 +1370,7 @@ export function planRoute(
     shortcut:
       cut && cut.throughParking && cut.length < route.length - 1 ? cut : null,
     blocked,
+    closed: null,
   };
 }
 

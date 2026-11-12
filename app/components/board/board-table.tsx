@@ -48,6 +48,7 @@ import {
   asDriveSpan,
   cam,
   endLook,
+  blockSpots,
   finish,
   marks,
   picks,
@@ -134,6 +135,8 @@ export type ExtraCar = {
   heading: number;
   /** It can be picked: the scene says where it is on the screen (`picks`). */
   pick?: string;
+  /** Turned upside down to close a way (`blocks.ts`). */
+  flipped?: boolean;
 };
 
 const BOARD_W = BOUNDS.x1 - BOUNDS.x0;
@@ -716,6 +719,8 @@ function carOnTable(
   plate: string,
   tier: BoardTier,
   source?: THREE.Object3D,
+  /** Lying on its roof, as an instructor turns a car over to close a way. */
+  flipped = false,
 ) {
   const holder = new THREE.Group();
   const options = {
@@ -731,6 +736,13 @@ function carOnTable(
       node.receiveShadow = false;
     });
   }
+  if (flipped) {
+    // Turned over about its length, then lifted so the roof rests on the road.
+    const size = new THREE.Box3().setFromObject(model);
+    model.rotation.z = Math.PI;
+    model.position.y = size.max.y + size.min.y;
+  }
+  holder.userData.flipped = flipped;
   holder.add(model);
   blob ??= blobTexture();
   const shadow = new THREE.Mesh(
@@ -1030,6 +1042,7 @@ function Scene({
           other.plate ?? "KCZ 718M",
           tier,
           models?.[other.car ?? beside[i % beside.length]],
+          other.flipped,
         );
       }),
     [challenge, tier, models, driven],
@@ -1060,7 +1073,13 @@ function Scene({
   const extras = React.useMemo(() => {
     const group = new THREE.Group();
     (extraCars ?? []).forEach((spot) => {
-      const extra = carOnTable(spot.paint, spot.plate, tier, models?.[spot.car]);
+      const extra = carOnTable(
+        spot.paint,
+        spot.plate,
+        tier,
+        models?.[spot.car],
+        spot.flipped,
+      );
       extra.position.set(spot.x, 0, spot.z);
       extra.rotation.y = -spot.heading;
       group.add(extra);
@@ -1222,7 +1241,7 @@ function Scene({
     parked.visible = !(
       challenge &&
       isRouteTask(challenge) &&
-      challenge.otherCars.length > 0
+      challenge.otherCars.some((other) => !other.flipped)
     );
     if (playing && !stillChevrons) chevrons.offset.x -= dt * 0.9;
     if (glowMaterial.current) {
@@ -1250,7 +1269,9 @@ function Scene({
         pose.x - other.position.x,
         pose.z - other.position.z,
       );
-      if (driving && moved < 1) rollWheels(other, moved);
+      if (driving && moved < 1 && !other.userData.flipped) {
+        rollWheels(other, moved);
+      }
       other.position.set(pose.x, 0, pose.z);
       other.rotation.y = -pose.heading;
     });
@@ -1365,24 +1386,27 @@ function Scene({
     // The opening look: on a screen that shows only part of the table, the
     // view starts on the finish and slides back to the car. A push of the
     // stick ends it at once.
+    // With a way blocked, the upside-down car is the thing to see first.
+    const blockAt = challenge?.otherCars.find((other) => other.flipped);
+    const look = blockAt ?? goal;
     if (fresh) {
       r.intro =
         sweep &&
         !calm &&
-        goal !== null &&
+        look != null &&
         wide < 1 &&
-        Math.hypot(goal.x - car.x, goal.z - car.z) > SWEEP_FROM
-          ? SWEEP_HOLD + SWEEP_MOVE
+        Math.hypot(look.x - car.x, look.z - car.z) > (blockAt ? 12 : SWEEP_FROM)
+          ? (blockAt ? SWEEP_HOLD * 2 : SWEEP_HOLD) + SWEEP_MOVE
           : 0;
     } else if (busy || focus) {
       r.intro = 0;
     } else if (driving) {
       r.intro = Math.max(0, r.intro - dt);
     }
-    if (r.intro > 0 && goal) {
+    if (r.intro > 0 && look) {
       const t = ease(clamp(r.intro / SWEEP_MOVE, 0, 1));
-      goalX = lerp(goalX, goal.x, t);
-      goalZ = lerp(goalZ, goal.z, t);
+      goalX = lerp(goalX, look.x, t);
+      goalZ = lerp(goalZ, look.z, t);
     }
     let near = close;
     const k = fresh ? 1 : 1 - Math.exp(-dt * 4);
@@ -1547,6 +1571,17 @@ function Scene({
       finish.x = (probe.x + 1) / 2;
       finish.y = (1 - probe.y) / 2;
       finish.metres = Math.hypot(goal.x - car.x, goal.z - car.z);
+    }
+
+    // Where the upside-down cars are on the screen, so nothing is drawn over them.
+    blockSpots.length = 0;
+    if (driving && challenge) {
+      for (const other of challenge.otherCars) {
+        if (!other.flipped) continue;
+        probe.set(other.x, 1, other.z).project(state.camera);
+        if (probe.z > 1) continue;
+        blockSpots.push({ x: (probe.x + 1) / 2, y: (1 - probe.y) / 2 });
+      }
     }
 
     // Where each car that can be picked is on the screen, for its button.

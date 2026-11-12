@@ -38,7 +38,14 @@ const BACKOFF_SPEED = 0.9;
 const KERB_DEPTH = 2;
 
 /** What the learner's car has just touched. */
-export type Contact = "kerb" | "reserve" | "island" | "end" | "car";
+export type Contact =
+  | "kerb"
+  | "reserve"
+  | "island"
+  | "end"
+  | "car"
+  /** A car the instructor has turned upside down to close a way. */
+  | "block";
 
 export type OtherPose = { x: number; z: number; heading: number };
 
@@ -51,6 +58,8 @@ export type Physics = {
   /** New contacts made during the latest step. */
   contacts: Contact[];
   crashed: boolean;
+  /** The crash was into an upside-down car closing a way. */
+  hitBlock: boolean;
   crashTime: number;
   /** How hard the latest hit was, 0 to 1, for the shake and the sound. */
   impact: number;
@@ -63,7 +72,14 @@ export type Physics = {
   backoff: number;
 };
 
-function carBody(x: number, z: number, heading: number, label: string) {
+function carBody(
+  x: number,
+  z: number,
+  heading: number,
+  label: string,
+  /** An upside-down car stays where the instructor put it. */
+  fixed = false,
+) {
   return Bodies.rectangle(
     x * SCALE,
     z * SCALE,
@@ -71,6 +87,7 @@ function carBody(x: number, z: number, heading: number, label: string) {
     CAR.length * SCALE,
     {
       label,
+      isStatic: fixed,
       angle: heading,
       chamfer: { radius: 0.35 * SCALE },
       frictionAir: label === "car" ? 0.09 : 0,
@@ -143,7 +160,9 @@ export function createPhysics(challenge: BoardChallenge, car: CarState) {
   const engine = Engine.create({ gravity: { x: 0, y: 0 } });
   const player = carBody(car.x, car.z, car.heading, "player");
   const others = challenge.otherCars.map((other) =>
-    carBody(other.x, other.z, other.heading, "car"),
+    other.flipped
+      ? carBody(other.x, other.z, other.heading, "block", true)
+      : carBody(other.x, other.z, other.heading, "car"),
   );
   Composite.add(engine.world, [player, ...others, ...scenery()]);
 
@@ -154,6 +173,7 @@ export function createPhysics(challenge: BoardChallenge, car: CarState) {
     poses: challenge.otherCars.map(({ x, z, heading }) => ({ x, z, heading })),
     contacts: [],
     crashed: false,
+    hitBlock: false,
     crashTime: 0,
     impact: 0,
     steer: 0,
@@ -189,8 +209,9 @@ export function createPhysics(challenge: BoardChallenge, car: CarState) {
         1,
         Math.max(0.35, (Body.getSpeed(player) * 60) / SCALE / CAR.maxSpeed),
       );
-      if (kind === "car" && !physics.crashed) {
+      if ((kind === "car" || kind === "block") && !physics.crashed) {
         physics.crashed = true;
+        physics.hitBlock = kind === "block";
         // From here the bump plays out by itself.
         player.frictionAir = 0.07;
       }
