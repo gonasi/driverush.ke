@@ -2,7 +2,7 @@
  * Open Graph cards — the picture that shows up when a DriveRush link lands in
  * WhatsApp, X or Facebook.
  *
- * These are real PNGs in `public/og/`, not runtime-generated images. They're
+ * These are real image files in `public/og/`, not runtime-generated images. They're
  * captured from `/tools/og`, a route that renders each card with the app's own
  * fonts, colours and artwork (actual sprite crops off the Pelican chart,
  * actual GLB models in the 3D card), then screenshotted by
@@ -64,9 +64,18 @@ export const OG_CARDS: OgCard[] = [
   },
 ];
 
-/** Site-relative path to a card's PNG. */
+/**
+ * Cards that ship as JPEG. The board card is a photo-like 3D still, which
+ * comes to about 300 kB as a PNG: right at the size where WhatsApp has been
+ * known to drop the preview picture. As a JPEG it is well under half that.
+ * The flat cards stay PNG, where they are small and sharper.
+ * Keep in step with `jpeg` in `scripts/build-og-images.mjs`.
+ */
+const JPEG_CARDS: ReadonlySet<OgCardId> = new Set(["board"]);
+
+/** Site-relative path to a card's image. */
 export function ogCardPath(id: OgCardId): string {
-  return `/og/${id}.png`;
+  return `/og/${id}.${JPEG_CARDS.has(id) ? "jpg" : "png"}`;
 }
 
 /** Alt text for a card, for `og:image:alt`. */

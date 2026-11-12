@@ -19,7 +19,7 @@
  * machine against localhost, never in production.
  */
 import { execFile } from "node:child_process";
-import { mkdir, stat } from "node:fs/promises";
+import { mkdir, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -61,7 +61,10 @@ const CARDS = [
   //     --out public/assets/board/poster.jpg && rm public/og/board-3d.png
   { id: "board-3d", settleMs: 25000, minBytes: 200_000 },
   { id: "default", settleMs: 2500, minBytes: 20_000 },
-  { id: "board", settleMs: 3500, minBytes: 20_000 },
+  // Shipped as a JPEG: as a PNG this card is about 300 kB, which is where
+  // WhatsApp starts dropping the preview picture. See JPEG_CARDS in
+  // `app/lib/og-cards.ts`.
+  { id: "board", settleMs: 3500, minBytes: 20_000, jpeg: 85 },
   { id: "pelican", settleMs: 3500, minBytes: 20_000 },
   // WebGL through SwiftShader plus three GLB loads: this one needs room.
   { id: "signs3d", settleMs: 20000, minBytes: 50_000 },
@@ -140,6 +143,28 @@ async function capture(chrome, card, attempt = 1) {
   return { out, size };
 }
 
+/**
+ * Re-encode a captured card as a JPEG and drop the PNG. Uses `sips`, which
+ * ships with macOS, the same tool the poster steps above use.
+ */
+async function toJpeg(card) {
+  const png = path.join(OUT_DIR, `${card.id}.png`);
+  const jpg = path.join(OUT_DIR, `${card.id}.jpg`);
+  await execFileAsync("sips", [
+    "-s",
+    "format",
+    "jpeg",
+    "-s",
+    "formatOptions",
+    String(card.jpeg),
+    png,
+    "--out",
+    jpg,
+  ]);
+  await rm(png);
+  return (await stat(jpg)).size;
+}
+
 async function main() {
   const only = process.argv.slice(2).filter((a) => !a.startsWith("-"));
   const wanted = only.length ? CARDS.filter((c) => only.includes(c.id)) : CARDS;
@@ -166,7 +191,14 @@ async function main() {
       process.stdout.write(`(blank, retry ${attempt}) `);
       if (attempt === MAX_ATTEMPTS) failed.push(card.id);
     }
-    console.log(`${(size / 1024).toFixed(0)} kB  →  public/og/${card.id}.png`);
+    let ext = "png";
+    if (card.jpeg && size >= card.minBytes) {
+      size = await toJpeg(card);
+      ext = "jpg";
+    }
+    console.log(
+      `${(size / 1024).toFixed(0)} kB  →  public/og/${card.id}.${ext}`,
+    );
   }
 
   if (failed.length) {

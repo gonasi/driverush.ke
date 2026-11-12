@@ -57,8 +57,9 @@ export function buildShareLink(payload: SharePayload): ShareLink {
         t: String(total),
         f: String(firstTry),
       });
+      const signs = total === 1 ? "road sign" : "road signs";
       const what =
-        kind === "pelican" ? "road signs from memory" : "road signs in 3D";
+        kind === "pelican" ? `${signs} from memory` : `${signs} in 3D`;
       return {
         kind,
         url: `${BASE}/s?${params}`,
@@ -215,7 +216,7 @@ export function resolveShare(params: URLSearchParams): ResolvedShare {
       return {
         valid: true,
         kind,
-        headline: `They recalled ${total} Kenyan road signs ${how}`,
+        headline: `They recalled ${total} Kenyan road ${total === 1 ? "sign" : "signs"} ${how}`,
         detail: `${firstTry} of ${total} on the first try. Train on the Pelican chart or in 3D, free and no signup.`,
         ctaHref: kind === "pelican" ? "/road-signs/pelican" : "/road-signs/3d",
         ctaLabel: "Try the sign trainer",
