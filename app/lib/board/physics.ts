@@ -24,8 +24,11 @@ const STEP_MS = 1000 / 60;
 const DT = 1 / 60;
 /** The share of sideways speed the tyres kill each step. No drifting. */
 const GRIP = 0.9;
-/** How long the cars slide after a hit before the attempt is called. */
-const CRASH_TIME = 0.9;
+/**
+ * How long the cars slide after a hit before the attempt is called. Long
+ * enough to see the bump, short enough that the card does not feel late.
+ */
+const CRASH_TIME = 0.35;
 /** Slower than this with the throttle on means the car is blocked. */
 const STALL_SPEED = 0.3;
 const STALL_TIME = 0.35;

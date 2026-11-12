@@ -84,6 +84,14 @@
   animation-delay: calc(var(--i, 0) * 55ms);
 }
 
+/*
+ * A popup over the game board. Much quicker than a staggered entrance: it
+ * answers something the learner just did, so it must not feel late.
+ */
+.dr-sheet {
+  animation: dr-rise 140ms var(--ease-out-quart) backwards;
+}
+
 /* Client-side page change. Quick, because the point is the next page. */
 .dr-page {
   animation: dr-page 220ms var(--ease-out-quart) backwards;
@@ -244,6 +252,7 @@ p {
 
 @media (prefers-reduced-motion: reduce) {
   .dr-rise,
+  .dr-sheet,
   .dr-page,
   .dr-pop,
   .dr-settle,

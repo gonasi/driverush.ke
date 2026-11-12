@@ -38,7 +38,7 @@ export function BoardSheet({
           // Every popup in the game is one dark card. `dark` turns the brand's
           // own colours over inside it, so buttons and text made for paper
           // read correctly here whatever theme the site is in.
-          "dark dr-rise pointer-events-auto flex max-h-[62dvh] w-full max-w-md flex-col overflow-hidden rounded-md border-2 shadow-[0_6px_0_rgba(0,0,0,0.45)]",
+          "dark dr-sheet pointer-events-auto flex max-h-[62dvh] w-full max-w-md flex-col overflow-hidden rounded-md border-2 shadow-[0_6px_0_rgba(0,0,0,0.45)]",
           tone === "watch"
             ? "border-white/20 bg-[#101114]/95 text-white"
             : "border-white/20 bg-[#101114]/95 text-ink",
