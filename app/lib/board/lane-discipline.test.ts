@@ -300,7 +300,7 @@ describe("a route task keeps to the left of a two-way road", () => {
     // lane, facing the way the route goes: no line is crossed on the way
     const ref = createRouteRef();
     // the stop line on the way here has been stopped at
-    route.steps.forEach((_, i) => ref.stopped.add(i));
+    route.steps.forEach((_, i) => ref.stopped.push(i));
     let fault: Fault | undefined;
     const from = step.from + 2;
     ref.progress = from;
@@ -346,13 +346,12 @@ describe("what a lane mistake costs, by level", () => {
     useBoardStore.getState().resetProgress();
   });
 
-  it("an Easy level puts the car back and takes a star", () => {
+  it("an Easy level ends the attempt: a lane rule is never softened", () => {
     useBoardStore.getState().startLevel("drive-straight");
     cutAcross();
     const s = useBoardStore.getState();
-    expect(s.phase).toBe("driving");
-    expect(s.notice?.fault.id).toBe("solid_line");
-    expect(s.notice?.back).toBe(true);
+    expect(s.phase).toBe("fault");
+    expect(s.fault?.id).toBe("solid_line");
     expect(s.faults).toBe(1);
   });
 

@@ -44,7 +44,8 @@ export const drive: DriveOptions = { seat: "south", assist: true };
 
 /**
  * How the drive is judged. On the no-fail first drive a breach of lane
- * discipline is only said, as a small mistake, and the drive carries on.
+ * discipline is only said, as a small mistake, and the drive carries on. On
+ * every other level it ends the attempt.
  */
 export const judging = { forgiveLanes: false };
 
@@ -90,6 +91,11 @@ type Callbacks = {
   onFault: (fault: Fault) => void;
   /** A small mistake: a star is lost and the drive goes on. */
   onSmall: (fault: Fault) => void;
+  /**
+   * The car has left the task's route without breaking a rule. Said once. The
+   * drive goes on, but reaching the goal is no longer a pass.
+   */
+  onDeviation?: (fault: Fault) => void;
   onGoal: () => void;
 };
 
@@ -246,6 +252,15 @@ export function setBack(metres: number): boolean {
   letGo = true;
   driving = true;
   return true;
+}
+
+/**
+ * How the car left the task's route, if it has. After a set back this is the
+ * drive as it stood then, so the car may be back on its route.
+ */
+export function deviation(): Fault | null {
+  if (!challenge) return null;
+  return isRouteTask(challenge) ? routeRef.off : ref.off;
 }
 
 /** Metres driven this attempt. */
@@ -429,6 +444,15 @@ export function tick(frameSeconds: number): void {
       stopDriving();
       callbacks.onFault(result.fault);
       return;
+    }
+    if (result.deviation) {
+      // Against the frame of the board: a bump, and the drive goes on.
+      if (result.deviation.id === "past_end") {
+        view.jolt = Math.max(view.jolt, 0.6 * Math.max(0.5, physics.impact));
+      }
+      callbacks.onDeviation?.(result.deviation);
+      // A no-fail drive may have put the car back: start the next step clean.
+      continue;
     }
     if (result.goal) {
       stopDriving();

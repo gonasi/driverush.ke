@@ -1,80 +1,80 @@
 /**
  * The referee for route tasks: the ones that leave the roundabout's roads for
- * the street, the two-way road and the parking bays. `referee.ts` knows the
- * roundabout lane by lane. This one checks a drive against the task's route,
- * the line `network.ts` found for it.
+ * the street, the two-way road and the parking bays. The rules of the road
+ * are `road-rules.ts`, the same ones a turn task is held to. This file adds
+ * the task: it checks the drive against the task's route, the line
+ * `network.ts` found for it.
  *
- * It ends the attempt when the car leaves the route, is in the wrong lane at
- * the roundabout, at a gap in the reserve or coming up to a junction turn,
- * crosses or drives along a continuous line, drives on the wrong side of a
- * road, or runs a stop line. It passes
- * the task when the car stops in the green box, or in the bay, straight.
+ * A car may go anywhere on the board as long as it breaks no rule. Leaving
+ * the route is said once as a deviation: the drive goes on, but it is no
+ * longer a pass. On the route, it ends the attempt when the car runs one of
+ * the route's stop lines, or makes a junction turn from the wrong lane. It
+ * passes the task when the car stops in the green box, or in the bay,
+ * straight.
  *
  * Giving way, at a give way line or to people on a crossing, is not enforced:
- * there is no other traffic on the board yet to give way to. Standing still
- * where no car may stop is: on a pedestrian crossing, or on the roundabout.
+ * there is no other traffic on the board yet to give way to.
  */
 import type { CarState } from "./car";
-import { ROADS } from "./full-board";
-import { ARMS, laneBearing, locate, wrapPi } from "./geometry";
+import { wrapPi } from "./geometry";
 import { ROAD_BOX } from "./lessons";
-import { network, type Route } from "./network";
-import { createLineState, lineStep, type LineState } from "./lines";
+import { poseAt, type Route } from "./network";
 import type { Contact } from "./physics";
-import type { Fault, RefResult, SmallFaultId } from "./referee";
+import type { Fault, RefResult } from "./referee";
+import { createRoad, roadStep, type RoadState } from "./road-rules";
 
 export type RouteRefState = {
+  /** The rules of the road, as they stand for this car. */
+  road: RoadState;
   /** How far along the route the car has got, metres. */
   progress: number;
   offTime: number;
   wrongWayTime: number;
-  /** How long the car has driven up the lane that comes the other way. */
-  wrongSideTime: number;
   goalTime: number;
   /** How long the car has sat in the bay without being straight in it. */
   askewTime: number;
   /** The learner has been told the car is not straight in the bay. */
   askewTold: boolean;
   /** Stop lines the car has stopped at, by the step that starts at them. */
-  stopped: Set<number>;
-  /** How long the car has stood on a crossing or on the roundabout. */
-  standing: number;
-  /** Where it was told off for standing, so each place costs one star. */
-  stoodAt: Set<string>;
-  cooldown: Partial<Record<SmallFaultId, number>>;
-  /** Which side of each continuous line the car is on. */
-  lines: LineState;
+  stopped: number[];
+  /** How long the car has come up to a junction turn out of its lane. */
+  laneTime: number;
+  /** The turn it came up to in the wrong lane, by step, until it is past. */
+  wrongLaneAt: number | null;
+  /** How the car left the route, once it has. */
+  off: Fault | null;
 };
 
 export function createRouteRef(): RouteRefState {
   return {
+    road: createRoad(),
     progress: 0,
     offTime: 0,
     wrongWayTime: 0,
-    wrongSideTime: 0,
     goalTime: 0,
     askewTime: 0,
     askewTold: false,
-    stopped: new Set(),
-    standing: 0,
-    stoodAt: new Set(),
-    cooldown: {},
-    lines: createLineState(),
+    stopped: [],
+    laneTime: 0,
+    wrongLaneAt: null,
+    off: null,
   };
 }
 
-/** How far from the route's line the car may be, by what it is doing there. */
+/** The car this far from the route's line has left the route. */
+const CORRIDOR = 6;
+/** Coming up to a junction turn, the car this far off the line is out of its lane. */
 const LANE_STRICT = 3;
-const ROAD_LOOSE = 6;
 const OFF_GRACE = 1;
 /** This far before a junction turn, the car should be in the lane for it. */
 const TURN_APPROACH = 12;
+/** Facing within this of the way the turn comes out, the car has made the turn. */
+const TURNED = (45 * Math.PI) / 180;
 const WRONG_WAY_ANGLE = (115 * Math.PI) / 180;
 const WRONG_WAY_GRACE = 0.8;
 const MOVING = 0.5;
 const STOPPED = 0.2;
 const GOAL_HOLD = 0.35;
-const BUMP_COOLDOWN = 1.5;
 /** A stop counts from this far before the line to just over it. */
 const STOP_BEFORE = 9;
 const STOP_AFTER = 2;
@@ -90,71 +90,24 @@ const BAY_FIT = {
   angle_bay: { along: 1.4, across: 1.1, angle: (20 * Math.PI) / 180 },
 } as const;
 const BAY_NEAR = 4;
-/** Standing this long where no car may stop costs a star. */
-const STANDING_GRACE = 2.5;
-/** The middle of the car this near the middle of a crossing is on its bars. */
-const ON_CROSSING = ROADS.CROSSING_HALF - 0.4;
-
-/** The place the car is in where it may not stop, if it is in one. */
-function noStopping(car: CarState): string | null {
-  if (car.x >= ROADS.SIDE.x0 && car.x <= ROADS.SIDE.x1) {
-    for (const z of ROADS.CROSSINGS) {
-      if (Math.abs(car.z - z) < ON_CROSSING) return `crossing:${z}`;
-    }
-  }
-  return locate(car.x, car.z).kind === "ring" ? "ring" : null;
-}
 const ASKEW_GRACE = 1.4;
-/** The middle of the car this near the middle of a lane is in that lane. */
-const IN_LANE = 1.6;
-
-/**
- * The lane under the car: which way it runs, and whether only a painted line
- * keeps it from the lane coming the other way. Null between lanes, in a
- * junction, on the roundabout or in the parking zone.
- */
-function laneUnder(car: CarState): { heading: number; line: boolean } | null {
-  const loc = locate(car.x, car.z);
-  if (loc.kind === "arm") {
-    return {
-      heading: laneBearing(loc.arm, loc.side),
-      line: ARMS[loc.arm].medianHalf === 0,
-    };
-  }
-  if (loc.kind !== "road") return null;
-  for (const lane of network().roadLanes) {
-    // The parking aisle is for getting in and out of bays, across both lanes.
-    if (lane.road === "aisle") continue;
-    const dx = car.x - lane.a.x;
-    const dz = car.z - lane.a.z;
-    const sin = Math.sin(lane.heading);
-    const cos = Math.cos(lane.heading);
-    const along = dx * sin - dz * cos;
-    if (along < 0 || along > lane.length) continue;
-    if (Math.abs(dx * cos + dz * sin) > IN_LANE) continue;
-    return { heading: lane.heading, line: true };
-  }
-  return null;
-}
-
-const BUMPS: Partial<Record<Contact, SmallFaultId>> = {
-  kerb: "kerb",
-  reserve: "central_reserve",
-  island: "island",
-};
 
 /**
  * The nearest point of the route to the car, looking only a little behind
  * where it last was and some way ahead, so a route that crosses itself is not
- * confused with its own other half.
+ * confused with its own other half. A car that has left the route may come
+ * back to it anywhere, so then the whole of it is looked at.
  */
-function nearest(route: Route, car: CarState, from: number) {
+function nearest(route: Route, car: CarState, from: number, wide = false) {
   let best = { distance: from, gap: Infinity, heading: 0 };
   // Where a route goes forward and then back over the same ground, as it does
   // at a bay, the way the car is moving says which of the two it is on.
-  const moving = car.speed < -0.05 ? "reverse" : car.speed > 0.05 ? "forward" : null;
+  const moving =
+    car.speed < -0.05 ? "reverse" : car.speed > 0.05 ? "forward" : null;
   for (let i = 0; i < route.points.length - 1; i += 1) {
-    if (route.at[i + 1] < from - 12 || route.at[i] > from + 30) continue;
+    if (!wide && (route.at[i + 1] < from - 12 || route.at[i] > from + 30)) {
+      continue;
+    }
     if (moving) {
       const middle = (route.at[i] + route.at[i + 1]) / 2;
       const step = route.steps.find((s) => middle < s.to);
@@ -192,124 +145,95 @@ export function routeRefStep(
   contacts: readonly Contact[],
   dt: number,
 ): RefResult {
-  const result: RefResult = { small: [] };
-
-  for (const key of Object.keys(ref.cooldown) as SmallFaultId[]) {
-    ref.cooldown[key] = Math.max(0, (ref.cooldown[key] ?? 0) - dt);
-  }
-  for (const contact of contacts) {
-    if (contact === "end") {
-      result.fault = { id: "past_end", serious: true };
-      return result;
-    }
-    const id = BUMPS[contact];
-    if (id && !(ref.cooldown[id]! > 0)) {
-      ref.cooldown[id] = BUMP_COOLDOWN;
-      result.small.push({ id, serious: false });
-    }
-  }
-
-  // Continuous lines, crossed or driven along: white or yellow, the attempt ends.
-  for (const color of lineStep(ref.lines, car, dt)) {
-    result.fault = {
-      id: color === "yellow" ? "centre_line" : "solid_line",
-      serious: true,
-    };
-    return result;
-  }
-
-  const at = nearest(route, car, ref.progress);
-  ref.progress = at.distance;
+  const wasOff = ref.off != null;
+  const at = nearest(route, car, ref.progress, wasOff);
+  // Off the route, the car is only somewhere along it again once it is back
+  // on its line.
+  if (!wasOff || at.gap < CORRIDOR) ref.progress = at.distance;
   const index = Math.max(
     0,
     route.steps.findIndex((s) => at.distance < s.to),
   );
   const step = route.steps[index] ?? route.steps[route.steps.length - 1];
+  const next = route.steps[index + 1];
   const speed = Math.abs(car.speed);
-
-  // off the route, or in the wrong lane where the lane is the whole point
-  // The lane matters at the roundabout, and at a junction: in the turn itself
-  // and on the last stretch up to it, where the car should already be in the
-  // lane the turn is made from.
   const isTurn = (s: typeof step) =>
     s.maneuver === "turn_left" || s.maneuver === "turn_right";
-  const next = route.steps[index + 1];
-  // Turning back through a gap is made from the lane beside the reserve, into
-  // the lane beside it: the lane counts through the turn and on the way to it.
-  const isBack = (s: typeof step) => s.maneuver === "u_turn";
-  const strict =
-    isBack(step) ||
-    (next != null && isBack(next) && at.distance > next.from - TURN_APPROACH) ||
-    step.maneuver === "hold_lane" ||
-    step.maneuver === "ring" ||
-    step.maneuver === "exit" ||
-    isTurn(step) ||
-    (next != null && isTurn(next) && at.distance > next.from - TURN_APPROACH);
-  ref.offTime = at.gap > (strict ? LANE_STRICT : ROAD_LOOSE) ? ref.offTime + dt : 0;
-  if (ref.offTime > OFF_GRACE) {
-    // In the turn itself, the car has gone somewhere else. Before it, or at
-    // the roundabout, it is in the wrong lane.
-    const fault: Fault =
-      isBack(step) || (next != null && isBack(next) && strict)
-        ? { id: "u_turn_lane", serious: true }
-        : strict && !isTurn(step)
-          ? { id: "wrong_lane", serious: true }
-          : { id: "off_route", serious: true };
-    result.fault = fault;
-    return result;
-  }
 
-  // facing against the way the route runs
-  const against = Math.abs(wrapPi(car.heading - at.heading)) > WRONG_WAY_ANGLE;
-  ref.wrongWayTime = against && speed > MOVING ? ref.wrongWayTime + dt : 0;
-  if (ref.wrongWayTime > WRONG_WAY_GRACE) {
-    result.fault = { id: "wrong_way", serious: true };
-    return result;
-  }
-
-  // Keep left: going forward up the lane that comes the other way. Where the
-  // route itself crosses that lane, to turn, turn back or park, it is allowed.
+  // Where the route itself crosses the other lane, to turn, turn back or
+  // park, keeping left is not judged.
   const crossing =
-    isTurn(step) ||
-    isBack(step) ||
-    step.gear === "reverse" ||
-    step.road === "angle_bay" ||
-    step.road === "flush_bay";
-  const under = crossing ? null : laneUnder(car);
-  const wrongSide =
-    under != null &&
-    car.speed > MOVING &&
-    Math.abs(wrapPi(car.heading - under.heading)) > WRONG_WAY_ANGLE;
-  ref.wrongSideTime = wrongSide ? ref.wrongSideTime + dt : 0;
-  if (ref.wrongSideTime > WRONG_WAY_GRACE) {
-    result.fault = {
-      id: under!.line ? "centre_line" : "wrong_way",
-      serious: true,
-    };
+    !wasOff &&
+    (isTurn(step) ||
+      step.maneuver === "u_turn" ||
+      step.gear === "reverse" ||
+      step.road === "angle_bay" ||
+      step.road === "flush_bay");
+  const road = roadStep(ref.road, car, contacts, dt, {
+    crossing,
+    stopLines: wasOff,
+  });
+  const result: RefResult = { small: road.small };
+  if (road.fault) {
+    result.fault = road.fault;
     return result;
   }
+  /** Off the route, with no rule broken: said the first time only. */
+  const deviate = (fault: Fault) => {
+    if (ref.off) return;
+    ref.off = fault;
+    result.deviation = fault;
+  };
 
-  // no stopping, parking or waiting on a crossing or on the roundabout
-  const where = noStopping(car);
-  ref.standing = where && speed < STOPPED ? ref.standing + dt : 0;
-  if (where && ref.standing > STANDING_GRACE && !ref.stoodAt.has(where)) {
-    ref.stoodAt.add(where);
-    result.small.push({
-      id: where === "ring" ? "roundabout_stop" : "crossing_stop",
-      serious: false,
-    });
+  // The frame of the board is past the end of every road.
+  if (road.frame) deviate({ id: "past_end", serious: false });
+
+  if (!ref.off) {
+    // away from the route's line
+    ref.offTime = at.gap > CORRIDOR ? ref.offTime + dt : 0;
+    if (ref.offTime > OFF_GRACE) deviate({ id: "off_route", serious: false });
+
+    // facing against the way the route runs: turned round, going elsewhere
+    const against =
+      Math.abs(wrapPi(car.heading - at.heading)) > WRONG_WAY_ANGLE;
+    ref.wrongWayTime = against && speed > MOVING ? ref.wrongWayTime + dt : 0;
+    if (ref.wrongWayTime > WRONG_WAY_GRACE) {
+      deviate({ id: "off_route", serious: false });
+    }
   }
 
-  // stop lines: a full stop before the line, every time
-  for (let i = 0; i < route.steps.length; i += 1) {
-    const line = route.steps[i];
-    if (line.control !== "stop" || ref.stopped.has(i)) continue;
-    const past = at.distance - line.from;
-    if (past > -STOP_BEFORE && past < STOP_AFTER && speed < STOPPED) {
-      ref.stopped.add(i);
-    } else if (past > STOP_RUN && past < STOP_RUN + 20) {
-      result.fault = { id: "stop_line", serious: true };
-      return result;
+  if (!ref.off) {
+    // A junction turn is made from the lane the route comes up to it in.
+    // Coming up to it in another lane is only noted. Driving on past is the
+    // car's own business. Making the turn from there is the wrong lane.
+    const coming =
+      next != null && isTurn(next) && at.distance > next.from - TURN_APPROACH;
+    ref.laneTime = coming && at.gap > LANE_STRICT ? ref.laneTime + dt : 0;
+    if (coming && ref.laneTime > OFF_GRACE) ref.wrongLaneAt = index + 1;
+    if (ref.wrongLaneAt != null) {
+      const turn = route.steps[ref.wrongLaneAt];
+      if (index > ref.wrongLaneAt || (!coming && index < ref.wrongLaneAt)) {
+        ref.wrongLaneAt = null;
+      } else if (
+        index === ref.wrongLaneAt &&
+        Math.abs(wrapPi(car.heading - poseAt(route, turn.to).heading)) < TURNED
+      ) {
+        result.fault = { id: "wrong_lane", serious: true };
+        return result;
+      }
+    }
+
+    // the route's stop lines: a full stop before the line, every time
+    for (let i = 0; i < route.steps.length; i += 1) {
+      const line = route.steps[i];
+      if (line.control !== "stop" || ref.stopped.includes(i)) continue;
+      const past = at.distance - line.from;
+      if (past > -STOP_BEFORE && past < STOP_AFTER && speed < STOPPED) {
+        ref.stopped.push(i);
+      } else if (past > STOP_RUN && past < STOP_RUN + 20) {
+        result.fault = { id: "stop_line", serious: true };
+        return result;
+      }
     }
   }
 

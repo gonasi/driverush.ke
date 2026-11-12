@@ -32,10 +32,16 @@ import {
   type QueuePose,
 } from "./board/lane-queue";
 import { shuffleParkingLayout } from "./board/parking-layouts";
-import type { Fault, FaultId } from "./board/referee";
+import { challengeRoute, taskParks } from "./board/lessons";
+import {
+  STOPS_ALWAYS,
+  type Fault,
+  type FaultId,
+} from "./board/referee";
 import {
   beginChallenge,
   car,
+  deviation,
   drive,
   judging,
   elapsedSeconds,
@@ -52,6 +58,14 @@ import {
   releaseCamera,
   useStage,
 } from "./board/stage";
+import {
+  OFF_ROUTE_SCORE,
+  SCORE_VERSION,
+  beats,
+  parSeconds,
+  scoreFor,
+  type BestScore,
+} from "./board/score";
 import { FIRST_DRIVE } from "./board/warmup";
 import { applyGrade, type SignProgress } from "./pelican-progress";
 import { bumpPracticeStreak, dayKey } from "./practice-streak";
@@ -106,7 +120,16 @@ export type LanesRun = {
   picked: string | null;
 };
 
-export type BoardNotice = { fault: Fault; n: number; back?: boolean };
+/**
+ * `back` means the car was put back a little. `route` means the car has left
+ * the task's route: no rule broken, no star lost, but no pass either.
+ */
+export type BoardNotice = {
+  fault: Fault;
+  n: number;
+  back?: boolean;
+  route?: boolean;
+};
 
 type BoardState = {
   // ---- persisted ----
@@ -114,6 +137,8 @@ type BoardState = {
   /** Same boxes as the sign trainers, keyed by challenge id. */
   progress: SignProgress;
   bestStars: Record<string, number>;
+  /** The best score on each task, with what it was worked out from. */
+  bestScores?: Record<string, BestScore>;
   /** Lessons watched to the end. */
   learned?: string[];
   /** Levels finished today, for the day's goal on the Board page. */
@@ -147,6 +172,19 @@ type BoardState = {
   /** Which attempt at the task this is, from 1. */
   tries: number;
   fault: Fault | null;
+  /**
+   * How the car left the task's route on this attempt, once it has. It broke
+   * no rule, so the drive goes on, but stopping in the box will not pass.
+   */
+  offRoute: Fault | null;
+  /** The attempt ended in the box after leaving the route: not a pass. */
+  missed: boolean;
+  /** The score of the drive just finished, and how long it took. */
+  lastScore: number | null;
+  lastSeconds: number;
+  lastPar: number;
+  /** That score is the best yet on its task. */
+  lastBest: boolean;
   /**
    * The latest small mistake, shown as a toast. `n` restarts its animation.
    * `back` means the car was put back a little instead of the attempt ending.
@@ -207,6 +245,12 @@ const FRESH_RUN = {
   taskFaults: 0,
   tries: 1,
   fault: null,
+  offRoute: null as Fault | null,
+  missed: false,
+  lastScore: null as number | null,
+  lastSeconds: 0,
+  lastPar: 0,
+  lastBest: false,
   notice: null as BoardNotice | null,
   noticeCount: 0,
   lastStars: 0,
@@ -268,7 +312,8 @@ export const useBoardStore = create<BoardState>()(
        * How kindly this drive is judged. "free" is the first drive: nothing
        * ends it and nothing is counted. "soft" is a lesson car or an Easy
        * level: the first mistakes put the car back a little, and only the
-       * third stops the attempt.
+       * third stops the attempt. Breaking a lane rule is never softened: on
+       * every level but the first drive it ends the attempt.
        */
       const gentle = (): "free" | "soft" | null => {
         const s = get();
@@ -288,20 +333,82 @@ export const useBoardStore = create<BoardState>()(
         const kind = gentle();
         const room =
           kind === "free" ||
-          (kind === "soft" && get().faults < SMALL_FAULT_LIMIT - 1);
-        if (
-          room &&
-          setBack(fault.id === "past_end" ? SET_BACK_PAST : SET_BACK)
-        ) {
+          (kind === "soft" &&
+            !STOPS_ALWAYS.has(fault.id) &&
+            get().faults < SMALL_FAULT_LIMIT - 1);
+        if (room && setBack(SET_BACK)) {
           if (kind === "soft") record(fault);
           set((s) => ({
             notice: { fault, n: s.noticeCount + 1, back: true },
             noticeCount: s.noticeCount + 1,
+            // The car may be back before the place it left its route.
+            offRoute: deviation(),
           }));
           return;
         }
         if (kind !== "free") record(fault);
         stopped(fault);
+      };
+
+      /**
+       * The car has left the task's route without breaking a rule. It may
+       * drive on wherever it likes, but this attempt can no longer pass. The
+       * first drive has no route to lose: the car is put back, as before.
+       */
+      const onDeviation = (fault: Fault) => {
+        if (get().settings.sound) playSfx("wrong");
+        buzz(BUZZ.miss);
+        if (gentle() === "free") {
+          const back = setBack(
+            fault.id === "past_end" ? SET_BACK_PAST : SET_BACK,
+          );
+          set((s) => ({
+            notice: { fault, n: s.noticeCount + 1, back },
+            noticeCount: s.noticeCount + 1,
+          }));
+          return;
+        }
+        const { queue, pos, taskFaults } = get();
+        const challenge = queue[pos];
+        if (!challenge) return;
+        const first = taskFaults === 0;
+        // Counted against the task, so it is not a clean first try, but not
+        // against the stars: no rule was broken.
+        set((s) => ({
+          offRoute: fault,
+          taskFaults: s.taskFaults + 1,
+          runStreak: 0,
+          runFaulted: first ? [...s.runFaulted, challenge.id] : s.runFaulted,
+          progress:
+            first && !s.lanes
+              ? applyGrade(s.progress, challenge.id, "missed")
+              : s.progress,
+          notice: { fault, n: s.noticeCount + 1, route: true },
+          noticeCount: s.noticeCount + 1,
+        }));
+        analytics.boardFaulted({
+          challenge_id: challenge.id,
+          rule: fault.id,
+          severity: "route",
+          fault_number: taskFaults + 1,
+        });
+      };
+
+      /** In the box, but not by the task's route: the drive ends, not passed. */
+      const missed = (challenge: BoardChallenge, fault: Fault) => {
+        if (get().settings.sound) playSfx("wrong");
+        buzz(BUZZ.miss);
+        const seconds = elapsedSeconds();
+        stopped(fault);
+        set({ missed: true, lastScore: OFF_ROUTE_SCORE, lastSeconds: seconds });
+        analytics.boardChallengeMissed({
+          challenge_id: challenge.id,
+          rule: fault.id,
+          tries: get().tries,
+          seconds: Math.round(seconds),
+          score: OFF_ROUTE_SCORE,
+          score_version: SCORE_VERSION,
+        });
       };
 
       /** The attempt is over: the card, and the line the car drove. */
@@ -388,6 +495,11 @@ export const useBoardStore = create<BoardState>()(
           get();
         const challenge = queue[pos];
         if (!challenge) return;
+        const off = get().offRoute;
+        if (off && gentle() !== "free") {
+          missed(challenge, off);
+          return;
+        }
         const run = get().lanes;
         if (run?.picked) {
           carHome(run, run.picked);
@@ -413,11 +525,31 @@ export const useBoardStore = create<BoardState>()(
         const clean = taskFaults === 0 && !hinted;
         // The stars are for this attempt. Shown the way, it is two at most.
         const stars = Math.min(starsFor(faults), hinted ? 2 : 3);
+        // The score: how clean this attempt was, and its time against par.
+        const seconds = elapsedSeconds();
+        const route = challengeRoute(challenge);
+        const par = route ? parSeconds(route, taskParks(challenge)) : 0;
+        const scored: BestScore = {
+          v: SCORE_VERSION,
+          score: scoreFor({ faults, hinted, seconds, par }),
+          ms: Math.round(seconds * 1000),
+          par,
+          faults,
+          hinted,
+        };
+        const best = beats(scored, get().bestScores?.[challenge.id]);
         set((s) => {
           const runStreak = clean ? s.runStreak + 1 : 0;
           return {
             phase: "passed",
             lastStars: stars,
+            lastScore: scored.score,
+            lastSeconds: seconds,
+            lastPar: par,
+            lastBest: best,
+            bestScores: best
+              ? { ...s.bestScores, [challenge.id]: scored }
+              : s.bestScores,
             runStreak,
             runBestStreak: Math.max(s.runBestStreak, runStreak),
             runClean: clean ? [...s.runClean, challenge.id] : s.runClean,
@@ -438,7 +570,11 @@ export const useBoardStore = create<BoardState>()(
           faults: taskFaults,
           stars,
           tries,
-          seconds: Math.round(elapsedSeconds()),
+          seconds: Math.round(seconds),
+          score: scored.score,
+          score_version: SCORE_VERSION,
+          par_seconds: par,
+          best,
         });
         const level = levelById(get().level);
         if (level?.kind === "drive") levelCompleted(level);
@@ -472,7 +608,7 @@ export const useBoardStore = create<BoardState>()(
         if (isRouteTask(challenge) && challenge.otherCars.length > 0) {
           shuffleParkingLayout();
         }
-        beginChallenge(challenge, { onFault, onSmall, onGoal });
+        beginChallenge(challenge, { onFault, onSmall, onDeviation, onGoal });
         // Judged kindly, the car is also carried out of the roundabout.
         drive.exitHold = gentle() !== null;
         judging.forgiveLanes = gentle() === "free";
@@ -506,6 +642,10 @@ export const useBoardStore = create<BoardState>()(
           phase: "driving",
           faults: 0,
           fault: null,
+          offRoute: null,
+          missed: false,
+          lastScore: null,
+          lastBest: false,
           notice: null,
           attempt: s.attempt + 1,
         }));
@@ -611,6 +751,7 @@ export const useBoardStore = create<BoardState>()(
               of: before.queue.length,
               tries: before.tries,
               moved: hasMoved(),
+              off_route: before.offRoute != null,
             });
           }
           stopDriving();
@@ -800,6 +941,7 @@ export const useBoardStore = create<BoardState>()(
           set({
             progress: {},
             bestStars: {},
+            bestScores: {},
             learned: [],
             places: {},
             homes: {},
@@ -816,6 +958,7 @@ export const useBoardStore = create<BoardState>()(
         settings: s.settings,
         progress: s.progress,
         bestStars: s.bestStars,
+        bestScores: s.bestScores,
         learned: s.learned,
         places: s.places,
         homes: s.homes,
@@ -831,6 +974,7 @@ export const useBoardStore = create<BoardState>()(
           settings: { ...DEFAULT_BOARD_SETTINGS, ...prev?.settings },
           progress: prev?.progress ?? {},
           bestStars: prev?.bestStars ?? {},
+          bestScores: prev?.bestScores ?? {},
           learned: prev?.learned ?? [],
           places: prev?.places ?? {},
           homes: prev?.homes ?? {},

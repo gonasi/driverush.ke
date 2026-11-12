@@ -2,6 +2,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { useBoardStore } from "../board-store";
 import { ALL_LEVELS, levelById, levelDone, nextLevel } from "./curriculum";
+import { locate } from "./geometry";
 import { car, loadPhysics, stick, tick } from "./runtime";
 import { FIRST_DRIVE, WARMUP_LEVEL_ID } from "./warmup";
 
@@ -63,31 +64,51 @@ describe("the first drive", () => {
 });
 
 describe("an Easy level", () => {
+  /** Up to the roundabout, then round it the wrong way until something is said. */
+  function againstTheRoundabout() {
+    const before = useBoardStore.getState().noticeCount;
+    for (let i = 0; i < 600 && locate(car.x, car.z).kind !== "ring"; i += 1) {
+      hold(0, -0.7, 0.05);
+    }
+    for (
+      let i = 0;
+      i < 200 &&
+      useBoardStore.getState().phase === "driving" &&
+      useBoardStore.getState().noticeCount === before;
+      i += 1
+    ) {
+      hold(1, 0, 0.05);
+    }
+  }
+
   it("puts the car back for the first two serious mistakes, then stops", () => {
     useBoardStore.getState().startLevel("drive-straight");
-    // straight on, never stopping, runs past the box on the far side
     for (let n = 1; n <= 2; n += 1) {
-      for (
-        let i = 0;
-        i < 60 && (useBoardStore.getState().notice?.n ?? 0) < n;
-        i += 1
-      ) {
-        hold(0, -1, 1);
-      }
+      againstTheRoundabout();
       // the stick must be let go before the car answers again
       hold(0, 0, 0.2);
       const s = useBoardStore.getState();
       expect(s.phase).toBe("driving");
+      expect(s.notice?.fault.id).toBe("wrong_way");
       expect(s.notice?.back).toBe(true);
       expect(s.faults).toBe(n);
     }
-    for (
-      let i = 0;
-      i < 60 && useBoardStore.getState().phase === "driving";
-      i += 1
-    ) {
+    againstTheRoundabout();
+    expect(useBoardStore.getState().phase).toBe("fault");
+    expect(useBoardStore.getState().fault?.id).toBe("wrong_way");
+  });
+
+  it("lets the car drive on past the box: off the route, and nobody stops it", () => {
+    useBoardStore.getState().startLevel("drive-straight");
+    for (let i = 0; i < 60 && !useBoardStore.getState().offRoute; i += 1) {
       hold(0, -1, 1);
     }
-    expect(useBoardStore.getState().phase).toBe("fault");
+    hold(0, -1, 2);
+    const s = useBoardStore.getState();
+    expect(s.phase).toBe("driving");
+    expect(s.offRoute?.id).toBe("past_end");
+    expect(s.notice?.route).toBe(true);
+    // no rule broken, so no star lost
+    expect(s.faults).toBe(0);
   });
 });

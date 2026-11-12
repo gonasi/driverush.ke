@@ -1,6 +1,7 @@
 import Matter from "matter-js";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
+import { useBoardStore } from "../board-store";
 import { faultTip } from "./board-rules";
 import { CAR } from "./car";
 import {
@@ -44,6 +45,7 @@ import {
 } from "./parking-layouts";
 import { createPhysics, physicsStep } from "./physics";
 import type { Fault } from "./referee";
+import { OFF_ROUTE_SCORE, SCORE_MAX } from "./score";
 import {
   beginChallenge,
   car,
@@ -74,6 +76,8 @@ function task(turn: Turn, startLane = 1): TurnChallenge {
 
 type Outcome = {
   fault?: Fault;
+  /** How the car left the task's route, with no rule broken. */
+  deviation?: Fault;
   small: Fault[];
   goal: boolean;
   /** The car's middle left the tarmac at some point. Kerbs should stop that. */
@@ -115,6 +119,9 @@ function play(
       over = true;
     },
     onSmall: (fault) => outcome.small.push(fault),
+    onDeviation: (fault) => {
+      outcome.deviation = fault;
+    },
     onGoal: () => {
       outcome.goal = true;
       over = true;
@@ -737,7 +744,9 @@ describe("serious mistakes end the attempt", () => {
       challenge,
       follower(challenge, lanePath("S", 1, "straight")),
     );
-    expect(result.fault).toMatchObject({
+    // No rule was broken, so nobody stops the car: it has only left its route.
+    expect(result.fault).toBeUndefined();
+    expect(result.deviation).toMatchObject({
       id: "wrong_destination",
       turn: "straight",
       asked: "left",
@@ -808,8 +817,9 @@ describe("serious mistakes end the attempt", () => {
       challenge,
       follower(challenge, path, { through: true }),
     );
-    expect(result.fault).toMatchObject({ id: "off_route", serious: true });
-    expect(faultTip(result.fault!).reason).toContain("does not use");
+    expect(result.fault).toBeUndefined();
+    expect(result.deviation).toMatchObject({ id: "off_route" });
+    expect(faultTip(result.deviation!).reason).toContain("does not use");
   });
 
   it("turning back, then driving on past the box toward the roundabout", () => {
@@ -818,7 +828,7 @@ describe("serious mistakes end the attempt", () => {
       challenge,
       turningBack(challenge, 2, { through: true }, 26),
     );
-    expect(result.fault).toMatchObject({ id: "past_end" });
+    expect(result.deviation).toMatchObject({ id: "past_end" });
     expect(result.goal).toBe(false);
   });
 
@@ -830,7 +840,8 @@ describe("serious mistakes end the attempt", () => {
         through: true,
       }),
     );
-    expect(result.fault).toMatchObject({ id: "past_end" });
+    expect(result.fault).toBeUndefined();
+    expect(result.deviation).toMatchObject({ id: "past_end" });
     expect(result.goal).toBe(false);
   });
 });
@@ -1152,7 +1163,10 @@ describe("tasks away from the roundabout", () => {
       routeFollower(challenge, route, { aside: -3.6 }),
       240,
     );
-    expect(result.fault?.id).toMatch(/wrong_lane|off_route|centre_line|wrong_way/);
+    // A lane out, the car joins and leaves the roundabout in the wrong lane.
+    expect(result.fault?.id).toMatch(
+      /wrong_exit|exit_lane|roundabout_lane_change|centre_line|wrong_way/,
+    );
   });
 
   it("turning into the street from the second lane ends the attempt", () => {
@@ -1167,13 +1181,13 @@ describe("tasks away from the roundabout", () => {
     expect(result.fault).toMatchObject({ id: "wrong_lane", serious: true });
   });
 
-  it("driving off down another road ends the attempt", () => {
+  it("driving off down another road leaves the route, and the drive goes on", () => {
     const challenge = ROUTE_TASKS.find((c) => c.id === "down-the-street")!;
     // straight on down the dual carriageway, past the street
     // It never left lane 3 for the turn, and then it missed the turn.
     const result = play(challenge, () => point(Math.PI, 0.8), 120);
-    expect(result.fault?.id).toMatch(/wrong_lane|off_route/);
-    expect(result.fault?.serious).toBe(true);
+    expect(result.deviation).toMatchObject({ id: "off_route" });
+    expect(result.goal).toBe(false);
   });
 
   it("the car only reverses in a task that has a reverse gear", () => {
@@ -1207,5 +1221,102 @@ describe("tasks away from the roundabout", () => {
       expect(route.length).toBeGreaterThan(15);
       expect(distanceNear(route, poseAt(route, 0))).toBeLessThan(0.1);
     }
+  });
+});
+
+describe("leaving the route breaks no rule, but it is not a pass", () => {
+  type Roam = RouteFollow & {
+    /** Drive this far to the side of the route until the car is off it. */
+    stray?: number;
+  };
+
+  /** Drive a task through the store, the way the game does. */
+  function roam(id: string, how: Roam = {}) {
+    useBoardStore.getState().exit();
+    useBoardStore.getState().resetProgress();
+    useBoardStore.getState().start([id]);
+    const challenge = useBoardStore.getState().queue[0];
+    const route = challengeRoute(challenge)!;
+    const options: RouteFollow = { ...how, aside: how.stray ?? how.aside };
+    const each = routeFollower(challenge, route, options);
+    /** Was the drive still going a moment after the car left its route? */
+    let wentOn = false;
+    let offFor = 0;
+    for (
+      let i = 0;
+      i < 240 / STEP && useBoardStore.getState().phase === "driving";
+      i += 1
+    ) {
+      if (useBoardStore.getState().offRoute) {
+        // back to the route's own line, and on to the box
+        options.aside = how.aside;
+        offFor += STEP;
+        if (offFor > 2) wentOn = true;
+      }
+      each();
+      tick(STEP);
+    }
+    return { ...useBoardStore.getState(), wentOn };
+  }
+
+  beforeAll(() => loadPhysics());
+  afterEach(() => {
+    useBoardStore.getState().exit();
+    useBoardStore.getState().resetProgress();
+  });
+
+  it("a clean drive passes, and its score is saved with what made it", () => {
+    const s = roam("down-the-street");
+    expect(s.phase).toBe("passed");
+    expect(s.offRoute).toBeNull();
+    expect(s.lastScore).toBe(SCORE_MAX);
+    expect(s.lastBest).toBe(true);
+    expect(s.bestScores?.["down-the-street"]).toMatchObject({
+      v: 1,
+      score: SCORE_MAX,
+      faults: 0,
+      hinted: false,
+    });
+    expect(s.bestScores!["down-the-street"].ms).toBeGreaterThan(0);
+  });
+
+  it("off the route and back to the box: the drive goes on, and does not pass", () => {
+    const s = roam("down-the-street", { stray: 7.4 });
+    expect(s.wentOn).toBe(true);
+    expect(s.phase).toBe("fault");
+    expect(s.missed).toBe(true);
+    expect(s.fault).toMatchObject({ id: "off_route", serious: false });
+    // Leaving the route took no star: no rule was broken. (Straying that far,
+    // the car brushes a kerb, and that is all it is marked down for.)
+    expect(s.runFaultRules).toEqual(["kerb"]);
+    expect(s.faults).toBe(1);
+    expect(s.lastScore).toBe(OFF_ROUTE_SCORE);
+    // and nothing is saved
+    expect(s.bestStars).toEqual({});
+    expect(s.bestScores).toEqual({});
+  });
+
+  it("off the route, a continuous line still ends the attempt", () => {
+    const s = roam("to-two-way", { stray: 7.4 });
+    expect(s.offRoute).toMatchObject({ id: "off_route" });
+    expect(s.phase).toBe("fault");
+    expect(s.missed).toBe(false);
+    expect(s.fault).toMatchObject({ id: "solid_line", serious: true });
+  });
+
+  it("off the route, a stop line still has to be stopped at", () => {
+    const s = roam("down-the-street", { stray: 7.4, runStopLines: true });
+    expect(s.offRoute).toMatchObject({ id: "off_route" });
+    expect(s.phase).toBe("fault");
+    expect(s.missed).toBe(false);
+    expect(s.fault).toMatchObject({ id: "stop_line", serious: true });
+  });
+
+  it("a route task is held to the roundabout's lanes like any other", () => {
+    // a lane out all the way: round the roundabout and out of it in the wrong lane
+    const s = roam("long-way-round", { aside: 3.6 });
+    expect(s.phase).toBe("fault");
+    expect(s.missed).toBe(false);
+    expect(s.fault?.id).toMatch(/exit_lane|roundabout_lane_change|wrong_exit/);
   });
 });

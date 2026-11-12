@@ -149,7 +149,7 @@ export function ringLaneAt(r: number): number {
 export type Location =
   | { kind: "ring"; lane: number; r: number; bearing: number }
   | { kind: "arm"; arm: ArmId; side: Side; lane: number; along: number }
-  /** One of the board's other roads, which no task uses yet. */
+  /** One of the board's other roads: the street, the two-way road, parking. */
   | { kind: "road"; what: OtherRoad }
   | { kind: "off"; what: "island" | "median" | "verge" };
 

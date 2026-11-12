@@ -115,7 +115,7 @@ const RULES: Record<FaultId, { title: string; rule: string }> = {
     rule: "Slow down early and stop inside the green box.",
   },
   off_route: {
-    title: "Not that road",
+    title: "Not the way you were asked",
     rule: "Follow the road the examiner asked for.",
   },
   wrong_lane: {
@@ -166,7 +166,7 @@ function reasonFor(fault: Fault): string {
     case "wrong_destination": {
       const asked = fault.asked ?? "straight";
       const did = fault.turn ?? "straight";
-      return `You were asked to ${TURN_VERB[asked]}, but you ${TURN_PAST[did]}. To ${TURN_VERB[asked]} from this road, ${approachAdvice(fault.lanes ?? 4, asked)} Count the exits as you go round: left is the first, straight the second, right the third.`;
+      return `You were asked to ${TURN_VERB[asked]}, but you ${TURN_PAST[did]}. Your lane may take that exit, so no rule was broken and nobody stops you, but only the turn you were asked for is a pass. To ${TURN_VERB[asked]} from this road, ${approachAdvice(fault.lanes ?? 4, asked)} Count the exits as you go round: left is the first, straight the second, right the third.`;
     }
     case "wrong_way":
       return "You drove against the traffic. In Kenya you keep left, and you go round a roundabout clockwise.";
@@ -177,9 +177,9 @@ function reasonFor(fault: Fault): string {
     case "collision":
       return "You drove into the red car. Ease off early and stop behind it with a gap.";
     case "off_route":
-      return "You turned onto a road this task does not use. Stay on the road you were asked to take, and stop in the green box.";
+      return "You left the way you were asked to go, for a road or a part of the road this task does not use. No rule was broken, so nobody stops you, but only the route you were asked for is a pass. Stay on the road you were asked to take, and stop in the green box.";
     case "wrong_lane":
-      return "You came up to the turn in a lane that does not make it. At a junction, turn left from the lane by the kerb. At the roundabout, choose the lane further back, where the lines are broken, and stay in it until your exit.";
+      return "You made the turn from a lane that does not make it. At a junction, turn left from the lane by the kerb. Be in that lane before you reach the turn, and hold it.";
     case "stop_line":
       return "You drove over the stop line without stopping. A stop line means stop every time, look both ways, and go only when the road is clear.";
     case "exit_lane":
@@ -191,7 +191,7 @@ function reasonFor(fault: Fault): string {
     case "bay_line":
       return "The car is in the bay but over a line or at an angle. Straighten up so the whole car sits inside the lines. You can reverse a little to line it up.";
     case "past_end":
-      return "You drove on past the green box. Ease off as you reach the box, then let go and the car brakes to a stop.";
+      return "You drove on past the green box. No rule was broken, so nobody stops you, but the drive is only a pass if you stop in the box when you reach it. Ease off as you reach the box, then let go and the car brakes to a stop.";
   }
 }
 

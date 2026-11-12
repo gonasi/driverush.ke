@@ -34,6 +34,7 @@ import {
   setPaused,
 } from "~/lib/board/runtime";
 import type { Fault } from "~/lib/board/referee";
+import { SCORE_MAX } from "~/lib/board/score";
 import { peekAt, useStage } from "~/lib/board/stage";
 import { LevelCheer } from "~/components/board/board-cheer";
 import {
@@ -128,7 +129,16 @@ function Stars({ count, className }: { count: number; className?: string }) {
   );
 }
 
-/** Time on this attempt. It only informs; nobody fails on the clock. */
+/** Seconds as the clock shows them: minutes, then seconds. */
+function clockTime(seconds: number): string {
+  const whole = Math.max(0, Math.round(seconds));
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
+}
+
+/**
+ * Time on this attempt. Nobody fails on the clock, but time over the task's
+ * par comes off the score.
+ */
 function Clock({ running }: { running: boolean }) {
   const [seconds, setSeconds] = React.useState(0);
   React.useEffect(() => {
@@ -512,7 +522,8 @@ function HudColumn({ children }: { children: React.ReactNode }) {
 
 /**
  * A small mistake: the rule, a star gone, and the drive carries on. It takes
- * itself away once it has been read, so it leaves no gap in the column.
+ * itself away once it has been read, so it leaves no gap in the column. The
+ * same toast says the car has left its route: no star gone, but no pass.
  */
 function StarLost({
   notice,
@@ -540,11 +551,17 @@ function StarLost({
       style={{ animationDuration: "3.6s" }}
     >
       <p className="m-0 font-mono text-[10px] font-bold uppercase tracking-widest">
-        {notice.back ? `Back a bit · ${tip.title}` : tip.title}
-        {!lesson && " · 1 star lost"}
+        {notice.route
+          ? `Off route · ${tip.title}`
+          : notice.back
+            ? `Back a bit · ${tip.title}`
+            : tip.title}
+        {!lesson && !notice.route && " · 1 star lost"}
       </p>
       <p className="m-0 mt-1 text-[13.5px] font-semibold leading-snug">
-        {tip.rule}
+        {notice.route
+          ? "No rule broken, so drive on if you like. This try will not pass. Restart to try again."
+          : tip.rule}
       </p>
     </div>
   );
@@ -653,6 +670,12 @@ export function BoardGame() {
       fault: st.fault,
       notice: st.notice,
       lastStars: st.lastStars,
+      offRoute: st.offRoute,
+      missed: st.missed,
+      lastScore: st.lastScore,
+      lastSeconds: st.lastSeconds,
+      lastPar: st.lastPar,
+      lastBest: st.lastBest,
       attempt: st.attempt,
       lanes: st.lanes,
       pickCar: st.pickCar,
@@ -781,6 +804,7 @@ export function BoardGame() {
   // The first drive: nothing graded, so no clock, no stars and no hints.
   const warmup = level?.kind === "warmup";
   // A lesson car or an Easy level: a miss is "not quite", not an examiner.
+  // A broken lane rule ends the attempt there too; only the words are kinder.
   const kindly =
     pickedCar != null || (level?.kind === "drive" && level.difficulty === "Easy");
   // Reading or watching: no task, no clock, no joystick.
@@ -1071,7 +1095,18 @@ export function BoardGame() {
                   running={s.phase === "driving" && !held}
                   key={s.attempt}
                 />
-                <Stars count={Math.max(1, 3 - s.faults)} />
+                {/* Off its route the drive cannot pass, so there are no stars to show. */}
+                {s.offRoute ? (
+                  <span
+                    role="status"
+                    data-msg="off-route"
+                    className="rounded-sm bg-[#f6c416] px-1.5 py-0.5 text-[10px] uppercase tracking-widest text-[#17181b]"
+                  >
+                    Off route
+                  </span>
+                ) : (
+                  <Stars count={Math.max(1, 3 - s.faults)} />
+                )}
               </div>
             )}
             {goalBox && (
@@ -1209,7 +1244,13 @@ export function BoardGame() {
       {s.phase === "fault" && s.fault && (
         <BoardSheet
           tone="fault"
-          strip={kindly ? "Not quite" : "The examiner stopped you"}
+          strip={
+            s.missed
+              ? "Not a pass"
+              : kindly
+                ? "Not quite"
+                : "The examiner stopped you"
+          }
           role="alertdialog"
           aria-labelledby="board-fault-title"
         >
@@ -1217,14 +1258,21 @@ export function BoardGame() {
             id="board-fault-title"
             className="m-0 font-display text-[clamp(22px,5.5vw,28px)] font-extrabold uppercase leading-none tracking-tight"
           >
-            {faultTip(s.fault).title}
+            {s.missed ? "You left the route" : faultTip(s.fault).title}
           </h2>
           {challenge && (
             <p className="m-0 text-[13px] leading-snug text-ink-2">
               You were asked: {challenge.prompt}
             </p>
           )}
-          <BoardFaultTip tip={faultTip(s.fault)} />
+          <BoardFaultTip tip={faultTip(s.fault)} offRoute={s.missed} />
+          {s.missed && s.lastScore != null && (
+            <p className="m-0 text-[13.5px] font-semibold leading-snug text-ink">
+              Score {s.lastScore} of {SCORE_MAX.toLocaleString("en")}. Not
+              saved. You reached the box, but not by the way you were asked to
+              go.
+            </p>
+          )}
           <p className="m-0 flex items-center gap-2 text-[12.5px] font-semibold leading-snug text-ink-2">
             <span
               aria-hidden
@@ -1314,6 +1362,26 @@ export function BoardGame() {
                     ? "Right way, right lane, and you stopped in the box."
                     : "Right lane, right exit, and you stopped in the box."}
           </p>
+          {!warmup && s.lastScore != null && (
+            <div
+              data-msg="score"
+              className="space-y-1.5 border-2 border-ink bg-paper-2 p-3 text-left"
+            >
+              <p className="m-0 flex items-baseline justify-between gap-3">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-ink-3">
+                  {s.lastBest ? "Score · New best" : "Score"}
+                </span>
+                <span className="font-display text-[26px] font-extrabold tabular-nums leading-none text-ink">
+                  {s.lastScore.toLocaleString("en")}
+                </span>
+              </p>
+              <p className="m-0 text-[12.5px] leading-snug text-ink-2">
+                Time {clockTime(s.lastSeconds)}, par {clockTime(s.lastPar)}.
+                Start at {SCORE_MAX.toLocaleString("en")}. Each mistake takes
+                150, a hint 100, and time over par up to 400.
+              </p>
+            </div>
+          )}
           {level && <LevelCheer level={level} className="text-ink" />}
           {level && nextUp && (
             <Button

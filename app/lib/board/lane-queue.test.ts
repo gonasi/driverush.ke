@@ -35,7 +35,12 @@ import {
 const STEP = 1 / 60;
 const RELEASE_DECEL = 0.7 * CAR.brake + CAR.coast;
 
-type Outcome = { fault?: Fault; small: Fault[]; goal: boolean };
+type Outcome = {
+  fault?: Fault;
+  deviation?: Fault;
+  small: Fault[];
+  goal: boolean;
+};
 
 /** Drive one car along a line with the knob, and stop it in its box. */
 function driveAlong(challenge: TurnChallenge, path: Vec[]): Outcome {
@@ -47,6 +52,9 @@ function driveAlong(challenge: TurnChallenge, path: Vec[]): Outcome {
       over = true;
     },
     onSmall: (fault) => outcome.small.push(fault),
+    onDeviation: (fault) => {
+      outcome.deviation = fault;
+    },
     onGoal: () => {
       outcome.goal = true;
       over = true;
@@ -212,7 +220,7 @@ describe("the lane options line-up", () => {
     playLesson("W", (front) => front[front.length - 1]);
   });
 
-  it("stops a car taken out of the wrong exit", () => {
+  it("a car taken out of another exit its lane may take has left its route", () => {
     const cars = queueCars("S");
     const left = cars.find((c) => c.lane === 1 && c.option.turn === "left");
     const straight = cars.find(
@@ -225,6 +233,7 @@ describe("the lane options line-up", () => {
       straight.option.route.points,
     );
     expect(outcome.goal).toBe(false);
-    expect(outcome.fault?.id).toBe("wrong_destination");
+    expect(outcome.fault).toBeUndefined();
+    expect(outcome.deviation?.id).toBe("wrong_destination");
   });
 });

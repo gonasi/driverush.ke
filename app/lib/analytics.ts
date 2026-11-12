@@ -190,12 +190,16 @@ export const analytics = {
   boardStarted: (args: { challenges: number; scope: "round" | "drill" }) =>
     emit("board_started", args),
 
-  /** The referee stopped the learner. Shows which rules trip people up. */
+  /** The referee called a mistake. Shows which rules trip people up. */
   boardFaulted: (args: {
     challenge_id: string;
     rule: string;
-    /** Small mistakes cost a star; serious ones end the attempt. */
-    severity: "small" | "serious";
+    /**
+     * Small mistakes cost a star; serious ones end the attempt. "route" is
+     * leaving the task's route with no rule broken: the drive goes on, but it
+     * cannot pass.
+     */
+    severity: "small" | "serious" | "route";
     /** 1 for the first fault on this challenge, and so on. */
     fault_number: number;
   }) => emit("board_faulted", args),
@@ -209,7 +213,24 @@ export const analytics = {
     seconds: number;
     /** Which attempt at the task it was passed on, from 1. */
     tries: number;
+    /** Out of 1,000, from the mistakes and the time against par. */
+    score: number;
+    score_version: number;
+    par_seconds: number;
+    /** The score is the learner's best yet on this task. */
+    best: boolean;
   }) => emit("board_challenge_passed", args),
+
+  /** The learner stopped in the box after leaving the route: not a pass. */
+  boardChallengeMissed: (args: {
+    challenge_id: string;
+    /** How the car left the route. */
+    rule: string;
+    tries: number;
+    seconds: number;
+    score: number;
+    score_version: number;
+  }) => emit("board_challenge_missed", args),
 
   /** The learner left a round before the end. Shows where people give up. */
   boardAbandoned: (args: {
@@ -222,6 +243,8 @@ export const analytics = {
     tries: number;
     /** False when they left without ever pushing the joystick. */
     moved: boolean;
+    /** The car had left the task's route, so the attempt could not pass. */
+    off_route: boolean;
   }) => emit("board_abandoned", args),
 
   /** A board round finished. */
