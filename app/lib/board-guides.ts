@@ -14,12 +14,21 @@ export const BOARD_PATH = "/model-town-board";
 export const BOARD_PLAY_PATH = `${BOARD_PATH}/play`;
 
 /**
- * The course: every unit and level, in the order to take them. It is the
- * Board page itself; the list is the first thing on it.
+ * Every level of the course, as pictures to pick from. The Board page starts
+ * or carries on the course; this is where a learner jumps to any level.
  */
-export const BOARD_LEVELS_PATH = BOARD_PATH;
+export const BOARD_LEVELS_PATH = `${BOARD_PATH}/levels`;
+export const BOARD_LEVELS_TITLE = "All 52 Model Town Board levels";
+export const BOARD_LEVELS_DESCRIPTION =
+  "Every level of the Model Town Board course, with a picture of each: lanes, the roundabout, routes, blocked roads and parking. Free, every level open.";
 /** The game opened on one level of the course. */
 export const levelHref = (id: string) => `${BOARD_PLAY_PATH}?level=${id}`;
+
+/** Bump when the board's paint or a level's route changes, so pictures reload. */
+const LEVEL_PICTURES = "1";
+/** A level's picture: the flat board, zoomed to what the level uses. */
+export const levelPictureHref = (id: string) =>
+  `${BOARD_LEVELS_PATH}/${id}.svg?v=${LEVEL_PICTURES}`;
 
 /**
  * Every board question with its answer, as a PDF to print. Made by

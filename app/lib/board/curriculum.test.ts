@@ -8,6 +8,7 @@ import {
   doneCount,
   learnedKey,
   levelAfter,
+  levelBefore,
   levelById,
   levelDone,
   nextLevel,
@@ -137,5 +138,7 @@ describe("progress through the course", () => {
     expect(nextLevel(saved).n).toBe(2);
     expect(levelAfter(first)?.n).toBe(2);
     expect(levelAfter(ALL_LEVELS[ALL_LEVELS.length - 1])).toBeUndefined();
+    expect(levelBefore(first)).toBeUndefined();
+    expect(levelBefore(ALL_LEVELS[1])).toBe(first);
   });
 });

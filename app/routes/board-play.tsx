@@ -42,12 +42,11 @@ export function meta(_: Route.MetaArgs) {
 export default function BoardPlay() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const open = useBoardStore((s) => s.overlayOpen);
   const learn = params.get("learn") === "1";
   const task = params.get("task");
   const level = params.get("level");
-  /** The game has been open on this visit, so closing it means leaving. */
-  const wasOpen = React.useRef(false);
+  /** The game is being shut by this page itself: to change level, or to go. */
+  const swapping = React.useRef(false);
 
   React.useEffect(() => {
     const store = useBoardStore.getState();
@@ -58,24 +57,30 @@ export default function BoardPlay() {
       else store.start(task && challengeById(task) ? [task] : undefined);
     }
     return () => {
-      wasOpen.current = false;
+      swapping.current = true;
       useBoardStore.getState().exit();
+      swapping.current = false;
     };
   }, [learn, task, level]);
 
-  React.useEffect(() => {
-    if (open) wasOpen.current = true;
-    else if (wasOpen.current) {
-      // Close takes the learner back to the page they opened the game from.
-      // The router numbers the pages visited on the site. Above 0 there is one
-      // to go back to. At 0 the game was opened cold (a typed address, a
-      // shared link), and back would leave the site. Moving from level to
-      // level replaces this entry, so one step back always leaves the game.
-      const visited = (window.history.state as { idx?: number } | null)?.idx;
-      if (visited && visited > 0) navigate(-1);
-      else navigate(BOARD_PATH, { replace: true });
-    }
-  }, [open, navigate]);
+  // Close takes the learner back to the page they opened the game from. The
+  // store is listened to directly, not read from a render: moving from one
+  // level to another shuts the game and opens it again before the page draws,
+  // which a render never sees.
+  React.useEffect(
+    () =>
+      useBoardStore.subscribe((state, before) => {
+        if (!before.overlayOpen || state.overlayOpen || swapping.current) return;
+        // The router numbers the pages visited on the site. Above 0 there is
+        // one to go back to. At 0 the game was opened cold (a typed address,
+        // a shared link), and back would leave the site. Moving from level to
+        // level replaces this entry, so one step back always leaves the game.
+        const visited = (window.history.state as { idx?: number } | null)?.idx;
+        if (visited && visited > 0) navigate(-1);
+        else navigate(BOARD_PATH, { replace: true });
+      }),
+    [navigate],
+  );
 
   return (
     <main className="fixed inset-0 flex flex-col items-center justify-center gap-6 bg-[#101114] text-white">

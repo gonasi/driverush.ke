@@ -6,6 +6,7 @@ describe("which tab a page belongs to", () => {
   it.each([
     ["/", "home"],
     ["/model-town-board", "board"],
+    ["/model-town-board/levels", "board"],
     ["/model-town-board/rules", "guides"],
     ["/road-signs", "signs"],
     ["/road-signs/pelican", "signs"],

@@ -49,6 +49,7 @@ import { useBoardStore } from "~/lib/board-store";
 import { cn } from "~/lib/utils";
 
 import { LevelCheer } from "~/components/board/board-cheer";
+import { useOpenLevels } from "~/components/board/levels-sheet-context";
 import { BoardSpotPicks } from "~/components/board/board-spot-picks";
 import { Icon } from "~/components/brand/icon";
 import {
@@ -56,6 +57,7 @@ import {
   CheckIcon,
   ChevronLeftIcon,
   CloseIcon,
+  GridIcon,
   PlayIcon,
   SettingsIcon,
 } from "~/components/brand/icons";
@@ -89,6 +91,7 @@ export function LevelNext({
   className?: string;
 }) {
   const next = levelAfter(level);
+  const openLevels = useOpenLevels();
   return (
     <div className={cn("grid gap-2", className)}>
       {next && (
@@ -99,9 +102,15 @@ export function LevelNext({
           <Icon icon={ArrowRightIcon} size={16} className="shrink-0" />
         </Link>
       )}
-      <Link to={BOARD_LEVELS_PATH} replace className={secondary}>
-        All levels
-      </Link>
+      {openLevels ? (
+        <button type="button" onClick={openLevels} className={secondary}>
+          All levels
+        </button>
+      ) : (
+        <Link to={BOARD_LEVELS_PATH} replace className={secondary}>
+          All levels
+        </Link>
+      )}
     </div>
   );
 }
@@ -679,6 +688,7 @@ export function BoardLevel({
   onSettings: () => void;
 }) {
   const exit = useBoardStore((s) => s.exit);
+  const openLevels = useOpenLevels();
   const completeLevel = useBoardStore((s) => s.completeLevel);
   const learned = useBoardStore((s) => s.learned);
   const sideways = seat === "east" || seat === "west";
@@ -741,6 +751,16 @@ export function BoardLevel({
             </h2>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
+            {openLevels && (
+              <button
+                type="button"
+                aria-label="All levels"
+                onClick={openLevels}
+                className={iconButton}
+              >
+                <Icon icon={GridIcon} size={20} />
+              </button>
+            )}
             <button
               type="button"
               aria-label="Settings"

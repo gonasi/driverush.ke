@@ -14,6 +14,7 @@ import { absUrl } from "~/lib/site";
 import { getAllPosts } from "~/lib/blog";
 import {
   BOARD_CHECKED,
+  BOARD_LEVELS_PATH,
   BOARD_GUIDES,
   BOARD_PATH,
   BOARD_QUESTIONS_PDF,
@@ -58,6 +59,7 @@ const STATIC_PAGES: Entry[] = [
   page("/", "1.0", "weekly"),
   // The Model Town Board is what most learners come for.
   page(BOARD_PATH, "1.0", "weekly", BOARD_CHECKED),
+  page(BOARD_LEVELS_PATH, "0.7", "weekly", BOARD_CHECKED),
   ...BOARD_GUIDES.map((guide) =>
     page(guide.path, "0.8", "monthly", BOARD_CHECKED),
   ),

@@ -26,10 +26,9 @@ export default [
   route("model-town-board", "routes/model-town-board.tsx"),
   // The game alone, with no page under it. Every way into driving links here.
   route("model-town-board/play", "routes/board-play.tsx"),
-  // The levels had a page of their own for a day. They are the Board page now.
-  route("model-town-board/levels", "routes/legacy-redirects.ts", {
-    id: "legacy-board-levels",
-  }),
+  // Every level as a picture to pick from, and the pictures themselves.
+  route("model-town-board/levels", "routes/board-levels.tsx"),
+  route("model-town-board/levels/:file", "routes/board-level-picture.ts"),
   // The board's guides. One file, one route each: the path picks the guide.
   route("model-town-board/diagram", "routes/board-guide.tsx", {
     id: "board-guide-diagram",

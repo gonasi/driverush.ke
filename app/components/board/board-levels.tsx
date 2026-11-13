@@ -1,26 +1,27 @@
 /**
  * The Board page's working part: the picture, one button that starts the
- * course or carries on with it, and every unit with its levels. The unit the
- * learner is in stands open and the others open on a tap. Each row opens the
- * game on that level. All of it is in the server's HTML. What is done, and
- * which level is next, is filled in from this browser's saved progress once
- * the page is running.
+ * course or carries on with it, and the units. Each unit links to its levels
+ * on the levels page (`level-picker.tsx`), where any level can be picked by
+ * its picture. All of it is in the server's HTML. What is done, and which
+ * level is next, is filled in from this browser's saved progress once the
+ * page is running.
  */
 import { Link } from "react-router";
 
-import { BOARD_PLAY_PATH, levelHref } from "~/lib/board-guides";
+import {
+  BOARD_LEVELS_PATH,
+  BOARD_PLAY_PATH,
+  levelHref,
+} from "~/lib/board-guides";
 import {
   COURSE_LEVELS,
   DAILY_GOAL,
-  KIND_LABEL,
   UNITS,
   doneCount,
   levelDone,
   nextLevel,
   readiness,
   weakestDrive,
-  type Level,
-  type LevelKind,
 } from "~/lib/board/curriculum";
 import { dayKey, usePracticeStreak } from "~/lib/practice-streak";
 import { useCourseProgress } from "~/lib/use-course-progress";
@@ -34,102 +35,12 @@ import {
   CheckIcon,
   ChevronRightIcon,
   PlayIcon,
-  StarIcon,
 } from "~/components/brand/icons";
-import { Badge, type BadgeProps } from "~/components/ui/badge";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
 
 const TOTAL = COURSE_LEVELS.length;
-
-const KIND_BADGE: Record<LevelKind, BadgeProps["variant"]> = {
-  warmup: "rush",
-  slides: "cream",
-  lanes: "cream",
-  watch: "cyan",
-  drive: "rush",
-  mock: "rush",
-};
-
-function LevelRow({
-  level,
-  done,
-  next,
-  stars,
-}: {
-  level: Level;
-  done: boolean;
-  next: boolean;
-  stars: number;
-}) {
-  return (
-    <li>
-      <Link
-        to={level.kind === "mock" ? BOARD_PLAY_PATH : levelHref(level.id)}
-        aria-current={next ? "step" : undefined}
-        className={cn(
-          "flex min-h-14 items-center gap-3 border px-3 py-2.5 text-ink no-underline outline-none transition-colors",
-          next
-            ? "border-ink bg-amber text-amber-foreground hover:brightness-105 focus-visible:brightness-105"
-            : "border-ink/20 bg-surface hover:bg-paper-2 focus-visible:bg-paper-2",
-        )}
-      >
-        <span
-          className={cn(
-            "flex size-9 shrink-0 items-center justify-center border border-ink/40 font-mono text-[13px] font-bold tabular-nums",
-            done
-              ? "bg-kenya-green text-kenya-green-foreground"
-              : "bg-paper-2 text-ink",
-          )}
-        >
-          {done ? (
-            <>
-              <Icon icon={CheckIcon} size={16} />
-              <span className="sr-only">Level {level.n}, done</span>
-            </>
-          ) : (
-            level.n
-          )}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-[14.5px] font-bold leading-snug">
-            {level.title}
-          </span>
-          <span className="mt-1 flex flex-wrap items-center gap-1.5">
-            <Badge variant={KIND_BADGE[level.kind]} className="border px-1.5">
-              {KIND_LABEL[level.kind]}
-            </Badge>
-            <span className="font-mono text-[10px] font-bold uppercase tracking-widest opacity-70">
-              {level.difficulty}
-              {next && " · Next"}
-              {level.kind === "drive" &&
-                stars > 0 &&
-                stars < 3 &&
-                " · Get 3 stars"}
-            </span>
-            {level.kind === "drive" && stars > 0 && (
-              <span
-                role="img"
-                aria-label={`Best: ${stars} of 3 stars`}
-                className="inline-flex gap-0.5"
-              >
-                {[1, 2, 3].map((n) => (
-                  <Icon
-                    key={n}
-                    icon={StarIcon}
-                    size={12}
-                    className={n <= stars ? "text-kenya-gold" : "opacity-25"}
-                  />
-                ))}
-              </span>
-            )}
-          </span>
-        </span>
-        <Icon icon={ChevronRightIcon} size={18} className="shrink-0" />
-      </Link>
-    </li>
-  );
-}
 
 const quiet =
   "inline-flex min-h-11 items-center font-sans text-[14.5px] font-bold text-ink underline decoration-rush decoration-2 underline-offset-4 outline-none hover:text-rush focus-visible:text-rush";
@@ -253,64 +164,60 @@ export function BoardLevels({ className }: { className?: string }) {
       {done >= 3 && <InstallNudge />}
 
       <div className="grid gap-2">
-        {units.map((unit, i) => {
-          const unitDone = saved
-            ? unit.levels.filter((l) => levelDone(l, saved)).length
-            : 0;
-          const complete = unitDone === unit.levels.length;
-          return (
-            <details
-              key={unit.id}
-              id={`unit-${unit.id}`}
-              open={unit.id === openUnit}
-              className="group scroll-mt-20 border border-ink/25 bg-surface"
-            >
-              <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 px-4 py-3 outline-none transition-colors hover:bg-paper-2 focus-visible:bg-paper-2 [&::-webkit-details-marker]:hidden">
-                <span className="min-w-0 flex-1">
-                  <span className="block font-mono text-[10px] font-bold uppercase tracking-widest text-ink-3">
-                    Unit {i + 1}
-                  </span>
-                  <span className="block font-display text-[16px] font-extrabold uppercase leading-tight tracking-tight text-ink">
-                    {unit.title}
-                  </span>
-                </span>
-                <span
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="m-0 font-display text-[18px] font-extrabold uppercase leading-tight tracking-tight text-ink">
+            Units
+          </h2>
+          <Link to={BOARD_LEVELS_PATH} className={quiet}>
+            All levels
+          </Link>
+        </div>
+        <ol className="m-0 grid list-none gap-2 p-0 sm:grid-cols-2">
+          {units.map((unit, i) => {
+            const unitDone = saved
+              ? unit.levels.filter((l) => levelDone(l, saved)).length
+              : 0;
+            const complete = unitDone === unit.levels.length;
+            const here = unit.id === openUnit;
+            return (
+              <li key={unit.id}>
+                <Link
+                  to={`${BOARD_LEVELS_PATH}#unit-${unit.id}`}
                   className={cn(
-                    "inline-flex shrink-0 items-center gap-1 font-mono text-[11px] font-bold tabular-nums",
-                    complete ? "text-kenya-green" : "text-ink-3",
+                    "flex h-full min-h-16 items-center gap-3 border bg-surface px-4 py-3 text-ink no-underline outline-none transition-colors hover:bg-paper-2 focus-visible:bg-paper-2",
+                    here && saved ? "border-ink" : "border-ink/25",
                   )}
                 >
-                  {complete && <Icon icon={CheckIcon} size={12} />}
-                  {unitDone} / {unit.levels.length}
-                </span>
-                <span
-                  aria-hidden
-                  className="w-4 shrink-0 text-center font-display text-[22px] font-extrabold leading-none text-rush before:content-['+'] group-open:before:content-['−']"
-                />
-              </summary>
-              <div className="border-t border-ink/15 p-3">
-                <p className="m-0 mb-3 text-[14px] leading-snug text-ink-2">
-                  {unit.blurb}
-                </p>
-                <ol className="m-0 grid list-none gap-2 p-0 sm:grid-cols-2">
-                  {unit.levels.map((level) => (
-                    <LevelRow
-                      key={level.id}
-                      level={level}
-                      done={saved ? levelDone(level, saved) : false}
-                      next={saved != null && level.id === next.id}
-                      stars={
-                        saved && level.kind === "drive"
-                          ? (saved.bestStars[level.challenge] ?? 0)
-                          : 0
-                      }
-                    />
-                  ))}
-                </ol>
-              </div>
-            </details>
-          );
-        })}
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-mono text-[10px] font-bold uppercase tracking-widest text-ink-3">
+                      Unit {i + 1}
+                    </span>
+                    <span className="block font-display text-[16px] font-extrabold uppercase leading-tight tracking-tight">
+                      {unit.title}
+                    </span>
+                    <span className="mt-0.5 block text-[13.5px] leading-snug text-ink-2">
+                      {unit.blurb}
+                    </span>
+                  </span>
+                  <span
+                    className={cn(
+                      "inline-flex shrink-0 items-center gap-1 font-mono text-[11px] font-bold tabular-nums",
+                      complete ? "text-kenya-green" : "text-ink-3",
+                    )}
+                  >
+                    {complete && <Icon icon={CheckIcon} size={12} />}
+                    {unitDone} / {unit.levels.length}
+                  </span>
+                  <Icon
+                    icon={ChevronRightIcon}
+                    size={18}
+                    className="shrink-0"
+                  />
+                </Link>
+              </li>
+            );
+          })}
+        </ol>
       </div>
 
       <Link

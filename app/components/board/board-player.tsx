@@ -48,7 +48,7 @@ import {
   useBoardStore,
   type BoardNotice,
 } from "~/lib/board-store";
-import { BOARD_LEVELS_PATH, levelHref } from "~/lib/board-guides";
+import { levelHref } from "~/lib/board-guides";
 import {
   COURSE_LEVELS,
   levelAfter,
@@ -64,6 +64,7 @@ import { ShareButton } from "~/components/brand/share-button";
 import {
   ChevronLeftIcon,
   CloseIcon,
+  GridIcon,
   InfoIcon,
   PlayIcon,
   MenuIcon,
@@ -83,6 +84,7 @@ import { BoardFinishCue } from "~/components/board/board-finish-cue";
 import { BoardFps } from "~/components/board/board-fps";
 import { BoardLearn } from "~/components/board/board-learn";
 import { BoardLevel } from "~/components/board/board-level";
+import { OpenLevelsContext } from "~/components/board/levels-sheet-context";
 import { BoardPlayback, routeLines } from "~/components/board/board-playback";
 import { BoardSettingsSheet } from "~/components/board/board-settings-sheet";
 import { BoardSheet } from "~/components/board/board-sheet";
@@ -91,6 +93,10 @@ import { BoardViewer } from "~/components/board/board-viewer";
 
 // Only needed at the end of a round, and it brings framer-motion with it, so
 // people who land here to read the guide never download it.
+// The level picker, with its pictures, is only fetched when it is opened.
+const BoardLevelsSheet = React.lazy(
+  () => import("~/components/board/board-levels-sheet"),
+);
 const TrainerResultCard = React.lazy(() =>
   import("~/components/brand/trainer-result-card").then((m) => ({
     default: m.TrainerResultCard,
@@ -706,6 +712,13 @@ export function BoardGame() {
   const [mounted, setMounted] = React.useState(false);
   const [unsupported, setUnsupported] = React.useState(false);
   const [settingsOpen, setSettingsOpen] = React.useState(false);
+  // Every level, over the game. Asked for once, it stays loaded.
+  const [levelsOpen, setLevelsOpen] = React.useState(false);
+  const [levelsAsked, setLevelsAsked] = React.useState(false);
+  const openLevels = React.useCallback(() => {
+    setLevelsAsked(true);
+    setLevelsOpen(true);
+  }, []);
   const [wrongStep, setWrongStep] = React.useState<number | null>(null);
   // Asked before a drive that is under way is thrown away.
   const [leaving, setLeaving] = React.useState(false);
@@ -723,9 +736,9 @@ export function BoardGame() {
     if (!s.overlayOpen) setPainted(false);
   }, [s.overlayOpen]);
 
-  // With the settings or the "leave?" question over the table, the drive
-  // holds still: the car, the referee and the clock.
-  const held = settingsOpen || leaving;
+  // With the settings, the levels or the "leave?" question over the table,
+  // the drive holds still: the car, the referee and the clock.
+  const held = settingsOpen || levelsOpen || leaving;
   React.useEffect(() => {
     setPaused(held);
     return () => setPaused(false);
@@ -735,8 +748,8 @@ export function BoardGame() {
     setLeaving(false);
     setMoreOpen(false);
   }, [s.phase, s.attempt]);
-  const heldRef = React.useRef({ settingsOpen, leaving });
-  heldRef.current = { settingsOpen, leaving };
+  const heldRef = React.useRef({ settingsOpen, levelsOpen, leaving });
+  heldRef.current = { settingsOpen, levelsOpen, leaving };
 
   /** Leave the board. Mid-drive, ask first: it is one tap from a restart. */
   const askToLeave = () => {
@@ -819,6 +832,8 @@ export function BoardGame() {
   );
   // The level of the course the game was opened on, if it was.
   const level = levelById(s.level) ?? null;
+  // Another level, or none: the picker has done its job.
+  React.useEffect(() => setLevelsOpen(false), [s.level]);
   // The first drive: nothing graded, so no clock, no stars and no hints.
   const warmup = level?.kind === "warmup";
   // A lesson car or an Easy level: a miss is "not quite", not an examiner.
@@ -848,7 +863,7 @@ export function BoardGame() {
       const store = useBoardStore.getState();
       // The settings sheet closes itself on Escape. It must not take the
       // board with it.
-      if (heldRef.current.settingsOpen) return;
+      if (heldRef.current.settingsOpen || heldRef.current.levelsOpen) return;
       if (e.key === "Escape") askRef.current();
       if (e.key === "Enter") {
         if (store.phase === "fault") store.retry();
@@ -985,12 +1000,14 @@ export function BoardGame() {
         <BoardLearn seat={seat} onSettings={() => setSettingsOpen(true)} />
       )}
       {!unsupported && s.mode === "level" && level && (
-        <BoardLevel
-          key={level.id}
-          level={level}
-          seat={seat}
-          onSettings={() => setSettingsOpen(true)}
-        />
+        <OpenLevelsContext.Provider value={openLevels}>
+          <BoardLevel
+            key={level.id}
+            level={level}
+            seat={seat}
+            onSettings={() => setSettingsOpen(true)}
+          />
+        </OpenLevelsContext.Provider>
       )}
 
       {!unsupported &&
@@ -1092,6 +1109,19 @@ export function BoardGame() {
                   >
                     <Icon icon={ChevronLeftIcon} size={18} />
                     Put it back
+                  </button>
+                )}
+                {level && (
+                  <button
+                    type="button"
+                    className={moreItem}
+                    onClick={() => {
+                      setMoreOpen(false);
+                      openLevels();
+                    }}
+                  >
+                    <Icon icon={GridIcon} size={18} />
+                    All levels
                   </button>
                 )}
                 <button
@@ -1227,6 +1257,15 @@ export function BoardGame() {
         !(coaching && !warmup) && (
           <StuckChip key={s.attempt} onRestart={s.restart} />
         )}
+      {levelsAsked && level && (
+        <React.Suspense fallback={null}>
+          <BoardLevelsSheet
+            open={levelsOpen}
+            onOpenChange={setLevelsOpen}
+            level={level}
+          />
+        </React.Suspense>
+      )}
       <BoardSettingsSheet
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
@@ -1334,13 +1373,13 @@ export function BoardGame() {
             {pickedCar ? "Back to the cars" : "Close"}
           </button>
           {level && !pickedCar && (
-            <Link
-              to={BOARD_LEVELS_PATH}
-              replace
+            <button
+              type="button"
+              onClick={openLevels}
               className="-mt-2 flex min-h-11 w-full items-center justify-center text-[13.5px] font-semibold text-ink-2 underline underline-offset-4 outline-none hover:text-ink focus-visible:text-ink"
             >
               All levels
-            </Link>
+            </button>
           )}
         </BoardSheet>
       )}
@@ -1435,10 +1474,13 @@ export function BoardGame() {
                   <Icon icon={RefreshIcon} size={16} />
                   Again
                 </Button>
-                <Button asChild variant="paper" size="lg" className="flex-1">
-                  <Link to={BOARD_LEVELS_PATH} replace>
-                    All levels
-                  </Link>
+                <Button
+                  variant="paper"
+                  size="lg"
+                  className="flex-1"
+                  onClick={openLevels}
+                >
+                  All levels
                 </Button>
               </>
             ) : (

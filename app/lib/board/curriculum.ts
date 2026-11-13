@@ -482,6 +482,12 @@ export function levelAfter(level: Level): Level | undefined {
   return ALL_LEVELS[ALL_LEVELS.indexOf(level) + 1];
 }
 
+/** The level before this one in the list. The first level has none. */
+export function levelBefore(level: Level): Level | undefined {
+  const i = ALL_LEVELS.indexOf(level);
+  return i > 0 ? ALL_LEVELS[i - 1] : undefined;
+}
+
 export const KIND_LABEL: Record<LevelKind, string> = {
   warmup: "Drive",
   slides: "Learn",
