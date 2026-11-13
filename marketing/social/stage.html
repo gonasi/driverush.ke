@@ -1,0 +1,195 @@
+<!doctype html>
+<!--
+  The 1080x1920 frame every video is recorded in (360x640 CSS px at 3x).
+
+  The app plays in one window in the middle of the frame, the only part a
+  phone never crops and TikTok never covers: the sides of the video are cut
+  off on tall phones, the top sits under the search bar, the bottom under the
+  username and caption, and buttons run down the right edge. Captions go in
+  the strip above the window and never on top of the app. capture.mjs sets
+  the window with `stage.layout()` and calls `stage.frame()` once per video
+  frame, so nothing here runs on its own clock.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=block"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      html,
+      body {
+        width: 360px;
+        height: 640px;
+        overflow: hidden;
+        background: #0b0b0d;
+        font-family: Montserrat, system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      #win {
+        position: absolute;
+        overflow: hidden;
+        border-radius: 14px;
+        background: #101114;
+        box-shadow: 0 0 0 1px rgb(255 255 255 / 0.1);
+      }
+      #app {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 360px;
+        border: 0;
+        display: block;
+        background: #101114;
+        transform-origin: 0 0;
+      }
+      #cap,
+      #outro,
+      #touch {
+        position: absolute;
+        pointer-events: none;
+      }
+      /* Captions sit on the window's top edge and grow upward. */
+      #cap,
+      #outro {
+        text-align: center;
+        transform-origin: 50% 100%;
+      }
+      #cap span,
+      #outro span {
+        font: 700 17px/1.58 Montserrat, sans-serif;
+        letter-spacing: -0.01em;
+        color: #111;
+        background: #fff;
+        padding: 3px 8px 4px;
+        border-radius: 6px;
+        -webkit-box-decoration-break: clone;
+        box-decoration-break: clone;
+      }
+      #cap em {
+        font-style: normal;
+        color: #e11d2e;
+      }
+      #outro span {
+        font-size: 14.5px;
+        white-space: nowrap;
+        color: #fff;
+        background: #e11d2e;
+      }
+      #outro small {
+        display: block;
+        margin-top: 6px;
+        font: 600 11px/1 Montserrat, sans-serif;
+        color: rgb(255 255 255 / 0.85);
+      }
+      #touch {
+        width: 40px;
+        height: 40px;
+        margin: -20px 0 0 -20px;
+        border-radius: 50%;
+        background: rgb(255 255 255 / 0.55);
+        box-shadow:
+          0 0 0 2px rgb(0 0 0 / 0.25),
+          0 2px 8px rgb(0 0 0 / 0.35);
+        opacity: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="win"><iframe id="app" title="app"></iframe></div>
+    <div id="cap"><span></span></div>
+    <div id="outro">
+      <span>driverush.ke 👈 free, no signup</span>
+      <small>powered by Gonasi</small>
+    </div>
+    <div id="touch"></div>
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const clamp = (v) => Math.max(0, Math.min(1, v));
+      const ease = (v) => 1 - Math.pow(1 - clamp(v), 3);
+      const mark = (s) =>
+        s
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/\*([\s\S]+?)\*/g, "<em>$1</em>")
+          .replace(/\n/g, "<br>");
+      let shown = null;
+      window.stage = {
+        /**
+         * @param win    {x, y, w, h} the window, CSS px
+         * @param scale  how much the 360-wide app is shrunk to fit it
+         * @param appH   the app's own height, before shrinking
+         * @param viewY  how far down the app the window starts
+         */
+        layout({ win, scale, appH, viewY }) {
+          Object.assign($("win").style, {
+            left: win.x + "px",
+            top: win.y + "px",
+            width: win.w + "px",
+            height: win.h + "px",
+          });
+          $("app").style.height = appH + "px";
+          $("app").style.transform = `scale(${scale}) translateY(${-viewY}px)`;
+          for (const id of ["cap", "outro"]) {
+            Object.assign($(id).style, {
+              // Wider than the window: above it only the frame's edges are
+              // lost, nothing floats over the picture.
+              left: Math.max(8, win.x - 40) + "px",
+              width: win.w + 2 * Math.min(40, win.x - 8) + "px",
+              bottom: 640 - win.y + 10 + "px",
+            });
+          }
+        },
+        /**
+         * @param s.text   caption; *stars* mark the red words; "" hides it
+         * @param s.textT  seconds since those words came on
+         * @param s.touch  {x, y, t} a tap t seconds old, or {x, y, down: true}
+         * @param s.outro  seconds into the closing label, or -1
+         */
+        frame(s) {
+          const cap = $("cap");
+          if (s.text !== shown) {
+            shown = s.text;
+            const span = cap.firstElementChild;
+            span.innerHTML = mark(s.text ?? "");
+            // Two lines at most, or the words climb under TikTok's top bar.
+            let size = 17;
+            span.style.fontSize = size + "px";
+            while (size > 12 && cap.offsetHeight > size * 1.58 * 2 + 4) {
+              size -= 0.5;
+              span.style.fontSize = size + "px";
+            }
+          }
+          const p = ease(s.textT / 0.16);
+          cap.style.opacity = s.text ? p : 0;
+          cap.style.transform = `scale(${0.88 + 0.12 * p})`;
+
+          const outro = $("outro");
+          const q = s.outro >= 0 ? ease(s.outro / 0.2) : 0;
+          outro.style.opacity = q;
+          outro.style.transform = `scale(${0.88 + 0.12 * q})`;
+          if (q > 0) cap.style.opacity = 0;
+
+          const touch = $("touch");
+          if (s.touch) {
+            const life = s.touch.down ? 1 : 1 - clamp(s.touch.t / 0.35);
+            touch.style.left = s.touch.x + "px";
+            touch.style.top = s.touch.y + "px";
+            touch.style.opacity = life;
+            touch.style.transform = `scale(${s.touch.down ? 0.9 : 0.9 + 0.5 * (1 - life)})`;
+          } else {
+            touch.style.opacity = 0;
+          }
+        },
+      };
+    </script>
+  </body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "name": "driverush-social",
+  "private": true,
+  "type": "module",
+  "description": "Records the vertical promo videos from the built app. Not part of the site.",
+  "dependencies": {
+    "playwright-core": "^1.50.0"
+  }
+}

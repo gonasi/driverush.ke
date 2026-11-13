@@ -1,0 +1,334 @@
+<!doctype html>
+<!--
+  The 1080x1920 frame every photo is shot in (540x960 CSS px at 2x).
+
+  The app runs in an iframe (`#win`), either filling the frame ("bleed") or as
+  a framed screen on a brand colour ("card"). The headline sits in the top
+  band, below TikTok's search bar; the driverush.ke label sits above TikTok's
+  caption. photos.mjs places everything with `stage.set()`.
+
+  Kept clear of text: the top 12%, the bottom 13.5%, and the right 14% from
+  52% to 92% of the height, where TikTok draws its own bars and buttons.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Montserrat:wght@600;700&display=block"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      html,
+      body {
+        width: 540px;
+        height: 960px;
+        overflow: hidden;
+        font-family: Montserrat, system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      /* ---- colour themes: page, words, highlighted words ---- */
+      body {
+        --bg: #0e1014;
+        --fg: #fbf7ee;
+        --soft: rgb(251 247 238 / 0.78);
+        --hi-bg: #e11d2e;
+        --hi-fg: #fff;
+        --frame: #fbf7ee;
+        --pill-bg: #fbf7ee;
+        --pill-fg: #0e1014;
+        background: var(--bg);
+      }
+      body[data-theme="red"] {
+        --bg: #e11d2e;
+        --fg: #fff;
+        --soft: rgb(255 255 255 / 0.86);
+        --hi-bg: #ffc933;
+        --hi-fg: #0e1014;
+        --frame: #0e1014;
+        --pill-bg: #0e1014;
+        --pill-fg: #fff;
+      }
+      body[data-theme="paper"] {
+        --bg: #f2ede3;
+        --fg: #0e1014;
+        --soft: #2a2d33;
+        --hi-bg: #e11d2e;
+        --hi-fg: #fff;
+        --frame: #0e1014;
+        --pill-bg: #0e1014;
+        --pill-fg: #fff;
+      }
+      body[data-theme="amber"] {
+        --bg: #f2b21c;
+        --fg: #0e1014;
+        --soft: #2a2d33;
+        --hi-bg: #0e1014;
+        --hi-fg: #ffc933;
+        --frame: #0e1014;
+        --pill-bg: #0e1014;
+        --pill-fg: #fff;
+      }
+      body[data-theme="green"] {
+        --bg: #17703d;
+        --fg: #fff;
+        --soft: rgb(255 255 255 / 0.86);
+        --hi-bg: #ffc933;
+        --hi-fg: #0e1014;
+        --frame: #0e1014;
+        --pill-bg: #0e1014;
+        --pill-fg: #fff;
+      }
+      /* A road's centre line, running off the corner behind everything. */
+      #lane {
+        position: absolute;
+        left: -120px;
+        top: 560px;
+        width: 900px;
+        height: 14px;
+        transform: rotate(-24deg);
+        background: repeating-linear-gradient(
+          90deg,
+          var(--fg) 0 56px,
+          transparent 56px 104px
+        );
+        opacity: 0.16;
+      }
+      body[data-layout="bleed"] #lane {
+        display: none;
+      }
+      #win {
+        position: absolute;
+        overflow: hidden;
+        background: #101114;
+      }
+      body[data-layout="card"] #win {
+        border-radius: 26px;
+        box-shadow:
+          0 0 0 5px var(--frame),
+          0 22px 44px rgb(0 0 0 / 0.38);
+      }
+      #app {
+        position: absolute;
+        left: 0;
+        top: 0;
+        border: 0;
+        display: block;
+        background: #101114;
+        transform-origin: 0 0;
+      }
+      /* Bleed: darken the top and bottom so the words read on any picture. */
+      #shade {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        display: none;
+        background:
+          linear-gradient(
+            180deg,
+            rgb(8 9 12 / 0.94) 0,
+            rgb(8 9 12 / 0.86) 22%,
+            rgb(8 9 12 / 0) 40%
+          ),
+          linear-gradient(
+            0deg,
+            rgb(8 9 12 / 0.9) 0,
+            rgb(8 9 12 / 0.6) 12%,
+            rgb(8 9 12 / 0) 24%
+          );
+      }
+      body[data-layout="bleed"] #shade {
+        display: block;
+      }
+      #head {
+        position: absolute;
+        left: 38px;
+        width: 464px;
+        top: 124px;
+        pointer-events: none;
+      }
+      #kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font:
+          700 13px/1 Montserrat,
+          sans-serif;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--soft);
+        margin-bottom: 12px;
+      }
+      #kicker::before {
+        content: "";
+        width: 22px;
+        height: 4px;
+        border-radius: 2px;
+        background: var(--hi-bg);
+      }
+      h1 {
+        font:
+          800 46px/1.08 Sora,
+          Montserrat,
+          sans-serif;
+        letter-spacing: -0.035em;
+        color: var(--fg);
+        text-wrap: balance;
+      }
+      h1 em {
+        font-style: normal;
+        color: var(--hi-fg);
+        background: var(--hi-bg);
+        padding: 0 0.16em 0.04em;
+        border-radius: 0.14em;
+        white-space: nowrap;
+      }
+      #sub {
+        margin-top: 12px;
+        font:
+          600 17px/1.35 Montserrat,
+          sans-serif;
+        color: var(--soft);
+        text-wrap: balance;
+      }
+      #sub:empty,
+      #kicker:empty {
+        display: none;
+      }
+      #foot {
+        position: absolute;
+        left: 38px;
+        pointer-events: none;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      #pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 36px;
+        padding: 0 15px 0 13px;
+        border-radius: 10px;
+        background: var(--pill-bg);
+        color: var(--pill-fg);
+        font:
+          800 16px/1 Sora,
+          sans-serif;
+        letter-spacing: -0.01em;
+      }
+      #pill i {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #e11d2e;
+      }
+      #foot small {
+        font:
+          600 12px/1.3 Montserrat,
+          sans-serif;
+        color: var(--soft);
+      }
+      /* What TikTok covers: only drawn for the check pictures. */
+      #safe {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        display: none;
+      }
+      #safe div {
+        position: absolute;
+        background: rgb(0 200 255 / 0.4);
+        outline: 1px solid #00c8ff;
+      }
+    </style>
+  </head>
+  <body data-layout="card" data-theme="ink">
+    <div id="lane"></div>
+    <div id="win"><iframe id="app" title="app"></iframe></div>
+    <div id="shade"></div>
+    <div id="head">
+      <div id="kicker"></div>
+      <h1></h1>
+      <p id="sub"></p>
+    </div>
+    <div id="foot">
+      <span id="pill"><i></i>driverush.ke</span>
+      <small>free, no signup<br />powered by Gonasi</small>
+    </div>
+    <div id="safe">
+      <div style="left: 0; top: 0; width: 100%; height: 12%"></div>
+      <div style="left: 0; bottom: 0; width: 100%; height: 13.5%"></div>
+      <div style="right: 0; top: 52%; width: 14%; height: 40%"></div>
+    </div>
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const mark = (s) =>
+        (s ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/\*([\s\S]+?)\*/g, "<em>$1</em>")
+          .replace(/\n/g, "<br>");
+      let headY = 124;
+      window.stage = {
+        /**
+         * @param s.layout  "bleed" | "card" | "split" (full width under a band of colour)
+         * @param s.theme   "ink" | "red" | "paper" | "amber" | "green"
+         * @param s.win     {x, y, w, h} where the app shows, CSS px
+         * @param s.app     {w, h} the size the app is laid out at
+         * @param s.viewY   how far down the app the window starts
+         */
+        set(s) {
+          document.body.dataset.layout = s.layout;
+          document.body.dataset.theme = s.theme;
+          const scale = s.win.w / s.app.w;
+          Object.assign($("win").style, {
+            left: s.win.x + "px",
+            top: s.win.y + "px",
+            width: s.win.w + "px",
+            height: s.win.h + "px",
+          });
+          Object.assign($("app").style, {
+            width: s.app.w + "px",
+            height: s.app.h + "px",
+            transform: `scale(${scale}) translateY(${-(s.viewY ?? 0)}px)`,
+          });
+          $("foot").style.top = (s.footY ?? 786) + "px";
+          // A shorter frame (4:5) and a headline that starts higher up.
+          if (s.frameH) {
+            document.documentElement.style.height = s.frameH + "px";
+            document.body.style.height = s.frameH + "px";
+          }
+          headY = s.headY ?? 124;
+          $("head").style.top = headY + "px";
+        },
+        /** Words go on last, once the app is where the photo wants it. */
+        words({ kicker, headline, sub, size, maxH, footInHead }) {
+          $("kicker").textContent = kicker ?? "";
+          $("sub").textContent = sub ?? "";
+          const h1 = document.querySelector("h1");
+          h1.innerHTML = mark(headline);
+          // Shrink the headline until the whole block fits its band.
+          let px = size ?? 46;
+          h1.style.fontSize = px + "px";
+          while (px > 28 && $("head").offsetHeight > (maxH ?? 170)) {
+            px -= 1;
+            h1.style.fontSize = px + "px";
+          }
+          // With the app running to the bottom, the label moves up under the words.
+          if (footInHead) $("foot").style.top = headY + $("head").offsetHeight + 16 + "px";
+          return { px, height: $("head").offsetHeight };
+        },
+        safe(on) {
+          $("safe").style.display = on ? "block" : "none";
+        },
+      };
+    </script>
+  </body>
+</html>

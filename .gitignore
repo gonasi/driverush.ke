@@ -8,3 +8,8 @@
 
 # Claude Code (machine-local permission grants; launch.json is shared)
 .claude/settings.local.json
+
+# Promo video recorder: its own dependencies and its rendered files
+/marketing/social/node_modules/
+/marketing/social/out/
+/marketing/social/.work/

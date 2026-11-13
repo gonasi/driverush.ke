@@ -1,0 +1,302 @@
+<!doctype html>
+<!--
+  The 1080x1350 frame of the LinkedIn launch film (432x540 CSS px at 2.5x).
+
+  Unlike stage.html this one is meant to look made: the app plays in a phone
+  shaped window on the brand's ink, a headline sits in the band above it, the
+  address runs along the bottom, and the film closes on a full end card.
+  capture.mjs drives it the same way: `stage.layout()` once per shot and
+  `stage.frame()` once per video frame, so nothing here runs on its own clock.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Montserrat:wght@600;700&display=block"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      html,
+      body {
+        width: 432px;
+        height: 540px;
+        overflow: hidden;
+        background: #0e1014;
+        font-family: Montserrat, system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      /* A road's centre line, running off the corner behind everything. */
+      #lane {
+        position: absolute;
+        left: -140px;
+        top: 330px;
+        width: 760px;
+        height: 11px;
+        transform: rotate(-24deg);
+        background: repeating-linear-gradient(
+          90deg,
+          #fbf7ee 0 46px,
+          transparent 46px 86px
+        );
+        opacity: 0.1;
+      }
+      #win {
+        position: absolute;
+        overflow: hidden;
+        border-radius: 18px;
+        background: #101114;
+        box-shadow:
+          0 0 0 4px #fbf7ee,
+          0 18px 40px rgb(0 0 0 / 0.5);
+      }
+      #app {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 360px;
+        border: 0;
+        display: block;
+        background: #101114;
+        transform-origin: 0 0;
+      }
+      #cap,
+      #touch,
+      #strip,
+      #end {
+        position: absolute;
+        pointer-events: none;
+      }
+      /* The headline sits on the window's top edge and grows upward. */
+      #cap {
+        left: 20px;
+        width: 392px;
+        text-align: center;
+        font:
+          800 23px/1.16 Sora,
+          Montserrat,
+          sans-serif;
+        letter-spacing: -0.03em;
+        color: #fbf7ee;
+        text-wrap: balance;
+      }
+      #cap em {
+        font-style: normal;
+        color: #fff;
+        background: #e11d2e;
+        padding: 0 0.18em 0.05em;
+        border-radius: 0.16em;
+        white-space: nowrap;
+      }
+      #strip {
+        left: 0;
+        width: 432px;
+        bottom: 9px;
+        text-align: center;
+        font:
+          700 10.5px/1 Montserrat,
+          sans-serif;
+        letter-spacing: 0.02em;
+        color: rgb(251 247 238 / 0.72);
+      }
+      #strip b {
+        font:
+          800 11.5px/1 Sora,
+          sans-serif;
+        color: #fbf7ee;
+      }
+      #strip i {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        margin-right: 5px;
+        border-radius: 50%;
+        background: #e11d2e;
+      }
+      #touch {
+        width: 34px;
+        height: 34px;
+        margin: -17px 0 0 -17px;
+        border-radius: 50%;
+        background: rgb(255 255 255 / 0.5);
+        box-shadow:
+          0 0 0 2px rgb(0 0 0 / 0.22),
+          0 2px 8px rgb(0 0 0 / 0.3);
+        opacity: 0;
+      }
+      /* ---- the end card ---- */
+      #end {
+        inset: 0;
+        background: #f2ede3;
+        opacity: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 34px 30px 0;
+      }
+      #end img.dr {
+        width: 150px;
+        height: 100px;
+        object-fit: contain;
+        margin-bottom: 2px;
+      }
+      #end h2 {
+        font:
+          800 37px/1.1 Sora,
+          sans-serif;
+        letter-spacing: -0.035em;
+        color: #0e1014;
+      }
+      #end h2 em {
+        font-style: normal;
+        color: #fff;
+        background: #e11d2e;
+        padding: 0 0.18em 0.05em;
+        border-radius: 0.14em;
+      }
+      #end .pill {
+        margin-top: 26px;
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        height: 50px;
+        padding: 0 22px 0 19px;
+        border-radius: 13px;
+        background: #0e1014;
+        color: #fff;
+        font:
+          800 24px/1 Sora,
+          sans-serif;
+        letter-spacing: -0.02em;
+      }
+      #end .pill i {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        background: #e11d2e;
+      }
+      #end p {
+        margin-top: 13px;
+        font:
+          700 14.5px/1.4 Montserrat,
+          sans-serif;
+        color: #2a2d33;
+      }
+      #end .by {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        font:
+          600 11.5px/1 Montserrat,
+          sans-serif;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #5a5d63;
+      }
+      /* The logo file is a square with wide margins: show its middle. */
+      #end .by span {
+        width: 54px;
+        height: 54px;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #0f172a;
+      }
+      #end .by img {
+        width: 88px;
+        height: 88px;
+        margin: -17px 0 0 -17px;
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="lane"></div>
+    <div id="win"><iframe id="app" title="app"></iframe></div>
+    <div id="cap"></div>
+    <div id="strip">
+      <i></i><b>driverush.ke</b> &nbsp;·&nbsp; free, no signup
+    </div>
+    <div id="touch"></div>
+    <div id="end">
+      <img class="dr" src="/images/driverush-logo-plain.png" alt="" />
+      <h2>Seen better<br />NTSA prep?<br /><em>Show us.</em></h2>
+      <div class="pill"><i></i>driverush.ke</div>
+      <p>Model Town Board and road signs.<br />Free. No signup.</p>
+      <div class="by">
+        Powered by
+        <span><img src="/assets/gonasi/logo-on-dark.jpg" alt="Gonasi" /></span>
+      </div>
+    </div>
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const clamp = (v) => Math.max(0, Math.min(1, v));
+      const ease = (v) => 1 - Math.pow(1 - clamp(v), 3);
+      const mark = (s) =>
+        s
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/\*([\s\S]+?)\*/g, "<em>$1</em>")
+          .replace(/\n/g, "<br>");
+      let shown = null;
+      let band = 80;
+      window.stage = {
+        /** Same contract as stage.html: where the app shows, and how shrunk. */
+        layout({ win, scale, appH, viewY }) {
+          Object.assign($("win").style, {
+            left: win.x + "px",
+            top: win.y + "px",
+            width: win.w + "px",
+            height: win.h + "px",
+          });
+          $("app").style.height = appH + "px";
+          $("app").style.transform = `scale(${scale}) translateY(${-viewY}px)`;
+          $("cap").style.bottom = 540 - win.y + 15 + "px";
+          band = win.y - 15 - 14;
+        },
+        frame(s) {
+          const cap = $("cap");
+          if (s.text !== shown) {
+            shown = s.text;
+            cap.innerHTML = mark(s.text ?? "");
+            // Shrink until the words fit the band above the window.
+            let size = 23;
+            cap.style.fontSize = size + "px";
+            while (size > 15 && cap.offsetHeight > band) {
+              size -= 0.5;
+              cap.style.fontSize = size + "px";
+            }
+          }
+          const p = ease(s.textT / 0.28);
+          cap.style.opacity = s.text ? p : 0;
+          cap.style.transform = `translateY(${(1 - p) * 7}px)`;
+
+          const q = s.outro >= 0 ? ease(s.outro / 0.4) : 0;
+          $("end").style.opacity = q;
+
+          const touch = $("touch");
+          if (s.touch && q === 0) {
+            const life = s.touch.down ? 1 : 1 - clamp(s.touch.t / 0.35);
+            touch.style.left = s.touch.x + "px";
+            touch.style.top = s.touch.y + "px";
+            touch.style.opacity = life;
+            touch.style.transform = `scale(${s.touch.down ? 0.9 : 0.9 + 0.5 * (1 - life)})`;
+          } else {
+            touch.style.opacity = 0;
+          }
+        },
+      };
+    </script>
+  </body>
+</html>
